@@ -23,7 +23,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":dd-sdk-android-core"))
+    implementation(project(":fc-sdk-android-core"))
     implementation(libs.kotlin)
 
     // Testing

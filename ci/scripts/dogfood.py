@@ -24,7 +24,7 @@ TARGET_GRADLE_PLUGIN = "gradle-plugin"
 REPOSITORIES = {
     TARGET_APP: "datadog-android",
     TARGET_DEMO: "shopist-android",
-    TARGET_GRADLE_PLUGIN: "dd-sdk-android-gradle-plugin",
+    TARGET_GRADLE_PLUGIN: "fc-sdk-android-gradle-plugin",
     # Flutter is not needed because it pulls updates instead of being pushed them with the dogfood script.
 }
 
@@ -61,7 +61,7 @@ def github_create_pr(repository: str, branch_name: str, base_name: str, version:
     }
     body = "This PR has been created automatically by the CI"
     if previous_version:
-        diff = "Updating Datadog SDK from version {previous_version} to version {version}: [diff](https://github.com/DataDog/dd-sdk-android/compare/{previous_version}...{version})".format(previous_version=previous_version, version=version)
+        diff = "Updating Datadog SDK from version {previous_version} to version {version}: [diff](https://github.com/DataDog/fc-sdk-android/compare/{previous_version}...{version})".format(previous_version=previous_version, version=version)
         body = "\\n".join([body, diff])
     data = '{"body": "' + body + '", ' \
            '"title": "Update Datadog SDK to version ' + version + '", ' \

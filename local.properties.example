@@ -1,0 +1,19 @@
+# Android SDK 路径配置示例
+# 复制此文件为 local.properties 并修改路径
+
+# macOS 典型路径
+sdk.dir=/Users/YOUR_USERNAME/Library/Android/sdk
+
+# 或者使用环境变量（二选一）
+# sdk.dir=${ANDROID_HOME}
+
+# Linux 典型路径
+# sdk.dir=/home/YOUR_USERNAME/Android/Sdk
+
+# Windows 典型路径
+# sdk.dir=C\:\\Users\\YOUR_USERNAME\\AppData\\Local\\Android\\Sdk
+
+# 其他可选配置
+# ndk.dir=/path/to/ndk
+# cmake.dir=/path/to/cmake
+

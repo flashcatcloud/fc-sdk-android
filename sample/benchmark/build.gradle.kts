@@ -50,7 +50,7 @@ android {
             create("release") {
                 storeFile = File(project.rootDir, "sample-benchmark.keystore")
                 storePassword = bmPassword
-                keyAlias = "dd-sdk-android"
+                keyAlias = "fc-sdk-android"
                 keyPassword = bmPassword
             }
         }
@@ -104,18 +104,18 @@ dependencies {
     implementation(libs.coroutinesCore)
     implementation(libs.bundles.ktorClient)
     implementation(libs.kotlinxSerializationJson)
-    implementation(project(":features:dd-sdk-android-logs"))
-    implementation(project(":features:dd-sdk-android-rum"))
-    implementation(project(":features:dd-sdk-android-trace"))
-    implementation(project(":features:dd-sdk-android-trace-otel"))
-    implementation(project(":features:dd-sdk-android-ndk"))
-    implementation(project(":features:dd-sdk-android-webview"))
-    implementation(project(":features:dd-sdk-android-session-replay"))
-    implementation(project(":features:dd-sdk-android-session-replay-material"))
-    implementation(project(":features:dd-sdk-android-session-replay-compose"))
-    implementation(project(":integrations:dd-sdk-android-compose"))
-    implementation(project(":integrations:dd-sdk-android-glide"))
-    implementation(project(":integrations:dd-sdk-android-okhttp"))
+    implementation(project(":features:fc-sdk-android-logs"))
+    implementation(project(":features:fc-sdk-android-rum"))
+    implementation(project(":features:fc-sdk-android-trace"))
+    implementation(project(":features:fc-sdk-android-trace-otel"))
+    implementation(project(":features:fc-sdk-android-ndk"))
+    implementation(project(":features:fc-sdk-android-webview"))
+    implementation(project(":features:fc-sdk-android-session-replay"))
+    implementation(project(":features:fc-sdk-android-session-replay-material"))
+    implementation(project(":features:fc-sdk-android-session-replay-compose"))
+    implementation(project(":integrations:fc-sdk-android-compose"))
+    implementation(project(":integrations:fc-sdk-android-glide"))
+    implementation(project(":integrations:fc-sdk-android-okhttp"))
     implementation(project(":tools:benchmark"))
 
     testImplementation(libs.bundles.jUnit5)

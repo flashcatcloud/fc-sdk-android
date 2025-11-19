@@ -33,8 +33,8 @@ android {
 }
 
 dependencies {
-    implementation(project(":dd-sdk-android-core"))
-    implementation(project(":dd-sdk-android-internal"))
+    implementation(project(":fc-sdk-android-core"))
+    implementation(project(":fc-sdk-android-internal"))
     implementation(libs.kotlin)
     implementation(libs.okHttp)
     implementation(libs.openTelemetryApi)
@@ -61,5 +61,5 @@ dependencyUpdateConfig()
 androidLibraryConfig()
 publishingConfig(
     projectDescription = "An internal benchmarking tool to measure the overhead of Datadog SDK",
-    customArtifactId = "dd-sdk-android-benchmark-internal"
+    customArtifactId = "fc-sdk-android-benchmark-internal"
 )

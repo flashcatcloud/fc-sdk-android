@@ -9,7 +9,7 @@ set -o pipefail
 
 tag_name=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
      -H "Accept: application/vnd.github+json" \
-     https://api.github.com/repos/DataDog/dd-sdk-android/releases/latest | jq -r .tag_name)
+     https://api.github.com/repos/DataDog/fc-sdk-android/releases/latest | jq -r .tag_name)
 
 if [ -z "$tag_name" ] || [ "$tag_name" = "null" ]; then
   echo "Error: Failed to retrieve tag_name from GitHub API: tag_name='$tag_name'"

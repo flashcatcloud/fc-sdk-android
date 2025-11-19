@@ -13,7 +13,7 @@ check-release:is-published:
     DDOCTOSTS_ID_TOKEN:
       aud: dd-octo-sts
   script:
-    - export GITHUB_TOKEN=$(dd-octo-sts token --scope DataDog/dd-sdk-android --policy self.gitlab.read)
+    - export GITHUB_TOKEN=$(dd-octo-sts token --scope DataDog/fc-sdk-android --policy self.gitlab.read)
     - bash ./ci/scripts/check_latest_release_is_published.sh
 
 notify:report-failure-to-slack:

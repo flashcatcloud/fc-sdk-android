@@ -117,7 +117,7 @@ android {
             create("release") {
                 storeFile = File(project.rootDir, "sample-android.keystore")
                 storePassword = e2ePassword
-                keyAlias = "dd-sdk-android"
+                keyAlias = "fc-sdk-android"
                 keyPassword = e2ePassword
             }
         }
@@ -149,27 +149,27 @@ datadog {
 
 dependencies {
     // Datadog Libraries
-    implementation(project(":features:dd-sdk-android-logs"))
-    implementation(project(":features:dd-sdk-android-flags"))
-    implementation(project(":features:dd-sdk-android-rum"))
-    implementation(project(":features:dd-sdk-android-trace"))
-    implementation(project(":features:dd-sdk-android-trace-otel"))
-    implementation(project(":features:dd-sdk-android-ndk"))
-    implementation(project(":features:dd-sdk-android-webview"))
-    implementation(project(":features:dd-sdk-android-session-replay"))
-    implementation(project(":features:dd-sdk-android-session-replay-material"))
-    implementation(project(":features:dd-sdk-android-session-replay-compose"))
-    implementation(project(":integrations:dd-sdk-android-trace-coroutines"))
-    implementation(project(":integrations:dd-sdk-android-rum-coroutines"))
-    implementation(project(":integrations:dd-sdk-android-rx"))
-    implementation(project(":integrations:dd-sdk-android-timber"))
-    implementation(project(":integrations:dd-sdk-android-coil"))
-    implementation(project(":integrations:dd-sdk-android-glide"))
-    implementation(project(":integrations:dd-sdk-android-fresco"))
-    implementation(project(":integrations:dd-sdk-android-sqldelight"))
-    implementation(project(":integrations:dd-sdk-android-compose"))
-    implementation(project(":integrations:dd-sdk-android-okhttp"))
-    implementation(project(":integrations:dd-sdk-android-okhttp-otel"))
+    implementation(project(":features:fc-sdk-android-logs"))
+    implementation(project(":features:fc-sdk-android-flags"))
+    implementation(project(":features:fc-sdk-android-rum"))
+    implementation(project(":features:fc-sdk-android-trace"))
+    implementation(project(":features:fc-sdk-android-trace-otel"))
+    implementation(project(":features:fc-sdk-android-ndk"))
+    implementation(project(":features:fc-sdk-android-webview"))
+    implementation(project(":features:fc-sdk-android-session-replay"))
+    implementation(project(":features:fc-sdk-android-session-replay-material"))
+    implementation(project(":features:fc-sdk-android-session-replay-compose"))
+    implementation(project(":integrations:fc-sdk-android-trace-coroutines"))
+    implementation(project(":integrations:fc-sdk-android-rum-coroutines"))
+    implementation(project(":integrations:fc-sdk-android-rx"))
+    implementation(project(":integrations:fc-sdk-android-timber"))
+    implementation(project(":integrations:fc-sdk-android-coil"))
+    implementation(project(":integrations:fc-sdk-android-glide"))
+    implementation(project(":integrations:fc-sdk-android-fresco"))
+    implementation(project(":integrations:fc-sdk-android-sqldelight"))
+    implementation(project(":integrations:fc-sdk-android-compose"))
+    implementation(project(":integrations:fc-sdk-android-okhttp"))
+    implementation(project(":integrations:fc-sdk-android-okhttp-otel"))
     implementation(project(":tools:benchmark"))
 
     // Desugaring SDK

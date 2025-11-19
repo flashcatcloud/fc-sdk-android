@@ -23,34 +23,34 @@ In addition, to be able to run the static analysis tools locally, you should run
 
 This project hosts the following modules:
 
-  - `dd-sdk-android-core`: the main library implementing the core functionality of SDK (storage and upload of data, core APIs);
-  - `dd-sdk-android-internal`: a library providing internal APIs, classes and utilities shared by the SDK modules;
+  - `fc-sdk-android-core`: the main library implementing the core functionality of SDK (storage and upload of data, core APIs);
+  - `fc-sdk-android-internal`: a library providing internal APIs, classes and utilities shared by the SDK modules;
   - `features/***`: a set of libraries implementing Datadog products: 
-    - `features/dd-sdk-android-logs`: a library to send logs to Datadog;
-    - `features/dd-sdk-android-rum`: a library to track user navigation and interaction;
-    - `features/dd-sdk-android-ndk`: a lightweight library to track crashes from NDK libraries;
-    - `features/dd-sdk-android-session-replay`: a library to capture the window content;
-    - `features/dd-sdk-android-session-replay-compose`: an extension for Session Replay to integrate with the Jetpack Compose;
-    - `features/dd-sdk-android-session-replay-material`: an extension for Session Replay to integrate with the Material Design library;
-    - `features/dd-sdk-android-trace`: a library to measure performance of operations locally;
-    - `features/dd-sdk-android-trace-api`: a library containing API definitions for the Trace library;
-    - `features/dd-sdk-android-trace-internal`: a library containing internal classes for the Trace library;
-    - `features/dd-sdk-android-trace-otel`: an extension of Trace library to integrate with [OpenTelemetry](https://opentelemetry.io/);
-    - `features/dd-sdk-android-webview`: a library to forward logs and RUM events captured in a webview to be linked with the mobile session;
+    - `features/fc-sdk-android-logs`: a library to send logs to Datadog;
+    - `features/fc-sdk-android-rum`: a library to track user navigation and interaction;
+    - `features/fc-sdk-android-ndk`: a lightweight library to track crashes from NDK libraries;
+    - `features/fc-sdk-android-session-replay`: a library to capture the window content;
+    - `features/fc-sdk-android-session-replay-compose`: an extension for Session Replay to integrate with the Jetpack Compose;
+    - `features/fc-sdk-android-session-replay-material`: an extension for Session Replay to integrate with the Material Design library;
+    - `features/fc-sdk-android-trace`: a library to measure performance of operations locally;
+    - `features/fc-sdk-android-trace-api`: a library containing API definitions for the Trace library;
+    - `features/fc-sdk-android-trace-internal`: a library containing internal classes for the Trace library;
+    - `features/fc-sdk-android-trace-otel`: an extension of Trace library to integrate with [OpenTelemetry](https://opentelemetry.io/);
+    - `features/fc-sdk-android-webview`: a library to forward logs and RUM events captured in a webview to be linked with the mobile session;
   - `integrations/***`: a set of libraries integrating Datadog products in third party libraries:
-    - `integrations/dd-sdk-android-apollo`: a lightweight library providing a bridge integration between Datadog SDK and [Apollo Kotlin](https://github.com/apollographql/apollo-kotlin)
-    - `integrations/dd-sdk-android-coil`: a lightweight library providing a bridge integration between Datadog SDK and [Coil](https://coil-kt.github.io/coil/);
-    - `integrations/dd-sdk-android-compose`: a lightweight library providing a bridge integration between Datadog SDK and [Jetpack Compose](https://developer.android.com/jetpack/compose);
-    - `integrations/dd-sdk-android-fresco`: a lightweight library providing a bridge integration between Datadog SDK and [Fresco](https://frescolib.org/);
-    - `integrations/dd-sdk-android-glide`: a lightweight library providing a bridge integration between Datadog SDK and [Glide](https://bumptech.github.io/glide/);
-    - `integrations/dd-sdk-android-okhttp`: a lightweight library providing an instrumentation for [OkHttp](https://square.github.io/okhttp/);
-    - `integrations/dd-sdk-android-okhttp-otel`: a lightweight library providing a support of [OpenTelemetry](https://opentelemetry.io/) for the [OkHttp](https://square.github.io/okhttp/) instrumentation;
-    - `integrations/dd-sdk-android-rum-coroutines`: a set of extensions for Kotlin Coroutines to ease the work with the RUM library;
-    - `integrations/dd-sdk-android-rx`: a lightweight library providing a bridge integration between Datadog SDK and [RxJava](https://github.com/ReactiveX/RxJava);
-    - `integrations/dd-sdk-android-sqldelight`: a lightweight library providing a bridge integration between Datadog SDK and [SQLDelight](https://cashapp.github.io/sqldelight/);
-    - `integrations/dd-sdk-android-timber`: a lightweight library providing a bridge integration between Datadog SDK and [Timber](https://github.com/JakeWharton/timber);
-    - `integrations/dd-sdk-android-tv`: a lightweight library providing extensions for [Android TV](https://www.android.com/tv/)
-    - `integrations/dd-sdk-android-trace-coroutines`: a set of extensions for Kotlin Coroutines to ease the work with the Trace library;
+    - `integrations/fc-sdk-android-apollo`: a lightweight library providing a bridge integration between Datadog SDK and [Apollo Kotlin](https://github.com/apollographql/apollo-kotlin)
+    - `integrations/fc-sdk-android-coil`: a lightweight library providing a bridge integration between Datadog SDK and [Coil](https://coil-kt.github.io/coil/);
+    - `integrations/fc-sdk-android-compose`: a lightweight library providing a bridge integration between Datadog SDK and [Jetpack Compose](https://developer.android.com/jetpack/compose);
+    - `integrations/fc-sdk-android-fresco`: a lightweight library providing a bridge integration between Datadog SDK and [Fresco](https://frescolib.org/);
+    - `integrations/fc-sdk-android-glide`: a lightweight library providing a bridge integration between Datadog SDK and [Glide](https://bumptech.github.io/glide/);
+    - `integrations/fc-sdk-android-okhttp`: a lightweight library providing an instrumentation for [OkHttp](https://square.github.io/okhttp/);
+    - `integrations/fc-sdk-android-okhttp-otel`: a lightweight library providing a support of [OpenTelemetry](https://opentelemetry.io/) for the [OkHttp](https://square.github.io/okhttp/) instrumentation;
+    - `integrations/fc-sdk-android-rum-coroutines`: a set of extensions for Kotlin Coroutines to ease the work with the RUM library;
+    - `integrations/fc-sdk-android-rx`: a lightweight library providing a bridge integration between Datadog SDK and [RxJava](https://github.com/ReactiveX/RxJava);
+    - `integrations/fc-sdk-android-sqldelight`: a lightweight library providing a bridge integration between Datadog SDK and [SQLDelight](https://cashapp.github.io/sqldelight/);
+    - `integrations/fc-sdk-android-timber`: a lightweight library providing a bridge integration between Datadog SDK and [Timber](https://github.com/JakeWharton/timber);
+    - `integrations/fc-sdk-android-tv`: a lightweight library providing extensions for [Android TV](https://www.android.com/tv/)
+    - `integrations/fc-sdk-android-trace-coroutines`: a set of extensions for Kotlin Coroutines to ease the work with the Trace library;
   - `instrumented/***`: a set of modules used to run instrumented tests:
     - `instrumented/integration`: a test module with integration tests using Espresso;
   - `reliability/***`: a set of modules used to run integration tests:
@@ -109,7 +109,7 @@ The whole project is covered by a set of static analysis tools, linters and test
 Many great ideas for new features come from the community, and we'd be happy to
 consider yours!
 
-To share your request, you can open an [issue](https://github.com/DataDog/dd-sdk-android/issues/new?labels=enhancement&template=FeatureRequest.yml)
+To share your request, you can open an [issue](https://github.com/DataDog/fc-sdk-android/issues/new?labels=enhancement&template=FeatureRequest.yml)
 with the details about what you'd like to see. At a minimum, please provide:
 
  - The goal of the new feature;
@@ -124,7 +124,7 @@ or UI, contact our support team via https://docs.datadoghq.com/help/ for direct,
 faster assistance.
 
 You may submit bug reports concerning the Datadog SDK for Android by 
-[opening a Github issue](https://github.com/DataDog/dd-sdk-android/issues/new?labels=bug&template=BugReport.yml).
+[opening a Github issue](https://github.com/DataDog/fc-sdk-android/issues/new?labels=bug&template=BugReport.yml).
 At a minimum, please provide:
 
  - A description of the problem;
@@ -152,18 +152,18 @@ the bug are best.
 ## Have a patch?
 
 We welcome code contributions to the library, which you can 
-[submit as a pull request](https://github.com/DataDog/dd-sdk-android/pull/new/develop).
+[submit as a pull request](https://github.com/DataDog/fc-sdk-android/pull/new/develop).
 Before you submit a PR, make sure that you first create an Issue to explain the
 bug or the feature your patch covers, and make sure another Issue or PR doesn't
 already exist.
 
 To create a pull request:
 
-1. **Fork the repository** from https://github.com/DataDog/dd-sdk-android ;
+1. **Fork the repository** from https://github.com/DataDog/fc-sdk-android ;
 2. **Make any changes** for your patch;
 3. **Write tests** that demonstrate how the feature works or how the bug is fixed;
 4. **Update any documentation**, especially for new features. It can be found either in the `docs` folder of this repository, or in [documentation repository](https://github.com/DataDog/documentation);
-5. **Submit the pull request** from your fork back to this [repository](https://github.com/DataDog/dd-sdk-android).
+5. **Submit the pull request** from your fork back to this [repository](https://github.com/DataDog/fc-sdk-android).
 
 
 The pull request will be run through our CI pipeline, and a project member will

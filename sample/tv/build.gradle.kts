@@ -72,14 +72,14 @@ repositories {
 
 dependencies {
 
-    implementation(project(":dd-sdk-android-core"))
-    implementation(project(":features:dd-sdk-android-rum"))
-    implementation(project(":features:dd-sdk-android-logs"))
-    implementation(project(":features:dd-sdk-android-session-replay"))
-    implementation(project(":features:dd-sdk-android-session-replay-material"))
-    implementation(project(":integrations:dd-sdk-android-okhttp"))
-    implementation(project(":integrations:dd-sdk-android-timber"))
-    implementation(project(":integrations:dd-sdk-android-tv"))
+    implementation(project(":fc-sdk-android-core"))
+    implementation(project(":features:fc-sdk-android-rum"))
+    implementation(project(":features:fc-sdk-android-logs"))
+    implementation(project(":features:fc-sdk-android-session-replay"))
+    implementation(project(":features:fc-sdk-android-session-replay-material"))
+    implementation(project(":integrations:fc-sdk-android-okhttp"))
+    implementation(project(":integrations:fc-sdk-android-timber"))
+    implementation(project(":integrations:fc-sdk-android-tv"))
 
     implementation(libs.kotlin)
 
