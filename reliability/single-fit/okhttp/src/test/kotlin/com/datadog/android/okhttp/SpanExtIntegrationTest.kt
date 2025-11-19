@@ -1,25 +1,25 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
-package com.datadog.android.okhttp
+package com.flashcat.rum.okhttp
 
-import com.datadog.android.Datadog
-import com.datadog.android.api.SdkCore
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.core.stub.StubEvent
-import com.datadog.android.core.stub.StubSDKCore
-import com.datadog.android.okhttp.tests.assertj.SpansPayloadAssert
-import com.datadog.android.okhttp.tests.elmyr.OkHttpConfigurator
-import com.datadog.android.trace.DatadogTracing
-import com.datadog.android.trace.GlobalDatadogTracer
-import com.datadog.android.trace.Trace
-import com.datadog.android.trace.TraceConfiguration
-import com.datadog.android.trace.api.replace
-import com.datadog.android.trace.api.span.DatadogSpan
-import com.datadog.android.trace.internal.DatadogTracingToolkit
-import com.datadog.android.trace.withinSpan
+import com.flashcat.rum.Flashcat
+import com.flashcat.rum.api.SdkCore
+import com.flashcat.rum.api.feature.Feature
+import com.flashcat.rum.core.stub.StubEvent
+import com.flashcat.rum.core.stub.StubSDKCore
+import com.flashcat.rum.okhttp.tests.assertj.SpansPayloadAssert
+import com.flashcat.rum.okhttp.tests.elmyr.OkHttpConfigurator
+import com.flashcat.rum.trace.DatadogTracing
+import com.flashcat.rum.trace.GlobalDatadogTracer
+import com.flashcat.rum.trace.Trace
+import com.flashcat.rum.trace.TraceConfiguration
+import com.flashcat.rum.trace.api.replace
+import com.flashcat.rum.trace.api.span.DatadogSpan
+import com.flashcat.rum.trace.internal.DatadogTracingToolkit
+import com.flashcat.rum.trace.withinSpan
 import com.datadog.tools.unit.extensions.TestConfigurationExtension
 import com.datadog.tools.unit.getFieldValue
 import com.datadog.tools.unit.getStaticValue
@@ -52,7 +52,7 @@ class SpanExtIntegrationTest {
     private lateinit var stubSdkCore: StubSDKCore
     private lateinit var mockServer: MockWebServer
 
-    private val expectedEnv: String get() = stubSdkCore.getDatadogContext().env
+    private val expectedEnv: String get() = stubSdkCore.getFlashcatContext().env
 
     private val JsonObject.spanId: String
         get() = get("span_id").asString

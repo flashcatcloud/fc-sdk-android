@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 # Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
-# This product includes software developed at Datadog (https://www.datadoghq.com/).
-# Copyright 2019-Present Datadog, Inc
+# This product includes software developed at flashcat (https://www.flashcathq.com/).
+# Copyright 2019-Present flashcat, Inc
 
 import re
 import subprocess
@@ -22,9 +22,9 @@ TARGET_DEMO = "demo"
 TARGET_GRADLE_PLUGIN = "gradle-plugin"
 
 REPOSITORIES = {
-    TARGET_APP: "datadog-android",
+    TARGET_APP: "flashcat-android",
     TARGET_DEMO: "shopist-android",
-    TARGET_GRADLE_PLUGIN: "dd-sdk-android-gradle-plugin",
+    TARGET_GRADLE_PLUGIN: "fc-sdk-android-gradle-plugin",
     # Flutter is not needed because it pulls updates instead of being pushed them with the dogfood script.
 }
 
@@ -35,9 +35,9 @@ FILE_PATH = {
 }
 
 PREFIX = {
-    TARGET_APP: "datadog",
-    TARGET_DEMO: "datadogSdk",
-    TARGET_GRADLE_PLUGIN: "datadogSdk",
+    TARGET_APP: "flashcat",
+    TARGET_DEMO: "flashcatSdk",
+    TARGET_GRADLE_PLUGIN: "flashcatSdk",
 }
 
 
@@ -61,13 +61,13 @@ def github_create_pr(repository: str, branch_name: str, base_name: str, version:
     }
     body = "This PR has been created automatically by the CI"
     if previous_version:
-        diff = "Updating Datadog SDK from version {previous_version} to version {version}: [diff](https://github.com/DataDog/dd-sdk-android/compare/{previous_version}...{version})".format(previous_version=previous_version, version=version)
+        diff = "Updating flashcat SDK from version {previous_version} to version {version}: [diff](https://github.com/flashcat/fc-sdk-android/compare/{previous_version}...{version})".format(previous_version=previous_version, version=version)
         body = "\\n".join([body, diff])
     data = '{"body": "' + body + '", ' \
-           '"title": "Update Datadog SDK to version ' + version + '", ' \
+           '"title": "Update flashcat SDK to version ' + version + '", ' \
            '"base":"' + base_name + '", "head":"' + branch_name + '"}'
 
-    url = "https://api.github.com/repos/DataDog/" + repository + "/pulls"
+    url = "https://api.github.com/repos/flashcat/" + repository + "/pulls"
     response = requests.post(url=url, headers=headers, data=data)
     if response.status_code == 201:
         print("Pull Request created successfully")
@@ -100,7 +100,7 @@ def generate_target_code(target: str, temp_dir_path: str, version: str):
 
 def git_clone_repository(repo_name: str, gh_token: str, temp_dir_path: str) -> Tuple[Repo, str]:
     print("Cloning repository " + repo_name)
-    url = "https://x-access-token:" + gh_token + "@github.com/DataDog/" + repo_name
+    url = "https://x-access-token:" + gh_token + "@github.com/flashcat/" + repo_name
     repo = Repo.clone_from(url, temp_dir_path)
     base_name = repo.active_branch.name
     return repo, base_name
@@ -109,7 +109,7 @@ def git_clone_repository(repo_name: str, gh_token: str, temp_dir_path: str) -> T
 def git_push_changes(repo: Repo, version: str):
     print("Committing changes")
     repo.git.add(update=True)
-    repo.index.commit("Update Datadog SDK to " + version)
+    repo.index.commit("Update flashcat SDK to " + version)
 
     print("Pushing branch")
     origin = repo.remote(name="origin")

@@ -1,6 +1,6 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
@@ -44,7 +44,7 @@ internal class LaunchActivity : AppCompatActivity() {
         benchmarkConfigHolder.config = config
 
         /**
-         * The general recommendation is to initialize Datadog SDK at the Application.onCreate
+         * The general recommendation is to initialize Flashcat SDK at the Application.onCreate
          * to have all the observability as early as possible. However in the Benchmark app we know what kind of run we
          * have [SyntheticsRun.Instrumented] or [SyntheticsRun.Baseline] only in [LaunchActivity.onCreate].
          * It is derived from intent extras.

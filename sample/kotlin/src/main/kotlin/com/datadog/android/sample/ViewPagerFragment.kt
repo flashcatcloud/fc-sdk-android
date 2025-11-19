@@ -1,10 +1,10 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.sample
+package com.flashcat.rum.sample
 
 import android.app.Activity
 import android.os.Bundle
@@ -17,9 +17,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.viewpager.widget.ViewPager
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
-import com.datadog.android.sample.viewpager.FragmentA
-import com.datadog.android.sample.viewpager.FragmentB
-import com.datadog.android.sample.viewpager.FragmentC
+import com.flashcat.rum.sample.viewpager.FragmentA
+import com.flashcat.rum.sample.viewpager.FragmentB
+import com.flashcat.rum.sample.viewpager.FragmentC
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 

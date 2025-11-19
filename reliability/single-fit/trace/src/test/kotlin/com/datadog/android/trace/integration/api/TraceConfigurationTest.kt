@@ -1,26 +1,26 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.trace.integration.api
+package com.flashcat.rum.trace.integration.api
 
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.StorageBackedFeature
-import com.datadog.android.api.net.RequestExecutionContext
-import com.datadog.android.api.storage.RawBatchEvent
-import com.datadog.android.core.stub.StubSDKCore
-import com.datadog.android.tests.ktx.getInt
-import com.datadog.android.tests.ktx.getLong
-import com.datadog.android.tests.ktx.getString
-import com.datadog.android.trace.DatadogTracing
-import com.datadog.android.trace.GlobalDatadogTracer
-import com.datadog.android.trace.Trace
-import com.datadog.android.trace.TraceConfiguration
-import com.datadog.android.trace.event.SpanEventMapper
-import com.datadog.android.trace.integration.tests.elmyr.TraceIntegrationForgeConfigurator
-import com.datadog.android.trace.model.SpanEvent
+import com.flashcat.rum.api.feature.Feature
+import com.flashcat.rum.api.feature.StorageBackedFeature
+import com.flashcat.rum.api.net.RequestExecutionContext
+import com.flashcat.rum.api.storage.RawBatchEvent
+import com.flashcat.rum.core.stub.StubSDKCore
+import com.flashcat.rum.tests.ktx.getInt
+import com.flashcat.rum.tests.ktx.getLong
+import com.flashcat.rum.tests.ktx.getString
+import com.flashcat.rum.trace.DatadogTracing
+import com.flashcat.rum.trace.GlobalDatadogTracer
+import com.flashcat.rum.trace.Trace
+import com.flashcat.rum.trace.TraceConfiguration
+import com.flashcat.rum.trace.event.SpanEventMapper
+import com.flashcat.rum.trace.integration.tests.elmyr.TraceIntegrationForgeConfigurator
+import com.flashcat.rum.trace.model.SpanEvent
 import com.datadog.tools.unit.extensions.TestConfigurationExtension
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
@@ -74,16 +74,16 @@ class TraceConfigurationTest {
         @StringForgery fakeMetadata: String
     ) {
         // Given
-        val expectedSite = stubSdkCore.getDatadogContext().site
-        val expectedClientToken = stubSdkCore.getDatadogContext().clientToken
-        val expectedSource = stubSdkCore.getDatadogContext().source
-        val expectedSdkVersion = stubSdkCore.getDatadogContext().sdkVersion
+        val expectedSite = stubSdkCore.getFlashcatContext().site
+        val expectedClientToken = stubSdkCore.getFlashcatContext().clientToken
+        val expectedSource = stubSdkCore.getFlashcatContext().source
+        val expectedSdkVersion = stubSdkCore.getFlashcatContext().sdkVersion
 
         // When
         val traceFeature = stubSdkCore.getFeature(Feature.TRACING_FEATURE_NAME)?.unwrap<StorageBackedFeature>()
         val requestFactory = traceFeature?.requestFactory
         val request = requestFactory?.create(
-            stubSdkCore.getDatadogContext(),
+            stubSdkCore.getFlashcatContext(),
             fakeRequestExecutionContext,
             fakeBatch,
             fakeMetadata.toByteArray()
@@ -105,9 +105,9 @@ class TraceConfigurationTest {
         @StringForgery fakeMetadata: String
     ) {
         // Given
-        val expectedClientToken = stubSdkCore.getDatadogContext().clientToken
-        val expectedSource = stubSdkCore.getDatadogContext().source
-        val expectedSdkVersion = stubSdkCore.getDatadogContext().sdkVersion
+        val expectedClientToken = stubSdkCore.getFlashcatContext().clientToken
+        val expectedSource = stubSdkCore.getFlashcatContext().source
+        val expectedSdkVersion = stubSdkCore.getFlashcatContext().sdkVersion
         val fakeTraceConfiguration = TraceConfiguration.Builder()
             .useCustomEndpoint(fakeEndpoint)
             .build()
@@ -117,7 +117,7 @@ class TraceConfigurationTest {
         val traceFeature = stubSdkCore.getFeature(Feature.TRACING_FEATURE_NAME)?.unwrap<StorageBackedFeature>()
         val requestFactory = traceFeature?.requestFactory
         val request = requestFactory?.create(
-            stubSdkCore.getDatadogContext(),
+            stubSdkCore.getFlashcatContext(),
             fakeRequestExecutionContext,
             fakeBatch,
             fakeMetadata.toByteArray()
@@ -160,15 +160,15 @@ class TraceConfigurationTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.TRACING_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("env")).isEqualTo(stubSdkCore.getDatadogContext().env)
+        assertThat(event0.getString("env")).isEqualTo(stubSdkCore.getFlashcatContext().env)
         assertThat(event0.getString("spans[0].trace_id")).isEqualTo(leastSignificantTraceId)
         assertThat(event0.getString("spans[0].meta._dd.p.id")).isEqualTo(mostSignificantTraceId)
         assertThat(event0.getString("spans[0].span_id")).isEqualTo(spanId)
-        assertThat(event0.getString("spans[0].service")).isEqualTo(stubSdkCore.getDatadogContext().service)
-        assertThat(event0.getString("spans[0].meta.version")).isEqualTo(stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("spans[0].meta._dd.source")).isEqualTo(stubSdkCore.getDatadogContext().source)
+        assertThat(event0.getString("spans[0].service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
+        assertThat(event0.getString("spans[0].meta.version")).isEqualTo(stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("spans[0].meta._dd.source")).isEqualTo(stubSdkCore.getFlashcatContext().source)
         assertThat(event0.getString("spans[0].meta.tracer.version"))
-            .isEqualTo(stubSdkCore.getDatadogContext().sdkVersion)
+            .isEqualTo(stubSdkCore.getFlashcatContext().sdkVersion)
         assertThat(event0.getInt("spans[0].error")).isEqualTo(0)
         assertThat(event0.getString("spans[0].name")).isEqualTo(fakeOperation)
         assertThat(event0.getString("spans[0].resource")).isEqualTo(fakeOperation)
@@ -206,25 +206,25 @@ class TraceConfigurationTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.TRACING_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("env")).isEqualTo(stubSdkCore.getDatadogContext().env)
+        assertThat(event0.getString("env")).isEqualTo(stubSdkCore.getFlashcatContext().env)
         assertThat(event0.getString("spans[0].trace_id")).isEqualTo(leastSignificantTraceId)
         assertThat(event0.getString("spans[0].meta._dd.p.id")).isEqualTo(mostSignificantTraceId)
         assertThat(event0.getString("spans[0].span_id")).isEqualTo(spanId)
-        assertThat(event0.getString("spans[0].service")).isEqualTo(stubSdkCore.getDatadogContext().service)
-        assertThat(event0.getString("spans[0].meta.version")).isEqualTo(stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("spans[0].meta._dd.source")).isEqualTo(stubSdkCore.getDatadogContext().source)
+        assertThat(event0.getString("spans[0].service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
+        assertThat(event0.getString("spans[0].meta.version")).isEqualTo(stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("spans[0].meta._dd.source")).isEqualTo(stubSdkCore.getFlashcatContext().source)
         assertThat(event0.getString("spans[0].meta.tracer.version"))
-            .isEqualTo(stubSdkCore.getDatadogContext().sdkVersion)
+            .isEqualTo(stubSdkCore.getFlashcatContext().sdkVersion)
         assertThat(event0.getInt("spans[0].error")).isEqualTo(0)
         assertThat(event0.getString("spans[0].name")).isEqualTo(fakeOperation)
         assertThat(event0.getString("spans[0].resource")).isEqualTo(fakeOperation)
         assertThat(event0.getLong("spans[0].duration")).isBetween(OP_DURATION_NS, fullDuration)
         assertThat(event0.getString("spans[0].meta.network.client.connectivity"))
-            .isEqualTo(stubSdkCore.getDatadogContext().networkInfo.connectivity.name)
+            .isEqualTo(stubSdkCore.getFlashcatContext().networkInfo.connectivity.name)
         assertThat(event0.getString("spans[0].meta.network.client.sim_carrier.name"))
-            .isEqualTo(stubSdkCore.getDatadogContext().networkInfo.carrierName)
+            .isEqualTo(stubSdkCore.getFlashcatContext().networkInfo.carrierName)
         assertThat(event0.getLong("spans[0].meta.network.client.sim_carrier.id"))
-            .isEqualTo(stubSdkCore.getDatadogContext().networkInfo.carrierId)
+            .isEqualTo(stubSdkCore.getFlashcatContext().networkInfo.carrierId)
     }
 
     @RepeatedTest(16)
@@ -258,12 +258,12 @@ class TraceConfigurationTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.TRACING_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("env")).isEqualTo(stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("spans[0].service")).isEqualTo(stubSdkCore.getDatadogContext().service)
-        assertThat(event0.getString("spans[0].meta.version")).isEqualTo(stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("spans[0].meta._dd.source")).isEqualTo(stubSdkCore.getDatadogContext().source)
+        assertThat(event0.getString("env")).isEqualTo(stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("spans[0].service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
+        assertThat(event0.getString("spans[0].meta.version")).isEqualTo(stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("spans[0].meta._dd.source")).isEqualTo(stubSdkCore.getFlashcatContext().source)
         assertThat(event0.getString("spans[0].meta.tracer.version"))
-            .isEqualTo(stubSdkCore.getDatadogContext().sdkVersion)
+            .isEqualTo(stubSdkCore.getFlashcatContext().sdkVersion)
         assertThat(event0.getInt("spans[0].error")).isEqualTo(0)
         assertThat(event0.getString("spans[0].name")).isEqualTo(fakeMappedOperation)
         assertThat(event0.getString("spans[0].resource")).isEqualTo(fakeMappedResource)

@@ -1,21 +1,21 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.sample
+package com.flashcat.rum.sample
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.datadog.android.sample.data.DataRepository
-import com.datadog.android.sample.data.db.LocalDataSource
-import com.datadog.android.sample.data.remote.RemoteDataSource
-import com.datadog.android.sample.datalist.DataListViewModel
-import com.datadog.android.sample.traces.OtelTracesViewModel
-import com.datadog.android.sample.traces.TracesViewModel
-import com.datadog.android.sample.webview.WebViewModel
-import com.datadog.android.vendor.sample.LocalServer
+import com.flashcat.rum.sample.data.DataRepository
+import com.flashcat.rum.sample.data.db.LocalDataSource
+import com.flashcat.rum.sample.data.remote.RemoteDataSource
+import com.flashcat.rum.sample.datalist.DataListViewModel
+import com.flashcat.rum.sample.traces.OtelTracesViewModel
+import com.flashcat.rum.sample.traces.TracesViewModel
+import com.flashcat.rum.sample.webview.WebViewModel
+import com.flashcat.rum.vendor.sample.LocalServer
 import okhttp3.OkHttpClient
 
 internal class ViewModelFactory(

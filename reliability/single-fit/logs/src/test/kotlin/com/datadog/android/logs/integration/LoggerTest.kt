@@ -1,26 +1,26 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.logs.integration
+package com.flashcat.rum.logs.integration
 
 import android.util.Log
-import com.datadog.android.api.context.NetworkInfo
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.StorageBackedFeature
-import com.datadog.android.api.net.RequestExecutionContext
-import com.datadog.android.api.storage.RawBatchEvent
-import com.datadog.android.core.stub.StubSDKCore
-import com.datadog.android.event.EventMapper
-import com.datadog.android.log.LogAttributes
-import com.datadog.android.log.Logger
-import com.datadog.android.log.Logs
-import com.datadog.android.log.LogsConfiguration
-import com.datadog.android.log.model.LogEvent
-import com.datadog.android.logs.integration.tests.elmyr.LogsIntegrationForgeConfigurator
-import com.datadog.android.tests.ktx.getString
+import com.flashcat.rum.api.context.NetworkInfo
+import com.flashcat.rum.api.feature.Feature
+import com.flashcat.rum.api.feature.StorageBackedFeature
+import com.flashcat.rum.api.net.RequestExecutionContext
+import com.flashcat.rum.api.storage.RawBatchEvent
+import com.flashcat.rum.core.stub.StubSDKCore
+import com.flashcat.rum.event.EventMapper
+import com.flashcat.rum.log.LogAttributes
+import com.flashcat.rum.log.Logger
+import com.flashcat.rum.log.Logs
+import com.flashcat.rum.log.LogsConfiguration
+import com.flashcat.rum.log.model.LogEvent
+import com.flashcat.rum.logs.integration.tests.elmyr.LogsIntegrationForgeConfigurator
+import com.flashcat.rum.tests.ktx.getString
 import com.datadog.tools.unit.extensions.TestConfigurationExtension
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
@@ -89,16 +89,16 @@ class LoggerTest {
         @StringForgery fakeMetadata: String
     ) {
         // Given
-        val expectedSite = stubSdkCore.getDatadogContext().site
-        val expectedClientToken = stubSdkCore.getDatadogContext().clientToken
-        val expectedSource = stubSdkCore.getDatadogContext().source
-        val expectedSdkVersion = stubSdkCore.getDatadogContext().sdkVersion
+        val expectedSite = stubSdkCore.getFlashcatContext().site
+        val expectedClientToken = stubSdkCore.getFlashcatContext().clientToken
+        val expectedSource = stubSdkCore.getFlashcatContext().source
+        val expectedSdkVersion = stubSdkCore.getFlashcatContext().sdkVersion
 
         // When
         val logsFeature = stubSdkCore.getFeature(Feature.LOGS_FEATURE_NAME)?.unwrap<StorageBackedFeature>()
         val requestFactory = logsFeature?.requestFactory
         val request = requestFactory?.create(
-            stubSdkCore.getDatadogContext(),
+            stubSdkCore.getFlashcatContext(),
             fakeExecutionContext,
             fakeBatch,
             fakeMetadata.toByteArray()
@@ -120,9 +120,9 @@ class LoggerTest {
         @StringForgery fakeMetadata: String
     ) {
         // Given
-        val expectedClientToken = stubSdkCore.getDatadogContext().clientToken
-        val expectedSource = stubSdkCore.getDatadogContext().source
-        val expectedSdkVersion = stubSdkCore.getDatadogContext().sdkVersion
+        val expectedClientToken = stubSdkCore.getFlashcatContext().clientToken
+        val expectedSource = stubSdkCore.getFlashcatContext().source
+        val expectedSdkVersion = stubSdkCore.getFlashcatContext().sdkVersion
         val fakeLogsConfiguration = LogsConfiguration.Builder()
             .useCustomEndpoint(fakeEndpoint)
             .build()
@@ -132,7 +132,7 @@ class LoggerTest {
         val logsFeature = stubSdkCore.getFeature(Feature.LOGS_FEATURE_NAME)?.unwrap<StorageBackedFeature>()
         val requestFactory = logsFeature?.requestFactory
         val request = requestFactory?.create(
-            stubSdkCore.getDatadogContext(),
+            stubSdkCore.getFlashcatContext(),
             fakeExecutionContext,
             fakeBatch,
             fakeMetadata.toByteArray()
@@ -166,10 +166,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
     }
@@ -188,10 +188,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo("trace")
     }
@@ -210,10 +210,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo("debug")
     }
@@ -232,10 +232,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo("info")
     }
@@ -254,10 +254,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo("warn")
     }
@@ -276,10 +276,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo("error")
     }
@@ -298,10 +298,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo("critical")
     }
@@ -326,9 +326,9 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
         assertThat(event0.getString("service")).isEqualTo(fakeServiceName)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
@@ -350,10 +350,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString("logger.name")).isEqualTo(fakeLoggerName)
@@ -378,10 +378,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString("usr.id")).isEqualTo(fakeUserId)
@@ -408,10 +408,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString("usr.$fakeUserKey")).isEqualTo(fakeUserValue)
@@ -435,10 +435,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString("account.id")).isEqualTo(fakeAccountId)
@@ -467,10 +467,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString("account.$fakeAccountKey")).isEqualTo(fakeAccountValue)
@@ -493,10 +493,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString("network.client.connectivity"))
@@ -522,10 +522,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString("network.client.connectivity")).isNull()
@@ -550,10 +550,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
     }
@@ -623,10 +623,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString("application_id")).isEqualTo(fakeRumApplicationId)
@@ -658,10 +658,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString("dd.trace_id")).isEqualTo(fakeTraceId)
@@ -681,7 +681,7 @@ class LoggerTest {
             testedLogger.log(fakeLevel, fakeMessage)
 
             // Then
-            val serviceName = stubSdkCore.getDatadogContext().service
+            val serviceName = stubSdkCore.getFlashcatContext().service
             val expectedTag = if (serviceName.length > 23) {
                 serviceName.substring(0, 23)
             } else {
@@ -712,10 +712,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString(fakeKey)).isEqualTo(fakeValue)
@@ -737,10 +737,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString("error.kind")).isEqualTo(fakeException.javaClass.canonicalName)
@@ -767,10 +767,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString("error.kind")).isEqualTo(fakeErrorKind)
@@ -798,10 +798,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString("error.kind")).isEqualTo(fakeErrorKind)
@@ -828,10 +828,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString(fakeAttributeKey)).isEqualTo(fakeAttributeValue)
@@ -857,10 +857,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString(fakeAttributeKey)).isEqualTo(fakeAttributeValue2)
@@ -884,10 +884,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString(fakeAttributeKey)).isEqualTo(fakeAttributeValue)
@@ -913,10 +913,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString(fakeAttributeKey)).isEqualTo(fakeAttributeValue2)
@@ -941,10 +941,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString(fakeAttributeKey)).isNull()
@@ -970,10 +970,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString(fakeAttributeKey)).isEqualTo(fakeAttributeValue2)
@@ -998,10 +998,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString(fakeAttributeKey)).isEqualTo(fakeAttributeValue2)
@@ -1026,10 +1026,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString(fakeAttributeKey)).isNull()
@@ -1054,10 +1054,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString("ddtags")).contains(expectedTag)
@@ -1085,10 +1085,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString("ddtags")).contains(expectedTag)
@@ -1114,10 +1114,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString("ddtags")).contains(expectedTag)
@@ -1145,10 +1145,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString("ddtags")).contains(expectedTag)
@@ -1178,10 +1178,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString("ddtags")).doesNotContain("${fakeTagKey.lowercase()}:")
@@ -1212,10 +1212,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString("ddtags")).doesNotContain("${fakeTagKey.lowercase()}:")
@@ -1244,10 +1244,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString("ddtags")).doesNotContain("${fakeTagKey.lowercase()}:")
@@ -1278,10 +1278,10 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getDatadogContext().env)
-        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getDatadogContext().version)
-        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getDatadogContext().variant)
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("ddtags")).contains("env:" + stubSdkCore.getFlashcatContext().env)
+        assertThat(event0.getString("ddtags")).contains("version:" + stubSdkCore.getFlashcatContext().version)
+        assertThat(event0.getString("ddtags")).contains("variant:" + stubSdkCore.getFlashcatContext().variant)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeLevel])
         assertThat(event0.getString("ddtags")).doesNotContain("${fakeTagKey.lowercase()}:")
@@ -1319,7 +1319,7 @@ class LoggerTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.LOGS_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(1)
         val event0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
-        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getDatadogContext().service)
+        assertThat(event0.getString("service")).isEqualTo(stubSdkCore.getFlashcatContext().service)
         assertThat(event0.getString("message")).isEqualTo(fakeMappedMessage)
         assertThat(event0.getString("status")).isEqualTo(LEVEL_NAMES[fakeMappedLevel])
     }

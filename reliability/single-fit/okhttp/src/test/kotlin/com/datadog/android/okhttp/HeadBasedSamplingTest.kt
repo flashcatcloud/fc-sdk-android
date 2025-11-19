@@ -1,30 +1,30 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.okhttp
+package com.flashcat.rum.okhttp
 
-import com.datadog.android.Datadog
-import com.datadog.android.api.SdkCore
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.core.stub.StubSDKCore
-import com.datadog.android.internal.utils.toHexString
-import com.datadog.android.okhttp.otel.addParentSpan
-import com.datadog.android.okhttp.tests.assertj.SpansPayloadAssert
-import com.datadog.android.okhttp.tests.elmyr.OkHttpConfigurator
-import com.datadog.android.okhttp.trace.TracingInterceptor
-import com.datadog.android.tests.ktx.getString
-import com.datadog.android.trace.DatadogTracing
-import com.datadog.android.trace.GlobalDatadogTracer
-import com.datadog.android.trace.Trace
-import com.datadog.android.trace.TraceConfiguration
-import com.datadog.android.trace.TracingHeaderType
-import com.datadog.android.trace.api.DatadogTracingConstants
-import com.datadog.android.trace.api.span.DatadogSpan
-import com.datadog.android.trace.internal.DatadogTracingToolkit
-import com.datadog.android.trace.opentelemetry.OtelTracerProvider
+import com.flashcat.rum.Flashcat
+import com.flashcat.rum.api.SdkCore
+import com.flashcat.rum.api.feature.Feature
+import com.flashcat.rum.core.stub.StubSDKCore
+import com.flashcat.rum.internal.utils.toHexString
+import com.flashcat.rum.okhttp.otel.addParentSpan
+import com.flashcat.rum.okhttp.tests.assertj.SpansPayloadAssert
+import com.flashcat.rum.okhttp.tests.elmyr.OkHttpConfigurator
+import com.flashcat.rum.okhttp.trace.TracingInterceptor
+import com.flashcat.rum.tests.ktx.getString
+import com.flashcat.rum.trace.DatadogTracing
+import com.flashcat.rum.trace.GlobalDatadogTracer
+import com.flashcat.rum.trace.Trace
+import com.flashcat.rum.trace.TraceConfiguration
+import com.flashcat.rum.trace.TracingHeaderType
+import com.flashcat.rum.trace.api.DatadogTracingConstants
+import com.flashcat.rum.trace.api.span.DatadogSpan
+import com.flashcat.rum.trace.internal.DatadogTracingToolkit
+import com.flashcat.rum.trace.opentelemetry.OtelTracerProvider
 import com.datadog.tools.unit.extensions.TestConfigurationExtension
 import com.datadog.tools.unit.getFieldValue
 import com.datadog.tools.unit.getStaticValue
@@ -132,16 +132,16 @@ class HeadBasedSamplingTest {
 
         val spanPayload = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
         SpansPayloadAssert.assertThat(spanPayload)
-            .hasEnv(stubSdkCore.getDatadogContext().env)
+            .hasEnv(stubSdkCore.getFlashcatContext().env)
             .hasSpanAtIndexWith(0) {
                 hasLeastSignificant64BitsTraceId(
                     leastSignificantTraceId.toLong().toHexString().padStart(16, '0')
                 )
                 hasMostSignificant64BitsTraceId(mostSignificantTraceId)
                 hasSpanId(spanId.toHexPaddedFromDecimalString())
-                hasVersion(stubSdkCore.getDatadogContext().version)
-                hasSource(stubSdkCore.getDatadogContext().source)
-                hasTracerVersion(stubSdkCore.getDatadogContext().sdkVersion)
+                hasVersion(stubSdkCore.getFlashcatContext().version)
+                hasSource(stubSdkCore.getFlashcatContext().source)
+                hasTracerVersion(stubSdkCore.getFlashcatContext().sdkVersion)
                 hasError(0)
                 hasName("okhttp.request")
                 hasResource("http://${mockServer.hostName}:${mockServer.port}/")
@@ -192,7 +192,7 @@ class HeadBasedSamplingTest {
         eventsWritten.forEach {
             val spanPayload = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
             SpansPayloadAssert.assertThat(spanPayload)
-                .hasEnv(stubSdkCore.getDatadogContext().env)
+                .hasEnv(stubSdkCore.getFlashcatContext().env)
                 .hasSpanAtIndexWith(0) {
                     hasAgentPsr(0.5)
                 }
@@ -361,7 +361,7 @@ class HeadBasedSamplingTest {
 
         val okHttpSpanPayload = JsonParser.parseString(eventsWritten[1].eventData) as JsonObject
         SpansPayloadAssert.assertThat(okHttpSpanPayload)
-            .hasEnv(stubSdkCore.getDatadogContext().env)
+            .hasEnv(stubSdkCore.getFlashcatContext().env)
             .hasSpanAtIndexWith(0) {
                 hasLeastSignificant64BitsTraceId(
                     leastSignificantTraceId.toLong().toHexString().padStart(16, '0')
@@ -369,9 +369,9 @@ class HeadBasedSamplingTest {
                 hasMostSignificant64BitsTraceId(mostSignificantTraceId)
                 hasSpanId(spanId.toHexPaddedFromDecimalString())
                 hasParentId(localSpanId.toHexPaddedFromHexString())
-                hasVersion(stubSdkCore.getDatadogContext().version)
-                hasSource(stubSdkCore.getDatadogContext().source)
-                hasTracerVersion(stubSdkCore.getDatadogContext().sdkVersion)
+                hasVersion(stubSdkCore.getFlashcatContext().version)
+                hasSource(stubSdkCore.getFlashcatContext().source)
+                hasTracerVersion(stubSdkCore.getFlashcatContext().sdkVersion)
                 hasError(0)
                 hasName("okhttp.request")
                 hasResource("http://${mockServer.hostName}:${mockServer.port}/")
@@ -458,7 +458,7 @@ class HeadBasedSamplingTest {
 
         val okHttpSpanPayload = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
         SpansPayloadAssert.assertThat(okHttpSpanPayload)
-            .hasEnv(stubSdkCore.getDatadogContext().env)
+            .hasEnv(stubSdkCore.getFlashcatContext().env)
             .hasSpanAtIndexWith(0) {
                 hasLeastSignificant64BitsTraceId(
                     leastSignificantTraceId.toLong().toHexString().padStart(16, '0')
@@ -466,9 +466,9 @@ class HeadBasedSamplingTest {
                 hasMostSignificant64BitsTraceId(mostSignificantTraceId)
                 hasSpanId(spanId.toHexPaddedFromDecimalString())
                 hasParentId(localSpanId.toHexPaddedFromHexString())
-                hasVersion(stubSdkCore.getDatadogContext().version)
-                hasSource(stubSdkCore.getDatadogContext().source)
-                hasTracerVersion(stubSdkCore.getDatadogContext().sdkVersion)
+                hasVersion(stubSdkCore.getFlashcatContext().version)
+                hasSource(stubSdkCore.getFlashcatContext().source)
+                hasTracerVersion(stubSdkCore.getFlashcatContext().sdkVersion)
                 hasError(0)
                 hasName("okhttp.request")
                 hasResource("http://${mockServer.hostName}:${mockServer.port}/")
@@ -606,7 +606,7 @@ class HeadBasedSamplingTest {
 
         val okHttpSpanPayload = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
         SpansPayloadAssert.assertThat(okHttpSpanPayload)
-            .hasEnv(stubSdkCore.getDatadogContext().env)
+            .hasEnv(stubSdkCore.getFlashcatContext().env)
             .hasSpanAtIndexWith(0) {
                 hasLeastSignificant64BitsTraceId(
                     leastSignificantTraceId.toLong().toHexString().padStart(16, '0')
@@ -614,9 +614,9 @@ class HeadBasedSamplingTest {
                 hasMostSignificant64BitsTraceId(mostSignificantTraceId)
                 hasSpanId(spanId.toHexPaddedFromDecimalString())
                 hasParentId(localSpanId.toHexPaddedFromHexString())
-                hasVersion(stubSdkCore.getDatadogContext().version)
-                hasSource(stubSdkCore.getDatadogContext().source)
-                hasTracerVersion(stubSdkCore.getDatadogContext().sdkVersion)
+                hasVersion(stubSdkCore.getFlashcatContext().version)
+                hasSource(stubSdkCore.getFlashcatContext().source)
+                hasTracerVersion(stubSdkCore.getFlashcatContext().sdkVersion)
                 hasError(0)
                 hasName("okhttp.request")
                 hasResource("http://${mockServer.hostName}:${mockServer.port}/")

@@ -1,20 +1,20 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.trace.integration.otel
+package com.flashcat.rum.trace.integration.otel
 
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.core.stub.StubSDKCore
-import com.datadog.android.trace.Trace
-import com.datadog.android.trace.TraceConfiguration
-import com.datadog.android.trace.event.SpanEventMapper
-import com.datadog.android.trace.integration.tests.assertj.SpansPayloadAssert
-import com.datadog.android.trace.integration.tests.elmyr.TraceIntegrationForgeConfigurator
-import com.datadog.android.trace.model.SpanEvent
-import com.datadog.android.trace.opentelemetry.OtelTracerProvider
+import com.flashcat.rum.api.feature.Feature
+import com.flashcat.rum.core.stub.StubSDKCore
+import com.flashcat.rum.trace.Trace
+import com.flashcat.rum.trace.TraceConfiguration
+import com.flashcat.rum.trace.event.SpanEventMapper
+import com.flashcat.rum.trace.integration.tests.assertj.SpansPayloadAssert
+import com.flashcat.rum.trace.integration.tests.elmyr.TraceIntegrationForgeConfigurator
+import com.flashcat.rum.trace.model.SpanEvent
+import com.flashcat.rum.trace.opentelemetry.OtelTracerProvider
 import com.datadog.tools.unit.extensions.TestConfigurationExtension
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
@@ -83,15 +83,15 @@ class OtelTraceConfigurationTest {
         assertThat(eventsWritten).hasSize(1)
         val payload0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
         SpansPayloadAssert.assertThat(payload0)
-            .hasEnv(stubSdkCore.getDatadogContext().env)
+            .hasEnv(stubSdkCore.getFlashcatContext().env)
             .hasSpanAtIndexWith(0) {
                 hasLeastSignificant64BitsTraceId(leastSignificantTraceId)
                 hasMostSignificant64BitsTraceId(mostSignificantTraceId)
                 hasSpanId(spanId)
-                hasService(stubSdkCore.getDatadogContext().service)
-                hasVersion(stubSdkCore.getDatadogContext().version)
-                hasSource(stubSdkCore.getDatadogContext().source)
-                hasTracerVersion(stubSdkCore.getDatadogContext().sdkVersion)
+                hasService(stubSdkCore.getFlashcatContext().service)
+                hasVersion(stubSdkCore.getFlashcatContext().version)
+                hasSource(stubSdkCore.getFlashcatContext().source)
+                hasTracerVersion(stubSdkCore.getFlashcatContext().sdkVersion)
                 hasError(0)
                 hasName(DEFAULT_SPAN_NAME)
                 hasResource(fakeOperation)
@@ -136,22 +136,22 @@ class OtelTraceConfigurationTest {
         assertThat(eventsWritten).hasSize(1)
         val payload0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
         SpansPayloadAssert.assertThat(payload0)
-            .hasEnv(stubSdkCore.getDatadogContext().env)
+            .hasEnv(stubSdkCore.getFlashcatContext().env)
             .hasSpanAtIndexWith(0) {
                 hasLeastSignificant64BitsTraceId(leastSignificantTraceId)
                 hasMostSignificant64BitsTraceId(mostSignificantTraceId)
                 hasSpanId(spanId)
-                hasService(stubSdkCore.getDatadogContext().service)
-                hasVersion(stubSdkCore.getDatadogContext().version)
-                hasSource(stubSdkCore.getDatadogContext().source)
-                hasTracerVersion(stubSdkCore.getDatadogContext().sdkVersion)
+                hasService(stubSdkCore.getFlashcatContext().service)
+                hasVersion(stubSdkCore.getFlashcatContext().version)
+                hasSource(stubSdkCore.getFlashcatContext().source)
+                hasTracerVersion(stubSdkCore.getFlashcatContext().sdkVersion)
                 hasError(0)
                 hasName(DEFAULT_SPAN_NAME)
                 hasResource(fakeOperation)
                 hasDurationBetween(OP_DURATION_NS, fullDuration)
-                hasConnectivity(stubSdkCore.getDatadogContext().networkInfo.connectivity.name)
-                hasSimCarrierId(stubSdkCore.getDatadogContext().networkInfo.carrierId)
-                hasSimCarrierName(stubSdkCore.getDatadogContext().networkInfo.carrierName)
+                hasConnectivity(stubSdkCore.getFlashcatContext().networkInfo.connectivity.name)
+                hasSimCarrierId(stubSdkCore.getFlashcatContext().networkInfo.carrierId)
+                hasSimCarrierName(stubSdkCore.getFlashcatContext().networkInfo.carrierName)
             }
     }
 
@@ -199,15 +199,15 @@ class OtelTraceConfigurationTest {
         assertThat(eventsWritten).hasSize(1)
         val payload0 = JsonParser.parseString(eventsWritten[0].eventData) as JsonObject
         SpansPayloadAssert.assertThat(payload0)
-            .hasEnv(stubSdkCore.getDatadogContext().env)
+            .hasEnv(stubSdkCore.getFlashcatContext().env)
             .hasSpanAtIndexWith(0) {
                 hasLeastSignificant64BitsTraceId(leastSignificantTraceId)
                 hasMostSignificant64BitsTraceId(mostSignificantTraceId)
                 hasSpanId(spanId)
-                hasService(stubSdkCore.getDatadogContext().service)
-                hasVersion(stubSdkCore.getDatadogContext().version)
-                hasSource(stubSdkCore.getDatadogContext().source)
-                hasTracerVersion(stubSdkCore.getDatadogContext().sdkVersion)
+                hasService(stubSdkCore.getFlashcatContext().service)
+                hasVersion(stubSdkCore.getFlashcatContext().version)
+                hasSource(stubSdkCore.getFlashcatContext().source)
+                hasTracerVersion(stubSdkCore.getFlashcatContext().sdkVersion)
                 hasError(0)
                 hasName(fakeMappedOperation)
                 hasResource(fakeMappedResource)

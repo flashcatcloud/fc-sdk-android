@@ -1,0 +1,205 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
+ * Copyright 2016-Present Datadog, Inc.
+ */
+
+package com.flashcat.rum.core.internal
+
+import android.app.Application
+import com.flashcat.rum.api.context.AccountInfo
+import com.flashcat.rum.api.context.NetworkInfo
+import com.flashcat.rum.api.context.UserInfo
+import com.flashcat.rum.core.internal.system.AndroidInfoProvider
+import com.flashcat.rum.privacy.TrackingConsent
+import com.flashcat.rum.utils.config.ApplicationContextTestConfiguration
+import com.flashcat.rum.utils.config.CoreFeatureTestConfiguration
+import com.flashcat.rum.utils.forge.Configurator
+import com.datadog.tools.unit.annotations.TestConfigurationsProvider
+import com.datadog.tools.unit.extensions.TestConfigurationExtension
+import com.datadog.tools.unit.extensions.config.TestConfiguration
+import com.datadog.tools.unit.forge.exhaustiveAttributes
+import fr.xgouchet.elmyr.Forge
+import fr.xgouchet.elmyr.annotation.Forgery
+import fr.xgouchet.elmyr.annotation.LongForgery
+import fr.xgouchet.elmyr.junit5.ForgeConfiguration
+import fr.xgouchet.elmyr.junit5.ForgeExtension
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.api.extension.Extensions
+import org.mockito.Mock
+import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.junit.jupiter.MockitoSettings
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.whenever
+import org.mockito.quality.Strictness
+import java.util.concurrent.TimeUnit
+
+@Extensions(
+    ExtendWith(MockitoExtension::class),
+    ExtendWith(ForgeExtension::class),
+    ExtendWith(TestConfigurationExtension::class)
+)
+@MockitoSettings(strictness = Strictness.LENIENT)
+@ForgeConfiguration(Configurator::class)
+internal class flashcatContextProviderTest {
+
+    private lateinit var testedProvider: ContextProvider
+
+    @Forgery
+    lateinit var fakeNetworkInfo: NetworkInfo
+
+    @Forgery
+    lateinit var fakeUserInfo: UserInfo
+
+    @Forgery
+    lateinit var fakeAccountInfo: AccountInfo
+
+    @Forgery
+    lateinit var fakeAndroidInfo: AndroidInfoProvider
+
+    @LongForgery(min = 0L)
+    var fakeDeviceTimestamp: Long = 0L
+
+    @LongForgery(min = 0L)
+    var fakeServerTimestamp: Long = 0L
+
+    @Forgery
+    lateinit var fakeTrackingConsent: TrackingConsent
+
+    lateinit var fakeFeaturesContext: Map<String, Map<String, Any?>>
+
+    @Mock
+    lateinit var mockFeatureContextProvider: FeatureContextProvider
+
+    @BeforeEach
+    fun setUp(forge: Forge) {
+        testedProvider = flashcatContextProvider(coreFeature.mockInstance, mockFeatureContextProvider)
+
+        whenever(coreFeature.mockInstance.userInfoProvider.getUserInfo()) doReturn fakeUserInfo
+        whenever(coreFeature.mockInstance.accountInfoProvider.getAccountInfo()) doReturn fakeAccountInfo
+        whenever(
+            coreFeature.mockInstance.networkInfoProvider.getLatestNetworkInfo()
+        ) doReturn fakeNetworkInfo
+
+        whenever(coreFeature.mockInstance.androidInfoProvider) doReturn fakeAndroidInfo
+
+        whenever(coreFeature.mockInstance.timeProvider.getDeviceTimestamp()) doReturn
+            fakeDeviceTimestamp
+        whenever(coreFeature.mockInstance.timeProvider.getServerTimestamp()) doReturn
+            fakeServerTimestamp
+
+        whenever(coreFeature.mockInstance.trackingConsentProvider.getConsent()) doReturn
+            fakeTrackingConsent
+        // building nested maps with default size slows down tests quite a lot, so will use
+        // an explicit small size
+        fakeFeaturesContext = forge.aMap(size = 2) {
+            forge.anAlphabeticalString() to forge.exhaustiveAttributes()
+        }
+        whenever(
+            mockFeatureContextProvider.getFeatureContext(any())
+        ) doAnswer {
+            val featureName = it.getArgument<String>(0)
+            fakeFeaturesContext[featureName]
+        }
+    }
+
+    @Test
+    fun `M create a context W getContext()`() {
+        // When
+        val context = testedProvider.getContext(fakeFeaturesContext.keys)
+
+        // Then
+        assertThat(context.site).isEqualTo(coreFeature.mockInstance.site)
+        assertThat(context.env).isEqualTo(coreFeature.mockInstance.envName)
+        assertThat(context.clientToken).isEqualTo(coreFeature.mockInstance.clientToken)
+        assertThat(context.service).isEqualTo(coreFeature.mockInstance.serviceName)
+        assertThat(context.env).isEqualTo(coreFeature.mockInstance.envName)
+        assertThat(context.version)
+            .isEqualTo(coreFeature.mockInstance.packageVersionProvider.version)
+        assertThat(context.sdkVersion).isEqualTo(coreFeature.mockInstance.sdkVersion)
+        assertThat(context.source).isEqualTo(coreFeature.mockInstance.sourceName)
+
+        // time info
+        assertThat(context.time.deviceTimeNs)
+            .isEqualTo(TimeUnit.MILLISECONDS.toNanos(fakeDeviceTimestamp))
+        assertThat(context.time.serverTimeNs)
+            .isEqualTo(TimeUnit.MILLISECONDS.toNanos(fakeServerTimestamp))
+        assertThat(context.time.serverTimeOffsetMs)
+            .isEqualTo(fakeServerTimestamp - fakeDeviceTimestamp)
+        assertThat(context.time.serverTimeOffsetNs)
+            .isEqualTo(TimeUnit.MILLISECONDS.toNanos(fakeServerTimestamp - fakeDeviceTimestamp))
+
+        // process info
+        assertThat(context.processInfo.isMainProcess)
+            .isEqualTo(coreFeature.mockInstance.isMainProcess)
+
+        // network info
+        assertThat(context.networkInfo.connectivity.name)
+            .isEqualTo(fakeNetworkInfo.connectivity.name)
+        assertThat(context.networkInfo.carrierName)
+            .isEqualTo(fakeNetworkInfo.carrierName)
+        assertThat(context.networkInfo.carrierId)
+            .isEqualTo(fakeNetworkInfo.carrierId)
+        assertThat(context.networkInfo.cellularTechnology)
+            .isEqualTo(fakeNetworkInfo.cellularTechnology)
+        assertThat(context.networkInfo.upKbps)
+            .isEqualTo(fakeNetworkInfo.upKbps)
+        assertThat(context.networkInfo.downKbps)
+            .isEqualTo(fakeNetworkInfo.downKbps)
+        assertThat(context.networkInfo.strength)
+            .isEqualTo(fakeNetworkInfo.strength)
+
+        // device info
+        assertThat(context.deviceInfo.deviceBrand).isEqualTo(fakeAndroidInfo.deviceBrand)
+        assertThat(context.deviceInfo.deviceName).isEqualTo(fakeAndroidInfo.deviceName)
+        assertThat(context.deviceInfo.deviceType).isEqualTo(fakeAndroidInfo.deviceType)
+        assertThat(context.deviceInfo.deviceModel).isEqualTo(fakeAndroidInfo.deviceModel)
+        assertThat(context.deviceInfo.deviceBuildId).isEqualTo(fakeAndroidInfo.deviceBuildId)
+        assertThat(context.deviceInfo.osName).isEqualTo(fakeAndroidInfo.osName)
+        assertThat(context.deviceInfo.osVersion).isEqualTo(fakeAndroidInfo.osVersion)
+        assertThat(context.deviceInfo.osMajorVersion).isEqualTo(fakeAndroidInfo.osMajorVersion)
+        assertThat(context.deviceInfo.architecture).isEqualTo(fakeAndroidInfo.architecture)
+        assertThat(context.deviceInfo.numberOfDisplays).isEqualTo(fakeAndroidInfo.numberOfDisplays)
+
+        // locale info
+        assertThat(context.deviceInfo.localeInfo.locales).isEqualTo(fakeAndroidInfo.locales)
+        assertThat(context.deviceInfo.localeInfo.currentLocale).isEqualTo(fakeAndroidInfo.currentLocale)
+        assertThat(context.deviceInfo.localeInfo.timeZone).isEqualTo(fakeAndroidInfo.timeZone)
+
+        // user info
+        assertThat(context.userInfo.id).isEqualTo(fakeUserInfo.id)
+        assertThat(context.userInfo.name).isEqualTo(fakeUserInfo.name)
+        assertThat(context.userInfo.email).isEqualTo(fakeUserInfo.email)
+        assertThat(context.userInfo.additionalProperties)
+            .isEqualTo(fakeUserInfo.additionalProperties)
+
+        // account info
+        assertThat(context.accountInfo).isNotNull
+        context.accountInfo?.let {
+            assertThat(it.id).isEqualTo(fakeAccountInfo.id)
+            assertThat(it.name).isEqualTo(fakeAccountInfo.name)
+            assertThat(it.extraInfo).isEqualTo(fakeAccountInfo.extraInfo)
+        }
+
+        assertThat(context.appBuildId).isEqualTo(coreFeature.mockInstance.appBuildId)
+        assertThat(context.trackingConsent).isEqualTo(fakeTrackingConsent)
+
+        assertThat(context.featuresContext).isEqualTo(fakeFeaturesContext)
+    }
+
+    companion object {
+        val appContext = ApplicationContextTestConfiguration(Application::class.java)
+        val coreFeature = CoreFeatureTestConfiguration(appContext)
+
+        @TestConfigurationsProvider
+        @JvmStatic
+        fun getTestConfigurations(): List<TestConfiguration> {
+            return listOf(appContext, coreFeature)
+        }
+    }
+}

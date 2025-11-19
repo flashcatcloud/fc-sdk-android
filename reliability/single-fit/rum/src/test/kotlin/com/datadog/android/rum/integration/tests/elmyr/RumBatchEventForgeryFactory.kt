@@ -1,18 +1,18 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.rum.integration.tests.elmyr
+package com.flashcat.rum.rum.integration.tests.elmyr
 
-import com.datadog.android.api.storage.RawBatchEvent
-import com.datadog.android.rum.integration.tests.utils.RumBatchEvent
-import com.datadog.android.rum.model.ActionEvent
-import com.datadog.android.rum.model.ErrorEvent
-import com.datadog.android.rum.model.LongTaskEvent
-import com.datadog.android.rum.model.ResourceEvent
-import com.datadog.android.rum.model.ViewEvent
+import com.flashcat.rum.api.storage.RawBatchEvent
+import com.flashcat.rum.rum.integration.tests.utils.RumBatchEvent
+import com.flashcat.rum.rum.model.ActionEvent
+import com.flashcat.rum.rum.model.ErrorEvent
+import com.flashcat.rum.rum.model.LongTaskEvent
+import com.flashcat.rum.rum.model.ResourceEvent
+import com.flashcat.rum.rum.model.ViewEvent
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory
 

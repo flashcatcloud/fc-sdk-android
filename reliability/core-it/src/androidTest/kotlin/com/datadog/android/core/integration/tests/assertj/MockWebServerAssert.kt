@@ -1,17 +1,17 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.core.integration.tests.assertj
+package com.flashcat.rum.core.integration.tests.assertj
 
-import com.datadog.android.api.feature.stub.StubRequestFactory
-import com.datadog.android.api.storage.RawBatchEvent
-import com.datadog.android.core.configuration.Configuration
-import com.datadog.android.core.integration.tests.utils.HandledRequest
-import com.datadog.android.core.integration.tests.utils.MockWebServerWrapper
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.rum.api.feature.stub.StubRequestFactory
+import com.flashcat.rum.api.storage.RawBatchEvent
+import com.flashcat.rum.core.configuration.Configuration
+import com.flashcat.rum.core.integration.tests.utils.HandledRequest
+import com.flashcat.rum.core.integration.tests.utils.MockWebServerWrapper
+import com.flashcat.rum.privacy.TrackingConsent
 import org.assertj.core.api.AbstractAssert
 import org.assertj.core.api.Assertions.assertThat
 

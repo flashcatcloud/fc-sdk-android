@@ -4,10 +4,10 @@
  * Copyright 2016-Present Datadog, Inc.
  */
 
-import com.datadog.gradle.config.androidLibraryConfig
-import com.datadog.gradle.config.dependencyUpdateConfig
-import com.datadog.gradle.config.junitConfig
-import com.datadog.gradle.config.kotlinConfig
+import com.flashcat.gradle.config.androidLibraryConfig
+import com.flashcat.gradle.config.dependencyUpdateConfig
+import com.flashcat.gradle.config.junitConfig
+import com.flashcat.gradle.config.kotlinConfig
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -25,14 +25,14 @@ plugins {
 }
 
 android {
-    namespace = "com.datadog.android.okhttp.integration"
+    namespace = "com.flashcat.rum.okhttp.integration"
 }
 
 dependencies {
-    implementation(project(":features:dd-sdk-android-trace"))
-    implementation(project(":features:dd-sdk-android-trace-otel"))
-    implementation(project(":integrations:dd-sdk-android-okhttp"))
-    implementation(project(":integrations:dd-sdk-android-okhttp-otel"))
+    implementation(project(":features:fc-sdk-android-trace"))
+    implementation(project(":features:fc-sdk-android-trace-otel"))
+    implementation(project(":integrations:fc-sdk-android-okhttp"))
+    implementation(project(":integrations:fc-sdk-android-okhttp-otel"))
     implementation(libs.kotlin)
 
     // Testing
@@ -44,12 +44,12 @@ dependencies {
             )
         }
     }
-    testImplementation(project(":dd-sdk-android-internal"))
-    testImplementation(testFixtures(project(":dd-sdk-android-core")))
-    testImplementation(testFixtures(project(":features:dd-sdk-android-trace")))
+    testImplementation(project(":fc-sdk-android-internal"))
+    testImplementation(testFixtures(project(":fc-sdk-android-core")))
+    testImplementation(testFixtures(project(":features:fc-sdk-android-trace")))
     testImplementation(project(":reliability:stub-core"))
-    testImplementation(project(":integrations:dd-sdk-android-apollo"))
-    testImplementation(project(":features:dd-sdk-android-rum"))
+    testImplementation(project(":integrations:fc-sdk-android-apollo"))
+    testImplementation(project(":features:fc-sdk-android-rum"))
     testImplementation(libs.bundles.jUnit5)
     testImplementation(libs.bundles.testTools)
     testImplementation(libs.okHttp)
@@ -62,7 +62,7 @@ dependencies {
 apollo {
     service("testService") {
         srcDir("src/test/resources/graphql")
-        packageName.set("com.datadog.android.testgraphql")
+        packageName.set("com.flashcat.rum.testgraphql")
         schemaFiles.from("src/test/resources/graphql/schema.graphqls")
 
         outputDirConnection {

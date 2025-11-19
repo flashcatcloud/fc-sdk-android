@@ -1,10 +1,10 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.lint
+package com.flashcat.rum.lint
 
 import com.android.tools.lint.detector.api.AnnotationInfo
 import com.android.tools.lint.detector.api.AnnotationUsageInfo
@@ -46,7 +46,7 @@ class InternalApiUsageDetector : Detector(), SourceCodeScanner {
                 scope = element,
                 location = context.getLocation(usageInfo.usage),
                 message = "Symbols annotated with `com.datadog.android.lint.InternalApi` shouldn't" +
-                    " be used outside of Datadog SDK packages."
+                    " be used outside of Flashcat SDK packages."
             )
         }
     }
@@ -54,8 +54,8 @@ class InternalApiUsageDetector : Detector(), SourceCodeScanner {
     internal companion object {
 
         val ISSUE = Issue.create(
-            id = "DatadogInternalApiUsage",
-            briefDescription = "Prohibits usages of Datadog SDK internal API",
+            id = "FlashcatInternalApiUsage",
+            briefDescription = "Prohibits usages of Flashcat SDK internal API",
             explanation = "Usages of classes and methods annotated" +
                 " with `com.datadog.android.lint.InternalApi` are prohibited",
             category = Category.CORRECTNESS,

@@ -4,10 +4,10 @@
  * Copyright 2016-Present Datadog, Inc.
  */
 
-import com.datadog.gradle.config.androidLibraryConfig
-import com.datadog.gradle.config.dependencyUpdateConfig
-import com.datadog.gradle.config.junitConfig
-import com.datadog.gradle.config.kotlinConfig
+import com.flashcat.gradle.config.androidLibraryConfig
+import com.flashcat.gradle.config.dependencyUpdateConfig
+import com.flashcat.gradle.config.junitConfig
+import com.flashcat.gradle.config.kotlinConfig
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -24,13 +24,13 @@ plugins {
 }
 
 android {
-    namespace = "com.datadog.android.rum.integration"
+    namespace = "com.flashcat.rum.rum.integration"
 }
 
 dependencies {
-    implementation(project(":dd-sdk-android-core"))
-    implementation(project(":dd-sdk-android-internal"))
-    implementation(project(":features:dd-sdk-android-rum"))
+    implementation(project(":fc-sdk-android-core"))
+    implementation(project(":fc-sdk-android-internal"))
+    implementation(project(":features:fc-sdk-android-rum"))
     implementation(libs.kotlin)
     implementation(libs.bundles.androidXNavigation)
 
@@ -43,8 +43,8 @@ dependencies {
             )
         }
     }
-    testImplementation(testFixtures(project(":dd-sdk-android-core")))
-    testImplementation(testFixtures(project(":features:dd-sdk-android-rum")))
+    testImplementation(testFixtures(project(":fc-sdk-android-core")))
+    testImplementation(testFixtures(project(":features:fc-sdk-android-rum")))
     testImplementation(project(":reliability:stub-core"))
     testImplementation(libs.bundles.androidXNavigation)
     testImplementation(libs.bundles.jUnit5)

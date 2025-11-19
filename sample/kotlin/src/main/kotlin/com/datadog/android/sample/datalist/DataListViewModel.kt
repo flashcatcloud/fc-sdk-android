@@ -1,17 +1,17 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
-package com.datadog.android.sample.datalist
+package com.flashcat.rum.sample.datalist
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.datadog.android.Datadog
-import com.datadog.android.rx.sendErrorToDatadog
-import com.datadog.android.sample.data.DataRepository
-import com.datadog.android.sample.data.model.Log
+import com.flashcat.rum.Flashcat
+import com.flashcat.rum.rx.sendErrorToDatadog
+import com.flashcat.rum.sample.data.DataRepository
+import com.flashcat.rum.sample.data.model.Log
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.disposables.Disposable

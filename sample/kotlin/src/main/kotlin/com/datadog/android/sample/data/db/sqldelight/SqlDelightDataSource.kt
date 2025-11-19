@@ -1,17 +1,17 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.sample.data.db.sqldelight
+package com.flashcat.rum.sample.data.db.sqldelight
 
 import android.content.Context
-import com.datadog.android.sample.data.db.DataSource
-import com.datadog.android.sample.data.model.Log
-import com.datadog.android.sample.data.model.LogAttributes
-import com.datadog.android.sample.datalist.DataSourceType
-import com.datadog.android.sqldelight.transactionTraced
+import com.flashcat.rum.sample.data.db.DataSource
+import com.flashcat.rum.sample.data.model.Log
+import com.flashcat.rum.sample.data.model.LogAttributes
+import com.flashcat.rum.sample.datalist.DataSourceType
+import com.flashcat.rum.sqldelight.transactionTraced
 import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.schedulers.Schedulers
 import timber.log.Timber

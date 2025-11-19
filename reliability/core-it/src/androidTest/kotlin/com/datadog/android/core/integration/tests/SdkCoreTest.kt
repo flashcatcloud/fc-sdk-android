@@ -1,23 +1,23 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.core.integration.tests
+package com.flashcat.rum.core.integration.tests
 
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.datadog.android.Datadog
-import com.datadog.android.api.SdkCore
-import com.datadog.android.api.context.AccountInfo
-import com.datadog.android.api.context.UserInfo
-import com.datadog.android.api.feature.FeatureSdkCore
-import com.datadog.android.api.feature.StorageBackedFeature
-import com.datadog.android.api.feature.stub.StubStorageBackedFeature
-import com.datadog.android.core.configuration.Configuration
-import com.datadog.android.core.integration.tests.forge.factories.ConfigurationCoreForgeryFactory
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.rum.Flashcat
+import com.flashcat.rum.api.SdkCore
+import com.flashcat.rum.api.context.AccountInfo
+import com.flashcat.rum.api.context.UserInfo
+import com.flashcat.rum.api.feature.FeatureSdkCore
+import com.flashcat.rum.api.feature.StorageBackedFeature
+import com.flashcat.rum.api.feature.stub.StubStorageBackedFeature
+import com.flashcat.rum.core.configuration.Configuration
+import com.flashcat.rum.core.integration.tests.forge.factories.ConfigurationCoreForgeryFactory
+import com.flashcat.rum.privacy.TrackingConsent
 import com.datadog.tools.unit.forge.exhaustiveAttributes
 import com.datadog.tools.unit.forge.useToolsFactories
 import fr.xgouchet.elmyr.annotation.StringForgery
@@ -110,8 +110,8 @@ class SdkCoreTest : MockServerTest() {
         // Then
         val countDownLatch = CountDownLatch(1)
         var readUserInfo: UserInfo? = null
-        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-            readUserInfo = datadogContext.userInfo
+        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+            readUserInfo = flashcatContext.userInfo
             countDownLatch.countDown()
         }
         countDownLatch.await(SHORT_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -133,8 +133,8 @@ class SdkCoreTest : MockServerTest() {
         // Then
         val countDownLatch = CountDownLatch(1)
         var readUserInfo: UserInfo? = null
-        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-            readUserInfo = datadogContext.userInfo
+        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+            readUserInfo = flashcatContext.userInfo
             countDownLatch.countDown()
         }
         countDownLatch.await(SHORT_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -160,8 +160,8 @@ class SdkCoreTest : MockServerTest() {
         // Then
         val countDownLatch = CountDownLatch(1)
         var readAccountInfo: AccountInfo? = null
-        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-            readAccountInfo = datadogContext.accountInfo
+        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+            readAccountInfo = flashcatContext.accountInfo
             countDownLatch.countDown()
         }
         countDownLatch.await(SHORT_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -172,8 +172,8 @@ class SdkCoreTest : MockServerTest() {
 
         testedSdkCore.clearAccountInfo()
         val countDownLatch2 = CountDownLatch(1)
-        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-            readAccountInfo = datadogContext.accountInfo
+        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+            readAccountInfo = flashcatContext.accountInfo
             countDownLatch2.countDown()
         }
         countDownLatch2.await(SHORT_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -196,8 +196,8 @@ class SdkCoreTest : MockServerTest() {
         // Then
         val countDownLatch = CountDownLatch(1)
         var readUserInfo: UserInfo? = null
-        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-            readUserInfo = datadogContext.userInfo
+        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+            readUserInfo = flashcatContext.userInfo
             countDownLatch.countDown()
         }
         countDownLatch.await(SHORT_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -223,8 +223,8 @@ class SdkCoreTest : MockServerTest() {
         // Then
         val countDownLatch = CountDownLatch(1)
         var readUserInfo: UserInfo? = null
-        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-            readUserInfo = datadogContext.userInfo
+        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+            readUserInfo = flashcatContext.userInfo
             countDownLatch.countDown()
         }
         countDownLatch.await(SHORT_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -250,8 +250,8 @@ class SdkCoreTest : MockServerTest() {
         // Then
         val countDownLatch = CountDownLatch(1)
         var readUserInfo: UserInfo? = null
-        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-            readUserInfo = datadogContext.userInfo
+        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+            readUserInfo = flashcatContext.userInfo
             countDownLatch.countDown()
         }
         countDownLatch.await(SHORT_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -277,8 +277,8 @@ class SdkCoreTest : MockServerTest() {
         // Then
         val countDownLatch = CountDownLatch(1)
         var readUserInfo: UserInfo? = null
-        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-            readUserInfo = datadogContext.userInfo
+        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+            readUserInfo = flashcatContext.userInfo
             countDownLatch.countDown()
         }
         countDownLatch.await(SHORT_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -305,8 +305,8 @@ class SdkCoreTest : MockServerTest() {
         // Then
         val countDownLatch = CountDownLatch(1)
         var readUserInfo: UserInfo? = null
-        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-            readUserInfo = datadogContext.userInfo
+        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+            readUserInfo = flashcatContext.userInfo
             countDownLatch.countDown()
         }
         countDownLatch.await(SHORT_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -333,8 +333,8 @@ class SdkCoreTest : MockServerTest() {
         // Then
         val countDownLatch = CountDownLatch(1)
         var readUserInfo: UserInfo? = null
-        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-            readUserInfo = datadogContext.userInfo
+        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+            readUserInfo = flashcatContext.userInfo
             countDownLatch.countDown()
         }
         countDownLatch.await(SHORT_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -361,8 +361,8 @@ class SdkCoreTest : MockServerTest() {
         // Then
         val countDownLatch = CountDownLatch(1)
         var readUserInfo: UserInfo? = null
-        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-            readUserInfo = datadogContext.userInfo
+        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+            readUserInfo = flashcatContext.userInfo
             countDownLatch.countDown()
         }
         countDownLatch.await(SHORT_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -390,8 +390,8 @@ class SdkCoreTest : MockServerTest() {
         // Then
         val countDownLatch = CountDownLatch(1)
         var readUserInfo: UserInfo? = null
-        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-            readUserInfo = datadogContext.userInfo
+        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+            readUserInfo = flashcatContext.userInfo
             countDownLatch.countDown()
         }
         countDownLatch.await(SHORT_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -414,8 +414,8 @@ class SdkCoreTest : MockServerTest() {
         // Then
         val countDownLatch = CountDownLatch(1)
         var readUserInfo: UserInfo? = null
-        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-            readUserInfo = datadogContext.userInfo
+        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+            readUserInfo = flashcatContext.userInfo
             countDownLatch.countDown()
         }
         countDownLatch.await(SHORT_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -446,8 +446,8 @@ class SdkCoreTest : MockServerTest() {
         // Then
         val countDownLatch = CountDownLatch(1)
         var readAccountInfo: AccountInfo? = null
-        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-            readAccountInfo = datadogContext.accountInfo
+        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+            readAccountInfo = flashcatContext.accountInfo
             countDownLatch.countDown()
         }
         countDownLatch.await(SHORT_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -472,8 +472,8 @@ class SdkCoreTest : MockServerTest() {
         // Then
         val countDownLatch = CountDownLatch(1)
         var readAccountInfo: AccountInfo? = null
-        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-            readAccountInfo = datadogContext.accountInfo
+        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+            readAccountInfo = flashcatContext.accountInfo
             countDownLatch.countDown()
         }
         countDownLatch.await(SHORT_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -498,8 +498,8 @@ class SdkCoreTest : MockServerTest() {
         // Then
         val countDownLatch = CountDownLatch(1)
         var readAccountInfo: AccountInfo? = null
-        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-            readAccountInfo = datadogContext.accountInfo
+        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+            readAccountInfo = flashcatContext.accountInfo
             countDownLatch.countDown()
         }
         countDownLatch.await(SHORT_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -524,8 +524,8 @@ class SdkCoreTest : MockServerTest() {
         // Then
         val countDownLatch = CountDownLatch(1)
         var readAccountInfo: AccountInfo? = null
-        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-            readAccountInfo = datadogContext.accountInfo
+        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+            readAccountInfo = flashcatContext.accountInfo
             countDownLatch.countDown()
         }
         countDownLatch.await(SHORT_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -551,8 +551,8 @@ class SdkCoreTest : MockServerTest() {
         // Then
         val countDownLatch = CountDownLatch(1)
         var readAccountInfo: AccountInfo? = null
-        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-            readAccountInfo = datadogContext.accountInfo
+        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+            readAccountInfo = flashcatContext.accountInfo
             countDownLatch.countDown()
         }
         countDownLatch.await(SHORT_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -578,8 +578,8 @@ class SdkCoreTest : MockServerTest() {
         // Then
         val countDownLatch = CountDownLatch(1)
         var readAccountInfo: AccountInfo? = null
-        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-            readAccountInfo = datadogContext.accountInfo
+        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+            readAccountInfo = flashcatContext.accountInfo
             countDownLatch.countDown()
         }
         countDownLatch.await(SHORT_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -605,8 +605,8 @@ class SdkCoreTest : MockServerTest() {
         // Then
         val countDownLatch = CountDownLatch(1)
         var readAccountInfo: AccountInfo? = null
-        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-            readAccountInfo = datadogContext.accountInfo
+        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+            readAccountInfo = flashcatContext.accountInfo
             countDownLatch.countDown()
         }
         countDownLatch.await(SHORT_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -632,8 +632,8 @@ class SdkCoreTest : MockServerTest() {
         // Then
         val countDownLatch = CountDownLatch(1)
         var readAccountInfo: AccountInfo? = null
-        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-            readAccountInfo = datadogContext.accountInfo
+        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+            readAccountInfo = flashcatContext.accountInfo
             countDownLatch.countDown()
         }
         countDownLatch.await(SHORT_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -655,8 +655,8 @@ class SdkCoreTest : MockServerTest() {
         // Then
         val countDownLatch = CountDownLatch(1)
         var readAccountInfo: AccountInfo? = null
-        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-            readAccountInfo = datadogContext.accountInfo
+        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+            readAccountInfo = flashcatContext.accountInfo
             countDownLatch.countDown()
         }
         countDownLatch.await(SHORT_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -674,8 +674,8 @@ class SdkCoreTest : MockServerTest() {
     fun must_useTheInitializationTrackingConsent_when_initialize() {
         val countDownLatch = CountDownLatch(1)
         var trackingConsent: TrackingConsent? = null
-        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-            trackingConsent = datadogContext.trackingConsent
+        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+            trackingConsent = flashcatContext.trackingConsent
             countDownLatch.countDown()
         }
         countDownLatch.await(SHORT_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -693,8 +693,8 @@ class SdkCoreTest : MockServerTest() {
         // Then
         val countDownLatch = CountDownLatch(1)
         var trackingConsent: TrackingConsent? = null
-        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-            trackingConsent = datadogContext.trackingConsent
+        featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+            trackingConsent = flashcatContext.trackingConsent
             countDownLatch.countDown()
         }
         countDownLatch.await(SHORT_WAIT_MS, TimeUnit.MILLISECONDS)
@@ -712,8 +712,8 @@ class SdkCoreTest : MockServerTest() {
         val trackingConsents = mutableListOf<TrackingConsent>()
         repeat(repeatTimes) {
             testedSdkCore.setTrackingConsent(expectedTrackingConsents[it])
-            featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { datadogContext, _ ->
-                trackingConsents += datadogContext.trackingConsent
+            featureSdkCore.getFeature(stubFeature.name)?.withWriteContext { flashcatContext, _ ->
+                trackingConsents += flashcatContext.trackingConsent
                 countDownLatch.countDown()
             }
             testedSdkCore.setTrackingConsent(forge.aValueFrom(TrackingConsent::class.java))

@@ -1,0 +1,106 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
+ * Copyright 2016-Present Datadog, Inc.
+ */
+package com.flashcat.rum.okhttp.trace
+
+import com.flashcat.rum.core.sampling.Sampler
+import com.flashcat.rum.trace.api.propagation.DatadogPropagation
+import com.flashcat.rum.trace.api.span.DatadogSpan
+import com.flashcat.rum.trace.api.span.DatadogSpanBuilder
+import com.flashcat.rum.trace.api.span.DatadogSpanContext
+import com.flashcat.rum.trace.api.trace.DatadogTraceId
+import com.flashcat.rum.trace.api.tracer.DatadogTracer
+import com.flashcat.rum.trace.internal.fromHex
+import fr.xgouchet.elmyr.Forge
+import okhttp3.Request
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
+
+internal fun newAgentPropagationMock(
+    extractedContext: DatadogSpanContext = mock()
+) = mock<DatadogPropagation> {
+    on { extract(any<Request>(), any()) } doReturn extractedContext
+}
+internal fun DatadogPropagation.wheneverInjectThenThrow(throwable: Throwable) {
+    doThrow(throwable)
+        .whenever(this)
+        .inject(any<DatadogSpanContext>(), any<Request.Builder>(), any())
+}
+
+internal fun DatadogPropagation.wheneverInjectThenValueToHeaders(key: String, value: String) {
+    doAnswer { invocation ->
+        val carrier = invocation.getArgument<Request.Builder>(1)
+        val setter = invocation.getArgument<(carrier: Request.Builder, key: String, value: String) -> Unit>(2)
+        setter.invoke(carrier, key, value)
+    }
+        .whenever(this)
+        .inject(any<DatadogSpanContext>(), any<Request.Builder>(), any())
+}
+
+internal fun DatadogPropagation.wheneverInjectCalledPassContextToHeaders(
+    flashcatContext: Map<String, String>,
+    nonflashcatContextKey: String,
+    nonflashcatContextKeyValue: String
+) {
+    doAnswer { invocation ->
+        val carrier = invocation.getArgument<Request.Builder>(1)
+        val setter = invocation.getArgument<(carrier: Request.Builder, key: String, value: String) -> Unit>(2)
+        flashcatContext.forEach { setter.invoke(carrier, it.key, it.value) }
+        setter.invoke(carrier, nonflashcatContextKey, nonflashcatContextKeyValue)
+    }
+        .whenever(this)
+        .inject(any<DatadogSpanContext>(), any<Request.Builder>(), any())
+}
+
+internal fun Forge.aDatadogTraceId(
+    fakeString: String? = null
+) = DatadogTraceId.fromHex(fakeString ?: aStringMatching("[a-f0-9]{31}"))
+
+internal fun Forge.newTraceSamplerMock(
+    span: DatadogSpan = newSpanMock()
+) = mock<Sampler<DatadogSpan>> {
+    on { sample(span) } doReturn true
+}
+
+internal fun Forge.newTracerMock(
+    spanBuilder: DatadogSpanBuilder = newSpanBuilderMock(),
+    propagation: DatadogPropagation = newAgentPropagationMock()
+) = mock<DatadogTracer> {
+    on { buildSpan(TracingInterceptor.SPAN_NAME) } doReturn spanBuilder
+    on { propagate() } doReturn propagation
+}
+
+internal inline fun <reified T : DatadogSpanContext> Forge.newSpanContextMock(
+    fakeTraceId: DatadogTraceId = aDatadogTraceId(),
+    fakeSpanId: Long = aLong(),
+    samplingPriority: Int = 0
+): T = mock<T> {
+    on { spanId } doReturn fakeSpanId
+    on { traceId } doReturn fakeTraceId
+    on { mock.samplingPriority } doReturn samplingPriority
+}
+
+internal fun Forge.newSpanMock(
+    context: DatadogSpanContext = newSpanContextMock(),
+    samplingPriority: Int? = null
+) = mock<DatadogSpan> {
+    on { context() } doReturn context
+    on { this.samplingPriority } doReturn samplingPriority
+}
+
+internal fun Forge.newSpanBuilderMock(
+    localSpan: DatadogSpan = newSpanMock(),
+    context: DatadogSpanContext = newSpanContextMock()
+) = mock<DatadogSpanBuilder> {
+    on { withOrigin(anyOrNull()) } doReturn it
+    on { withParentContext(context) } doReturn it
+    on { withParentContext(null as DatadogSpanContext?) } doReturn it
+    on { start() } doReturn localSpan
+}

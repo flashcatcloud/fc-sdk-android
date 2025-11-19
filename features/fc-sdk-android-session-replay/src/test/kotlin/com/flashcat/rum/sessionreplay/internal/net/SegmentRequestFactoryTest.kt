@@ -1,0 +1,199 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
+ * Copyright 2016-Present Datadog, Inc.
+ */
+
+package com.flashcat.rum.sessionreplay.internal.net
+
+import com.flashcat.rum.api.context.FlashcatContext
+import com.flashcat.rum.api.net.RequestExecutionContext
+import com.flashcat.rum.api.net.RequestFactory
+import com.flashcat.rum.api.storage.RawBatchEvent
+import com.flashcat.rum.sessionreplay.forge.ForgeConfigurator
+import com.flashcat.rum.sessionreplay.internal.exception.InvalidPayloadFormatException
+import com.flashcat.rum.sessionreplay.model.MobileSegment
+import com.google.gson.JsonObject
+import fr.xgouchet.elmyr.Forge
+import fr.xgouchet.elmyr.annotation.Forgery
+import fr.xgouchet.elmyr.annotation.StringForgery
+import fr.xgouchet.elmyr.junit5.ForgeConfiguration
+import fr.xgouchet.elmyr.junit5.ForgeExtension
+import okhttp3.MediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import okio.Buffer
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.api.extension.Extensions
+import org.mockito.Mock
+import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.junit.jupiter.MockitoSettings
+import org.mockito.kotlin.whenever
+import org.mockito.quality.Strictness
+
+@Extensions(
+    ExtendWith(MockitoExtension::class),
+    ExtendWith(ForgeExtension::class)
+)
+@MockitoSettings(strictness = Strictness.LENIENT)
+@ForgeConfiguration(ForgeConfigurator::class)
+internal class SegmentRequestFactoryTest {
+
+    private lateinit var testedRequestFactory: SegmentRequestFactory
+
+    @Mock
+    lateinit var mockBatchesToSegmentsMapper: BatchesToSegmentsMapper
+
+    @Mock
+    lateinit var mockSegmentRequestBodyFactory: SegmentRequestBodyFactory
+
+    lateinit var fakeCompressedSegment: ByteArray
+
+    @Forgery
+    lateinit var fakeBatchData: List<RawBatchEvent>
+
+    @Forgery
+    lateinit var fakeFlashcatContext: FlashcatContext
+
+    @Forgery
+    lateinit var fakeExecutionContext: RequestExecutionContext
+
+    @Mock
+    lateinit var mockRequestBody: RequestBody
+
+    private lateinit var fakeMediaType: MediaType
+
+    private var fakeBatchMetadata: ByteArray? = null
+
+    lateinit var fakeDataGroup: List<Pair<MobileSegment, JsonObject>>
+
+    @BeforeEach
+    fun `set up`(forge: Forge) {
+        fakeDataGroup = forge.aList(size = forge.anInt(min = 1, max = 10)) {
+            val segment = forge.getForgery<MobileSegment>()
+            val json = forge.getForgery<JsonObject>()
+            Pair(segment, json)
+        }
+        fakeMediaType = forge.anElementFrom(
+            listOf(
+                MultipartBody.FORM,
+                MultipartBody.ALTERNATIVE,
+                MultipartBody.MIXED,
+                MultipartBody.PARALLEL
+            )
+        )
+        whenever(mockRequestBody.contentType()).thenReturn(fakeMediaType)
+        fakeCompressedSegment = forge.aString().toByteArray()
+        fakeBatchMetadata = forge.aNullable { forge.aString().toByteArray() }
+        whenever(mockSegmentRequestBodyFactory.create(fakeDataGroup))
+            .thenReturn(mockRequestBody)
+        whenever(mockBatchesToSegmentsMapper.map(fakeFlashcatContext, fakeBatchData.map { it.data }))
+            .thenReturn(fakeDataGroup)
+        testedRequestFactory = SegmentRequestFactory(
+            customEndpointUrl = null,
+            mockBatchesToSegmentsMapper,
+            mockSegmentRequestBodyFactory
+        )
+    }
+
+    // region Request
+
+    @Test
+    fun `M return a valid Request W create`() {
+        // When
+        val request = testedRequestFactory.create(
+            fakeFlashcatContext,
+            fakeExecutionContext,
+            fakeBatchData,
+            fakeBatchMetadata
+        )
+
+        // Then
+        requireNotNull(request)
+        assertThat(request.url).isEqualTo("${fakeFlashcatContext.site.intakeEndpoint}/api/v2/replay")
+        assertThat(request.contentType).isEqualTo(fakeMediaType.toString())
+        assertThat(request.headers.minus(RequestFactory.HEADER_REQUEST_ID)).isEqualTo(
+            mapOf(
+                RequestFactory.HEADER_API_KEY to fakeFlashcatContext.clientToken,
+                RequestFactory.HEADER_EVP_ORIGIN to fakeFlashcatContext.source,
+                RequestFactory.HEADER_EVP_ORIGIN_VERSION to fakeFlashcatContext.sdkVersion
+            )
+        )
+        assertThat(request.headers[RequestFactory.HEADER_REQUEST_ID]).isNotEmpty
+        assertThat(request.id).isEqualTo(request.headers[RequestFactory.HEADER_REQUEST_ID])
+        assertThat(request.description).isEqualTo("Session Replay Segment Upload Request")
+        assertThat(request.body).isEqualTo(mockRequestBody.toByteArray())
+    }
+
+    @Test
+    fun `M return a valid Request W create { custom endpoint }`(
+        @StringForgery(regex = "https://[a-z]+\\.com(/[a-z]+)+") fakeEndpoint: String
+    ) {
+        // When
+        testedRequestFactory = SegmentRequestFactory(
+            customEndpointUrl = fakeEndpoint,
+            mockBatchesToSegmentsMapper,
+            mockSegmentRequestBodyFactory
+        )
+        val request = testedRequestFactory.create(
+            fakeFlashcatContext,
+            fakeExecutionContext,
+            fakeBatchData,
+            fakeBatchMetadata
+        )
+
+        // Then
+        requireNotNull(request)
+        assertThat(request.url).isEqualTo(fakeEndpoint)
+        assertThat(request.contentType).isEqualTo(fakeMediaType.toString())
+        assertThat(request.headers.minus(RequestFactory.HEADER_REQUEST_ID)).isEqualTo(
+            mapOf(
+                RequestFactory.HEADER_API_KEY to fakeFlashcatContext.clientToken,
+                RequestFactory.HEADER_EVP_ORIGIN to fakeFlashcatContext.source,
+                RequestFactory.HEADER_EVP_ORIGIN_VERSION to fakeFlashcatContext.sdkVersion
+            )
+        )
+        assertThat(request.headers[RequestFactory.HEADER_REQUEST_ID]).isNotEmpty
+        assertThat(request.id).isEqualTo(request.headers[RequestFactory.HEADER_REQUEST_ID])
+        assertThat(request.description).isEqualTo("Session Replay Segment Upload Request")
+        assertThat(request.body).isEqualTo(mockRequestBody.toByteArray())
+    }
+
+    @Test
+    fun `M throw exception W create(){ payload is broken }`() {
+        // Given
+        whenever(mockBatchesToSegmentsMapper.map(fakeFlashcatContext, fakeBatchData.map { it.data }))
+            .thenReturn(emptyList())
+
+        // When
+        assertThatThrownBy {
+            testedRequestFactory.create(
+                fakeFlashcatContext,
+                fakeExecutionContext,
+                fakeBatchData,
+                fakeBatchMetadata
+            )
+        }
+            .isInstanceOf(InvalidPayloadFormatException::class.java)
+            .hasMessage(
+                "The payload format was broken and " +
+                    "an upload request could not be created"
+            )
+    }
+
+    // endregion
+
+    // region Internal
+
+    private fun RequestBody.toByteArray(): ByteArray {
+        val buffer = Buffer()
+        writeTo(buffer)
+        return buffer.readByteArray()
+    }
+
+    // endregion
+}

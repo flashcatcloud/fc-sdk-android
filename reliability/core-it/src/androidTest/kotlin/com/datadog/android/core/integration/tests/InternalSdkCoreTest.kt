@@ -1,10 +1,10 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.core.integration.tests
+package com.flashcat.rum.core.integration.tests
 
 import android.content.Context
 import android.content.pm.ApplicationInfo
@@ -13,31 +13,31 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.datadog.android.BuildConfig
-import com.datadog.android.Datadog
-import com.datadog.android.DatadogSite
-import com.datadog.android._InternalProxy
-import com.datadog.android.api.context.DeviceType
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.stub.StubStorageBackedFeature
-import com.datadog.android.core.InternalSdkCore
-import com.datadog.android.core.configuration.BatchProcessingLevel
-import com.datadog.android.core.configuration.BatchSize
-import com.datadog.android.core.configuration.Configuration
-import com.datadog.android.core.configuration.UploadFrequency
-import com.datadog.android.core.integration.tests.forge.factories.ConfigurationCoreForgeryFactory
-import com.datadog.android.core.integration.tests.utils.clientToken
-import com.datadog.android.core.integration.tests.utils.env
-import com.datadog.android.core.integration.tests.utils.getFirstPartyHostsWithHeaderTypes
-import com.datadog.android.core.integration.tests.utils.isCrashReportsEnabled
-import com.datadog.android.core.integration.tests.utils.isDeveloperModeEnabled
-import com.datadog.android.core.integration.tests.utils.removeRandomEntries
-import com.datadog.android.core.integration.tests.utils.service
-import com.datadog.android.core.integration.tests.utils.site
-import com.datadog.android.core.integration.tests.utils.variant
-import com.datadog.android.core.thread.FlushableExecutorService
-import com.datadog.android.privacy.TrackingConsent
-import com.datadog.android.trace.TracingHeaderType
+import com.flashcat.rum.BuildConfig
+import com.flashcat.rum.Flashcat
+import com.flashcat.rum.FlashcatSite
+import com.flashcat.rum._InternalProxy
+import com.flashcat.rum.api.context.DeviceType
+import com.flashcat.rum.api.feature.Feature
+import com.flashcat.rum.api.feature.stub.StubStorageBackedFeature
+import com.flashcat.rum.core.InternalSdkCore
+import com.flashcat.rum.core.configuration.BatchProcessingLevel
+import com.flashcat.rum.core.configuration.BatchSize
+import com.flashcat.rum.core.configuration.Configuration
+import com.flashcat.rum.core.configuration.UploadFrequency
+import com.flashcat.rum.core.integration.tests.forge.factories.ConfigurationCoreForgeryFactory
+import com.flashcat.rum.core.integration.tests.utils.clientToken
+import com.flashcat.rum.core.integration.tests.utils.env
+import com.flashcat.rum.core.integration.tests.utils.getFirstPartyHostsWithHeaderTypes
+import com.flashcat.rum.core.integration.tests.utils.isCrashReportsEnabled
+import com.flashcat.rum.core.integration.tests.utils.isDeveloperModeEnabled
+import com.flashcat.rum.core.integration.tests.utils.removeRandomEntries
+import com.flashcat.rum.core.integration.tests.utils.service
+import com.flashcat.rum.core.integration.tests.utils.site
+import com.flashcat.rum.core.integration.tests.utils.variant
+import com.flashcat.rum.core.thread.FlushableExecutorService
+import com.flashcat.rum.privacy.TrackingConsent
+import com.flashcat.rum.trace.TracingHeaderType
 import com.datadog.tools.unit.forge.exhaustiveAttributes
 import com.datadog.tools.unit.forge.useToolsFactories
 import fr.xgouchet.elmyr.annotation.Forgery
@@ -128,12 +128,12 @@ class InternalSdkCoreTest : MockServerTest() {
     // region get Datadog Context
 
     @Test
-    fun must_returnCorrectDatadogContext_when_getDatadogContext() {
+    fun must_returnCorrectflashcatContext_when_getFlashcatContext() {
         // Given
         val expectedServiceName = fakeConfiguration.service() ?: PACKAGE_NAME
 
         // When
-        val context = testedInternalSdkCore.getDatadogContext()
+        val context = testedInternalSdkCore.getFlashcatContext()
 
         // Then
         checkNotNull(context)
@@ -172,7 +172,7 @@ class InternalSdkCoreTest : MockServerTest() {
     }
 
     @Test
-    fun mustReturnTheUpdatedFeatureContext_getDatadogContext_featureContextWasSet() {
+    fun mustReturnTheUpdatedFeatureContext_getflashcatContext_featureContextWasSet() {
         // Given
         val fakeKeyValues = forge.aMap { forge.anAlphabeticalString() to forge.anAlphabeticalString() }
         testedInternalSdkCore.updateFeatureContext(fakeFeatureName, useContextThread = false) {
@@ -182,7 +182,7 @@ class InternalSdkCoreTest : MockServerTest() {
         }
 
         // When
-        val context = testedInternalSdkCore.getDatadogContext(withFeatureContexts = setOf(fakeFeatureName))
+        val context = testedInternalSdkCore.getFlashcatContext(withFeatureContexts = setOf(fakeFeatureName))
 
         // Then
         checkNotNull(context)
@@ -219,7 +219,7 @@ class InternalSdkCoreTest : MockServerTest() {
             .forEach { it.join(SHORT_WAIT_MS) }
 
         // When
-        val context = testedInternalSdkCore.getDatadogContext(withFeatureContexts = setOf(fakeFeatureName))
+        val context = testedInternalSdkCore.getFlashcatContext(withFeatureContexts = setOf(fakeFeatureName))
 
         // Then
         checkNotNull(context)
@@ -268,7 +268,7 @@ class InternalSdkCoreTest : MockServerTest() {
             .join(SHORT_WAIT_MS)
 
         // When
-        val context = testedInternalSdkCore.getDatadogContext(withFeatureContexts = setOf(fakeFeatureName))
+        val context = testedInternalSdkCore.getFlashcatContext(withFeatureContexts = setOf(fakeFeatureName))
 
         // Then
         checkNotNull(context)
@@ -317,7 +317,7 @@ class InternalSdkCoreTest : MockServerTest() {
             .join(SHORT_WAIT_MS)
 
         // When
-        val context = testedInternalSdkCore.getDatadogContext(withFeatureContexts = setOf(fakeFeatureName))
+        val context = testedInternalSdkCore.getFlashcatContext(withFeatureContexts = setOf(fakeFeatureName))
 
         // Then
         checkNotNull(context)
@@ -430,7 +430,7 @@ class InternalSdkCoreTest : MockServerTest() {
             .setBatchSize(BatchSize.SMALL)
             .setUploadFrequency(UploadFrequency.FREQUENT)
             .setBatchProcessingLevel(BatchProcessingLevel.HIGH)
-            .useSite(forge.aValueFrom(DatadogSite::class.java))
+            .useSite(forge.aValueFrom(FlashcatSite::class.java))
             .build()
 
         // When

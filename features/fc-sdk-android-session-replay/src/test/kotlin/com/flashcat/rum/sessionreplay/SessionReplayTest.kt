@@ -1,0 +1,207 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
+ * Copyright 2016-Present Datadog, Inc.
+ */
+
+package com.flashcat.rum.sessionreplay
+
+import com.flashcat.rum.api.InternalLogger
+import com.flashcat.rum.api.feature.Feature
+import com.flashcat.rum.api.feature.FeatureScope
+import com.flashcat.rum.api.feature.FeatureSdkCore
+import com.flashcat.rum.sessionreplay.SessionReplay.IS_ALREADY_REGISTERED_WARNING
+import com.flashcat.rum.sessionreplay.forge.ForgeConfigurator
+import com.flashcat.rum.sessionreplay.internal.SessionReplayFeature
+import com.flashcat.rum.sessionreplay.internal.net.SegmentRequestFactory
+import com.flashcat.rum.sessionreplay.utils.verifyLog
+import fr.xgouchet.elmyr.annotation.Forgery
+import fr.xgouchet.elmyr.annotation.StringForgery
+import fr.xgouchet.elmyr.junit5.ForgeConfiguration
+import fr.xgouchet.elmyr.junit5.ForgeExtension
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.api.extension.Extensions
+import org.mockito.Mock
+import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.junit.jupiter.MockitoSettings
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
+import org.mockito.quality.Strictness
+
+@Extensions(
+    ExtendWith(MockitoExtension::class),
+    ExtendWith(ForgeExtension::class)
+)
+@MockitoSettings(strictness = Strictness.LENIENT)
+@ForgeConfiguration(ForgeConfigurator::class)
+internal class SessionReplayTest {
+
+    @Mock
+    lateinit var mockSdkCore: FeatureSdkCore
+
+    @Mock
+    lateinit var mockSystemRequirementsConfiguration: SystemRequirementsConfiguration
+
+    @BeforeEach
+    fun `set up`() {
+        whenever(mockSdkCore.internalLogger) doReturn mock()
+        SessionReplay.currentRegisteredCore = null
+    }
+
+    @Test
+    fun `M register session replay feature W enable()`(
+        @StringForgery fakePackageName: String,
+        @Forgery fakeSessionReplayConfiguration: SessionReplayConfiguration
+    ) {
+        // When
+        val fakeSessionReplayConfigurationWithMockRequirement = fakeSessionReplayConfiguration.copy(
+            systemRequirementsConfiguration = mockSystemRequirementsConfiguration
+        )
+        whenever(
+            mockSystemRequirementsConfiguration.runIfRequirementsMet(any(), any())
+        ) doAnswer {
+            it.getArgument<() -> Unit>(1).invoke()
+        }
+        SessionReplay.enable(
+            fakeSessionReplayConfigurationWithMockRequirement,
+            mockSdkCore
+        )
+
+        // Then
+        argumentCaptor<SessionReplayFeature> {
+            verify(mockSdkCore).registerFeature(capture())
+
+            lastValue.onInitialize(
+                appContext = mock { whenever(it.packageName) doReturn fakePackageName }
+            )
+            assertThat(lastValue.privacy).isEqualTo(fakeSessionReplayConfiguration.privacy)
+            assertThat((lastValue.requestFactory as SegmentRequestFactory).customEndpointUrl)
+                .isEqualTo(fakeSessionReplayConfiguration.customEndpointUrl)
+        }
+    }
+
+    @Test
+    fun `M call manuallyStartRecording on feature W startRecording`(
+        @Mock mockFeatureScope: FeatureScope,
+        @Mock mockSessionReplayFeature: SessionReplayFeature
+    ) {
+        // Given
+        whenever(mockSdkCore.getFeature(Feature.SESSION_REPLAY_FEATURE_NAME))
+            .thenReturn(mockFeatureScope)
+
+        whenever(mockFeatureScope.unwrap<SessionReplayFeature>()) doReturn mockSessionReplayFeature
+
+        // When
+        SessionReplay.startRecording(mockSdkCore)
+
+        // Then
+        verify(mockSessionReplayFeature).manuallyStartRecording()
+    }
+
+    @Test
+    fun `M call manuallyStopRecording on feature W stopRecording`(
+        @Mock mockFeatureScope: FeatureScope,
+        @Mock mockSessionReplayFeature: SessionReplayFeature
+    ) {
+        // Given
+        whenever(mockSdkCore.getFeature(Feature.SESSION_REPLAY_FEATURE_NAME))
+            .thenReturn(mockFeatureScope)
+
+        whenever(mockFeatureScope.unwrap<SessionReplayFeature>()) doReturn mockSessionReplayFeature
+
+        // When
+        SessionReplay.stopRecording(mockSdkCore)
+
+        // Then
+        verify(mockSessionReplayFeature).manuallyStopRecording()
+    }
+
+    @Test
+    fun `M warn and send telemetry W enable { session replay feature already registered with another core }`(
+        @Forgery fakeSessionReplayConfiguration: SessionReplayConfiguration,
+        @Mock mockCore1: FeatureSdkCore,
+        @Mock mockCore2: FeatureSdkCore,
+        @Mock mockInternalLogger: InternalLogger
+    ) {
+        // Given
+        whenever(mockCore1.isCoreActive()).thenReturn(true)
+        whenever(mockCore1.internalLogger).thenReturn(mockInternalLogger)
+        whenever(mockCore2.internalLogger).thenReturn(mockInternalLogger)
+        val fakeSessionReplayConfigurationWithMockRequirement = fakeSessionReplayConfiguration.copy(
+            systemRequirementsConfiguration = mockSystemRequirementsConfiguration
+        )
+        whenever(
+            mockSystemRequirementsConfiguration.runIfRequirementsMet(any(), any())
+        ) doAnswer {
+            it.getArgument<() -> Unit>(1).invoke()
+        }
+        SessionReplay.enable(
+            sessionReplayConfiguration = fakeSessionReplayConfigurationWithMockRequirement,
+            sdkCore = mockCore1
+        )
+
+        // When
+        SessionReplay.enable(
+            sessionReplayConfiguration = fakeSessionReplayConfigurationWithMockRequirement,
+            sdkCore = mockCore2
+        )
+
+        // Then
+        mockInternalLogger.verifyLog(
+            level = InternalLogger.Level.ERROR,
+            targets = listOf(InternalLogger.Target.MAINTAINER),
+            message = IS_ALREADY_REGISTERED_WARNING
+        )
+
+        mockInternalLogger.verifyLog(
+            level = InternalLogger.Level.DEBUG,
+            targets = listOf(InternalLogger.Target.TELEMETRY),
+            message = IS_ALREADY_REGISTERED_WARNING
+        )
+        assertThat(SessionReplay.currentRegisteredCore?.get()).isEqualTo(mockCore1)
+    }
+
+    @Test
+    fun `M allow changing cores W enable { Session Replay already enabled but old core inactive }`(
+        @Forgery fakeSessionReplayConfiguration: SessionReplayConfiguration,
+        @Mock mockCore1: FeatureSdkCore,
+        @Mock mockCore2: FeatureSdkCore,
+        @Mock mockInternalLogger: InternalLogger
+    ) {
+        // Given
+        whenever(mockCore1.internalLogger).thenReturn(mockInternalLogger)
+        whenever(mockCore2.internalLogger).thenReturn(mockInternalLogger)
+        val fakeSessionReplayConfigurationWithMockRequirement = fakeSessionReplayConfiguration.copy(
+            systemRequirementsConfiguration = mockSystemRequirementsConfiguration
+        )
+        whenever(
+            mockSystemRequirementsConfiguration.runIfRequirementsMet(any(), any())
+        ) doAnswer {
+            it.getArgument<() -> Unit>(1).invoke()
+        }
+        whenever(mockCore1.isCoreActive()).thenReturn(true)
+        SessionReplay.enable(
+            sessionReplayConfiguration = fakeSessionReplayConfigurationWithMockRequirement,
+            sdkCore = mockCore1
+        )
+        assertThat(SessionReplay.currentRegisteredCore?.get()).isEqualTo(mockCore1)
+
+        // When
+        whenever(mockCore1.isCoreActive()).thenReturn(false)
+        SessionReplay.enable(
+            sessionReplayConfiguration = fakeSessionReplayConfigurationWithMockRequirement,
+            sdkCore = mockCore2
+        )
+
+        // Then
+        assertThat(SessionReplay.currentRegisteredCore?.get()).isEqualTo(mockCore2)
+    }
+}

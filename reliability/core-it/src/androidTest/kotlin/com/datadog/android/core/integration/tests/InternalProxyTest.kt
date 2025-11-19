@@ -1,18 +1,18 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.core.integration.tests
+package com.flashcat.rum.core.integration.tests
 
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.datadog.android.Datadog
-import com.datadog.android.core.InternalSdkCore
-import com.datadog.android.core.configuration.Configuration
-import com.datadog.android.core.integration.tests.forge.factories.ConfigurationCoreForgeryFactory
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.rum.Flashcat
+import com.flashcat.rum.core.InternalSdkCore
+import com.flashcat.rum.core.configuration.Configuration
+import com.flashcat.rum.core.integration.tests.forge.factories.ConfigurationCoreForgeryFactory
+import com.flashcat.rum.privacy.TrackingConsent
 import com.datadog.tools.unit.forge.useToolsFactories
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.junit4.ForgeRule
@@ -67,7 +67,7 @@ class InternalProxyTest {
         internalProxy.setCustomAppVersion(fakeAppVersion)
 
         // Then
-        val context = testedInternalSdkCore.getDatadogContext()
+        val context = testedInternalSdkCore.getFlashcatContext()
         checkNotNull(context)
         assertThat(context.version).isEqualTo(fakeAppVersion)
     }

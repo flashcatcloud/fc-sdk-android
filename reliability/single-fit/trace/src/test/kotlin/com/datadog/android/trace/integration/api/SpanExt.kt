@@ -1,13 +1,13 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.trace.integration.api
+package com.flashcat.rum.trace.integration.api
 
-import com.datadog.android.trace.api.span.DatadogSpan
-import com.datadog.android.trace.internal.DatadogTracingToolkit
+import com.flashcat.rum.trace.api.span.DatadogSpan
+import com.flashcat.rum.trace.internal.DatadogTracingToolkit
 
 /**
  * Returns the span's least significant trace id in hex format (the last 64 bits from the 128 bits trace id)

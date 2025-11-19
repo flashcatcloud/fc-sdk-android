@@ -4,10 +4,10 @@
  * Copyright 2016-Present Datadog, Inc.
  */
 
-import com.datadog.gradle.config.dependencyUpdateConfig
-import com.datadog.gradle.config.junitConfig
-import com.datadog.gradle.config.kotlinConfig
-import com.datadog.gradle.config.taskConfig
+import com.flashcat.gradle.config.dependencyUpdateConfig
+import com.flashcat.gradle.config.junitConfig
+import com.flashcat.gradle.config.kotlinConfig
+import com.flashcat.gradle.config.taskConfig
 
 plugins {
     id("org.jetbrains.kotlin.jvm")
@@ -32,6 +32,6 @@ dependencyUpdateConfig()
 
 taskConfig<Jar> {
     manifest {
-        attributes("Lint-Registry-v2" to "com.datadog.android.lint.DatadogIssueRegistry")
+        attributes("Lint-Registry-v2" to "com.flashcat.rum.lint.DatadogIssueRegistry")
     }
 }

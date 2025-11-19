@@ -4,11 +4,11 @@
  * Copyright 2016-Present Datadog, Inc.
  */
 
-import com.datadog.gradle.config.AndroidConfig
-import com.datadog.gradle.config.dependencyUpdateConfig
-import com.datadog.gradle.config.java11
-import com.datadog.gradle.config.junitConfig
-import com.datadog.gradle.config.kotlinConfig
+import com.flashcat.gradle.config.AndroidConfig
+import com.flashcat.gradle.config.dependencyUpdateConfig
+import com.flashcat.gradle.config.java11
+import com.flashcat.gradle.config.junitConfig
+import com.flashcat.gradle.config.kotlinConfig
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {

@@ -1,22 +1,22 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.rum.integration
+package com.flashcat.rum.rum.integration
 
-import com.datadog.android.core.stub.StubSDKCore
-import com.datadog.android.core.stub.StubTelemetryEvent
-import com.datadog.android.rum.GlobalRumMonitor
-import com.datadog.android.rum.Rum
-import com.datadog.android.rum.RumActionType
-import com.datadog.android.rum.RumConfiguration
-import com.datadog.android.rum.RumErrorSource
-import com.datadog.android.rum.RumResourceMethod
-import com.datadog.android.rum.integration.tests.assertj.StubTelemetryEventAssert.Companion.assertThat
-import com.datadog.android.rum.integration.tests.elmyr.RumIntegrationForgeConfigurator
-import com.datadog.android.rum.integration.tests.utils.MainLooperTestConfiguration
+import com.flashcat.rum.core.stub.StubSDKCore
+import com.flashcat.rum.core.stub.StubTelemetryEvent
+import com.flashcat.rum.rum.GlobalRumMonitor
+import com.flashcat.rum.rum.Rum
+import com.flashcat.rum.rum.RumActionType
+import com.flashcat.rum.rum.RumConfiguration
+import com.flashcat.rum.rum.RumErrorSource
+import com.flashcat.rum.rum.RumResourceMethod
+import com.flashcat.rum.rum.integration.tests.assertj.StubTelemetryEventAssert.Companion.assertThat
+import com.flashcat.rum.rum.integration.tests.elmyr.RumIntegrationForgeConfigurator
+import com.flashcat.rum.rum.integration.tests.utils.MainLooperTestConfiguration
 import com.datadog.tools.unit.annotations.TestConfigurationsProvider
 import com.datadog.tools.unit.extensions.TestConfigurationExtension
 import com.datadog.tools.unit.extensions.config.TestConfiguration

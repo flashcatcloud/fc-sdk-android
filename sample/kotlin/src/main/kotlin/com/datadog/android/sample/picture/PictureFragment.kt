@@ -1,9 +1,9 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
-package com.datadog.android.sample.picture
+package com.flashcat.rum.sample.picture
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -15,8 +15,8 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
-import com.datadog.android.sample.Preferences
-import com.datadog.android.sample.R
+import com.flashcat.rum.sample.Preferences
+import com.flashcat.rum.sample.R
 
 internal class PictureFragment :
     Fragment(), View.OnClickListener {

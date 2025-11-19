@@ -1,10 +1,10 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.tv.sample
+package com.flashcat.rum.tv.sample
 
 import android.content.ComponentName
 import android.content.Intent
@@ -15,9 +15,9 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.datadog.android.rum.resource.asRumResource
-import com.datadog.android.tv.sample.model.Episode
-import com.datadog.android.tv.sample.model.EpisodeList
+import com.flashcat.rum.rum.resource.asRumResource
+import com.flashcat.rum.tv.sample.model.Episode
+import com.flashcat.rum.tv.sample.model.EpisodeList
 import com.google.gson.Gson
 
 /**

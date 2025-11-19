@@ -1,15 +1,15 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.sample.picture
+package com.flashcat.rum.sample.picture
 
 import android.content.Context
 import android.widget.ImageView
-import com.datadog.android.sample.BuildConfig
-import com.datadog.android.sample.R
+import com.flashcat.rum.sample.BuildConfig
+import com.flashcat.rum.sample.R
 import com.squareup.picasso.LruCache
 import com.squareup.picasso.OkHttp3Downloader
 import com.squareup.picasso.Picasso

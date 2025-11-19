@@ -1,10 +1,10 @@
-import com.datadog.gradle.config.AndroidConfig
-import com.datadog.gradle.config.configureFlavorForAutoApp
-import com.datadog.gradle.config.dependencyUpdateConfig
-import com.datadog.gradle.config.java17
-import com.datadog.gradle.config.junitConfig
-import com.datadog.gradle.config.kotlinConfig
-import com.datadog.gradle.config.taskConfig
+import com.flashcat.gradle.config.AndroidConfig
+import com.flashcat.gradle.config.configureFlavorForAutoApp
+import com.flashcat.gradle.config.dependencyUpdateConfig
+import com.flashcat.gradle.config.java17
+import com.flashcat.gradle.config.junitConfig
+import com.flashcat.gradle.config.kotlinConfig
+import com.flashcat.gradle.config.taskConfig
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -59,8 +59,8 @@ android {
 
 dependencies {
     // Datadog Libraries
-    implementation(project(":features:dd-sdk-android-logs"))
-    implementation(project(":features:dd-sdk-android-rum"))
+    implementation(project(":features:fc-sdk-android-logs"))
+    implementation(project(":features:fc-sdk-android-rum"))
 
     implementation(libs.kotlin)
 

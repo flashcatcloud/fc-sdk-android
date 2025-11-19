@@ -1,0 +1,23 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
+ * Copyright 2016-Present Datadog, Inc.
+ */
+
+package com.flashcat.rum.api.feature
+
+import androidx.annotation.AnyThread
+
+/**
+ * Receiver for feature context updates.
+ */
+fun interface FeatureContextUpdateReceiver {
+
+    /**
+     * Called when the context for a feature is updated.
+     * @param featureName the name of the feature
+     * @param context the updated context
+     */
+    @AnyThread
+    fun onContextUpdate(featureName: String, context: Map<String, Any?>)
+}

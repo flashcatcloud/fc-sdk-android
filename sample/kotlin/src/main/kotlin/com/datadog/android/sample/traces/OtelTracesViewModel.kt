@@ -1,17 +1,17 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.sample.traces
+package com.flashcat.rum.sample.traces
 
 import android.os.AsyncTask
 import androidx.lifecycle.ViewModel
-import com.datadog.android.log.Logger
-import com.datadog.android.okhttp.otel.addParentSpan
-import com.datadog.android.sample.BuildConfig
-import com.datadog.android.vendor.sample.LocalServer
+import com.flashcat.rum.log.Logger
+import com.flashcat.rum.okhttp.otel.addParentSpan
+import com.flashcat.rum.sample.BuildConfig
+import com.flashcat.rum.vendor.sample.LocalServer
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.trace.Span
@@ -34,7 +34,7 @@ internal class OtelTracesViewModel(
     private var linkedSpansTask: AsyncTask<Unit, Unit, Unit>? = null
 
     fun onResume() {
-        localServer.start("https://www.datadoghq.com/")
+        localServer.start("https://flashcat.cloud/")
     }
 
     fun onPause() {

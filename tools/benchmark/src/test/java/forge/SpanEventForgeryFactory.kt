@@ -1,14 +1,14 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
 package forge
 
-import com.datadog.android.api.context.NetworkInfo
-import com.datadog.android.api.context.UserInfo
-import com.datadog.android.internal.utils.toHexString
+import com.flashcat.rum.api.context.NetworkInfo
+import com.flashcat.rum.api.context.UserInfo
+import com.flashcat.rum.internal.utils.toHexString
 import com.datadog.benchmark.internal.model.SpanEvent
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory

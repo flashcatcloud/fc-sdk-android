@@ -1,12 +1,12 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.rum.integration.tests.utils
+package com.flashcat.rum.rum.integration.tests.utils
 
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.rum.api.storage.RawBatchEvent
 import com.google.gson.JsonElement
 
 data class RumBatchEvent(

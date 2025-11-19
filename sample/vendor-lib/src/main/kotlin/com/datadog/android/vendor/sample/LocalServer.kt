@@ -1,25 +1,25 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.vendor.sample
+package com.flashcat.rum.vendor.sample
 
 import android.content.Context
 import android.util.Log
-import com.datadog.android.Datadog
-import com.datadog.android.DatadogSite
-import com.datadog.android.core.configuration.BatchSize
-import com.datadog.android.core.configuration.Configuration
-import com.datadog.android.core.configuration.UploadFrequency
-import com.datadog.android.log.Logger
-import com.datadog.android.log.Logs
-import com.datadog.android.log.LogsConfiguration
-import com.datadog.android.privacy.TrackingConsent
-import com.datadog.android.trace.Trace
-import com.datadog.android.trace.TraceConfiguration
-import com.datadog.android.trace.opentelemetry.OtelTracerProvider
+import com.flashcat.rum.Flashcat
+import com.flashcat.rum.FlashcatSite
+import com.flashcat.rum.core.configuration.BatchSize
+import com.flashcat.rum.core.configuration.Configuration
+import com.flashcat.rum.core.configuration.UploadFrequency
+import com.flashcat.rum.log.Logger
+import com.flashcat.rum.log.Logs
+import com.flashcat.rum.log.LogsConfiguration
+import com.flashcat.rum.privacy.TrackingConsent
+import com.flashcat.rum.trace.Trace
+import com.flashcat.rum.trace.TraceConfiguration
+import com.flashcat.rum.trace.opentelemetry.OtelTracerProvider
 import io.ktor.server.application.install
 import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
@@ -60,7 +60,7 @@ public class LocalServer {
             env = "prod",
             service = SERVICE_NAME
         )
-            .useSite(DatadogSite.US1)
+            .useSite(FlashcatSite.US1)
             .setBatchSize(BatchSize.SMALL)
             .setUploadFrequency(UploadFrequency.FREQUENT)
             .build()

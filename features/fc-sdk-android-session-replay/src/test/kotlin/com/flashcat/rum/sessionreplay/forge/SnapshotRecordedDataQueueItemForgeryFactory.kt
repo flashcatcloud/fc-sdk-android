@@ -1,0 +1,24 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
+ * Copyright 2016-Present Datadog, Inc.
+ */
+
+package com.flashcat.rum.sessionreplay.forge
+
+import com.flashcat.rum.sessionreplay.internal.async.SnapshotRecordedDataQueueItem
+import fr.xgouchet.elmyr.Forge
+import fr.xgouchet.elmyr.ForgeryFactory
+
+internal class SnapshotRecordedDataQueueItemForgeryFactory : ForgeryFactory<SnapshotRecordedDataQueueItem> {
+    override fun getForgery(forge: Forge): SnapshotRecordedDataQueueItem {
+        val item = SnapshotRecordedDataQueueItem(
+            recordedQueuedItemContext = forge.getForgery(),
+            systemInformation = forge.getForgery()
+        )
+
+        item.pendingJobs.set(forge.anInt())
+        item.nodes = listOf(forge.getForgery())
+        return item
+    }
+}

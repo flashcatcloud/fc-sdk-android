@@ -1,10 +1,10 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.sample.service
+package com.flashcat.rum.sample.service
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -14,12 +14,12 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
-import com.datadog.android.rum.GlobalRumMonitor
-import com.datadog.android.rum.RumActionType
-import com.datadog.android.rum.RumErrorSource
-import com.datadog.android.rum.RumResourceKind
-import com.datadog.android.rum.RumResourceMethod
-import com.datadog.android.sample.R
+import com.flashcat.rum.rum.GlobalRumMonitor
+import com.flashcat.rum.rum.RumActionType
+import com.flashcat.rum.rum.RumErrorSource
+import com.flashcat.rum.rum.RumResourceKind
+import com.flashcat.rum.rum.RumResourceMethod
+import com.flashcat.rum.sample.R
 import java.io.IOException
 import java.lang.IllegalStateException
 import java.security.SecureRandom

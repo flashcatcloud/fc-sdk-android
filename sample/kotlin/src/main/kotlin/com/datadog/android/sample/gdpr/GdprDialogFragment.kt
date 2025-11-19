@@ -1,10 +1,10 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.sample.gdpr
+package com.flashcat.rum.sample.gdpr
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -13,11 +13,11 @@ import android.view.ViewGroup
 import android.widget.RadioGroup
 import androidx.annotation.IdRes
 import androidx.fragment.app.DialogFragment
-import com.datadog.android.Datadog
-import com.datadog.android.privacy.TrackingConsent
-import com.datadog.android.sample.Preferences
-import com.datadog.android.sample.R
-import com.datadog.android.sample.TrackingConsentChangeListener
+import com.flashcat.rum.Flashcat
+import com.flashcat.rum.privacy.TrackingConsent
+import com.flashcat.rum.sample.Preferences
+import com.flashcat.rum.sample.R
+import com.flashcat.rum.sample.TrackingConsentChangeListener
 
 internal class GdprDialogFragment : DialogFragment() {
     lateinit var trackingConsentSelector: RadioGroup

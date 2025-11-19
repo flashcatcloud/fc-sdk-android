@@ -1,14 +1,14 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.trace.integration.otel
+package com.flashcat.rum.trace.integration.otel
 
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureScope
-import com.datadog.android.trace.integration.tests.utils.BlockingWriterWrapper
+import com.flashcat.rum.api.feature.Feature
+import com.flashcat.rum.api.feature.FeatureScope
+import com.flashcat.rum.trace.integration.tests.utils.BlockingWriterWrapper
 import com.datadog.tools.unit.getFieldValue
 import com.datadog.tools.unit.setFieldValue
 import com.datadog.trace.common.writer.Writer

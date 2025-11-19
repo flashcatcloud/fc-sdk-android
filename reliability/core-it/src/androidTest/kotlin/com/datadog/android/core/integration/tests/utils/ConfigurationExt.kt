@@ -1,17 +1,17 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.core.integration.tests.utils
+package com.flashcat.rum.core.integration.tests.utils
 
-import com.datadog.android.DatadogSite
-import com.datadog.android.core.configuration.Configuration
-import com.datadog.android.trace.TracingHeaderType
+import com.flashcat.rum.FlashcatSite
+import com.flashcat.rum.core.configuration.Configuration
+import com.flashcat.rum.trace.TracingHeaderType
 import com.datadog.tools.unit.getFieldValue
 
-fun Configuration.site(): DatadogSite {
+fun Configuration.site(): FlashcatSite {
     return this.getFieldValue<Any, Configuration>("coreConfig").getFieldValue("site")
 }
 

@@ -1,0 +1,20 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
+ * Copyright 2016-Present Datadog, Inc.
+ */
+
+package com.flashcat.gradle.plugin.jsonschema
+
+enum class JsonPrimitiveType {
+    STRING, BOOLEAN, INTEGER, NUMBER
+}
+
+fun JsonPrimitiveType.nameString(): String {
+    return when (this) {
+        JsonPrimitiveType.STRING -> "String"
+        JsonPrimitiveType.BOOLEAN -> "Boolean"
+        JsonPrimitiveType.INTEGER -> "Long"
+        JsonPrimitiveType.NUMBER -> "Number"
+    }
+}

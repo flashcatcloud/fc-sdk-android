@@ -1,31 +1,31 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.rum.integration
+package com.flashcat.rum.rum.integration
 
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.core.stub.StubSDKCore
-import com.datadog.android.rum.GlobalRumMonitor
-import com.datadog.android.rum.Rum
-import com.datadog.android.rum.RumActionType
-import com.datadog.android.rum.RumConfiguration
-import com.datadog.android.rum.RumErrorSource
-import com.datadog.android.rum.RumMonitor
-import com.datadog.android.rum.RumResourceKind
-import com.datadog.android.rum.RumResourceMethod
-import com.datadog.android.rum.integration.tests.assertj.hasRumEvent
-import com.datadog.android.rum.integration.tests.elmyr.RumIntegrationForgeConfigurator
-import com.datadog.android.rum.integration.tests.utils.MainLooperTestConfiguration
-import com.datadog.android.rum.metric.interactiontonextview.LastInteractionIdentifier
-import com.datadog.android.rum.metric.interactiontonextview.PreviousViewLastInteractionContext
-import com.datadog.android.rum.metric.interactiontonextview.TimeBasedInteractionIdentifier
-import com.datadog.android.rum.metric.networksettled.InitialResourceIdentifier
-import com.datadog.android.rum.metric.networksettled.NetworkSettledResourceContext
-import com.datadog.android.rum.metric.networksettled.TimeBasedInitialResourceIdentifier
-import com.datadog.android.tests.assertj.StubEventsAssert.Companion.assertThat
+import com.flashcat.rum.api.feature.Feature
+import com.flashcat.rum.core.stub.StubSDKCore
+import com.flashcat.rum.rum.GlobalRumMonitor
+import com.flashcat.rum.rum.Rum
+import com.flashcat.rum.rum.RumActionType
+import com.flashcat.rum.rum.RumConfiguration
+import com.flashcat.rum.rum.RumErrorSource
+import com.flashcat.rum.rum.RumMonitor
+import com.flashcat.rum.rum.RumResourceKind
+import com.flashcat.rum.rum.RumResourceMethod
+import com.flashcat.rum.rum.integration.tests.assertj.hasRumEvent
+import com.flashcat.rum.rum.integration.tests.elmyr.RumIntegrationForgeConfigurator
+import com.flashcat.rum.rum.integration.tests.utils.MainLooperTestConfiguration
+import com.flashcat.rum.rum.metric.interactiontonextview.LastInteractionIdentifier
+import com.flashcat.rum.rum.metric.interactiontonextview.PreviousViewLastInteractionContext
+import com.flashcat.rum.rum.metric.interactiontonextview.TimeBasedInteractionIdentifier
+import com.flashcat.rum.rum.metric.networksettled.InitialResourceIdentifier
+import com.flashcat.rum.rum.metric.networksettled.NetworkSettledResourceContext
+import com.flashcat.rum.rum.metric.networksettled.TimeBasedInitialResourceIdentifier
+import com.flashcat.rum.tests.assertj.StubEventsAssert.Companion.assertThat
 import com.datadog.tools.unit.annotations.TestConfigurationsProvider
 import com.datadog.tools.unit.extensions.TestConfigurationExtension
 import com.datadog.tools.unit.extensions.config.TestConfiguration
@@ -126,7 +126,7 @@ class ViewLoadingTimeMetricsTests {
             .hasSize(4)
             .hasRumEvent(index = 0) {
                 // Initial view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -139,7 +139,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 1) {
                 // Custom event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -150,7 +150,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 2) {
                 // View updated with event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -162,7 +162,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 3) {
                 // View stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -202,7 +202,7 @@ class ViewLoadingTimeMetricsTests {
             .hasSize(6)
             .hasRumEvent(index = 0) {
                 // Initial view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -215,7 +215,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 1) {
                 // Custom event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -226,7 +226,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 2) {
                 // View updated with event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -238,7 +238,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 3) {
                 // View updated with event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -250,7 +250,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 4) {
                 // View updated with event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -262,7 +262,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 5) {
                 // View stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -301,7 +301,7 @@ class ViewLoadingTimeMetricsTests {
             .hasSize(4)
             .hasRumEvent(index = 0) {
                 // Initial view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -314,7 +314,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 1) {
                 // Custom event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -324,7 +324,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 2) {
                 // View updated with event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -337,7 +337,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 3) {
                 // View stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -375,7 +375,7 @@ class ViewLoadingTimeMetricsTests {
             .hasSize(2)
             .hasRumEvent(index = 0) {
                 // Initial view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -388,7 +388,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 1) {
                 // View stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -422,7 +422,7 @@ class ViewLoadingTimeMetricsTests {
             .hasSize(2)
             .hasRumEvent(index = 0) {
                 // Initial view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -435,7 +435,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 1) {
                 // View stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -470,7 +470,7 @@ class ViewLoadingTimeMetricsTests {
             .hasSize(4)
             .hasRumEvent(index = 0) {
                 // Initial view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -483,7 +483,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 1) {
                 // Custom event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -494,7 +494,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 2) {
                 // View updated with event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -506,7 +506,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 3) {
                 // View stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -543,7 +543,7 @@ class ViewLoadingTimeMetricsTests {
             .hasSize(4)
             .hasRumEvent(index = 0) {
                 // Initial view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -556,7 +556,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 1) {
                 // Custom event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -567,7 +567,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 2) {
                 // View updated with event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -579,7 +579,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 3) {
                 // View stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -616,7 +616,7 @@ class ViewLoadingTimeMetricsTests {
             .hasSize(4)
             .hasRumEvent(index = 0) {
                 // Initial view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -629,7 +629,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 1) {
                 // Custom event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -640,7 +640,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 2) {
                 // View updated with event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -652,7 +652,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 3) {
                 // View stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -686,7 +686,7 @@ class ViewLoadingTimeMetricsTests {
             .hasSize(6)
             .hasRumEvent(index = 0) {
                 // Initial previous view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -698,7 +698,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 1) {
                 // Action event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -708,7 +708,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 2) {
                 // View updated with event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -720,7 +720,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 3) {
                 // Previous view stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -732,7 +732,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 4) {
                 // New View Event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -743,7 +743,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 5) {
                 // View stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -773,7 +773,7 @@ class ViewLoadingTimeMetricsTests {
             .hasSize(6)
             .hasRumEvent(index = 0) {
                 // Initial previous view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -785,7 +785,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 1) {
                 // Action event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -795,7 +795,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 2) {
                 // View updated with event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -807,7 +807,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 3) {
                 // Previous view stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -819,7 +819,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 4) {
                 // New View Event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -830,7 +830,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 5) {
                 // View stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -862,7 +862,7 @@ class ViewLoadingTimeMetricsTests {
             .hasSize(4)
             .hasRumEvent(index = 0) {
                 // Initial previous view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -874,7 +874,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 1) {
                 // Previous view stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -886,7 +886,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 2) {
                 // New View Event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -897,7 +897,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 3) {
                 // View stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -933,7 +933,7 @@ class ViewLoadingTimeMetricsTests {
             .hasSize(6)
             .hasRumEvent(index = 0) {
                 // Initial previous view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -945,7 +945,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 1) {
                 // Action event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -955,7 +955,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 2) {
                 // View updated with event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -967,7 +967,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 3) {
                 // Previous view stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -979,7 +979,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 4) {
                 // New View Event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -990,7 +990,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 5) {
                 // View stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -1026,7 +1026,7 @@ class ViewLoadingTimeMetricsTests {
             .hasSize(6)
             .hasRumEvent(index = 0) {
                 // Initial previous view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -1038,7 +1038,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 1) {
                 // Action event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -1048,7 +1048,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 2) {
                 // View updated with event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -1060,7 +1060,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 3) {
                 // Previous view stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -1072,7 +1072,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 4) {
                 // New View Event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -1083,7 +1083,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 5) {
                 // View stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -1113,7 +1113,7 @@ class ViewLoadingTimeMetricsTests {
             .hasSize(6)
             .hasRumEvent(index = 0) {
                 // Initial previous view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -1125,7 +1125,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 1) {
                 // Action event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -1135,7 +1135,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 2) {
                 // View updated with event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -1147,7 +1147,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 3) {
                 // Previous view stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -1159,7 +1159,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 4) {
                 // New View Event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -1170,7 +1170,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 5) {
                 // View stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -1211,7 +1211,7 @@ class ViewLoadingTimeMetricsTests {
             .hasSize(6)
             .hasRumEvent(index = 0) {
                 // Initial previous view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -1223,7 +1223,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 1) {
                 // Action event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -1233,7 +1233,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 2) {
                 // View updated with event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -1245,7 +1245,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 3) {
                 // Previous view stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -1257,7 +1257,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 4) {
                 // New View Event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -1268,7 +1268,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 5) {
                 // View stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -1310,7 +1310,7 @@ class ViewLoadingTimeMetricsTests {
             .hasSize(6)
             .hasRumEvent(index = 0) {
                 // Initial previous view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -1322,7 +1322,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 1) {
                 // Action event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -1332,7 +1332,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 2) {
                 // View updated with event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -1344,7 +1344,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 3) {
                 // Previous view stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -1356,7 +1356,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 4) {
                 // New View Event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -1367,7 +1367,7 @@ class ViewLoadingTimeMetricsTests {
             }
             .hasRumEvent(index = 5) {
                 // View stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")

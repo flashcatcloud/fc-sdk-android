@@ -4,13 +4,13 @@
  * Copyright 2016-Present Datadog, Inc.
  */
 
-import com.datadog.gradle.config.AndroidConfig
-import com.datadog.gradle.config.androidLibraryConfig
-import com.datadog.gradle.config.dependencyUpdateConfig
-import com.datadog.gradle.config.java11
-import com.datadog.gradle.config.junitConfig
-import com.datadog.gradle.config.kotlinConfig
-import com.datadog.gradle.config.publishingConfig
+import com.flashcat.gradle.config.AndroidConfig
+import com.flashcat.gradle.config.androidLibraryConfig
+import com.flashcat.gradle.config.dependencyUpdateConfig
+import com.flashcat.gradle.config.java11
+import com.flashcat.gradle.config.junitConfig
+import com.flashcat.gradle.config.kotlinConfig
+import com.flashcat.gradle.config.publishingConfig
 
 plugins {
     id("com.android.library")
@@ -33,8 +33,8 @@ android {
 }
 
 dependencies {
-    implementation(project(":dd-sdk-android-core"))
-    implementation(project(":dd-sdk-android-internal"))
+    implementation(project(":fc-sdk-android-core"))
+    implementation(project(":fc-sdk-android-internal"))
     implementation(libs.kotlin)
     implementation(libs.okHttp)
     implementation(libs.openTelemetryApi)
@@ -61,5 +61,5 @@ dependencyUpdateConfig()
 androidLibraryConfig()
 publishingConfig(
     projectDescription = "An internal benchmarking tool to measure the overhead of Datadog SDK",
-    customArtifactId = "dd-sdk-android-benchmark-internal"
+    customArtifactId = "fc-sdk-android-benchmark-internal"
 )

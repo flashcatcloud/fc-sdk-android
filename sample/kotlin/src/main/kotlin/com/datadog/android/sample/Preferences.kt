@@ -1,16 +1,16 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.sample
+package com.flashcat.rum.sample
 
 import android.content.Context
 import androidx.preference.PreferenceManager
-import com.datadog.android.privacy.TrackingConsent
-import com.datadog.android.sample.datalist.DataSourceType
-import com.datadog.android.sample.picture.ImageLoaderType
+import com.flashcat.rum.privacy.TrackingConsent
+import com.flashcat.rum.sample.datalist.DataSourceType
+import com.flashcat.rum.sample.picture.ImageLoaderType
 import timber.log.Timber
 
 internal object Preferences {

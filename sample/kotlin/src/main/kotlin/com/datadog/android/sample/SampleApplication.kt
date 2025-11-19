@@ -1,9 +1,9 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
-package com.datadog.android.sample
+package com.flashcat.rum.sample
 
 import android.annotation.SuppressLint
 import android.app.Application
@@ -11,53 +11,53 @@ import android.content.Context
 import android.os.Build
 import android.util.Log
 import androidx.lifecycle.ViewModelProvider
-import com.datadog.android.Datadog
-import com.datadog.android.DatadogSite
-import com.datadog.android.compose.enableComposeActionTracking
-import com.datadog.android.core.configuration.BackPressureMitigation
-import com.datadog.android.core.configuration.BackPressureStrategy
-import com.datadog.android.core.configuration.BatchSize
-import com.datadog.android.core.configuration.Configuration
-import com.datadog.android.core.configuration.UploadFrequency
-import com.datadog.android.flags.Flags
-import com.datadog.android.flags.FlagsConfiguration
-import com.datadog.android.log.Logger
-import com.datadog.android.log.Logs
-import com.datadog.android.log.LogsConfiguration
-import com.datadog.android.ndk.NdkCrashReports
-import com.datadog.android.okhttp.DatadogEventListener
-import com.datadog.android.okhttp.DatadogInterceptor
-import com.datadog.android.okhttp.trace.TracingInterceptor
-import com.datadog.android.rum.ExperimentalRumApi
-import com.datadog.android.rum.GlobalRumMonitor
-import com.datadog.android.rum.Rum
-import com.datadog.android.rum.RumConfiguration
-import com.datadog.android.rum.RumErrorSource
-import com.datadog.android.rum.configuration.SlowFramesConfiguration
-import com.datadog.android.rum.tracking.NavigationViewTrackingStrategy
-import com.datadog.android.sample.account.AccountFragment
-import com.datadog.android.sample.data.db.LocalDataSource
-import com.datadog.android.sample.data.remote.RemoteDataSource
-import com.datadog.android.sample.picture.CoilImageLoader
-import com.datadog.android.sample.picture.FrescoImageLoader
-import com.datadog.android.sample.picture.PicassoImageLoader
-import com.datadog.android.sample.user.UserFragment
-import com.datadog.android.sessionreplay.ImagePrivacy
-import com.datadog.android.sessionreplay.SessionReplay
-import com.datadog.android.sessionreplay.SessionReplayConfiguration
-import com.datadog.android.sessionreplay.SessionReplayPrivacy
-import com.datadog.android.sessionreplay.SystemRequirementsConfiguration
-import com.datadog.android.sessionreplay.TextAndInputPrivacy
-import com.datadog.android.sessionreplay.TouchPrivacy
-import com.datadog.android.sessionreplay.compose.ComposeExtensionSupport
-import com.datadog.android.sessionreplay.material.MaterialExtensionSupport
-import com.datadog.android.timber.DatadogTree
-import com.datadog.android.trace.DatadogTracing
-import com.datadog.android.trace.GlobalDatadogTracer
-import com.datadog.android.trace.Trace
-import com.datadog.android.trace.TraceConfiguration
-import com.datadog.android.trace.opentelemetry.DatadogOpenTelemetry
-import com.datadog.android.vendor.sample.LocalServer
+import com.flashcat.rum.Flashcat
+import com.flashcat.rum.FlashcatSite
+import com.flashcat.rum.compose.enableComposeActionTracking
+import com.flashcat.rum.core.configuration.BackPressureMitigation
+import com.flashcat.rum.core.configuration.BackPressureStrategy
+import com.flashcat.rum.core.configuration.BatchSize
+import com.flashcat.rum.core.configuration.Configuration
+import com.flashcat.rum.core.configuration.UploadFrequency
+import com.flashcat.rum.flags.Flags
+import com.flashcat.rum.flags.FlagsConfiguration
+import com.flashcat.rum.log.Logger
+import com.flashcat.rum.log.Logs
+import com.flashcat.rum.log.LogsConfiguration
+import com.flashcat.rum.ndk.NdkCrashReports
+import com.flashcat.rum.okhttp.DatadogEventListener
+import com.flashcat.rum.okhttp.DatadogInterceptor
+import com.flashcat.rum.okhttp.trace.TracingInterceptor
+import com.flashcat.rum.rum.ExperimentalRumApi
+import com.flashcat.rum.rum.GlobalRumMonitor
+import com.flashcat.rum.rum.Rum
+import com.flashcat.rum.rum.RumConfiguration
+import com.flashcat.rum.rum.RumErrorSource
+import com.flashcat.rum.rum.configuration.SlowFramesConfiguration
+import com.flashcat.rum.rum.tracking.NavigationViewTrackingStrategy
+import com.flashcat.rum.sample.account.AccountFragment
+import com.flashcat.rum.sample.data.db.LocalDataSource
+import com.flashcat.rum.sample.data.remote.RemoteDataSource
+import com.flashcat.rum.sample.picture.CoilImageLoader
+import com.flashcat.rum.sample.picture.FrescoImageLoader
+import com.flashcat.rum.sample.picture.PicassoImageLoader
+import com.flashcat.rum.sample.user.UserFragment
+import com.flashcat.rum.sessionreplay.ImagePrivacy
+import com.flashcat.rum.sessionreplay.SessionReplay
+import com.flashcat.rum.sessionreplay.SessionReplayConfiguration
+import com.flashcat.rum.sessionreplay.SessionReplayPrivacy
+import com.flashcat.rum.sessionreplay.SystemRequirementsConfiguration
+import com.flashcat.rum.sessionreplay.TextAndInputPrivacy
+import com.flashcat.rum.sessionreplay.TouchPrivacy
+import com.flashcat.rum.sessionreplay.compose.ComposeExtensionSupport
+import com.flashcat.rum.sessionreplay.material.MaterialExtensionSupport
+import com.flashcat.rum.timber.DatadogTree
+import com.flashcat.rum.trace.DatadogTracing
+import com.flashcat.rum.trace.GlobalDatadogTracer
+import com.flashcat.rum.trace.Trace
+import com.flashcat.rum.trace.TraceConfiguration
+import com.flashcat.rum.trace.opentelemetry.DatadogOpenTelemetry
+import com.flashcat.rum.vendor.sample.LocalServer
 import com.facebook.stetho.Stetho
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
@@ -77,7 +77,7 @@ import java.security.SecureRandom
 class SampleApplication : Application() {
 
     private val tracedHosts = listOf(
-        "datadoghq.com",
+        "flashcat.cloud",
         "127.0.0.1"
     )
 
@@ -94,7 +94,7 @@ class SampleApplication : Application() {
         .build()
 
     private val retrofitClient = Retrofit.Builder()
-        .baseUrl("https://api.datadoghq.com/api/v2/")
+        .baseUrl("https://api.flashcat.cloud/api/v2/")
         .addConverterFactory(GsonConverterFactory.create(GsonBuilder().setLenient().create()))
         .addCallAdapterFactory(RxJava3CallAdapterFactory.createSynchronous())
         .client(okHttpClient)
@@ -348,7 +348,7 @@ class SampleApplication : Application() {
             .setUploadFrequency(UploadFrequency.FREQUENT)
 
         try {
-            configBuilder.useSite(DatadogSite.valueOf(BuildConfig.DD_SITE_NAME))
+            configBuilder.useSite(FlashcatSite.valueOf(BuildConfig.DD_SITE_NAME))
         } catch (e: IllegalArgumentException) {
             Timber.e("Error setting site to ${BuildConfig.DD_SITE_NAME}")
         }

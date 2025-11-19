@@ -4,13 +4,13 @@
  * Copyright 2016-Present Datadog, Inc.
  */
 
-import com.datadog.gradle.config.AndroidConfig
-import com.datadog.gradle.config.configureFlavorForTvApp
-import com.datadog.gradle.config.dependencyUpdateConfig
-import com.datadog.gradle.config.java17
-import com.datadog.gradle.config.junitConfig
-import com.datadog.gradle.config.kotlinConfig
-import com.datadog.gradle.config.taskConfig
+import com.flashcat.gradle.config.AndroidConfig
+import com.flashcat.gradle.config.configureFlavorForTvApp
+import com.flashcat.gradle.config.dependencyUpdateConfig
+import com.flashcat.gradle.config.java17
+import com.flashcat.gradle.config.junitConfig
+import com.flashcat.gradle.config.kotlinConfig
+import com.flashcat.gradle.config.taskConfig
 
 plugins {
     id("com.android.application")
@@ -20,7 +20,7 @@ plugins {
 }
 
 android {
-    namespace = "com.datadog.android.tv.sample"
+    namespace = "com.flashcat.rum.tv.sample"
     compileSdk = AndroidConfig.TARGET_SDK
     buildToolsVersion = AndroidConfig.BUILD_TOOLS_VERSION
 
@@ -72,14 +72,14 @@ repositories {
 
 dependencies {
 
-    implementation(project(":dd-sdk-android-core"))
-    implementation(project(":features:dd-sdk-android-rum"))
-    implementation(project(":features:dd-sdk-android-logs"))
-    implementation(project(":features:dd-sdk-android-session-replay"))
-    implementation(project(":features:dd-sdk-android-session-replay-material"))
-    implementation(project(":integrations:dd-sdk-android-okhttp"))
-    implementation(project(":integrations:dd-sdk-android-timber"))
-    implementation(project(":integrations:dd-sdk-android-tv"))
+    implementation(project(":fc-sdk-android-core"))
+    implementation(project(":features:fc-sdk-android-rum"))
+    implementation(project(":features:fc-sdk-android-logs"))
+    implementation(project(":features:fc-sdk-android-session-replay"))
+    implementation(project(":features:fc-sdk-android-session-replay-material"))
+    implementation(project(":integrations:fc-sdk-android-okhttp"))
+    implementation(project(":integrations:fc-sdk-android-timber"))
+    implementation(project(":integrations:fc-sdk-android-tv"))
 
     implementation(libs.kotlin)
 

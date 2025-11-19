@@ -1,10 +1,10 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.sample.sessionreplay
+package com.flashcat.rum.sample.sessionreplay
 
 import android.graphics.drawable.Drawable
 import android.view.View
@@ -12,7 +12,7 @@ import androidx.lifecycle.ViewModel
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
-import com.datadog.android.sample.R
+import com.flashcat.rum.sample.R
 
 internal class ImageComponentsViewModel : ViewModel() {
     internal fun fetchRemoteImage(url: String, view: View, callback: ImageLoadedCallback) {

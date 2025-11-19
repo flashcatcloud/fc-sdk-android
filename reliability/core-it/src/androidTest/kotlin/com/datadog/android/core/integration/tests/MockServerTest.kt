@@ -1,12 +1,12 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.core.integration.tests
+package com.flashcat.rum.core.integration.tests
 
-import com.datadog.android.core.integration.tests.utils.MockWebServerWrapper
+import com.flashcat.rum.core.integration.tests.utils.MockWebServerWrapper
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.mockito.internal.matchers.Any

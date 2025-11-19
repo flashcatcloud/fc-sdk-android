@@ -1,6 +1,6 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
@@ -8,11 +8,11 @@ package com.datadog.benchmark.sample.ui.rummanual
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.datadog.android.rum.RumActionType
-import com.datadog.android.rum.RumErrorSource
-import com.datadog.android.rum.RumMonitor
-import com.datadog.android.rum.RumResourceKind
-import com.datadog.android.rum.RumResourceMethod
+import com.flashcat.rum.rum.RumActionType
+import com.flashcat.rum.rum.RumErrorSource
+import com.flashcat.rum.rum.RumMonitor
+import com.flashcat.rum.rum.RumResourceKind
+import com.flashcat.rum.rum.RumResourceMethod
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable

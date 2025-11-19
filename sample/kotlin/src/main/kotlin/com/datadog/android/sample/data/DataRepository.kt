@@ -1,17 +1,17 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.sample.data
+package com.flashcat.rum.sample.data
 
-import com.datadog.android.sample.data.db.LocalDataSource
-import com.datadog.android.sample.data.model.Log
-import com.datadog.android.sample.data.remote.RemoteDataSource
-import com.datadog.android.sample.datalist.DataSourceType
-import com.datadog.android.trace.GlobalDatadogTracer
-import com.datadog.android.trace.api.scope.DatadogScope
+import com.flashcat.rum.sample.data.db.LocalDataSource
+import com.flashcat.rum.sample.data.model.Log
+import com.flashcat.rum.sample.data.remote.RemoteDataSource
+import com.flashcat.rum.sample.datalist.DataSourceType
+import com.flashcat.rum.trace.GlobalDatadogTracer
+import com.flashcat.rum.trace.api.scope.DatadogScope
 import io.reactivex.rxjava3.core.Flowable
 import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.schedulers.Schedulers

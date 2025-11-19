@@ -1,10 +1,10 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.sample
+package com.flashcat.rum.sample
 
 import android.content.Intent
 import android.os.Bundle
@@ -17,9 +17,9 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.NavController
 import androidx.navigation.findNavController
-import com.datadog.android.Datadog
-import com.datadog.android.privacy.TrackingConsent
-import com.datadog.android.sample.service.LogsForegroundService
+import com.flashcat.rum.Flashcat
+import com.flashcat.rum.privacy.TrackingConsent
+import com.flashcat.rum.sample.service.LogsForegroundService
 import com.google.android.material.snackbar.Snackbar
 import timber.log.Timber
 

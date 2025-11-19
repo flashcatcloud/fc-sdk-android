@@ -1,10 +1,10 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.sample.sessionreplay
+package com.flashcat.rum.sample.sessionreplay
 
 import android.graphics.drawable.Drawable
 import android.os.Bundle
@@ -21,9 +21,9 @@ import androidx.appcompat.widget.AppCompatImageButton
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
-import com.datadog.android.rum.ExperimentalRumApi
-import com.datadog.android.rum.GlobalRumMonitor
-import com.datadog.android.sample.R
+import com.flashcat.rum.rum.ExperimentalRumApi
+import com.flashcat.rum.rum.GlobalRumMonitor
+import com.flashcat.rum.sample.R
 
 internal interface ImageLoadedCallback {
     fun onImageLoaded(resource: Drawable)

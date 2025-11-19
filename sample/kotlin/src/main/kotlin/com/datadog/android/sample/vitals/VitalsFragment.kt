@@ -1,9 +1,9 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
-package com.datadog.android.sample.vitals
+package com.flashcat.rum.sample.vitals
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -15,8 +15,8 @@ import android.widget.CompoundButton
 import android.widget.ProgressBar
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
-import com.datadog.android.rum.featureoperations.FailureReason
-import com.datadog.android.sample.R
+import com.flashcat.rum.rum.featureoperations.FailureReason
+import com.flashcat.rum.sample.R
 import com.google.android.material.textfield.TextInputEditText
 
 internal class VitalsFragment :

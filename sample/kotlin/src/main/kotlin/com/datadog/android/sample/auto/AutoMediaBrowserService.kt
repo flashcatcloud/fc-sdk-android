@@ -1,10 +1,10 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.sample.auto
+package com.flashcat.rum.sample.auto
 
 import android.os.Bundle
 import android.support.v4.media.MediaBrowserCompat
@@ -12,8 +12,8 @@ import android.support.v4.media.MediaDescriptionCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.media.MediaBrowserServiceCompat
-import com.datadog.android.rum.GlobalRumMonitor
-import com.datadog.android.rum.RumActionType
+import com.flashcat.rum.rum.GlobalRumMonitor
+import com.flashcat.rum.rum.RumActionType
 import timber.log.Timber
 
 @Suppress("UndocumentedPublicProperty", "UndocumentedPublicClass")
@@ -24,7 +24,7 @@ class AutoMediaBrowserService : MediaBrowserServiceCompat() {
     override fun onCreate() {
         super.onCreate()
 
-        mediaSession = MediaSessionCompat(this, "DatadogMediaService")
+        mediaSession = MediaSessionCompat(this, "FlashcatMediaService")
 
         val stateBuilder = PlaybackStateCompat.Builder()
             .setActions(

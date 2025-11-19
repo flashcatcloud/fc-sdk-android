@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         Report crashes caused by the SDK. Please try to be as detailed as possible.
-        Before getting started, if the problem is urgent please use our [official support channel](https://www.datadoghq.com/support/).
+        Before getting started, if the problem is urgent please use our [official support channel](https://www.flashcathq.com/support/).
   - type: textarea
     id: stacktrace
     attributes:

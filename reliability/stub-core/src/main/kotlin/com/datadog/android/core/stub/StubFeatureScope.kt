@@ -1,17 +1,17 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.core.stub
+package com.flashcat.rum.core.stub
 
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.feature.EventWriteScope
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureScope
-import com.datadog.android.api.storage.EventBatchWriter
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.rum.api.context.FlashcatContext
+import com.flashcat.rum.api.feature.EventWriteScope
+import com.flashcat.rum.api.feature.Feature
+import com.flashcat.rum.api.feature.FeatureScope
+import com.flashcat.rum.api.storage.EventBatchWriter
+import com.flashcat.rum.api.storage.RawBatchEvent
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.mockingDetails
 import org.mockito.kotlin.any
@@ -22,7 +22,7 @@ import org.mockito.kotlin.whenever
 @Suppress("CheckInternal", "UnsafeThirdPartyFunctionCall")
 internal class StubFeatureScope(
     private val feature: Feature,
-    private val datadogContextProvider: () -> DatadogContext,
+    private val flashcatContextProvider: () -> flashcatContext,
     private val mockFeatureScope: FeatureScope = mock()
 ) : FeatureScope by mockFeatureScope {
 
@@ -59,20 +59,20 @@ internal class StubFeatureScope(
 
     override fun withWriteContext(
         withFeatureContexts: Set<String>,
-        callback: (DatadogContext, EventWriteScope) -> Unit
+        callback: (flashcatContext, EventWriteScope) -> Unit
     ) {
         callback(
-            datadogContextProvider(),
+            flashcatContextProvider(),
             { it.invoke(eventBatchWriter) }
         )
     }
 
-    override fun withContext(withFeatureContexts: Set<String>, callback: (datadogContext: DatadogContext) -> Unit) {
-        callback(datadogContextProvider())
+    override fun withContext(withFeatureContexts: Set<String>, callback: (flashcatContext: FlashcatContext) -> Unit) {
+        callback(flashcatContextProvider())
     }
 
-    override fun getWriteContextSync(withFeatureContexts: Set<String>): Pair<DatadogContext, EventWriteScope>? {
-        return datadogContextProvider() to { it.invoke(eventBatchWriter) }
+    override fun getWriteContextSync(withFeatureContexts: Set<String>): Pair<flashcatContext, EventWriteScope>? {
+        return flashcatContextProvider() to { it.invoke(eventBatchWriter) }
     }
 
     override fun sendEvent(event: Any) {

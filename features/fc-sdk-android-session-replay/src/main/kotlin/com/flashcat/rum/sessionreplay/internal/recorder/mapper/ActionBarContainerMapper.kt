@@ -1,0 +1,71 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
+ * Copyright 2016-Present Datadog, Inc.
+ */
+
+package com.flashcat.rum.sessionreplay.internal.recorder.mapper
+
+import androidx.annotation.UiThread
+import androidx.appcompat.widget.ActionBarContainer
+import androidx.appcompat.widget.DatadogActionBarContainerAccessor
+import com.flashcat.rum.api.InternalLogger
+import com.flashcat.rum.sessionreplay.model.MobileSegment
+import com.flashcat.rum.sessionreplay.recorder.MappingContext
+import com.flashcat.rum.sessionreplay.recorder.mapper.BaseViewGroupMapper
+import com.flashcat.rum.sessionreplay.utils.AsyncJobStatusCallback
+import com.flashcat.rum.sessionreplay.utils.ColorStringFormatter
+import com.flashcat.rum.sessionreplay.utils.DrawableToColorMapper
+import com.flashcat.rum.sessionreplay.utils.ViewBoundsResolver
+import com.flashcat.rum.sessionreplay.utils.ViewIdentifierResolver
+
+internal class ActionBarContainerMapper(
+    viewIdentifierResolver: ViewIdentifierResolver,
+    colorStringFormatter: ColorStringFormatter,
+    viewBoundsResolver: ViewBoundsResolver,
+    drawableToColorMapper: DrawableToColorMapper
+) : BaseViewGroupMapper<ActionBarContainer>(
+    viewIdentifierResolver,
+    colorStringFormatter,
+    viewBoundsResolver,
+    drawableToColorMapper
+) {
+
+    // Error: ActionBarContainer can only be accessed from within the same library group prefix
+    @Suppress("RestrictedApi")
+    @UiThread
+    override fun map(
+        view: ActionBarContainer,
+        mappingContext: MappingContext,
+        asyncJobStatusCallback: AsyncJobStatusCallback,
+        internalLogger: InternalLogger
+    ): List<MobileSegment.Wireframe> {
+        // The ActionBarContainer uses an internal Drawable implementation that redirects to some fields in the
+        // ActionBarContainer class. It uses an ActionBarContainer.mBackground field (not to be confused with the
+        // View.mBackground field which has a getBackground() accessor.
+        // Fortunately, the ActionBarContainer.mBackground field we're interested in is package private,
+        // which allows us to access it via the DatadogActionBarContainerAccessor.
+        val background = DatadogActionBarContainerAccessor(view).getBackgroundDrawable()
+        val shapeStyle = background?.let { resolveShapeStyle(it, view.alpha, internalLogger) }
+        val id = viewIdentifierResolver.resolveChildUniqueIdentifier(view, PREFIX_BACKGROUND_DRAWABLE)
+
+        if ((shapeStyle != null) && (id != null)) {
+            val density = mappingContext.systemInformation.screenDensity
+            val bounds = viewBoundsResolver.resolveViewGlobalBounds(view, density)
+
+            return listOf(
+                MobileSegment.Wireframe.ShapeWireframe(
+                    id,
+                    x = bounds.x,
+                    y = bounds.y,
+                    width = bounds.width,
+                    height = bounds.height,
+                    shapeStyle = shapeStyle,
+                    border = null
+                )
+            )
+        } else {
+            return emptyList()
+        }
+    }
+}

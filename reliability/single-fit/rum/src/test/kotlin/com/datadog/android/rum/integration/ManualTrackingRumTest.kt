@@ -1,27 +1,27 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.rum.integration
+package com.flashcat.rum.rum.integration
 
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.core.stub.StubSDKCore
-import com.datadog.android.rum.ExperimentalRumApi
-import com.datadog.android.rum.GlobalRumMonitor
-import com.datadog.android.rum.Rum
-import com.datadog.android.rum.RumActionType
-import com.datadog.android.rum.RumConfiguration
-import com.datadog.android.rum.RumErrorSource
-import com.datadog.android.rum.RumResourceKind
-import com.datadog.android.rum.RumResourceMethod
-import com.datadog.android.rum.integration.tests.assertj.hasRumEvent
-import com.datadog.android.rum.integration.tests.elmyr.RumIntegrationForgeConfigurator
-import com.datadog.android.rum.integration.tests.utils.MainLooperTestConfiguration
-import com.datadog.android.rum.internal.monitor.AdvancedNetworkRumMonitor
-import com.datadog.android.rum.resource.ResourceId
-import com.datadog.android.tests.assertj.StubEventsAssert.Companion.assertThat
+import com.flashcat.rum.api.feature.Feature
+import com.flashcat.rum.core.stub.StubSDKCore
+import com.flashcat.rum.rum.ExperimentalRumApi
+import com.flashcat.rum.rum.GlobalRumMonitor
+import com.flashcat.rum.rum.Rum
+import com.flashcat.rum.rum.RumActionType
+import com.flashcat.rum.rum.RumConfiguration
+import com.flashcat.rum.rum.RumErrorSource
+import com.flashcat.rum.rum.RumResourceKind
+import com.flashcat.rum.rum.RumResourceMethod
+import com.flashcat.rum.rum.integration.tests.assertj.hasRumEvent
+import com.flashcat.rum.rum.integration.tests.elmyr.RumIntegrationForgeConfigurator
+import com.flashcat.rum.rum.integration.tests.utils.MainLooperTestConfiguration
+import com.flashcat.rum.rum.internal.monitor.AdvancedNetworkRumMonitor
+import com.flashcat.rum.rum.resource.ResourceId
+import com.flashcat.rum.tests.assertj.StubEventsAssert.Companion.assertThat
 import com.datadog.tools.unit.annotations.TestConfigurationsProvider
 import com.datadog.tools.unit.extensions.TestConfigurationExtension
 import com.datadog.tools.unit.extensions.config.TestConfiguration
@@ -103,7 +103,7 @@ class ManualTrackingRumTest {
         assertThat(eventsWritten)
             .hasSize(1)
             .hasRumEvent(index = 0) {
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -130,7 +130,7 @@ class ManualTrackingRumTest {
         assertThat(eventsWritten)
             .hasSize(2)
             .hasRumEvent(index = 0) {
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -141,7 +141,7 @@ class ManualTrackingRumTest {
                 hasDocumentVersion(1)
             }
             .hasRumEvent(index = 1) {
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -173,7 +173,7 @@ class ManualTrackingRumTest {
         assertThat(eventsWritten)
             .hasSize(2)
             .hasRumEvent(index = 0) {
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -184,7 +184,7 @@ class ManualTrackingRumTest {
                 hasDocumentVersion(1)
             }
             .hasRumEvent(index = 1) {
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -218,7 +218,7 @@ class ManualTrackingRumTest {
             .hasSize(4)
             .hasRumEvent(index = 0) {
                 // Initial view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -230,7 +230,7 @@ class ManualTrackingRumTest {
             }
             .hasRumEvent(index = 1) {
                 // Custom event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -241,7 +241,7 @@ class ManualTrackingRumTest {
             }
             .hasRumEvent(index = 2) {
                 // View updated with event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -254,7 +254,7 @@ class ManualTrackingRumTest {
             }
             .hasRumEvent(index = 3) {
                 // View updated with FF
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -288,7 +288,7 @@ class ManualTrackingRumTest {
             .hasSize(4)
             .hasRumEvent(index = 0) {
                 // Initial view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -300,7 +300,7 @@ class ManualTrackingRumTest {
             }
             .hasRumEvent(index = 1) {
                 // Custom event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -310,7 +310,7 @@ class ManualTrackingRumTest {
             }
             .hasRumEvent(index = 2) {
                 // View updated with event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -322,7 +322,7 @@ class ManualTrackingRumTest {
             }
             .hasRumEvent(index = 3) {
                 // View updated with FF
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -357,7 +357,7 @@ class ManualTrackingRumTest {
             .hasSize(4)
             .hasRumEvent(index = 0) {
                 // Initial view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -369,7 +369,7 @@ class ManualTrackingRumTest {
             }
             .hasRumEvent(index = 1) {
                 // Custom event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -380,7 +380,7 @@ class ManualTrackingRumTest {
             }
             .hasRumEvent(index = 2) {
                 // View updated with event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -391,7 +391,7 @@ class ManualTrackingRumTest {
             }
             .hasRumEvent(index = 3) {
                 // View stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -428,7 +428,7 @@ class ManualTrackingRumTest {
             .hasSize(4)
             .hasRumEvent(index = 0) {
                 // Initial view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -440,7 +440,7 @@ class ManualTrackingRumTest {
             }
             .hasRumEvent(index = 1) {
                 // Custom event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -451,7 +451,7 @@ class ManualTrackingRumTest {
             }
             .hasRumEvent(index = 2) {
                 // View updated with event
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -462,7 +462,7 @@ class ManualTrackingRumTest {
             }
             .hasRumEvent(index = 3) {
                 // View stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -499,7 +499,7 @@ class ManualTrackingRumTest {
             .hasSize(2)
             .hasRumEvent(index = 0) {
                 // Initial view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -511,7 +511,7 @@ class ManualTrackingRumTest {
             }
             .hasRumEvent(index = 1) {
                 // view updated with loading time
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -546,7 +546,7 @@ class ManualTrackingRumTest {
             .hasSize(2)
             .hasRumEvent(index = 0) {
                 // Initial view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -558,7 +558,7 @@ class ManualTrackingRumTest {
             }
             .hasRumEvent(index = 1) {
                 // view stopped
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -596,7 +596,7 @@ class ManualTrackingRumTest {
             .hasSize(3)
             .hasRumEvent(index = 0) {
                 // Initial view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -608,7 +608,7 @@ class ManualTrackingRumTest {
             }
             .hasRumEvent(index = 1) {
                 // first view loading time
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -622,7 +622,7 @@ class ManualTrackingRumTest {
             }
             .hasRumEvent(index = 2) {
                 // second view loading time
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -661,7 +661,7 @@ class ManualTrackingRumTest {
             .hasSize(2)
             .hasRumEvent(index = 0) {
                 // Initial view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -673,7 +673,7 @@ class ManualTrackingRumTest {
             }
             .hasRumEvent(index = 1) {
                 // first view loading time
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -717,7 +717,7 @@ class ManualTrackingRumTest {
             .hasSize(1)
             .hasRumEvent(index = 0) {
                 // Initial view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -759,7 +759,7 @@ class ManualTrackingRumTest {
             .hasSize(1)
             .hasRumEvent(index = 0) {
                 // Initial view
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")

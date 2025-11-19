@@ -1,28 +1,28 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.rum.integration
+package com.flashcat.rum.rum.integration
 
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.StorageBackedFeature
-import com.datadog.android.api.net.RequestExecutionContext
-import com.datadog.android.core.stub.StubSDKCore
-import com.datadog.android.rum.GlobalRumMonitor
-import com.datadog.android.rum.Rum
-import com.datadog.android.rum.RumActionType
-import com.datadog.android.rum.RumConfiguration
-import com.datadog.android.rum.RumErrorSource
-import com.datadog.android.rum.RumResourceKind
-import com.datadog.android.rum.RumResourceMethod
-import com.datadog.android.rum.RumSessionListener
-import com.datadog.android.rum.integration.tests.assertj.hasRumEvent
-import com.datadog.android.rum.integration.tests.elmyr.RumIntegrationForgeConfigurator
-import com.datadog.android.rum.integration.tests.utils.MainLooperTestConfiguration
-import com.datadog.android.rum.integration.tests.utils.RumBatchEvent
-import com.datadog.android.tests.assertj.StubEventsAssert.Companion.assertThat
+import com.flashcat.rum.api.feature.Feature
+import com.flashcat.rum.api.feature.StorageBackedFeature
+import com.flashcat.rum.api.net.RequestExecutionContext
+import com.flashcat.rum.core.stub.StubSDKCore
+import com.flashcat.rum.rum.GlobalRumMonitor
+import com.flashcat.rum.rum.Rum
+import com.flashcat.rum.rum.RumActionType
+import com.flashcat.rum.rum.RumConfiguration
+import com.flashcat.rum.rum.RumErrorSource
+import com.flashcat.rum.rum.RumResourceKind
+import com.flashcat.rum.rum.RumResourceMethod
+import com.flashcat.rum.rum.RumSessionListener
+import com.flashcat.rum.rum.integration.tests.assertj.hasRumEvent
+import com.flashcat.rum.rum.integration.tests.elmyr.RumIntegrationForgeConfigurator
+import com.flashcat.rum.rum.integration.tests.utils.MainLooperTestConfiguration
+import com.flashcat.rum.rum.integration.tests.utils.RumBatchEvent
+import com.flashcat.rum.tests.assertj.StubEventsAssert.Companion.assertThat
 import com.datadog.tools.unit.annotations.TestConfigurationsProvider
 import com.datadog.tools.unit.extensions.TestConfigurationExtension
 import com.datadog.tools.unit.extensions.config.TestConfiguration
@@ -323,11 +323,11 @@ class RumConfigurationTest {
         @StringForgery fakeMetadata: String
     ) {
         // Given
-        val datadogContext = stubSdkCore.getDatadogContext()
-        val expectedSite = datadogContext.site
-        val expectedClientToken = datadogContext.clientToken
-        val expectedSource = datadogContext.source
-        val expectedSdkVersion = datadogContext.sdkVersion
+        val flashcatContext = stubSdkCore.getFlashcatContext()
+        val expectedSite = flashcatContext.site
+        val expectedClientToken = flashcatContext.clientToken
+        val expectedSource = flashcatContext.source
+        val expectedSdkVersion = flashcatContext.sdkVersion
         val expectedTags = listOf(
             "retry_count" to fakeExecutionContext.previousResponseCode?.let { fakeExecutionContext.attemptNumber },
             "last_failure_status" to fakeExecutionContext.previousResponseCode
@@ -344,7 +344,7 @@ class RumConfigurationTest {
         val rumFeature = stubSdkCore.getFeature(Feature.RUM_FEATURE_NAME)?.unwrap<StorageBackedFeature>()
         val requestFactory = rumFeature?.requestFactory
         val request = requestFactory?.create(
-            datadogContext,
+            flashcatContext,
             fakeExecutionContext,
             fakeBatch,
             fakeMetadata.toByteArray()
@@ -374,10 +374,10 @@ class RumConfigurationTest {
         @StringForgery fakeMetadata: String
     ) {
         // Given
-        val datadogContext = stubSdkCore.getDatadogContext()
-        val expectedClientToken = datadogContext.clientToken
-        val expectedSource = datadogContext.source
-        val expectedSdkVersion = datadogContext.sdkVersion
+        val flashcatContext = stubSdkCore.getFlashcatContext()
+        val expectedClientToken = flashcatContext.clientToken
+        val expectedSource = flashcatContext.source
+        val expectedSdkVersion = flashcatContext.sdkVersion
         val expectedTags = listOf(
             "retry_count" to fakeExecutionContext.previousResponseCode?.let { fakeExecutionContext.attemptNumber },
             "last_failure_status" to fakeExecutionContext.previousResponseCode
@@ -395,7 +395,7 @@ class RumConfigurationTest {
         val rumFeature = stubSdkCore.getFeature(Feature.RUM_FEATURE_NAME)?.unwrap<StorageBackedFeature>()
         val requestFactory = rumFeature?.requestFactory
         val request = requestFactory?.create(
-            datadogContext,
+            flashcatContext,
             fakeExecutionContext,
             fakeBatch,
             fakeMetadata.toByteArray()

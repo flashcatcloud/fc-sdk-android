@@ -1,17 +1,17 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.api.feature.stub
+package com.flashcat.rum.api.feature.stub
 
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.net.Request
-import com.datadog.android.api.net.RequestExecutionContext
-import com.datadog.android.api.net.RequestFactory
-import com.datadog.android.api.storage.RawBatchEvent
-import com.datadog.android.core.internal.utils.join
+import com.flashcat.rum.api.context.FlashcatContext
+import com.flashcat.rum.api.net.Request
+import com.flashcat.rum.api.net.RequestExecutionContext
+import com.flashcat.rum.api.net.RequestFactory
+import com.flashcat.rum.api.storage.RawBatchEvent
+import com.flashcat.rum.core.internal.utils.join
 import fr.xgouchet.elmyr.Forge
 import org.json.JSONObject
 import org.mockito.kotlin.mock
@@ -26,7 +26,7 @@ class StubRequestFactory(
 ) : RequestFactory {
 
     override fun create(
-        context: DatadogContext,
+        context: FlashcatContext,
         executionContext: RequestExecutionContext,
         batchData: List<RawBatchEvent>,
         batchMetadata: ByteArray?

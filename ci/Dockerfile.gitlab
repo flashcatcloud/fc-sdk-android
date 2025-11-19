@@ -99,13 +99,13 @@ RUN set -x \
     && nodenv install $NODENV_VERSION \
     && nodenv rehash
 
-# Install Datadog CI
+# Install flashcat CI
 RUN npm install -g npm@9.6.5
-RUN npm install -g @datadog/datadog-ci
+RUN npm install -g @flashcat/flashcat-ci
 
-# Install Datadog Java tracer
+# Install flashcat Java tracer
 ENV DD_TRACER_FOLDER $PWD/dd-java-agent
 RUN mkdir -p $DD_TRACER_FOLDER
-RUN wget -O $DD_TRACER_FOLDER/dd-java-agent.jar https://repo1.maven.org/maven2/com/datadoghq/dd-java-agent/$DD_TRACER_VERSION/dd-java-agent-$DD_TRACER_VERSION.jar
+RUN wget -O $DD_TRACER_FOLDER/dd-java-agent.jar https://repo1.maven.org/maven2/com/flashcathq/dd-java-agent/$DD_TRACER_VERSION/dd-java-agent-$DD_TRACER_VERSION.jar
 
 COPY --from=registry.ddbuild.io/dd-octo-sts:v1.8.2 /usr/local/bin/dd-octo-sts /usr/local/bin/dd-octo-sts

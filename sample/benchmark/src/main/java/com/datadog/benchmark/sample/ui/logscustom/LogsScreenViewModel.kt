@@ -1,6 +1,6 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
@@ -9,7 +9,7 @@ package com.datadog.benchmark.sample.ui.logscustom
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.datadog.android.log.Logger
+import com.flashcat.rum.log.Logger
 import com.datadog.benchmark.sample.ui.LogPayloadSize
 import com.datadog.benchmark.sample.ui.createLogAttributes
 import kotlinx.coroutines.CoroutineDispatcher

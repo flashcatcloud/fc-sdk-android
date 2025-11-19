@@ -1,13 +1,13 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.sample.data.remote
+package com.flashcat.rum.sample.data.remote
 
-import com.datadog.android.sample.BuildConfig
-import com.datadog.android.sample.data.model.LogsCollection
+import com.flashcat.rum.sample.BuildConfig
+import com.flashcat.rum.sample.data.model.LogsCollection
 import io.reactivex.rxjava3.core.Single
 import retrofit2.http.GET
 import retrofit2.http.Headers

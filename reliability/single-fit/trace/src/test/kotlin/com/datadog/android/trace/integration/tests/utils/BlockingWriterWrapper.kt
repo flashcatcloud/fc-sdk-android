@@ -1,10 +1,10 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.trace.integration.tests.utils
+package com.flashcat.rum.trace.integration.tests.utils
 
 import com.datadog.trace.common.writer.Writer
 import com.datadog.trace.core.DDSpan

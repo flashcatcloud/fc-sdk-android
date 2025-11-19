@@ -1,19 +1,19 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
-package com.datadog.android.sample.vitals
+package com.flashcat.rum.sample.vitals
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.os.Handler
 import android.os.Looper
 import androidx.lifecycle.ViewModel
-import com.datadog.android.rum.ExperimentalRumApi
-import com.datadog.android.rum.GlobalRumMonitor
-import com.datadog.android.rum.RumActionType
-import com.datadog.android.rum.featureoperations.FailureReason
+import com.flashcat.rum.rum.ExperimentalRumApi
+import com.flashcat.rum.rum.GlobalRumMonitor
+import com.flashcat.rum.rum.RumActionType
+import com.flashcat.rum.rum.featureoperations.FailureReason
 import timber.log.Timber
 import java.security.SecureRandom
 

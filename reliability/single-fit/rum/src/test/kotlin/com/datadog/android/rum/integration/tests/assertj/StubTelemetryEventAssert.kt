@@ -1,12 +1,12 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.rum.integration.tests.assertj
+package com.flashcat.rum.rum.integration.tests.assertj
 
-import com.datadog.android.core.stub.StubTelemetryEvent
+import com.flashcat.rum.core.stub.StubTelemetryEvent
 import com.datadog.tools.unit.assertj.JsonObjectAssert.Companion.assertThat
 import com.google.gson.Gson
 import org.assertj.core.api.AbstractObjectAssert

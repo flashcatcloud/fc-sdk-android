@@ -1,27 +1,27 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.wear.sample
+package com.flashcat.rum.wear.sample
 
 import android.app.Application
 import android.util.Log
-import com.datadog.android.Datadog
-import com.datadog.android.DatadogSite
-import com.datadog.android.core.configuration.Configuration
-import com.datadog.android.log.Logs
-import com.datadog.android.log.LogsConfiguration
-import com.datadog.android.privacy.TrackingConsent
-import com.datadog.android.rum.Rum
-import com.datadog.android.rum.RumConfiguration
-import com.datadog.android.rum.tracking.ActivityViewTrackingStrategy
-import com.datadog.android.trace.DatadogTracing
-import com.datadog.android.trace.GlobalDatadogTracer
-import com.datadog.android.trace.Trace
-import com.datadog.android.trace.TraceConfiguration
-import com.datadog.android.trace.opentelemetry.DatadogOpenTelemetry
+import com.flashcat.rum.Flashcat
+import com.flashcat.rum.FlashcatSite
+import com.flashcat.rum.core.configuration.Configuration
+import com.flashcat.rum.log.Logs
+import com.flashcat.rum.log.LogsConfiguration
+import com.flashcat.rum.privacy.TrackingConsent
+import com.flashcat.rum.rum.Rum
+import com.flashcat.rum.rum.RumConfiguration
+import com.flashcat.rum.rum.tracking.ActivityViewTrackingStrategy
+import com.flashcat.rum.trace.DatadogTracing
+import com.flashcat.rum.trace.GlobalDatadogTracer
+import com.flashcat.rum.trace.Trace
+import com.flashcat.rum.trace.TraceConfiguration
+import com.flashcat.rum.trace.opentelemetry.DatadogOpenTelemetry
 import io.opentelemetry.api.GlobalOpenTelemetry
 import timber.log.Timber
 
@@ -104,7 +104,7 @@ class WearApplication : Application() {
         )
 
         try {
-            configBuilder.useSite(DatadogSite.valueOf(BuildConfig.DD_SITE_NAME))
+            configBuilder.useSite(FlashcatSite.valueOf(BuildConfig.DD_SITE_NAME))
         } catch (e: IllegalArgumentException) {
             Timber.e("Error setting site to ${BuildConfig.DD_SITE_NAME}")
         }

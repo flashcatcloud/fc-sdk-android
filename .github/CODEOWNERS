@@ -1,8 +1,8 @@
 # Global code owners - RUM Mobile Team
 
-* @DataDog/rum-mobile @DataDog/rum-mobile-android
+* @flashcat/rum-mobile @flashcat/rum-mobile-android
 
 ## Docs
 
-/docs/ @DataDog/documentation @DataDog/rum-mobile 
-*README.md @DataDog/documentation @DataDog/rum-mobile 
+/docs/ @flashcat/documentation @flashcat/rum-mobile 
+*README.md @flashcat/documentation @flashcat/rum-mobile 

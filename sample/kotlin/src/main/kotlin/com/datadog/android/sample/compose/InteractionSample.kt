@@ -1,12 +1,12 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
 @file:OptIn(ExperimentalMaterialApi::class)
 
-package com.datadog.android.sample.compose
+package com.flashcat.rum.sample.compose
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
@@ -35,8 +35,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import com.datadog.android.compose.InteractionType
-import com.datadog.android.compose.TrackInteractionEffect
+import com.flashcat.rum.compose.InteractionType
+import com.flashcat.rum.compose.TrackInteractionEffect
 import kotlin.math.roundToInt
 
 @Suppress("MagicNumber")

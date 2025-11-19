@@ -1,15 +1,15 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.trace.integration.tests.assertj
+package com.flashcat.rum.trace.integration.tests.assertj
 
-import com.datadog.android.tests.ktx.getDouble
-import com.datadog.android.tests.ktx.getInt
-import com.datadog.android.tests.ktx.getLong
-import com.datadog.android.tests.ktx.getString
+import com.flashcat.rum.tests.ktx.getDouble
+import com.flashcat.rum.tests.ktx.getInt
+import com.flashcat.rum.tests.ktx.getLong
+import com.flashcat.rum.tests.ktx.getString
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import org.assertj.core.api.AbstractObjectAssert

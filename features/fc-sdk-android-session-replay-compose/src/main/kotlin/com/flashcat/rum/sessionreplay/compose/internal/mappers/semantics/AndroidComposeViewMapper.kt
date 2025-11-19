@@ -1,0 +1,51 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
+ * Copyright 2016-Present Datadog, Inc.
+ */
+
+@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+
+package com.flashcat.rum.sessionreplay.compose.internal.mappers.semantics
+
+import androidx.annotation.UiThread
+import androidx.compose.ui.platform.AndroidComposeView
+import com.flashcat.rum.api.InternalLogger
+import com.flashcat.rum.sessionreplay.model.MobileSegment
+import com.flashcat.rum.sessionreplay.recorder.MappingContext
+import com.flashcat.rum.sessionreplay.recorder.mapper.BaseWireframeMapper
+import com.flashcat.rum.sessionreplay.utils.AsyncJobStatusCallback
+import com.flashcat.rum.sessionreplay.utils.ColorStringFormatter
+import com.flashcat.rum.sessionreplay.utils.DrawableToColorMapper
+import com.flashcat.rum.sessionreplay.utils.ViewBoundsResolver
+import com.flashcat.rum.sessionreplay.utils.ViewIdentifierResolver
+
+internal class AndroidComposeViewMapper(
+    viewIdentifierResolver: ViewIdentifierResolver,
+    colorStringFormatter: ColorStringFormatter,
+    viewBoundsResolver: ViewBoundsResolver,
+    drawableToColorMapper: DrawableToColorMapper,
+    private val rootSemanticsNodeMapper: RootSemanticsNodeMapper
+) : BaseWireframeMapper<AndroidComposeView>(
+    viewIdentifierResolver,
+    colorStringFormatter,
+    viewBoundsResolver,
+    drawableToColorMapper
+) {
+    @UiThread
+    override fun map(
+        view: AndroidComposeView,
+        mappingContext: MappingContext,
+        asyncJobStatusCallback: AsyncJobStatusCallback,
+        internalLogger: InternalLogger
+    ): List<MobileSegment.Wireframe> {
+        val density =
+            mappingContext.systemInformation.screenDensity.let { if (it == 0.0f) 1.0f else it }
+        return rootSemanticsNodeMapper.createComposeWireframes(
+            view.semanticsOwner.unmergedRootSemanticsNode,
+            density,
+            mappingContext,
+            asyncJobStatusCallback
+        )
+    }
+}

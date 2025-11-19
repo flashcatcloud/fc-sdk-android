@@ -4,10 +4,10 @@
  * Copyright 2016-Present Datadog, Inc.
  */
 
-import com.datadog.gradle.androidTestImplementation
-import com.datadog.gradle.config.AndroidConfig
-import com.datadog.gradle.config.java17
-import com.datadog.gradle.config.kotlinConfig
+import com.flashcat.gradle.androidTestImplementation
+import com.flashcat.gradle.config.AndroidConfig
+import com.flashcat.gradle.config.java17
+import com.flashcat.gradle.config.kotlinConfig
 
 plugins {
     id("com.android.application")
@@ -36,7 +36,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    namespace = "com.datadog.android.sdk.integration"
+    namespace = "com.flashcat.rum.sdk.integration"
 
     testOptions {
         unitTests.isReturnDefaultValues = true
@@ -54,7 +54,7 @@ android {
 
     compileOptions {
         java17()
-        if (project.hasProperty(com.datadog.gradle.Properties.USE_DESUGARING)) {
+        if (project.hasProperty(com.flashcat.gradle.Properties.USE_DESUGARING)) {
             isCoreLibraryDesugaringEnabled = true
         }
     }
@@ -88,15 +88,15 @@ repositories {
 }
 
 dependencies {
-    if (project.hasProperty(com.datadog.gradle.Properties.USE_DESUGARING)) {
+    if (project.hasProperty(com.flashcat.gradle.Properties.USE_DESUGARING)) {
         coreLibraryDesugaring(libs.androidDesugaringSdk)
     }
-    implementation(project(":features:dd-sdk-android-session-replay"))
-    implementation(project(":features:dd-sdk-android-logs"))
-    implementation(project(":features:dd-sdk-android-trace"))
-    implementation(project(":features:dd-sdk-android-rum"))
-    implementation(project(":dd-sdk-android-internal"))
-    implementation(project(":integrations:dd-sdk-android-okhttp"))
+    implementation(project(":features:fc-sdk-android-session-replay"))
+    implementation(project(":features:fc-sdk-android-logs"))
+    implementation(project(":features:fc-sdk-android-trace"))
+    implementation(project(":features:fc-sdk-android-rum"))
+    implementation(project(":fc-sdk-android-internal"))
+    implementation(project(":integrations:fc-sdk-android-okhttp"))
 
     implementation(libs.gson)
     implementation(libs.kotlin)
@@ -104,7 +104,7 @@ dependencies {
     implementation(libs.androidXMultidex)
     implementation(libs.elmyr)
 
-    androidTestImplementation(project(":dd-sdk-android-internal"))
+    androidTestImplementation(project(":fc-sdk-android-internal"))
     androidTestImplementation(project(":tools:unit")) {
         attributes {
             attribute(
@@ -116,9 +116,9 @@ dependencies {
     androidTestImplementation(libs.assertJ)
     androidTestImplementation(libs.bundles.integrationTests)
     androidTestImplementation(libs.okHttpMock)
-    androidTestImplementation(project(":features:dd-sdk-android-trace-internal"))
-    androidTestImplementation(testFixtures(project(":features:dd-sdk-android-trace")))
-    if (project.hasProperty(com.datadog.gradle.Properties.USE_API21_JAVA_BACKPORT)) {
+    androidTestImplementation(project(":features:fc-sdk-android-trace-internal"))
+    androidTestImplementation(testFixtures(project(":features:fc-sdk-android-trace")))
+    if (project.hasProperty(com.flashcat.gradle.Properties.USE_API21_JAVA_BACKPORT)) {
         // this is needed to make AssertJ working on APIs <24
         androidTestImplementation(project(":tools:javabackport"))
     }

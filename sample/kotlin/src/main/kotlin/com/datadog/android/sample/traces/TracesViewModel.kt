@@ -1,27 +1,27 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.sample.traces
+package com.flashcat.rum.sample.traces
 
 import android.os.AsyncTask
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import com.datadog.android.log.Logger
-import com.datadog.android.rum.coroutines.sendErrorToDatadog
-import com.datadog.android.sample.BuildConfig
-import com.datadog.android.sample.data.Result
-import com.datadog.android.trace.GlobalDatadogTracer
-import com.datadog.android.trace.api.span.DatadogSpan
-import com.datadog.android.trace.coroutines.CoroutineScopeSpan
-import com.datadog.android.trace.coroutines.asyncTraced
-import com.datadog.android.trace.coroutines.awaitTraced
-import com.datadog.android.trace.coroutines.launchTraced
-import com.datadog.android.trace.coroutines.withContextTraced
-import com.datadog.android.trace.withinSpan
-import com.datadog.android.vendor.sample.LocalServer
+import com.flashcat.rum.log.Logger
+import com.flashcat.rum.rum.coroutines.sendErrorToDatadog
+import com.flashcat.rum.sample.BuildConfig
+import com.flashcat.rum.sample.data.Result
+import com.flashcat.rum.trace.GlobalDatadogTracer
+import com.flashcat.rum.trace.api.span.DatadogSpan
+import com.flashcat.rum.trace.coroutines.CoroutineScopeSpan
+import com.flashcat.rum.trace.coroutines.asyncTraced
+import com.flashcat.rum.trace.coroutines.awaitTraced
+import com.flashcat.rum.trace.coroutines.launchTraced
+import com.flashcat.rum.trace.coroutines.withContextTraced
+import com.flashcat.rum.trace.withinSpan
+import com.flashcat.rum.vendor.sample.LocalServer
 import com.launchdarkly.eventsource.EventHandler
 import com.launchdarkly.eventsource.EventSource
 import com.launchdarkly.eventsource.MessageEvent
@@ -52,7 +52,7 @@ internal class TracesViewModel(
     private val scope = MainScope()
 
     fun onResume() {
-        localServer.start("https://www.datadoghq.com/")
+        localServer.start("https://flashcat.cloud/")
     }
 
     fun onPause() {
@@ -100,7 +100,7 @@ internal class TracesViewModel(
         onCancel: () -> Unit
     ) {
         networkRequestTask = GetRequestTask(
-            "https://www.datadoghq.com/notfound",
+            "https://flashcat.cloud/notfound",
             okHttpClient,
             onResponse,
             onException,

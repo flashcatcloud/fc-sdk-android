@@ -1,0 +1,44 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
+ * Copyright 2016-Present Datadog, Inc.
+ */
+
+package com.flashcat.rum.sessionreplay.internal.recorder
+
+import android.view.View
+import android.view.ViewTreeObserver
+import com.flashcat.rum.api.feature.FeatureSdkCore
+import com.flashcat.rum.core.metrics.MethodCallSamplingRate
+import com.flashcat.rum.sessionreplay.ImagePrivacy
+import com.flashcat.rum.sessionreplay.TextAndInputPrivacy
+import com.flashcat.rum.sessionreplay.internal.TouchPrivacyManager
+import com.flashcat.rum.sessionreplay.internal.async.RecordedDataQueueHandler
+import com.flashcat.rum.sessionreplay.internal.recorder.listener.WindowsOnDrawListener
+
+internal class DefaultOnDrawListenerProducer(
+    private val snapshotProducer: SnapshotProducer,
+    private val recordedDataQueueHandler: RecordedDataQueueHandler,
+    private val sdkCore: FeatureSdkCore,
+    private val dynamicOptimizationEnabled: Boolean
+) : OnDrawListenerProducer {
+
+    override fun create(
+        decorViews: List<View>,
+        textAndInputPrivacy: TextAndInputPrivacy,
+        imagePrivacy: ImagePrivacy,
+        touchPrivacyManager: TouchPrivacyManager
+    ): ViewTreeObserver.OnDrawListener {
+        return WindowsOnDrawListener(
+            zOrderedDecorViews = decorViews,
+            recordedDataQueueHandler = recordedDataQueueHandler,
+            snapshotProducer = snapshotProducer,
+            textAndInputPrivacy = textAndInputPrivacy,
+            imagePrivacy = imagePrivacy,
+            sdkCore = sdkCore,
+            methodCallSamplingRate = MethodCallSamplingRate.LOW.rate,
+            dynamicOptimizationEnabled = dynamicOptimizationEnabled,
+            touchPrivacyManager = touchPrivacyManager
+        )
+    }
+}

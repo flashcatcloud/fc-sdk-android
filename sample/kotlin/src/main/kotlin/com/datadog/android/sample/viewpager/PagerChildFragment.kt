@@ -1,10 +1,10 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.sample.viewpager
+package com.flashcat.rum.sample.viewpager
 
 import android.annotation.SuppressLint
 import android.os.Bundle
@@ -15,10 +15,10 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.TextView
 import androidx.fragment.app.Fragment
-import com.datadog.android.rum.ExperimentalRumApi
-import com.datadog.android.rum.GlobalRumMonitor
-import com.datadog.android.sample.R
-import com.datadog.android.webview.WebViewTracking
+import com.flashcat.rum.rum.ExperimentalRumApi
+import com.flashcat.rum.rum.GlobalRumMonitor
+import com.flashcat.rum.sample.R
+import com.flashcat.rum.webview.WebViewTracking
 
 internal open class PagerChildFragment : Fragment() {
 
@@ -26,7 +26,7 @@ internal open class PagerChildFragment : Fragment() {
         get() = requireArguments().getString(ARG_PAGE_NAME) ?: "UNKNOWN"
 
     private val webViewUrl: String
-        get() = requireArguments().getString(ARG_WEB_VIEW_URL) ?: "https://datadoghq.com"
+        get() = requireArguments().getString(ARG_WEB_VIEW_URL) ?: "https://flashcat.cloud"
 
     private val webViewTrackingHosts = listOf(
         "datadoghq.dev"

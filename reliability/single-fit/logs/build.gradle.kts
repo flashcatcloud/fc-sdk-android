@@ -4,10 +4,10 @@
  * Copyright 2016-Present Datadog, Inc.
  */
 
-import com.datadog.gradle.config.androidLibraryConfig
-import com.datadog.gradle.config.dependencyUpdateConfig
-import com.datadog.gradle.config.junitConfig
-import com.datadog.gradle.config.kotlinConfig
+import com.flashcat.gradle.config.androidLibraryConfig
+import com.flashcat.gradle.config.dependencyUpdateConfig
+import com.flashcat.gradle.config.junitConfig
+import com.flashcat.gradle.config.kotlinConfig
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -24,12 +24,12 @@ plugins {
 }
 
 android {
-    namespace = "com.datadog.android.logs.integration"
+    namespace = "com.flashcat.rum.logs.integration"
 }
 
 dependencies {
-    implementation(project(":dd-sdk-android-core"))
-    implementation(project(":features:dd-sdk-android-logs"))
+    implementation(project(":fc-sdk-android-core"))
+    implementation(project(":features:fc-sdk-android-logs"))
     implementation(libs.kotlin)
 
     // Testing
@@ -41,7 +41,7 @@ dependencies {
             )
         }
     }
-    testImplementation(testFixtures(project(":dd-sdk-android-core")))
+    testImplementation(testFixtures(project(":fc-sdk-android-core")))
     testImplementation(project(":reliability:stub-core"))
     testImplementation(libs.bundles.jUnit5)
     testImplementation(libs.bundles.testTools)

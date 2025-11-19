@@ -39,12 +39,12 @@ stages:
     - if [[ "$exit_code" -ne 0 ]]; then exit 1; fi
     - exit 0
   set-publishing-credentials:
-    - aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.gradle-properties --with-decryption --query "Parameter.Value" --out text >> ./gradle.properties
-    - export GPG_PRIVATE_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.signing.gpg_private_key --with-decryption --query "Parameter.Value" --out text)
-    - export GPG_PASSWORD=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.signing.gpg_passphrase --with-decryption --query "Parameter.Value" --out text)
-    - export CENTRAL_PUBLISHER_USERNAME=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.publishing.central_username --with-decryption --query "Parameter.Value" --out text)
-    - export CENTRAL_PUBLISHER_PASSWORD=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.publishing.central_password --with-decryption --query "Parameter.Value" --out text)
-    - export GPG_PUBLIC_FINGERPRINT=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.signing.gpg_public_key --with-decryption --query "Parameter.Value" --out text | gpg --import --import-options show-only | grep -E -o -e "[A-F0-9]{40}")
+    - aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.gradle-properties --with-decryption --query "Parameter.Value" --out text >> ./gradle.properties
+    - export GPG_PRIVATE_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.signing.gpg_private_key --with-decryption --query "Parameter.Value" --out text)
+    - export GPG_PASSWORD=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.signing.gpg_passphrase --with-decryption --query "Parameter.Value" --out text)
+    - export CENTRAL_PUBLISHER_USERNAME=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.publishing.central_username --with-decryption --query "Parameter.Value" --out text)
+    - export CENTRAL_PUBLISHER_PASSWORD=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.publishing.central_password --with-decryption --query "Parameter.Value" --out text)
+    - export GPG_PUBLIC_FINGERPRINT=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.signing.gpg_public_key --with-decryption --query "Parameter.Value" --out text | gpg --import --import-options show-only | grep -E -o -e "[A-F0-9]{40}")
 
 # CI IMAGE
 
@@ -64,7 +64,7 @@ create_key:
   when: manual
   tags: [ "arch:amd64" ]
   variables:
-    PROJECT_NAME: "dd-sdk-android"
+    PROJECT_NAME: "fc-sdk-android"
     EXPORT_TO_KEYSERVER: "true"
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/agent-key-management-tools/gpg:1
   script:
@@ -100,31 +100,31 @@ analysis:detekt-custom:
     - ./gradlew :tools:detekt:jar --stacktrace
     - ./gradlew printDetektClasspath --stacktrace
     - curl -sSLO https://github.com/detekt/detekt/releases/download/v1.23.4/detekt-cli-1.23.4-all.jar
-    - ./gradlew :dd-sdk-android-core:customDetektRules
-    - ./gradlew :dd-sdk-android-internal:customDetektRules
-    - ./gradlew :features:dd-sdk-android-flags:customDetektRules
-    - ./gradlew :features:dd-sdk-android-logs:customDetektRules
-    - ./gradlew :features:dd-sdk-android-ndk:customDetektRules
-    - ./gradlew :features:dd-sdk-android-rum:customDetektRules
-    - ./gradlew :features:dd-sdk-android-session-replay:customDetektRules
-    - ./gradlew :features:dd-sdk-android-session-replay-material:customDetektRules
-    - ./gradlew :features:dd-sdk-android-session-replay-compose:customDetektRules
-    - ./gradlew :features:dd-sdk-android-trace-internal:customDetektRules
-    - ./gradlew :features:dd-sdk-android-trace:customDetektRules
-    - ./gradlew :features:dd-sdk-android-trace-otel:customDetektRules
-    - ./gradlew :features:dd-sdk-android-webview:customDetektRules
-    - ./gradlew :integrations:dd-sdk-android-coil:customDetektRules
-    - ./gradlew :integrations:dd-sdk-android-compose:customDetektRules
-    - ./gradlew :integrations:dd-sdk-android-fresco:customDetektRules
-    - ./gradlew :integrations:dd-sdk-android-glide:customDetektRules
-    - ./gradlew :integrations:dd-sdk-android-okhttp:customDetektRules
-    - ./gradlew :integrations:dd-sdk-android-okhttp-otel:customDetektRules
-    - ./gradlew :integrations:dd-sdk-android-rum-coroutines:customDetektRules
-    - ./gradlew :integrations:dd-sdk-android-rx:customDetektRules
-    - ./gradlew :integrations:dd-sdk-android-sqldelight:customDetektRules
-    - ./gradlew :integrations:dd-sdk-android-timber:customDetektRules
-    - ./gradlew :integrations:dd-sdk-android-trace-coroutines:customDetektRules
-    - ./gradlew :integrations:dd-sdk-android-tv:customDetektRules
+    - ./gradlew :fc-sdk-android-core:customDetektRules
+    - ./gradlew :fc-sdk-android-internal:customDetektRules
+    - ./gradlew :features:fc-sdk-android-flags:customDetektRules
+    - ./gradlew :features:fc-sdk-android-logs:customDetektRules
+    - ./gradlew :features:fc-sdk-android-ndk:customDetektRules
+    - ./gradlew :features:fc-sdk-android-rum:customDetektRules
+    - ./gradlew :features:fc-sdk-android-session-replay:customDetektRules
+    - ./gradlew :features:fc-sdk-android-session-replay-material:customDetektRules
+    - ./gradlew :features:fc-sdk-android-session-replay-compose:customDetektRules
+    - ./gradlew :features:fc-sdk-android-trace-internal:customDetektRules
+    - ./gradlew :features:fc-sdk-android-trace:customDetektRules
+    - ./gradlew :features:fc-sdk-android-trace-otel:customDetektRules
+    - ./gradlew :features:fc-sdk-android-webview:customDetektRules
+    - ./gradlew :integrations:fc-sdk-android-coil:customDetektRules
+    - ./gradlew :integrations:fc-sdk-android-compose:customDetektRules
+    - ./gradlew :integrations:fc-sdk-android-fresco:customDetektRules
+    - ./gradlew :integrations:fc-sdk-android-glide:customDetektRules
+    - ./gradlew :integrations:fc-sdk-android-okhttp:customDetektRules
+    - ./gradlew :integrations:fc-sdk-android-okhttp-otel:customDetektRules
+    - ./gradlew :integrations:fc-sdk-android-rum-coroutines:customDetektRules
+    - ./gradlew :integrations:fc-sdk-android-rx:customDetektRules
+    - ./gradlew :integrations:fc-sdk-android-sqldelight:customDetektRules
+    - ./gradlew :integrations:fc-sdk-android-timber:customDetektRules
+    - ./gradlew :integrations:fc-sdk-android-trace-coroutines:customDetektRules
+    - ./gradlew :integrations:fc-sdk-android-tv:customDetektRules
 
 
 # TODO RUM-1622 cleanup this section
@@ -144,8 +144,8 @@ test:debug:
   script:
     - rm -rf ~/.gradle/daemon/
     - export DD_AGENT_HOST="$BUILDENV_HOST_IP"
-    - GRADLE_OPTS="-Xmx3072m" DD_TAGS="test.configuration.variant:debug" ./gradlew :dd-sdk-android-core:testDebugUnitTest --no-daemon --build-cache --gradle-user-home cache/ -Dorg.gradle.jvmargs=-javaagent:$DD_TRACER_FOLDER/dd-java-agent.jar=$DD_COMMON_AGENT_CONFIG
-    - GRADLE_OPTS="-Xmx3072m" DD_TAGS="test.configuration.variant:debug" ./gradlew :dd-sdk-android-internal:testDebugUnitTest --no-daemon --build-cache --gradle-user-home cache/ -Dorg.gradle.jvmargs=-javaagent:$DD_TRACER_FOLDER/dd-java-agent.jar=$DD_COMMON_AGENT_CONFIG
+    - GRADLE_OPTS="-Xmx3072m" DD_TAGS="test.configuration.variant:debug" ./gradlew :fc-sdk-android-core:testDebugUnitTest --no-daemon --build-cache --gradle-user-home cache/ -Dorg.gradle.jvmargs=-javaagent:$DD_TRACER_FOLDER/dd-java-agent.jar=$DD_COMMON_AGENT_CONFIG
+    - GRADLE_OPTS="-Xmx3072m" DD_TAGS="test.configuration.variant:debug" ./gradlew :fc-sdk-android-internal:testDebugUnitTest --no-daemon --build-cache --gradle-user-home cache/ -Dorg.gradle.jvmargs=-javaagent:$DD_TRACER_FOLDER/dd-java-agent.jar=$DD_COMMON_AGENT_CONFIG
     - GRADLE_OPTS="-Xmx3072m" DD_TAGS="test.configuration.variant:debug" ./gradlew :unitTestDebugFeatures --no-daemon --build-cache --gradle-user-home cache/ -Dorg.gradle.jvmargs=-javaagent:$DD_TRACER_FOLDER/dd-java-agent.jar=$DD_COMMON_AGENT_CONFIG
     - GRADLE_OPTS="-Xmx3072m" DD_TAGS="test.configuration.variant:debug" ./gradlew :unitTestDebugIntegrations --no-daemon --build-cache --gradle-user-home cache/ -Dorg.gradle.jvmargs=-javaagent:$DD_TRACER_FOLDER/dd-java-agent.jar=$DD_COMMON_AGENT_CONFIG
     - GRADLE_OPTS="-Xmx3072m" DD_TAGS="test.configuration.variant:debug" ./gradlew :unitTestDebugSamples --no-daemon --build-cache --gradle-user-home cache/ -Dorg.gradle.jvmargs=-javaagent:$DD_TRACER_FOLDER/dd-java-agent.jar=$DD_COMMON_AGENT_CONFIG
@@ -182,14 +182,14 @@ test:kover:
       - cache/caches/
       - cache/notifications/
   script:
-    - pip3 install datadog
+    - pip3 install flashcat
     - rm -rf ~/.gradle/daemon/
     - export DD_AGENT_HOST="$BUILDENV_HOST_IP"
-    - export DD_API_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.api_key --with-decryption --query "Parameter.Value" --out text)
-    - export DD_APP_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.app_key --with-decryption --query "Parameter.Value" --out text)
-    - CODECOV_TOKEN=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.codecov-token  --with-decryption --query "Parameter.Value" --out text)
-    - GRADLE_OPTS="-Xmx3072m" DD_TAGS="test.configuration.variant:release" ./gradlew :dd-sdk-android-core:koverXmlReportRelease  --no-daemon --build-cache --gradle-user-home cache/ -Dorg.gradle.jvmargs=-javaagent:$DD_TRACER_FOLDER/dd-java-agent.jar=$DD_COMMON_AGENT_CONFIG
-    - GRADLE_OPTS="-Xmx3072m" DD_TAGS="test.configuration.variant:release" ./gradlew :dd-sdk-android-internal:koverXmlReportRelease  --no-daemon --build-cache --gradle-user-home cache/ -Dorg.gradle.jvmargs=-javaagent:$DD_TRACER_FOLDER/dd-java-agent.jar=$DD_COMMON_AGENT_CONFIG
+    - export DD_API_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.api_key --with-decryption --query "Parameter.Value" --out text)
+    - export DD_APP_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.app_key --with-decryption --query "Parameter.Value" --out text)
+    - CODECOV_TOKEN=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.codecov-token  --with-decryption --query "Parameter.Value" --out text)
+    - GRADLE_OPTS="-Xmx3072m" DD_TAGS="test.configuration.variant:release" ./gradlew :fc-sdk-android-core:koverXmlReportRelease  --no-daemon --build-cache --gradle-user-home cache/ -Dorg.gradle.jvmargs=-javaagent:$DD_TRACER_FOLDER/dd-java-agent.jar=$DD_COMMON_AGENT_CONFIG
+    - GRADLE_OPTS="-Xmx3072m" DD_TAGS="test.configuration.variant:release" ./gradlew :fc-sdk-android-internal:koverXmlReportRelease  --no-daemon --build-cache --gradle-user-home cache/ -Dorg.gradle.jvmargs=-javaagent:$DD_TRACER_FOLDER/dd-java-agent.jar=$DD_COMMON_AGENT_CONFIG
     - GRADLE_OPTS="-Xmx3072m" DD_TAGS="test.configuration.variant:release" ./gradlew :koverReportFeatures  --no-daemon --build-cache --gradle-user-home cache/ -Dorg.gradle.jvmargs=-javaagent:$DD_TRACER_FOLDER/dd-java-agent.jar=$DD_COMMON_AGENT_CONFIG
     - GRADLE_OPTS="-Xmx3072m" DD_TAGS="test.configuration.variant:release" ./gradlew :koverReportIntegrations  --no-daemon --build-cache --gradle-user-home cache/ -Dorg.gradle.jvmargs=-javaagent:$DD_TRACER_FOLDER/dd-java-agent.jar=$DD_COMMON_AGENT_CONFIG
     - bash <(cat ./ci/scripts/codecov.sh) -t $CODECOV_TOKEN
@@ -373,7 +373,7 @@ test-pyramid:detekt-api-coverage:
   timeout: 1h
   script:
     - mkdir -p ./config/
-    - aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.gradle-properties --with-decryption --query "Parameter.Value" --out text >> ./gradle.properties
+    - aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.gradle-properties --with-decryption --query "Parameter.Value" --out text >> ./gradle.properties
     - GRADLE_OPTS="-Xmx4096M" ./gradlew assembleLibrariesDebug --stacktrace --no-daemon
     - GRADLE_OPTS="-Xmx4096M" ./gradlew printSdkDebugRuntimeClasspath --stacktrace --no-daemon
     - GRADLE_OPTS="-Xmx4096M" ./gradlew :tools:detekt:jar --stacktrace --no-daemon
@@ -391,18 +391,18 @@ test-pyramid:publish-e2e-synthetics:
     - develop
   script:
     - mkdir -p ./config/
-    - aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.gradle-properties --with-decryption --query "Parameter.Value" --out text >> ./gradle.properties
-    - aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.keystore --with-decryption --query "Parameter.Value" --out text | base64 -d > ./sample-android.keystore
-    - aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.e2e_config_json --with-decryption --query "Parameter.Value" --out text > ./config/us1.json
-    - export E2E_STORE_PASSWD=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.keystore-password --with-decryption --query "Parameter.Value" --out text)
-    - export E2E_DD_API_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.e2e_api_key --with-decryption --query "Parameter.Value" --out text)
-    - export E2E_DD_APP_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.e2e_app_key --with-decryption --query "Parameter.Value" --out text)
-    - export E2E_MOBILE_APP_ID=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.e2e_mobile_app_id --with-decryption --query "Parameter.Value" --out text)
+    - aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.gradle-properties --with-decryption --query "Parameter.Value" --out text >> ./gradle.properties
+    - aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.keystore --with-decryption --query "Parameter.Value" --out text | base64 -d > ./sample-android.keystore
+    - aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.e2e_config_json --with-decryption --query "Parameter.Value" --out text > ./config/us1.json
+    - export E2E_STORE_PASSWD=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.keystore-password --with-decryption --query "Parameter.Value" --out text)
+    - export E2E_DD_API_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.e2e_api_key --with-decryption --query "Parameter.Value" --out text)
+    - export E2E_DD_APP_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.e2e_app_key --with-decryption --query "Parameter.Value" --out text)
+    - export E2E_MOBILE_APP_ID=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.e2e_mobile_app_id --with-decryption --query "Parameter.Value" --out text)
     - GRADLE_OPTS="-Xmx4096M" ./gradlew assembleLibrariesRelease --stacktrace --no-daemon
     - GRADLE_OPTS="-Xmx4096M" ./gradlew :sample:kotlin:packageUs1Release --stacktrace --no-daemon
-    - npm update -g @datadog/datadog-ci
-    - echo "Using datadog-ci $(npx @datadog/datadog-ci version)"
-    - npx @datadog/datadog-ci synthetics upload-application --appKey "$E2E_DD_APP_KEY" --apiKey "$E2E_DD_API_KEY" --mobileApp "sample/kotlin/build/outputs/apk/us1/release/kotlin-us1-release.apk" --mobileApplicationId "$E2E_MOBILE_APP_ID" --versionName "$CI_COMMIT_SHORT_SHA" --latest
+    - npm update -g @flashcat/flashcat-ci
+    - echo "Using flashcat-ci $(npx @flashcat/flashcat-ci version)"
+    - npx @flashcat/flashcat-ci synthetics upload-application --appKey "$E2E_DD_APP_KEY" --apiKey "$E2E_DD_API_KEY" --mobileApp "sample/kotlin/build/outputs/apk/us1/release/kotlin-us1-release.apk" --mobileApplicationId "$E2E_MOBILE_APP_ID" --versionName "$CI_COMMIT_SHORT_SHA" --latest
   artifacts:
     when: always
     expire_in: 1 week
@@ -418,18 +418,18 @@ test-pyramid:publish-webview-synthetics:
     - develop
   script:
     - mkdir -p ./config/
-    - aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.gradle-properties --with-decryption --query "Parameter.Value" --out text >> ./gradle.properties
-    - aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.keystore --with-decryption --query "Parameter.Value" --out text | base64 -d > ./sample-android.keystore
-    - aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.webview_config_json --with-decryption --query "Parameter.Value" --out text > ./config/us1.json
-    - export E2E_STORE_PASSWD=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.keystore-password --with-decryption --query "Parameter.Value" --out text)
-    - export E2E_DD_API_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.webview_api_key --with-decryption --query "Parameter.Value" --out text)
-    - export E2E_DD_APP_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.webview_app_key --with-decryption --query "Parameter.Value" --out text)
-    - export E2E_MOBILE_APP_ID=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.webview_mobile_app_id --with-decryption --query "Parameter.Value" --out text)
+    - aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.gradle-properties --with-decryption --query "Parameter.Value" --out text >> ./gradle.properties
+    - aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.keystore --with-decryption --query "Parameter.Value" --out text | base64 -d > ./sample-android.keystore
+    - aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.webview_config_json --with-decryption --query "Parameter.Value" --out text > ./config/us1.json
+    - export E2E_STORE_PASSWD=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.keystore-password --with-decryption --query "Parameter.Value" --out text)
+    - export E2E_DD_API_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.webview_api_key --with-decryption --query "Parameter.Value" --out text)
+    - export E2E_DD_APP_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.webview_app_key --with-decryption --query "Parameter.Value" --out text)
+    - export E2E_MOBILE_APP_ID=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.webview_mobile_app_id --with-decryption --query "Parameter.Value" --out text)
     - GRADLE_OPTS="-Xmx4096M" ./gradlew assembleLibrariesRelease --stacktrace --no-daemon
     - GRADLE_OPTS="-Xmx4096M" ./gradlew :sample:kotlin:packageUs1Release --stacktrace --no-daemon
-    - npm update -g @datadog/datadog-ci
-    - echo "Using datadog-ci $(npx @datadog/datadog-ci version)"
-    - npx @datadog/datadog-ci synthetics upload-application --appKey "$E2E_DD_APP_KEY" --apiKey "$E2E_DD_API_KEY" --mobileApp "sample/kotlin/build/outputs/apk/us1/release/kotlin-us1-release.apk" --mobileApplicationId "$E2E_MOBILE_APP_ID" --versionName "$CI_COMMIT_SHORT_SHA" --latest
+    - npm update -g @flashcat/flashcat-ci
+    - echo "Using flashcat-ci $(npx @flashcat/flashcat-ci version)"
+    - npx @flashcat/flashcat-ci synthetics upload-application --appKey "$E2E_DD_APP_KEY" --apiKey "$E2E_DD_API_KEY" --mobileApp "sample/kotlin/build/outputs/apk/us1/release/kotlin-us1-release.apk" --mobileApplicationId "$E2E_MOBILE_APP_ID" --versionName "$CI_COMMIT_SHORT_SHA" --latest
   artifacts:
     when: always
     expire_in: 1 week
@@ -445,18 +445,18 @@ test-pyramid:publish-staging-synthetics:
     - develop
   script:
     - mkdir -p ./config/
-    - aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.gradle-properties --with-decryption --query "Parameter.Value" --out text >> ./gradle.properties
-    - aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.keystore --with-decryption --query "Parameter.Value" --out text | base64 -d > ./sample-android.keystore
-    - aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.e2e_staging_config_json --with-decryption --query "Parameter.Value" --out text > ./config/staging.json
-    - export E2E_STORE_PASSWD=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.keystore-password --with-decryption --query "Parameter.Value" --out text)
-    - export E2E_DD_API_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.e2e_staging_api_key --with-decryption --query "Parameter.Value" --out text)
-    - export E2E_DD_APP_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.e2e_staging_app_key --with-decryption --query "Parameter.Value" --out text)
-    - export E2E_MOBILE_APP_ID=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.e2e_staging_mobile_app_id --with-decryption --query "Parameter.Value" --out text)
+    - aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.gradle-properties --with-decryption --query "Parameter.Value" --out text >> ./gradle.properties
+    - aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.keystore --with-decryption --query "Parameter.Value" --out text | base64 -d > ./sample-android.keystore
+    - aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.e2e_staging_config_json --with-decryption --query "Parameter.Value" --out text > ./config/staging.json
+    - export E2E_STORE_PASSWD=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.keystore-password --with-decryption --query "Parameter.Value" --out text)
+    - export E2E_DD_API_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.e2e_staging_api_key --with-decryption --query "Parameter.Value" --out text)
+    - export E2E_DD_APP_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.e2e_staging_app_key --with-decryption --query "Parameter.Value" --out text)
+    - export E2E_MOBILE_APP_ID=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.e2e_staging_mobile_app_id --with-decryption --query "Parameter.Value" --out text)
     - GRADLE_OPTS="-Xmx4096M" ./gradlew assembleLibrariesRelease --stacktrace --no-daemon
     - GRADLE_OPTS="-Xmx4096M" ./gradlew :sample:kotlin:packageStagingRelease --stacktrace --no-daemon
-    - npm update -g @datadog/datadog-ci
-    - echo "Using datadog-ci $(npx @datadog/datadog-ci version)"
-    - npx @datadog/datadog-ci synthetics upload-application --appKey "$E2E_DD_APP_KEY" --apiKey "$E2E_DD_API_KEY" --mobileApp "sample/kotlin/build/outputs/apk/staging/release/kotlin-staging-release.apk" --mobileApplicationId "$E2E_MOBILE_APP_ID" --versionName "$CI_COMMIT_SHORT_SHA" --latest --datadogSite "datad0g.com"
+    - npm update -g @flashcat/flashcat-ci
+    - echo "Using flashcat-ci $(npx @flashcat/flashcat-ci version)"
+    - npx @flashcat/flashcat-ci synthetics upload-application --appKey "$E2E_DD_APP_KEY" --apiKey "$E2E_DD_API_KEY" --mobileApp "sample/kotlin/build/outputs/apk/staging/release/kotlin-staging-release.apk" --mobileApplicationId "$E2E_MOBILE_APP_ID" --versionName "$CI_COMMIT_SHORT_SHA" --latest --flashcatSite "datad0g.com"
   artifacts:
     when: always
     expire_in: 1 week
@@ -472,18 +472,18 @@ test-pyramid:publish-benchmark-synthetics:
     - develop
   script:
     - mkdir -p ./config/
-    - aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.gradle-properties --with-decryption --query "Parameter.Value" --out text >> ./gradle.properties
-    - aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.keystore --with-decryption --query "Parameter.Value" --out text | base64 -d > ./sample-benchmark.keystore
-    - aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.benchmark_config_json --with-decryption --query "Parameter.Value" --out text > ./config/benchmark.json
-    - export BM_STORE_PASSWD=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.keystore-password --with-decryption --query "Parameter.Value" --out text)
-    - export BM_DD_API_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.benchmark_api_key --with-decryption --query "Parameter.Value" --out text)
-    - export BM_DD_APP_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.benchmark_app_key --with-decryption --query "Parameter.Value" --out text)
-    - export BM_MOBILE_APP_ID=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.benchmark_mobile_app_id --with-decryption --query "Parameter.Value" --out text)
+    - aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.gradle-properties --with-decryption --query "Parameter.Value" --out text >> ./gradle.properties
+    - aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.keystore --with-decryption --query "Parameter.Value" --out text | base64 -d > ./sample-benchmark.keystore
+    - aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.benchmark_config_json --with-decryption --query "Parameter.Value" --out text > ./config/benchmark.json
+    - export BM_STORE_PASSWD=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.keystore-password --with-decryption --query "Parameter.Value" --out text)
+    - export BM_DD_API_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.benchmark_api_key --with-decryption --query "Parameter.Value" --out text)
+    - export BM_DD_APP_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.benchmark_app_key --with-decryption --query "Parameter.Value" --out text)
+    - export BM_MOBILE_APP_ID=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.benchmark_mobile_app_id --with-decryption --query "Parameter.Value" --out text)
     - GRADLE_OPTS="-Xmx4096M" ./gradlew assembleLibrariesRelease --stacktrace --no-daemon
     - GRADLE_OPTS="-Xmx4096M" ./gradlew :sample:benchmark:packageRelease --stacktrace --no-daemon
-    - npm update -g @datadog/datadog-ci
-    - echo "Using datadog-ci $(npx @datadog/datadog-ci version)"
-    - npx @datadog/datadog-ci synthetics upload-application --appKey "$BM_DD_APP_KEY" --apiKey "$BM_DD_API_KEY" --mobileApp "sample/benchmark/build/outputs/apk/release/benchmark-release.apk" --mobileApplicationId "$BM_MOBILE_APP_ID" --versionName "$CI_COMMIT_SHORT_SHA" --latest
+    - npm update -g @flashcat/flashcat-ci
+    - echo "Using flashcat-ci $(npx @flashcat/flashcat-ci version)"
+    - npx @flashcat/flashcat-ci synthetics upload-application --appKey "$BM_DD_APP_KEY" --apiKey "$BM_DD_API_KEY" --mobileApp "sample/benchmark/build/outputs/apk/release/benchmark-release.apk" --mobileApplicationId "$BM_MOBILE_APP_ID" --versionName "$CI_COMMIT_SHORT_SHA" --latest
   artifacts:
     when: always
     expire_in: 1 week
@@ -502,12 +502,12 @@ publish:release-core:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :dd-sdk-android-core:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :fc-sdk-android-core:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - dd-sdk-android-core/verification-metadata.xml
+      - fc-sdk-android-core/verification-metadata.xml
 
 publish:release-internal:
   tags: [ "arch:amd64" ]
@@ -519,12 +519,12 @@ publish:release-internal:
   timeout: 30m
   script:
     - !reference [ .snippets, set-publishing-credentials ]
-    - ./gradlew :dd-sdk-android-internal:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :fc-sdk-android-internal:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - dd-sdk-android-internal/verification-metadata.xml
+      - fc-sdk-android-internal/verification-metadata.xml
 
 # region Publish features/*
 
@@ -538,12 +538,12 @@ publish:release-flags:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :features:dd-sdk-android-flags:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :features:fc-sdk-android-flags:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - features/dd-sdk-android-flags/verification-metadata.xml
+      - features/fc-sdk-android-flags/verification-metadata.xml
 
 publish:release-trace-api:
   tags: [ "arch:amd64" ]
@@ -555,12 +555,12 @@ publish:release-trace-api:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :features:dd-sdk-android-trace-api:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :features:fc-sdk-android-trace-api:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - features/dd-sdk-android-trace-api/verification-metadata.xml
+      - features/fc-sdk-android-trace-api/verification-metadata.xml
 
 
 publish:release-trace-internal:
@@ -573,12 +573,12 @@ publish:release-trace-internal:
   timeout: 30m
   script:
     - !reference [ .snippets, set-publishing-credentials ]
-    - ./gradlew :features:dd-sdk-android-trace-internal:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :features:fc-sdk-android-trace-internal:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - features/dd-sdk-android-trace-internal/verification-metadata.xml
+      - features/fc-sdk-android-trace-internal/verification-metadata.xml
 
 publish:release-trace:
   tags: [ "arch:amd64" ]
@@ -590,12 +590,12 @@ publish:release-trace:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :features:dd-sdk-android-trace:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :features:fc-sdk-android-trace:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - features/dd-sdk-android-trace/verification-metadata.xml
+      - features/fc-sdk-android-trace/verification-metadata.xml
 
 publish:release-trace-otel:
   tags: [ "arch:amd64" ]
@@ -607,12 +607,12 @@ publish:release-trace-otel:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :features:dd-sdk-android-trace-otel:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :features:fc-sdk-android-trace-otel:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - features/dd-sdk-android-trace-otel/verification-metadata.xml
+      - features/fc-sdk-android-trace-otel/verification-metadata.xml
 
 publish:release-logs:
   tags: [ "arch:amd64" ]
@@ -624,12 +624,12 @@ publish:release-logs:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :features:dd-sdk-android-logs:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :features:fc-sdk-android-logs:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - features/dd-sdk-android-logs/verification-metadata.xml
+      - features/fc-sdk-android-logs/verification-metadata.xml
 
 publish:release-rum:
   tags: [ "arch:amd64" ]
@@ -641,12 +641,12 @@ publish:release-rum:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :features:dd-sdk-android-rum:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :features:fc-sdk-android-rum:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - features/dd-sdk-android-rum/verification-metadata.xml
+      - features/fc-sdk-android-rum/verification-metadata.xml
 
 publish:release-ndk:
   tags: [ "arch:amd64" ]
@@ -658,12 +658,12 @@ publish:release-ndk:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :features:dd-sdk-android-ndk:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :features:fc-sdk-android-ndk:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - features/dd-sdk-android-ndk/verification-metadata.xml
+      - features/fc-sdk-android-ndk/verification-metadata.xml
 
 publish:release-session-replay:
   tags: [ "arch:amd64" ]
@@ -675,12 +675,12 @@ publish:release-session-replay:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :features:dd-sdk-android-session-replay:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :features:fc-sdk-android-session-replay:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - features/dd-sdk-android-session-replay/verification-metadata.xml
+      - features/fc-sdk-android-session-replay/verification-metadata.xml
 
 publish:release-session-replay-material:
   tags: [ "arch:amd64" ]
@@ -692,12 +692,12 @@ publish:release-session-replay-material:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :features:dd-sdk-android-session-replay-material:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :features:fc-sdk-android-session-replay-material:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - features/dd-sdk-android-session-replay-material/verification-metadata.xml
+      - features/fc-sdk-android-session-replay-material/verification-metadata.xml
 
 publish:release-session-replay-compose:
   tags: [ "arch:amd64" ]
@@ -709,12 +709,12 @@ publish:release-session-replay-compose:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :features:dd-sdk-android-session-replay-compose:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :features:fc-sdk-android-session-replay-compose:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - features/dd-sdk-android-session-replay-compose/verification-metadata.xml
+      - features/fc-sdk-android-session-replay-compose/verification-metadata.xml
 
 publish:release-webview:
   tags: [ "arch:amd64" ]
@@ -726,12 +726,12 @@ publish:release-webview:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :features:dd-sdk-android-webview:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :features:fc-sdk-android-webview:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - features/dd-sdk-android-webview/verification-metadata.xml
+      - features/fc-sdk-android-webview/verification-metadata.xml
 
 # endregion
 
@@ -747,12 +747,12 @@ publish:release-apollo:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-apollo:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:fc-sdk-android-apollo:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - integrations/dd-sdk-android-apollo/verification-metadata.xml
+      - integrations/fc-sdk-android-apollo/verification-metadata.xml
 
 publish:release-coil:
   tags: [ "arch:amd64" ]
@@ -764,12 +764,12 @@ publish:release-coil:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-coil:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:fc-sdk-android-coil:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - integrations/dd-sdk-android-coil/verification-metadata.xml
+      - integrations/fc-sdk-android-coil/verification-metadata.xml
 
 publish:release-compose:
   tags: [ "arch:amd64" ]
@@ -781,12 +781,12 @@ publish:release-compose:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-compose:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:fc-sdk-android-compose:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - integrations/dd-sdk-android-compose/verification-metadata.xml
+      - integrations/fc-sdk-android-compose/verification-metadata.xml
 
 publish:release-fresco:
   tags: [ "arch:amd64" ]
@@ -798,12 +798,12 @@ publish:release-fresco:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-fresco:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:fc-sdk-android-fresco:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - integrations/dd-sdk-android-fresco/verification-metadata.xml
+      - integrations/fc-sdk-android-fresco/verification-metadata.xml
 
 publish:release-glide:
   tags: [ "arch:amd64" ]
@@ -815,12 +815,12 @@ publish:release-glide:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-glide:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:fc-sdk-android-glide:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - integrations/dd-sdk-android-glide/verification-metadata.xml
+      - integrations/fc-sdk-android-glide/verification-metadata.xml
 
 publish:release-trace-coroutines:
   tags: [ "arch:amd64" ]
@@ -832,12 +832,12 @@ publish:release-trace-coroutines:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-trace-coroutines:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:fc-sdk-android-trace-coroutines:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - integrations/dd-sdk-android-trace-coroutines/verification-metadata.xml
+      - integrations/fc-sdk-android-trace-coroutines/verification-metadata.xml
 
 publish:release-rum-coroutines:
   tags: [ "arch:amd64" ]
@@ -849,12 +849,12 @@ publish:release-rum-coroutines:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-rum-coroutines:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:fc-sdk-android-rum-coroutines:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - integrations/dd-sdk-android-rum-coroutines/verification-metadata.xml
+      - integrations/fc-sdk-android-rum-coroutines/verification-metadata.xml
 
 publish:release-rx:
   tags: [ "arch:amd64" ]
@@ -866,12 +866,12 @@ publish:release-rx:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-rx:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:fc-sdk-android-rx:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - integrations/dd-sdk-android-rx/verification-metadata.xml
+      - integrations/fc-sdk-android-rx/verification-metadata.xml
 
 publish:release-sqldelight:
   tags: [ "arch:amd64" ]
@@ -883,12 +883,12 @@ publish:release-sqldelight:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-sqldelight:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:fc-sdk-android-sqldelight:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - integrations/dd-sdk-android-sqldelight/verification-metadata.xml
+      - integrations/fc-sdk-android-sqldelight/verification-metadata.xml
 
 publish:release-timber:
   tags: [ "arch:amd64" ]
@@ -900,12 +900,12 @@ publish:release-timber:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-timber:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:fc-sdk-android-timber:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - integrations/dd-sdk-android-timber/verification-metadata.xml
+      - integrations/fc-sdk-android-timber/verification-metadata.xml
 
 publish:release-android-tv:
   tags: [ "arch:amd64" ]
@@ -917,12 +917,12 @@ publish:release-android-tv:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-tv:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:fc-sdk-android-tv:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - integrations/dd-sdk-android-tv/verification-metadata.xml
+      - integrations/fc-sdk-android-tv/verification-metadata.xml
 
 publish:release-okhttp:
   tags: [ "arch:amd64" ]
@@ -934,12 +934,12 @@ publish:release-okhttp:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-okhttp:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:fc-sdk-android-okhttp:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - integrations/dd-sdk-android-okhttp/verification-metadata.xml
+      - integrations/fc-sdk-android-okhttp/verification-metadata.xml
 
 publish:release-okhttp-otel:
   tags: [ "arch:amd64" ]
@@ -951,12 +951,12 @@ publish:release-okhttp-otel:
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-okhttp-otel:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:fc-sdk-android-okhttp-otel:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
-      - integrations/dd-sdk-android-okhttp-otel/verification-metadata.xml
+      - integrations/fc-sdk-android-okhttp-otel/verification-metadata.xml
 
 # endregion
 
@@ -1008,7 +1008,7 @@ notify:publish-release-success:
   only:
     - tags
   script:
-    - MAVEN_URL="https://search.maven.org/artifact/com.datadoghq/dd-sdk-android-core/$CI_COMMIT_TAG/aar"
+    - MAVEN_URL="https://search.maven.org/artifact/com.flashcathq/fc-sdk-android-core/$CI_COMMIT_TAG/aar"
     - 'MESSAGE_TEXT=":rocket: $CI_PROJECT_NAME $CI_COMMIT_TAG published on :maven: $MAVEN_URL"'
     - postmessage "#mobile-sdk-ops" "$MESSAGE_TEXT"
 
@@ -1034,7 +1034,7 @@ notify:dogfood-app:
   stage: notify
   when: on_success
   script:
-    - export GITHUB_TOKEN=$(dd-octo-sts token --scope DataDog/datadog-android --policy all.gitlab.pr)
+    - export GITHUB_TOKEN=$(dd-octo-sts token --scope flashcat/flashcat-android --policy all.gitlab.pr)
     - pip3 install GitPython requests
     - python3 ./ci/scripts/dogfood.py -v $CI_COMMIT_TAG -t app
 
@@ -1049,7 +1049,7 @@ notify:dogfood-demo:
   stage: notify
   when: on_success
   script:
-    - export GITHUB_TOKEN=$(dd-octo-sts token --scope DataDog/shopist-android --policy all.gitlab.pr)
+    - export GITHUB_TOKEN=$(dd-octo-sts token --scope flashcat/shopist-android --policy all.gitlab.pr)
     - pip3 install GitPython requests
     - python3 ./ci/scripts/dogfood.py -v $CI_COMMIT_TAG -t demo
 
@@ -1064,7 +1064,7 @@ notify:dogfood-gradle-plugin:
   stage: notify
   when: on_success
   script:
-    - export GITHUB_TOKEN=$(dd-octo-sts token --scope DataDog/dd-sdk-android-gradle-plugin --policy all.gitlab.pr)
+    - export GITHUB_TOKEN=$(dd-octo-sts token --scope flashcat/fc-sdk-android-gradle-plugin --policy all.gitlab.pr)
     - pip3 install GitPython requests
     - python3 ./ci/scripts/dogfood.py -v $CI_COMMIT_TAG -t gradle-plugin
 

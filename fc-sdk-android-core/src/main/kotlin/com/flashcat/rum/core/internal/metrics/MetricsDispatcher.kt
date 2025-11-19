@@ -1,0 +1,17 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
+ * Copyright 2016-Present Datadog, Inc.
+ */
+
+package com.flashcat.rum.core.internal.metrics
+
+import com.datadog.tools.annotation.NoOpImplementation
+import java.io.File
+
+@NoOpImplementation
+internal interface MetricsDispatcher {
+    fun sendBatchDeletedMetric(batchFile: File, removalReason: RemovalReason, numPendingBatches: Int)
+
+    fun sendBatchClosedMetric(batchFile: File, batchMetadata: BatchClosedMetadata)
+}

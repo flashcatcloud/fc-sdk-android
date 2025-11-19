@@ -1,10 +1,10 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.sample.datalist
+package com.flashcat.rum.sample.datalist
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -19,12 +19,12 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.datadog.android.Datadog
-import com.datadog.android.rum.ExperimentalRumApi
-import com.datadog.android.rum.GlobalRumMonitor
-import com.datadog.android.sample.R
-import com.datadog.android.sample.SampleApplication
-import com.datadog.android.sample.data.model.Log
+import com.flashcat.rum.Flashcat
+import com.flashcat.rum.rum.ExperimentalRumApi
+import com.flashcat.rum.rum.GlobalRumMonitor
+import com.flashcat.rum.sample.R
+import com.flashcat.rum.sample.SampleApplication
+import com.flashcat.rum.sample.data.model.Log
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 internal class DataListFragment : Fragment() {

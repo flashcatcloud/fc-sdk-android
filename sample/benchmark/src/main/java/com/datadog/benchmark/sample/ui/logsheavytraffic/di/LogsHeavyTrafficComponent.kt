@@ -1,12 +1,12 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
 package com.datadog.benchmark.sample.ui.logsheavytraffic.di
 
-import com.datadog.android.log.Logger
+import com.flashcat.rum.log.Logger
 import com.datadog.benchmark.sample.di.common.DispatchersModule
 import com.datadog.benchmark.sample.ui.logsheavytraffic.LogsHeavyTrafficFragment
 import com.datadog.benchmark.sample.ui.logsheavytraffic.LogsHeavyTrafficHostFragment

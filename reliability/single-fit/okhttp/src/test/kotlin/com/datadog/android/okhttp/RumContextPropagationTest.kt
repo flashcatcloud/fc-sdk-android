@@ -1,35 +1,35 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
-package com.datadog.android.okhttp
+package com.flashcat.rum.okhttp
 
 import android.content.Context
-import com.datadog.android.Datadog
-import com.datadog.android.api.SdkCore
-import com.datadog.android.api.context.AccountInfo
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.context.UserInfo
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.SdkFeatureMock
-import com.datadog.android.core.sampling.DeterministicSampler.Companion.MAX_ID
-import com.datadog.android.core.sampling.DeterministicSampler.Companion.SAMPLER_HASHER
-import com.datadog.android.core.stub.StubSDKCore
-import com.datadog.android.okhttp.RumContextPropagationTest.Companion.SAMPLING_THRESHOLD
-import com.datadog.android.okhttp.tests.elmyr.OkHttpConfigurator
-import com.datadog.android.okhttp.trace.TracingInterceptor
-import com.datadog.android.trace.DatadogTracing
-import com.datadog.android.trace.GlobalDatadogTracer
-import com.datadog.android.trace.Trace
-import com.datadog.android.trace.TraceConfiguration
-import com.datadog.android.trace.TracingHeaderType
-import com.datadog.android.trace.api.TestIdGenerationStrategy
-import com.datadog.android.trace.api.replace
-import com.datadog.android.trace.api.setTestIdGenerationStrategy
-import com.datadog.android.trace.api.tracer.DatadogTracerBuilder
-import com.datadog.android.trace.utils.RumContextTestsUtils.aDatadogContextWithRumContext
-import com.datadog.android.trace.utils.RumContextTestsUtils.aRumContext
+import com.flashcat.rum.Flashcat
+import com.flashcat.rum.api.SdkCore
+import com.flashcat.rum.api.context.AccountInfo
+import com.flashcat.rum.api.context.FlashcatContext
+import com.flashcat.rum.api.context.UserInfo
+import com.flashcat.rum.api.feature.Feature
+import com.flashcat.rum.api.feature.SdkFeatureMock
+import com.flashcat.rum.core.sampling.DeterministicSampler.Companion.MAX_ID
+import com.flashcat.rum.core.sampling.DeterministicSampler.Companion.SAMPLER_HASHER
+import com.flashcat.rum.core.stub.StubSDKCore
+import com.flashcat.rum.okhttp.RumContextPropagationTest.Companion.SAMPLING_THRESHOLD
+import com.flashcat.rum.okhttp.tests.elmyr.OkHttpConfigurator
+import com.flashcat.rum.okhttp.trace.TracingInterceptor
+import com.flashcat.rum.trace.DatadogTracing
+import com.flashcat.rum.trace.GlobalDatadogTracer
+import com.flashcat.rum.trace.Trace
+import com.flashcat.rum.trace.TraceConfiguration
+import com.flashcat.rum.trace.TracingHeaderType
+import com.flashcat.rum.trace.api.TestIdGenerationStrategy
+import com.flashcat.rum.trace.api.replace
+import com.flashcat.rum.trace.api.setTestIdGenerationStrategy
+import com.flashcat.rum.trace.api.tracer.DatadogTracerBuilder
+import com.flashcat.rum.trace.utils.RumContextTestsUtils.aflashcatContextWithRumContext
+import com.flashcat.rum.trace.utils.RumContextTestsUtils.aRumContext
 import com.datadog.tools.unit.completedFutureMock
 import com.datadog.tools.unit.extensions.TestConfigurationExtension
 import com.datadog.tools.unit.getFieldValue
@@ -84,8 +84,8 @@ class RumContextPropagationTest {
         val rumContext = forge.aRumContext(SAMPLED_IDS.random())
         val accountInfo = forge.getForgery<AccountInfo>()
         val userInfo = forge.getForgery<UserInfo>()
-        val datadogContext = forge.aDatadogContextWithRumContext(rumContext, accountInfo, userInfo)
-        stubSdkCore = forge.prepareStubSdkCore(datadogContext)
+        val flashcatContext = forge.aflashcatContextWithRumContext(rumContext, accountInfo, userInfo)
+        stubSdkCore = forge.prepareStubSdkCore(flashcatContext)
         Trace.enable(TraceConfiguration.Builder().build(), stubSdkCore)
         testedClient = prepareClient(stubSdkCore)
         GlobalDatadogTracer.replace(createTracer(stubSdkCore))
@@ -111,8 +111,8 @@ class RumContextPropagationTest {
     ) {
         // Given
         val rumContext = forge.aRumContext(sessionId = SAMPLED_IDS.random())
-        val datadogContext = forge.aDatadogContextWithRumContext(rumContext)
-        stubSdkCore = forge.prepareStubSdkCore(datadogContext)
+        val flashcatContext = forge.aflashcatContextWithRumContext(rumContext)
+        stubSdkCore = forge.prepareStubSdkCore(flashcatContext)
         Trace.enable(TraceConfiguration.Builder().build(), stubSdkCore)
         testedClient = prepareClient(stubSdkCore)
         GlobalDatadogTracer.replace(createTracer(stubSdkCore))
@@ -132,8 +132,8 @@ class RumContextPropagationTest {
     ) {
         // Given
         val rumContext = forge.aRumContext(sessionId = DROPPED_IDS.random())
-        val datadogContext = forge.aDatadogContextWithRumContext(rumContext)
-        stubSdkCore = forge.prepareStubSdkCore(datadogContext)
+        val flashcatContext = forge.aflashcatContextWithRumContext(rumContext)
+        stubSdkCore = forge.prepareStubSdkCore(flashcatContext)
         Trace.enable(TraceConfiguration.Builder().build(), stubSdkCore)
         testedClient = prepareClient(stubSdkCore)
         GlobalDatadogTracer.replace(createTracer(stubSdkCore))
@@ -154,8 +154,8 @@ class RumContextPropagationTest {
     ) {
         // Given
         val rumContext = forge.aRumContext(sessionId = null)
-        val datadogContext = forge.aDatadogContextWithRumContext(rumContext)
-        stubSdkCore = forge.prepareStubSdkCore(datadogContext)
+        val flashcatContext = forge.aflashcatContextWithRumContext(rumContext)
+        stubSdkCore = forge.prepareStubSdkCore(flashcatContext)
         Trace.enable(TraceConfiguration.Builder().build(), stubSdkCore)
         testedClient = prepareClient(stubSdkCore)
         GlobalDatadogTracer.replace(createTracer(stubSdkCore).withTraceIdsFrom(DROPPED_IDS))
@@ -176,8 +176,8 @@ class RumContextPropagationTest {
     ) {
         // Given
         val rumContext = forge.aRumContext(sessionId = null)
-        val datadogContext = forge.aDatadogContextWithRumContext(rumContext)
-        stubSdkCore = forge.prepareStubSdkCore(datadogContext)
+        val flashcatContext = forge.aflashcatContextWithRumContext(rumContext)
+        stubSdkCore = forge.prepareStubSdkCore(flashcatContext)
         Trace.enable(TraceConfiguration.Builder().build(), stubSdkCore)
         testedClient = prepareClient(stubSdkCore)
         GlobalDatadogTracer.replace(createTracer(stubSdkCore).withTraceIdsFrom(SAMPLED_IDS))
@@ -242,8 +242,8 @@ class RumContextPropagationTest {
             block(mockServer.takeRequest())
         }
 
-        private fun Forge.prepareStubSdkCore(datadogContext: DatadogContext): StubSDKCore {
-            val sdkCoreStub = StubSDKCore(this, datadogContext = datadogContext)
+        private fun Forge.prepareStubSdkCore(flashcatContext: FlashcatContext): StubSDKCore {
+            val sdkCoreStub = StubSDKCore(this, flashcatContext = flashcatContext)
 
             Datadog::class.java
                 .getStaticValue<Datadog, Any>("registry")
@@ -252,7 +252,7 @@ class RumContextPropagationTest {
 
             sdkCoreStub.stubFeatureScope(
                 StubRumFeature,
-                SdkFeatureMock.create(completedFutureMock(datadogContext))
+                SdkFeatureMock.create(completedFutureMock(flashcatContext))
             )
 
             return sdkCoreStub

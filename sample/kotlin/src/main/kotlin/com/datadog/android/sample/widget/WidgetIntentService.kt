@@ -1,10 +1,10 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.sample.widget
+package com.flashcat.rum.sample.widget
 
 import android.app.IntentService
 import android.appwidget.AppWidgetManager
@@ -13,10 +13,10 @@ import android.content.Context
 import android.content.Intent
 import android.view.View
 import android.widget.RemoteViews
-import com.datadog.android.rum.GlobalRumMonitor
-import com.datadog.android.rum.RumActionType
-import com.datadog.android.sample.R
-import com.datadog.android.sample.SampleApplication
+import com.flashcat.rum.rum.GlobalRumMonitor
+import com.flashcat.rum.rum.RumActionType
+import com.flashcat.rum.sample.R
+import com.flashcat.rum.sample.SampleApplication
 import okhttp3.Request
 import timber.log.Timber
 import java.io.IOException
@@ -36,7 +36,7 @@ class WidgetIntentService : IntentService("WidgetIntentService") {
 
                 if (hasRumContext) {
                     GlobalRumMonitor.get()
-                        .startView(widgetId, widgetName ?: "DatadogWidget")
+                        .startView(widgetId, widgetName ?: "FlashcatWidget")
                     val clickedTargetName = intent.getStringExtra(WIDGET_CLICKED_TARGET_NAME)
                     if (clickedTargetName != null) {
                         GlobalRumMonitor.get()
@@ -60,7 +60,7 @@ class WidgetIntentService : IntentService("WidgetIntentService") {
         val okHttpClient = SampleApplication.getOkHttpClient(applicationContext)
         val builder = Request.Builder()
             .get()
-            .url("https://www.datadoghq.com/")
+            .url("https://flashcat.cloud/")
 
         val request = builder.build()
         try {

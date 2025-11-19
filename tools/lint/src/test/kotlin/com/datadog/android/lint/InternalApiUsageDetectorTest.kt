@@ -1,10 +1,10 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.lint
+package com.flashcat.rum.lint
 
 import com.android.tools.lint.checks.infrastructure.TestFile
 import com.android.tools.lint.checks.infrastructure.TestFiles.java
@@ -38,7 +38,7 @@ internal class InternalApiUsageDetectorTest {
                     """
                 package $nonDatadogPackage;
                 
-                import com.datadog.android.InternalSdkClass;
+                import com.flashcat.rum.InternalSdkClass;
                 
                 public class ClassUnderTest { 
                 
@@ -55,7 +55,7 @@ internal class InternalApiUsageDetectorTest {
             .expectErrorCount(1)
             .expect(
                 """
-                    src/${nonDatadogPackage.packageToPath()}/ClassUnderTest.java:8: Error: Symbols annotated with com.datadog.android.lint.InternalApi shouldn't be used outside of Datadog SDK packages. [DatadogInternalApiUsage]
+                    src/${nonDatadogPackage.packageToPath()}/ClassUnderTest.java:8: Error: Symbols annotated with com.datadog.android.lint.InternalApi shouldn't be used outside of Flashcat SDK packages. [DatadogInternalApiUsage]
                            InternalSdkClass instance = new InternalSdkClass();
                                                        ~~~~~~~~~~~~~~~~~~~~~~
                     1 errors, 0 warnings
@@ -73,7 +73,7 @@ internal class InternalApiUsageDetectorTest {
                     """
                 package $nonDatadogPackage;
                 
-                import com.datadog.android.SomeSdkClass;
+                import com.flashcat.rum.SomeSdkClass;
                 
                 public class ClassUnderTest { 
                 
@@ -91,7 +91,7 @@ internal class InternalApiUsageDetectorTest {
             .expectErrorCount(1)
             .expect(
                 """
-                    src/${nonDatadogPackage.packageToPath()}/ClassUnderTest.java:9: Error: Symbols annotated with com.datadog.android.lint.InternalApi shouldn't be used outside of Datadog SDK packages. [DatadogInternalApiUsage]
+                    src/${nonDatadogPackage.packageToPath()}/ClassUnderTest.java:9: Error: Symbols annotated with com.datadog.android.lint.InternalApi shouldn't be used outside of Flashcat SDK packages. [DatadogInternalApiUsage]
                            instance.internalMethod();
                            ~~~~~~~~~~~~~~~~~~~~~~~~~
                     1 errors, 0 warnings
@@ -109,7 +109,7 @@ internal class InternalApiUsageDetectorTest {
                     """
                 package $nonDatadogPackage;
                 
-                import com.datadog.android.SomeSdkClass;
+                import com.flashcat.rum.SomeSdkClass;
                 
                 public class ClassUnderTest { 
                 
@@ -127,7 +127,7 @@ internal class InternalApiUsageDetectorTest {
             .expectErrorCount(1)
             .expect(
                 """
-                    src/${nonDatadogPackage.packageToPath()}/ClassUnderTest.java:9: Error: Symbols annotated with com.datadog.android.lint.InternalApi shouldn't be used outside of Datadog SDK packages. [DatadogInternalApiUsage]
+                    src/${nonDatadogPackage.packageToPath()}/ClassUnderTest.java:9: Error: Symbols annotated with com.datadog.android.lint.InternalApi shouldn't be used outside of Flashcat SDK packages. [DatadogInternalApiUsage]
                            instance.getInternalProperty();
                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     1 errors, 0 warnings
@@ -146,7 +146,7 @@ internal class InternalApiUsageDetectorTest {
                     """
                 package $nonDatadogPackage;
                 
-                import com.datadog.android.SdkCore;
+                import com.flashcat.rum.SdkCore;
                 
                 public class ClassUnderTest { 
                 
@@ -164,7 +164,7 @@ internal class InternalApiUsageDetectorTest {
             .expectErrorCount(1)
             .expect(
                 """
-                    src/${nonDatadogPackage.packageToPath()}/ClassUnderTest.java:9: Error: Symbols annotated with com.datadog.android.lint.InternalApi shouldn't be used outside of Datadog SDK packages. [DatadogInternalApiUsage]
+                    src/${nonDatadogPackage.packageToPath()}/ClassUnderTest.java:9: Error: Symbols annotated with com.datadog.android.lint.InternalApi shouldn't be used outside of Flashcat SDK packages. [DatadogInternalApiUsage]
                            instance.internalMethod();
                            ~~~~~~~~~~~~~~~~~~~~~~~~~
                     1 errors, 0 warnings
@@ -182,7 +182,7 @@ internal class InternalApiUsageDetectorTest {
                     """
                 package $nonDatadogPackage;
                 
-                import com.datadog.android.TestKt;
+                import com.flashcat.rum.TestKt;
                 
                 public class ClassUnderTest { 
                 
@@ -199,7 +199,7 @@ internal class InternalApiUsageDetectorTest {
             .expectErrorCount(1)
             .expect(
                 """
-                    src/${nonDatadogPackage.packageToPath()}/ClassUnderTest.java:8: Error: Symbols annotated with com.datadog.android.lint.InternalApi shouldn't be used outside of Datadog SDK packages. [DatadogInternalApiUsage]
+                    src/${nonDatadogPackage.packageToPath()}/ClassUnderTest.java:8: Error: Symbols annotated with com.datadog.android.lint.InternalApi shouldn't be used outside of Flashcat SDK packages. [DatadogInternalApiUsage]
                            TestKt.internalMethod("something");
                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     1 errors, 0 warnings
@@ -217,7 +217,7 @@ internal class InternalApiUsageDetectorTest {
                     """
                 package $nonDatadogPackage;
                 
-                import com.datadog.android.Datadog;
+                import com.flashcat.rum.Datadog;
                 
                 public class ClassUnderTest { 
                 
@@ -234,7 +234,7 @@ internal class InternalApiUsageDetectorTest {
             .expectErrorCount(1)
             .expect(
                 """
-                    src/${nonDatadogPackage.packageToPath()}/ClassUnderTest.java:8: Error: Symbols annotated with com.datadog.android.lint.InternalApi shouldn't be used outside of Datadog SDK packages. [DatadogInternalApiUsage]
+                    src/${nonDatadogPackage.packageToPath()}/ClassUnderTest.java:8: Error: Symbols annotated with com.datadog.android.lint.InternalApi shouldn't be used outside of Flashcat SDK packages. [DatadogInternalApiUsage]
                            Datadog._internalProxy();
                            ~~~~~~~~~~~~~~~~~~~~~~~~
                     1 errors, 0 warnings
@@ -252,7 +252,7 @@ internal class InternalApiUsageDetectorTest {
                     """
                 package $nonDatadogPackage
                 
-                import com.datadog.android.InternalSdkClass
+                import com.flashcat.rum.InternalSdkClass
                 
                 class ClassUnderTest { 
                 
@@ -269,7 +269,7 @@ internal class InternalApiUsageDetectorTest {
             .expectErrorCount(1)
             .expect(
                 """
-                   src/${nonDatadogPackage.packageToPath()}/ClassUnderTest.kt:8: Error: Symbols annotated with com.datadog.android.lint.InternalApi shouldn't be used outside of Datadog SDK packages. [DatadogInternalApiUsage]
+                   src/${nonDatadogPackage.packageToPath()}/ClassUnderTest.kt:8: Error: Symbols annotated with com.datadog.android.lint.InternalApi shouldn't be used outside of Flashcat SDK packages. [DatadogInternalApiUsage]
                           val instance = InternalSdkClass()
                                          ~~~~~~~~~~~~~~~~~~
                    1 errors, 0 warnings
@@ -287,7 +287,7 @@ internal class InternalApiUsageDetectorTest {
                     """
                 package $nonDatadogPackage
                 
-                import com.datadog.android.SomeSdkClass
+                import com.flashcat.rum.SomeSdkClass
                 
                 class ClassUnderTest { 
                 
@@ -305,7 +305,7 @@ internal class InternalApiUsageDetectorTest {
             .expectErrorCount(1)
             .expect(
                 """
-                   src/${nonDatadogPackage.packageToPath()}/ClassUnderTest.kt:9: Error: Symbols annotated with com.datadog.android.lint.InternalApi shouldn't be used outside of Datadog SDK packages. [DatadogInternalApiUsage]
+                   src/${nonDatadogPackage.packageToPath()}/ClassUnderTest.kt:9: Error: Symbols annotated with com.datadog.android.lint.InternalApi shouldn't be used outside of Flashcat SDK packages. [DatadogInternalApiUsage]
                           instance.internalMethod()
                           ~~~~~~~~~~~~~~~~~~~~~~~~~
                    1 errors, 0 warnings
@@ -323,7 +323,7 @@ internal class InternalApiUsageDetectorTest {
                     """
                 package $nonDatadogPackage
                 
-                import com.datadog.android.SomeSdkClass
+                import com.flashcat.rum.SomeSdkClass
                 
                 class ClassUnderTest { 
                 
@@ -341,7 +341,7 @@ internal class InternalApiUsageDetectorTest {
             .expectErrorCount(1)
             .expect(
                 """
-                   src/${nonDatadogPackage.packageToPath()}/ClassUnderTest.kt:9: Error: Symbols annotated with com.datadog.android.lint.InternalApi shouldn't be used outside of Datadog SDK packages. [DatadogInternalApiUsage]
+                   src/${nonDatadogPackage.packageToPath()}/ClassUnderTest.kt:9: Error: Symbols annotated with com.datadog.android.lint.InternalApi shouldn't be used outside of Flashcat SDK packages. [DatadogInternalApiUsage]
                           instance.internalProperty
                                    ~~~~~~~~~~~~~~~~
                    1 errors, 0 warnings
@@ -359,7 +359,7 @@ internal class InternalApiUsageDetectorTest {
                     """
                 package $nonDatadogPackage
                 
-                import com.datadog.android.internalMethod
+                import com.flashcat.rum.internalMethod
                 
                 class ClassUnderTest { 
                 
@@ -381,7 +381,7 @@ internal class InternalApiUsageDetectorTest {
             .expectErrorCount(1)
             .expect(
                 """
-                   src/${nonDatadogPackage.packageToPath()}/ClassUnderTest.kt:13: Error: Symbols annotated with com.datadog.android.lint.InternalApi shouldn't be used outside of Datadog SDK packages. [DatadogInternalApiUsage]
+                   src/${nonDatadogPackage.packageToPath()}/ClassUnderTest.kt:13: Error: Symbols annotated with com.datadog.android.lint.InternalApi shouldn't be used outside of Flashcat SDK packages. [DatadogInternalApiUsage]
                           literal.internalMethod()
                           ~~~~~~~~~~~~~~~~~~~~~~~~
                    1 errors, 0 warnings
@@ -399,7 +399,7 @@ internal class InternalApiUsageDetectorTest {
                     """
                 package $nonDatadogPackage
                 
-                import com.datadog.android.Datadog
+                import com.flashcat.rum.Flashcat
                 
                 class ClassUnderTest { 
                 
@@ -416,7 +416,7 @@ internal class InternalApiUsageDetectorTest {
             .expectErrorCount(1)
             .expect(
                 """
-                   src/${nonDatadogPackage.packageToPath()}/ClassUnderTest.kt:8: Error: Symbols annotated with com.datadog.android.lint.InternalApi shouldn't be used outside of Datadog SDK packages. [DatadogInternalApiUsage]
+                   src/${nonDatadogPackage.packageToPath()}/ClassUnderTest.kt:8: Error: Symbols annotated with com.datadog.android.lint.InternalApi shouldn't be used outside of Flashcat SDK packages. [DatadogInternalApiUsage]
                           Datadog._internalProxy()
                           ~~~~~~~~~~~~~~~~~~~~~~~~
                    1 errors, 0 warnings
@@ -432,7 +432,7 @@ internal class InternalApiUsageDetectorTest {
                 internalMethodKotlinStub,
                 kotlin(
                     """                
-                import com.datadog.android.SomeSdkClass
+                import com.flashcat.rum.SomeSdkClass
                 
                 class ClassUnderTest { 
                 
@@ -460,7 +460,7 @@ internal class InternalApiUsageDetectorTest {
                     """
                 package $datadogPackage;
                 
-                import com.datadog.android.InternalSdkClass;
+                import com.flashcat.rum.InternalSdkClass;
                 
                 public class ClassUnderTest { 
                 
@@ -487,7 +487,7 @@ internal class InternalApiUsageDetectorTest {
                     """
                 package $datadogPackage;
                 
-                import com.datadog.android.SomeSdkClass;
+                import com.flashcat.rum.SomeSdkClass;
                 
                 public class ClassUnderTest { 
                 
@@ -515,7 +515,7 @@ internal class InternalApiUsageDetectorTest {
                     """
                 package $datadogPackage;
                 
-                import com.datadog.android.SomeSdkClass;
+                import com.flashcat.rum.SomeSdkClass;
                 
                 public class ClassUnderTest { 
                 
@@ -543,7 +543,7 @@ internal class InternalApiUsageDetectorTest {
                     """
                 package $datadogPackage;
                 
-                import com.datadog.android.TestKt;
+                import com.flashcat.rum.TestKt;
                 
                 public class ClassUnderTest { 
                 
@@ -570,7 +570,7 @@ internal class InternalApiUsageDetectorTest {
                     """
                 package $datadogPackage;
                 
-                import com.datadog.android.Datadog;
+                import com.flashcat.rum.Datadog;
                 
                 public class ClassUnderTest { 
                 
@@ -598,7 +598,7 @@ internal class InternalApiUsageDetectorTest {
                     """
                 package $nonDatadogPackage;
                 
-                import com.datadog.android.SdkCore;
+                import com.flashcat.rum.SdkCore;
                 
                 public class ClassUnderTest { 
                 
@@ -626,7 +626,7 @@ internal class InternalApiUsageDetectorTest {
                     """
                 package $datadogPackage
                 
-                import com.datadog.android.InternalSdkClass
+                import com.flashcat.rum.InternalSdkClass
                 
                 class ClassUnderTest { 
                 
@@ -653,7 +653,7 @@ internal class InternalApiUsageDetectorTest {
                     """
                 package $datadogPackage
                 
-                import com.datadog.android.SomeSdkClass
+                import com.flashcat.rum.SomeSdkClass
                 
                 class ClassUnderTest { 
                 
@@ -681,7 +681,7 @@ internal class InternalApiUsageDetectorTest {
                     """
                 package $datadogPackage
                 
-                import com.datadog.android.SomeSdkClass
+                import com.flashcat.rum.SomeSdkClass
                 
                 class ClassUnderTest { 
                 
@@ -709,7 +709,7 @@ internal class InternalApiUsageDetectorTest {
                     """
                 package $datadogPackage
                 
-                import com.datadog.android.internalMethod
+                import com.flashcat.rum.internalMethod
                 
                 class ClassUnderTest { 
                 
@@ -736,7 +736,7 @@ internal class InternalApiUsageDetectorTest {
                     """
                 package $datadogPackage
                 
-                import com.datadog.android.Datadog
+                import com.flashcat.rum.Flashcat
                 
                 class ClassUnderTest { 
                 
@@ -764,7 +764,7 @@ internal class InternalApiUsageDetectorTest {
                     """
                 package $nonDatadogPackage
                 
-                import com.datadog.android.SdkCore
+                import com.flashcat.rum.SdkCore
                 
                 class ClassUnderTest { 
                 
@@ -797,7 +797,7 @@ internal class InternalApiUsageDetectorTest {
             """
                 package com.datadog.android
                 
-                import com.datadog.android.lint.InternalApi;
+                import com.flashcat.rum.lint.InternalApi;
                 
                 @InternalApi
                 class InternalSdkClass
@@ -808,7 +808,7 @@ internal class InternalApiUsageDetectorTest {
             """
                 package com.datadog.android
 
-                import com.datadog.android.lint.InternalApi;
+                import com.flashcat.rum.lint.InternalApi;
 
                 interface InternalSdkCore {
                   @InternalApi
@@ -822,10 +822,10 @@ internal class InternalApiUsageDetectorTest {
             """
                 package com.datadog.android
 
-                import com.datadog.android.lint.InternalApi;
+                import com.flashcat.rum.lint.InternalApi;
                 import kotlin.jvm.JvmStatic;
 
-                object Datadog {
+                object Flashcat {
 
                   @JvmStatic
                   @InternalApi
@@ -850,7 +850,7 @@ internal class InternalApiUsageDetectorTest {
             """
                 package com.datadog.android
                 
-                import com.datadog.android.lint.InternalApi;
+                import com.flashcat.rum.lint.InternalApi;
                 
                 class SomeSdkClass {   
                   @InternalApi
@@ -863,7 +863,7 @@ internal class InternalApiUsageDetectorTest {
             """
                 package com.datadog.android
                 
-                import com.datadog.android.lint.InternalApi;
+                import com.flashcat.rum.lint.InternalApi;
                 
                 class SomeSdkClass {   
                   @InternalApi
@@ -876,7 +876,7 @@ internal class InternalApiUsageDetectorTest {
             """
                 package com.datadog.android
                 
-                import com.datadog.android.lint.InternalApi;
+                import com.flashcat.rum.lint.InternalApi;
                 
                 @InternalApi
                 fun String.internalMethod() = Unit

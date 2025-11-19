@@ -1,19 +1,19 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.rum.integration
+package com.flashcat.rum.rum.integration
 
-import com.datadog.android.api.SdkCore
-import com.datadog.android.core.stub.StubSDKCore
-import com.datadog.android.rum.GlobalRumMonitor
-import com.datadog.android.rum.Rum
-import com.datadog.android.rum.RumConfiguration
-import com.datadog.android.rum.integration.tests.elmyr.RumIntegrationForgeConfigurator
-import com.datadog.android.rum.integration.tests.utils.MainLooperTestConfiguration
-import com.datadog.android.tests.assertj.StubEventsAssert.Companion.assertThat
+import com.flashcat.rum.api.SdkCore
+import com.flashcat.rum.core.stub.StubSDKCore
+import com.flashcat.rum.rum.GlobalRumMonitor
+import com.flashcat.rum.rum.Rum
+import com.flashcat.rum.rum.RumConfiguration
+import com.flashcat.rum.rum.integration.tests.elmyr.RumIntegrationForgeConfigurator
+import com.flashcat.rum.rum.integration.tests.utils.MainLooperTestConfiguration
+import com.flashcat.rum.tests.assertj.StubEventsAssert.Companion.assertThat
 import com.datadog.tools.unit.annotations.TestConfigurationsProvider
 import com.datadog.tools.unit.extensions.TestConfigurationExtension
 import com.datadog.tools.unit.extensions.config.TestConfiguration

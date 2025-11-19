@@ -4,9 +4,9 @@
  * Copyright 2016-Present Datadog, Inc.
  */
 
-import com.datadog.gradle.config.AndroidConfig
-import com.datadog.gradle.config.configureFlavorForSampleApp
-import com.datadog.gradle.config.java17
+import com.flashcat.gradle.config.AndroidConfig
+import com.flashcat.gradle.config.configureFlavorForSampleApp
+import com.flashcat.gradle.config.java17
 
 plugins {
     id("com.android.application")
@@ -18,7 +18,7 @@ android {
     buildToolsVersion = AndroidConfig.BUILD_TOOLS_VERSION
 
     defaultConfig {
-        applicationId = "com.datadog.android.wear.sample"
+        applicationId = "com.flashcat.rum.wear.sample"
         minSdk = AndroidConfig.MIN_SDK
         targetSdk = AndroidConfig.TARGET_SDK
         versionCode = AndroidConfig.VERSION.code
@@ -29,7 +29,7 @@ android {
         }
     }
 
-    namespace = "com.datadog.android.wear.sample"
+    namespace = "com.flashcat.rum.wear.sample"
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
@@ -67,11 +67,11 @@ dependencies {
     implementation(libs.timber)
     coreLibraryDesugaring(libs.androidDesugaringSdk)
 
-    implementation(project(":features:dd-sdk-android-ndk"))
-    implementation(project(":features:dd-sdk-android-rum"))
-    implementation(project(":features:dd-sdk-android-logs"))
-    implementation(project(":features:dd-sdk-android-trace"))
-    implementation(project(":features:dd-sdk-android-trace-otel"))
+    implementation(project(":features:fc-sdk-android-ndk"))
+    implementation(project(":features:fc-sdk-android-rum"))
+    implementation(project(":features:fc-sdk-android-logs"))
+    implementation(project(":features:fc-sdk-android-trace"))
+    implementation(project(":features:fc-sdk-android-trace-otel"))
 
     implementation("androidx.wear:wear:1.2.0")
     implementation("androidx.core:core-ktx:1.7.0")

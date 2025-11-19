@@ -1,10 +1,10 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.sample.compose
+package com.flashcat.rum.sample.compose
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -14,8 +14,8 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
-import com.datadog.android.compose.AttributesResolver
-import com.datadog.android.compose.Navigation3TrackingEffect
+import com.flashcat.rum.compose.AttributesResolver
+import com.flashcat.rum.compose.Navigation3TrackingEffect
 
 internal class Navigation3Activity : ComponentActivity() {
 

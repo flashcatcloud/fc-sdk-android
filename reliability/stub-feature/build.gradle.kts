@@ -4,9 +4,9 @@
  * Copyright 2016-Present Datadog, Inc.
  */
 
-import com.datadog.gradle.config.androidLibraryConfig
-import com.datadog.gradle.config.dependencyUpdateConfig
-import com.datadog.gradle.config.kotlinConfig
+import com.flashcat.gradle.config.androidLibraryConfig
+import com.flashcat.gradle.config.dependencyUpdateConfig
+import com.flashcat.gradle.config.kotlinConfig
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -19,11 +19,11 @@ plugins {
 }
 
 android {
-    namespace = "com.datadog.android.api.feature.stub"
+    namespace = "com.flashcat.rum.api.feature.stub"
 }
 
 dependencies {
-    implementation(project(":dd-sdk-android-core"))
+    implementation(project(":fc-sdk-android-core"))
     implementation(libs.kotlin)
 
     // Testing

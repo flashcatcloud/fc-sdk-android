@@ -1,15 +1,15 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.core.stub
+package com.flashcat.rum.core.stub
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.core.metrics.PerformanceMetric
-import com.datadog.android.core.metrics.TelemetryMetricType
-import com.datadog.android.internal.telemetry.InternalTelemetryEvent
+import com.flashcat.rum.api.InternalLogger
+import com.flashcat.rum.core.metrics.PerformanceMetric
+import com.flashcat.rum.core.metrics.TelemetryMetricType
+import com.flashcat.rum.internal.telemetry.InternalTelemetryEvent
 
 @Suppress("UnsafeThirdPartyFunctionCall")
 internal class StubInternalLogger : InternalLogger {

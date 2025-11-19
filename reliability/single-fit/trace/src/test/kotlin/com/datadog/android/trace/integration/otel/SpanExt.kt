@@ -1,12 +1,12 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.trace.integration.otel
+package com.flashcat.rum.trace.integration.otel
 
-import com.datadog.android.trace.api.span.DatadogSpan
+import com.flashcat.rum.trace.api.span.DatadogSpan
 import com.datadog.tools.unit.getFieldValue
 import io.opentelemetry.api.trace.Span
 

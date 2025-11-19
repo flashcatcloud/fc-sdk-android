@@ -1,13 +1,13 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.sample.viewpager
+package com.flashcat.rum.sample.viewpager
 
 import androidx.core.os.bundleOf
-import com.datadog.android.sample.BuildConfig
+import com.flashcat.rum.sample.BuildConfig
 
 internal class FragmentC : PagerChildFragment() {
 
@@ -20,7 +20,7 @@ internal class FragmentC : PagerChildFragment() {
                         "https://datadoghq.dev/browser-sdk-test-playground/" +
                         "?client_token=${BuildConfig.DD_CLIENT_TOKEN}" +
                         "&application_id=${BuildConfig.DD_RUM_APPLICATION_ID}" +
-                        "&site=datadoghq.com",
+                        "&site=flashcat.cloud",
                     "fragmentClassName" to FragmentC::class.java.simpleName
                 )
             }

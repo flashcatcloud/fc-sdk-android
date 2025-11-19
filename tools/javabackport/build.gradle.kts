@@ -4,7 +4,7 @@
  * Copyright 2016-Present Datadog, Inc.
  */
 
-import com.datadog.gradle.config.kotlinConfig
+import com.flashcat.gradle.config.kotlinConfig
 
 plugins {
     id("org.jetbrains.kotlin.jvm")

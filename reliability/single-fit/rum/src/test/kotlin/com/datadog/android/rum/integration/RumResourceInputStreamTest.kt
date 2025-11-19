@@ -1,21 +1,21 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.rum.integration
+package com.flashcat.rum.rum.integration
 
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.core.stub.StubSDKCore
-import com.datadog.android.rum.GlobalRumMonitor
-import com.datadog.android.rum.Rum
-import com.datadog.android.rum.RumConfiguration
-import com.datadog.android.rum.integration.tests.assertj.hasRumEvent
-import com.datadog.android.rum.integration.tests.elmyr.RumIntegrationForgeConfigurator
-import com.datadog.android.rum.integration.tests.utils.MainLooperTestConfiguration
-import com.datadog.android.rum.resource.RumResourceInputStream
-import com.datadog.android.tests.assertj.StubEventsAssert.Companion.assertThat
+import com.flashcat.rum.api.feature.Feature
+import com.flashcat.rum.core.stub.StubSDKCore
+import com.flashcat.rum.rum.GlobalRumMonitor
+import com.flashcat.rum.rum.Rum
+import com.flashcat.rum.rum.RumConfiguration
+import com.flashcat.rum.rum.integration.tests.assertj.hasRumEvent
+import com.flashcat.rum.rum.integration.tests.elmyr.RumIntegrationForgeConfigurator
+import com.flashcat.rum.rum.integration.tests.utils.MainLooperTestConfiguration
+import com.flashcat.rum.rum.resource.RumResourceInputStream
+import com.flashcat.rum.tests.assertj.StubEventsAssert.Companion.assertThat
 import com.datadog.tools.unit.annotations.TestConfigurationsProvider
 import com.datadog.tools.unit.extensions.TestConfigurationExtension
 import com.datadog.tools.unit.extensions.config.TestConfiguration
@@ -85,7 +85,7 @@ class RumResourceInputStreamTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.RUM_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(3)
             .hasRumEvent(index = 0) {
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -94,7 +94,7 @@ class RumResourceInputStreamTest {
                 hasResourceCount(0)
             }
             .hasRumEvent(index = 1) {
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -103,7 +103,7 @@ class RumResourceInputStreamTest {
                 hasResourceUrl(resourceUrl)
             }
             .hasRumEvent(index = 2) {
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -139,7 +139,7 @@ class RumResourceInputStreamTest {
         val eventsWritten = stubSdkCore.eventsWritten(Feature.RUM_FEATURE_NAME)
         assertThat(eventsWritten).hasSize(3)
             .hasRumEvent(index = 0) {
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -149,7 +149,7 @@ class RumResourceInputStreamTest {
                 hasErrorCount(0)
             }
             .hasRumEvent(index = 1) {
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")
@@ -158,7 +158,7 @@ class RumResourceInputStreamTest {
                 hasErrorType(error.javaClass.name)
             }
             .hasRumEvent(index = 2) {
-                hasService(stubSdkCore.getDatadogContext().service)
+                hasService(stubSdkCore.getFlashcatContext().service)
                 hasApplicationId(fakeApplicationId)
                 hasSessionType("user")
                 hasSource("android")

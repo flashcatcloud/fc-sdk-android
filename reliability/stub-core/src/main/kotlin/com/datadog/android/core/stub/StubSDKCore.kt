@@ -1,25 +1,25 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.core.stub
+package com.flashcat.rum.core.stub
 
 import android.app.Application
 import android.content.ContentResolver
 import android.content.res.Configuration
 import android.content.res.Resources
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.context.AccountInfo
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.context.NetworkInfo
-import com.datadog.android.api.context.TimeInfo
-import com.datadog.android.api.context.UserInfo
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureScope
-import com.datadog.android.core.InternalSdkCore
-import com.datadog.android.core.internal.net.FirstPartyHostHeaderTypeResolver
+import com.flashcat.rum.api.InternalLogger
+import com.flashcat.rum.api.context.AccountInfo
+import com.flashcat.rum.api.context.FlashcatContext
+import com.flashcat.rum.api.context.NetworkInfo
+import com.flashcat.rum.api.context.TimeInfo
+import com.flashcat.rum.api.context.UserInfo
+import com.flashcat.rum.api.feature.Feature
+import com.flashcat.rum.api.feature.FeatureScope
+import com.flashcat.rum.core.InternalSdkCore
+import com.flashcat.rum.core.internal.net.FirstPartyHostHeaderTypeResolver
 import fr.xgouchet.elmyr.Forge
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.doReturn
@@ -39,7 +39,7 @@ class StubSDKCore(
     private val forge: Forge,
     private val mockContext: Application = mock(),
     private val mockSdkCore: InternalSdkCore = kmock { on { name } doReturn toString() },
-    private var datadogContext: DatadogContext = forge.getForgery<DatadogContext>().copy(source = "android")
+    private var flashcatContext: FlashcatContext = forge.getForgeryFlashcatContext>().copy(source = "android")
 ) : InternalSdkCore by mockSdkCore {
 
     private val featureScopes = mutableMapOf<String, FeatureScope>()
@@ -88,7 +88,7 @@ class StubSDKCore(
      * @param networkInfo the network info
      */
     fun stubNetworkInfo(networkInfo: NetworkInfo) {
-        datadogContext = datadogContext.copy(networkInfo = networkInfo)
+        flashcatContext = flashcatContext.copy(networkInfo = networkInfo)
     }
 
     /**
@@ -96,7 +96,7 @@ class StubSDKCore(
      * @param userInfo the user info
      */
     fun stubUserInfo(userInfo: UserInfo) {
-        datadogContext = datadogContext.copy(userInfo = userInfo)
+        flashcatContext = flashcatContext.copy(userInfo = userInfo)
     }
 
     /**
@@ -104,7 +104,7 @@ class StubSDKCore(
      * @param accountInfo the account info
      */
     fun stubAccountInfo(accountInfo: AccountInfo) {
-        datadogContext = datadogContext.copy(accountInfo = accountInfo)
+        flashcatContext = flashcatContext.copy(accountInfo = accountInfo)
     }
 
     /**
@@ -146,12 +146,12 @@ class StubSDKCore(
     override val firstPartyHostResolver: FirstPartyHostHeaderTypeResolver =
         StubFirstPartyHostHeaderTypeResolver()
 
-    override fun getDatadogContext(withFeatureContexts: Set<String>): DatadogContext {
-        return datadogContext
+    override fun getFlashcatContext(withFeatureContexts: Set<String>): FlashcatContext {
+        return flashcatContext
     }
 
     override val networkInfo: NetworkInfo
-        get() = datadogContext.networkInfo
+        get() = flashcatContext.networkInfo
 
     // endregion
 
@@ -160,7 +160,7 @@ class StubSDKCore(
     override val internalLogger: InternalLogger = StubInternalLogger()
 
     override fun registerFeature(feature: Feature) {
-        stubFeatureScope(feature, StubFeatureScope(feature, { datadogContext }))
+        stubFeatureScope(feature, StubFeatureScope(feature, { flashcatContext }))
     }
 
     override fun getFeature(featureName: String): FeatureScope? {
@@ -173,17 +173,17 @@ class StubSDKCore(
         useContextThread: Boolean,
         updateCallback: (context: MutableMap<String, Any?>) -> Unit
     ) {
-        val featureContext = datadogContext.featuresContext[featureName]?.toMutableMap() ?: mutableMapOf()
+        val featureContext = flashcatContext.featuresContext[featureName]?.toMutableMap() ?: mutableMapOf()
         updateCallback(featureContext)
-        datadogContext = datadogContext.copy(
-            featuresContext = datadogContext.featuresContext.toMutableMap().apply {
+        flashcatContext = flashcatContext.copy(
+            featuresContext = flashcatContext.featuresContext.toMutableMap().apply {
                 put(featureName, featureContext)
             }
         )
     }
 
     override fun getFeatureContext(featureName: String, useContextThread: Boolean): Map<String, Any?> {
-        return datadogContext.featuresContext[featureName].orEmpty()
+        return flashcatContext.featuresContext[featureName].orEmpty()
     }
 
     override fun createScheduledExecutorService(executorContext: String): ScheduledExecutorService {
@@ -200,7 +200,7 @@ class StubSDKCore(
 
     override val service: String
         get() {
-            return datadogContext.service
+            return flashcatContext.service
         }
 
     override val time: TimeInfo = mock()
@@ -227,7 +227,7 @@ class StubSDKCore(
     }
 
     override fun clearAccountInfo() {
-        datadogContext = datadogContext.copy(accountInfo = null)
+        flashcatContext = flashcatContext.copy(accountInfo = null)
     }
 
     // endregion

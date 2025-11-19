@@ -1,6 +1,6 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
@@ -8,7 +8,7 @@ package com.datadog.benchmark.exporter
 
 import android.os.Build
 import android.util.Log
-import com.datadog.android.BuildConfig
+import com.flashcat.rum.BuildConfig
 import com.datadog.benchmark.DatadogExporterConfiguration
 import com.datadog.benchmark.internal.MetricRequestBodyBuilder
 import com.datadog.benchmark.internal.model.BenchmarkContext

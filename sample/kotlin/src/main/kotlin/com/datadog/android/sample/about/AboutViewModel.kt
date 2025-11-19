@@ -1,18 +1,18 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.sample.about
+package com.flashcat.rum.sample.about
 
 import android.content.Context
 import android.os.AsyncTask
 import androidx.lifecycle.ViewModel
-import com.datadog.android.rum.resource.getAssetAsRumResource
-import com.datadog.android.rum.resource.getRawResAsRumResource
-import com.datadog.android.sample.R
-import com.datadog.android.trace.withinSpan
+import com.flashcat.rum.rum.resource.getAssetAsRumResource
+import com.flashcat.rum.rum.resource.getRawResAsRumResource
+import com.flashcat.rum.sample.R
+import com.flashcat.rum.trace.withinSpan
 import java.io.BufferedReader
 
 @Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")

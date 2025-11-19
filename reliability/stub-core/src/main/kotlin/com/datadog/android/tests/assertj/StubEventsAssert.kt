@@ -1,13 +1,13 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.tests.assertj
+package com.flashcat.rum.tests.assertj
 
 import android.annotation.SuppressLint
-import com.datadog.android.core.stub.StubEvent
+import com.flashcat.rum.core.stub.StubEvent
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import org.assertj.core.api.AbstractObjectAssert

@@ -35,3 +35,10 @@ sdk_classpath
 detekt_classpath
 **/verification-metadata.xml
 !gradle/verification-metadata.xml
+
+#other
+.cursor
+.vscode
+AGENTS.md
+openspec
+scripts

@@ -1,10 +1,10 @@
 /*
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
- * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * This product includes software developed at Datadog (https://flashcat.cloud/).
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.android.sample.compose
+package com.flashcat.rum.sample.compose
 
 import android.os.Bundle
 import androidx.activity.compose.setContent
@@ -21,8 +21,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
-import com.datadog.android.compose.NavigationViewTrackingEffect
-import com.datadog.android.rum.tracking.AcceptAllNavDestinations
+import com.flashcat.rum.compose.NavigationViewTrackingEffect
+import com.flashcat.rum.rum.tracking.AcceptAllNavDestinations
 
 /**
  * An activity to showcase Jetpack Compose instrumentation.

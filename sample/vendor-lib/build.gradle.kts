@@ -4,13 +4,13 @@
  * Copyright 2016-Present Datadog, Inc.
  */
 
-import com.datadog.gradle.config.AndroidConfig
-import com.datadog.gradle.config.dependencyUpdateConfig
-import com.datadog.gradle.config.java17
-import com.datadog.gradle.config.junitConfig
-import com.datadog.gradle.config.kotlinConfig
-import com.datadog.gradle.config.sampleAppConfig
-import com.datadog.gradle.config.taskConfig
+import com.flashcat.gradle.config.AndroidConfig
+import com.flashcat.gradle.config.dependencyUpdateConfig
+import com.flashcat.gradle.config.java17
+import com.flashcat.gradle.config.junitConfig
+import com.flashcat.gradle.config.kotlinConfig
+import com.flashcat.gradle.config.sampleAppConfig
+import com.flashcat.gradle.config.taskConfig
 import java.io.File
 
 plugins {
@@ -41,7 +41,7 @@ android {
         )
     }
 
-    namespace = "com.datadog.android.vendor.sample"
+    namespace = "com.flashcat.rum.vendor.sample"
 
     compileOptions {
         java17()
@@ -70,10 +70,10 @@ android {
 
 dependencies {
 
-    implementation(project(":features:dd-sdk-android-logs"))
-    implementation(project(":features:dd-sdk-android-trace"))
-    implementation(project(":features:dd-sdk-android-trace-otel"))
-    implementation(project(":integrations:dd-sdk-android-okhttp"))
+    implementation(project(":features:fc-sdk-android-logs"))
+    implementation(project(":features:fc-sdk-android-trace"))
+    implementation(project(":features:fc-sdk-android-trace-otel"))
+    implementation(project(":integrations:fc-sdk-android-okhttp"))
 
     implementation(libs.kotlin)
 
