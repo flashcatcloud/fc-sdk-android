@@ -12,8 +12,8 @@ import com.flashcat.rum.api.feature.FeatureSdkCore
 import com.flashcat.rum.rum.internal.monitor.NoOpAdvancedRumMonitor
 import com.flashcat.rum.rum.utils.forge.Configurator
 import com.flashcat.rum.rum.utils.verifyLog
-import com.datadog.tools.unit.annotations.ProhibitLeavingStaticMocksIn
-import com.datadog.tools.unit.extensions.ProhibitLeavingStaticMocksExtension
+import com.flashcat.tools.unit.annotations.ProhibitLeavingStaticMocksIn
+import com.flashcat.tools.unit.extensions.ProhibitLeavingStaticMocksExtension
 import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
 import fr.xgouchet.elmyr.junit5.ForgeExtension

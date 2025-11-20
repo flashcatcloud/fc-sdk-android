@@ -10,7 +10,7 @@ import com.flashcat.rum.api.InternalLogger
 import com.flashcat.rum.api.context.AccountInfo
 import com.flashcat.rum.core.internal.account.DatadogAccountInfoProvider.Companion.MSG_ACCOUNT_NULL
 import com.flashcat.rum.utils.forge.Configurator
-import com.datadog.tools.unit.forge.exhaustiveAttributes
+import com.flashcat.tools.unit.forge.exhaustiveAttributes
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.AdvancedForgery
 import fr.xgouchet.elmyr.annotation.Forgery

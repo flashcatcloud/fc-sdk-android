@@ -1,4 +1,4 @@
-object com.datadog.android.trace.api.DatadogTracingConstants
+object com.flashcat.rum.trace.api.FlashcatTracingConstants
   const val DEFAULT_ASYNC_PROPAGATING: Boolean
   object Tags
     const val KEY_HTTP_URL: String
@@ -44,19 +44,19 @@ object com.datadog.android.trace.api.DatadogTracingConstants
     const val UNSET: Byte
     const val HTTP_SERVER_DECORATOR: Byte
     const val DEFAULT: Byte
-interface com.datadog.android.trace.api.propagation.DatadogPropagation
-  fun <C> inject(com.datadog.android.trace.api.span.DatadogSpanContext, C, (C) -> Unit)
-  fun <C> extract(C, (C) -> Unit): com.datadog.android.trace.api.span.DatadogSpanContext?
-class com.datadog.android.trace.api.propagation.NoOpDatadogPropagation : DatadogPropagation
-  override fun <C> inject(com.datadog.android.trace.api.span.DatadogSpanContext, C, (C) -> Unit)
-  override fun <C> extract(C, (C) -> Unit): com.datadog.android.trace.api.span.DatadogSpanContext?
-interface com.datadog.android.trace.api.scope.DatadogScope : java.io.Closeable
+interface com.flashcat.rum.trace.api.propagation.DatadogPropagation
+  fun <C> inject(com.flashcat.rum.trace.api.span.DatadogSpanContext, C, (C) -> Unit)
+  fun <C> extract(C, (C) -> Unit): com.flashcat.rum.trace.api.span.DatadogSpanContext?
+class com.flashcat.rum.trace.api.propagation.NoOpDatadogPropagation : DatadogPropagation
+  override fun <C> inject(com.flashcat.rum.trace.api.span.DatadogSpanContext, C, (C) -> Unit)
+  override fun <C> extract(C, (C) -> Unit): com.flashcat.rum.trace.api.span.DatadogSpanContext?
+interface com.flashcat.rum.trace.api.scope.DatadogScope : java.io.Closeable
   override fun close()
-interface com.datadog.android.trace.api.span.DatadogSpan
+interface com.flashcat.rum.trace.api.span.DatadogSpan
   var isError: Boolean?
   val isRootSpan: Boolean
   val samplingPriority: Int?
-  val traceId: com.datadog.android.trace.api.trace.DatadogTraceId
+  val traceId: com.flashcat.rum.trace.api.trace.DatadogTraceId
   val parentSpanId: Long?
   var resourceName: String?
   var serviceName: String
@@ -80,7 +80,7 @@ interface com.datadog.android.trace.api.span.DatadogSpan
   fun logErrorMessage(String)
   fun logMessage(String)
   fun logAttributes(Map<String, Any>)
-interface com.datadog.android.trace.api.span.DatadogSpanBuilder
+interface com.flashcat.rum.trace.api.span.DatadogSpanBuilder
   fun start(): DatadogSpan
   fun withOrigin(String?): DatadogSpanBuilder
   fun withTag(String, Double?): DatadogSpanBuilder
@@ -92,35 +92,35 @@ interface com.datadog.android.trace.api.span.DatadogSpanBuilder
   fun withStartTimestamp(Long): DatadogSpanBuilder
   fun ignoreActiveSpan(): DatadogSpanBuilder
   fun withLink(DatadogSpanLink): DatadogSpanBuilder
-interface com.datadog.android.trace.api.span.DatadogSpanContext
-  val traceId: com.datadog.android.trace.api.trace.DatadogTraceId
+interface com.flashcat.rum.trace.api.span.DatadogSpanContext
+  val traceId: com.flashcat.rum.trace.api.trace.DatadogTraceId
   val spanId: Long
   val samplingPriority: Int
   val tags: Map<String, Any?>
   fun setSamplingPriority(Int): Boolean
   fun setMetric(CharSequence?, Double)
-interface com.datadog.android.trace.api.span.DatadogSpanLink
+interface com.flashcat.rum.trace.api.span.DatadogSpanLink
   val spanId: Long
   val sampled: Boolean
-  val traceId: com.datadog.android.trace.api.trace.DatadogTraceId
+  val traceId: com.flashcat.rum.trace.api.trace.DatadogTraceId
   val traceStrace: String
   val attributes: Map<String, String>?
-interface com.datadog.android.trace.api.span.DatadogSpanWriter
-interface com.datadog.android.trace.api.trace.DatadogTraceId
+interface com.flashcat.rum.trace.api.span.DatadogSpanWriter
+interface com.flashcat.rum.trace.api.trace.DatadogTraceId
   fun toHexStringPadded(Int): String
   fun toHexString(): String
   fun toLong(): Long
   companion object 
-interface com.datadog.android.trace.api.tracer.DatadogTracer
-  fun activeSpan(): com.datadog.android.trace.api.span.DatadogSpan?
-  fun propagate(): com.datadog.android.trace.api.propagation.DatadogPropagation
-  fun activateSpan(com.datadog.android.trace.api.span.DatadogSpan): com.datadog.android.trace.api.scope.DatadogScope?
-  fun buildSpan(CharSequence): com.datadog.android.trace.api.span.DatadogSpanBuilder
-  fun buildSpan(String, CharSequence): com.datadog.android.trace.api.span.DatadogSpanBuilder
-  fun addScopeListener(com.datadog.android.trace.api.scope.DatadogScopeListener)
-interface com.datadog.android.trace.api.tracer.DatadogTracerBuilder
+interface com.flashcat.rum.trace.api.tracer.DatadogTracer
+  fun activeSpan(): com.flashcat.rum.trace.api.span.DatadogSpan?
+  fun propagate(): com.flashcat.rum.trace.api.propagation.DatadogPropagation
+  fun activateSpan(com.flashcat.rum.trace.api.span.DatadogSpan): com.flashcat.rum.trace.api.scope.DatadogScope?
+  fun buildSpan(CharSequence): com.flashcat.rum.trace.api.span.DatadogSpanBuilder
+  fun buildSpan(String, CharSequence): com.flashcat.rum.trace.api.span.DatadogSpanBuilder
+  fun addScopeListener(com.flashcat.rum.trace.api.scope.DatadogScopeListener)
+interface com.flashcat.rum.trace.api.tracer.DatadogTracerBuilder
   fun build(): DatadogTracer
-  fun withTracingHeadersTypes(Set<com.datadog.android.trace.TracingHeaderType>): DatadogTracerBuilder
+  fun withTracingHeadersTypes(Set<com.flashcat.rum.trace.TracingHeaderType>): DatadogTracerBuilder
   fun withServiceName(String): DatadogTracerBuilder
   fun withSampleRate(Double): DatadogTracerBuilder
   fun withPartialFlushMinSpans(Int): DatadogTracerBuilder

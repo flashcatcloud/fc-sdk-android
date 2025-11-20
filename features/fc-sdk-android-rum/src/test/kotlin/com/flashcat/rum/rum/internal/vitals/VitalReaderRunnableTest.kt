@@ -13,8 +13,8 @@ import com.flashcat.rum.rum.internal.domain.RumContext
 import com.flashcat.rum.rum.internal.domain.scope.RumViewType
 import com.flashcat.rum.rum.utils.forge.Configurator
 import com.flashcat.rum.rum.utils.verifyLog
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
-import com.datadog.tools.unit.forge.exhaustiveAttributes
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.forge.exhaustiveAttributes
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.DoubleForgery
 import fr.xgouchet.elmyr.annotation.Forgery

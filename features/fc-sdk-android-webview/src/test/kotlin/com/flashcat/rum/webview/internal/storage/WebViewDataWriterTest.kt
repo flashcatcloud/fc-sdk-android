@@ -13,7 +13,7 @@ import com.flashcat.rum.api.storage.RawBatchEvent
 import com.flashcat.rum.core.persistence.Serializer
 import com.flashcat.rum.utils.forge.Configurator
 import com.flashcat.rum.utils.verifyLog
-import com.datadog.tools.unit.forge.aThrowable
+import com.flashcat.tools.unit.forge.aThrowable
 import com.google.gson.JsonObject
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.Forgery

@@ -19,8 +19,8 @@ import com.flashcat.rum.compose.InteractionType
 import com.flashcat.rum.rum.RumActionType
 import com.flashcat.rum.rum.RumAttributes
 import com.flashcat.rum.rum.RumMonitor
-import com.datadog.tools.unit.forge.BaseConfigurator
-import com.datadog.tools.unit.forge.anException
+import com.flashcat.tools.unit.forge.BaseConfigurator
+import com.flashcat.tools.unit.forge.anException
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.AdvancedForgery
 import fr.xgouchet.elmyr.annotation.MapForgery

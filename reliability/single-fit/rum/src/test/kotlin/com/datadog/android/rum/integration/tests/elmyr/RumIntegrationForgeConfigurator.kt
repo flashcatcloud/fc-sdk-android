@@ -8,7 +8,7 @@ package com.flashcat.rum.rum.integration.tests.elmyr
 
 import com.flashcat.rum.rum.utils.forge.useCommonRumFactories
 import com.flashcat.rum.tests.elmyr.useCoreFactories
-import com.datadog.tools.unit.forge.BaseConfigurator
+import com.flashcat.tools.unit.forge.BaseConfigurator
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.jvm.useJvmFactories
 

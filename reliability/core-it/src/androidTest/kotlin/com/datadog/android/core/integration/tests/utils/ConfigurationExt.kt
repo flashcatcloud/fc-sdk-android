@@ -9,7 +9,7 @@ package com.flashcat.rum.core.integration.tests.utils
 import com.flashcat.rum.FlashcatSite
 import com.flashcat.rum.core.configuration.Configuration
 import com.flashcat.rum.trace.TracingHeaderType
-import com.datadog.tools.unit.getFieldValue
+import com.flashcat.tools.unit.getFieldValue
 
 fun Configuration.site(): FlashcatSite {
     return this.getFieldValue<Any, Configuration>("coreConfig").getFieldValue("site")

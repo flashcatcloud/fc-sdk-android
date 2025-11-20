@@ -13,7 +13,7 @@ import com.flashcat.rum.sessionreplay.forge.ForgeConfigurator
 import com.flashcat.rum.sessionreplay.internal.net.ResourcesRequestFactory
 import com.flashcat.rum.sessionreplay.internal.storage.NoOpResourcesWriter
 import com.flashcat.rum.sessionreplay.internal.storage.ResourcesWriter
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
 import fr.xgouchet.elmyr.junit5.ForgeExtension

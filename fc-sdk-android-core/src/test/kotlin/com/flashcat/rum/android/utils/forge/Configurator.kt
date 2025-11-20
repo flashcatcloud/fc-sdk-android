@@ -10,7 +10,7 @@ import com.flashcat.rum.internal.tests.elmyr.InternalTelemetryApiUsageForgeryFac
 import com.flashcat.rum.internal.tests.elmyr.TracingHeaderTypesSetForgeryFactory
 import com.flashcat.rum.test.elmyr.PersistenceStrategyBatchForgeryFactory
 import com.flashcat.rum.tests.elmyr.useCoreFactories
-import com.datadog.tools.unit.forge.BaseConfigurator
+import com.flashcat.tools.unit.forge.BaseConfigurator
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.jvm.useJvmFactories
 

@@ -9,8 +9,8 @@ package com.flashcat.rum.trace.opentelemetry.internal
 import com.flashcat.rum.api.InternalLogger
 import com.flashcat.rum.trace.opentelemetry.utils.forge.Configurator
 import com.flashcat.rum.trace.opentelemetry.utils.verifyLog
-import com.datadog.tools.unit.annotations.TestTargetApi
-import com.datadog.tools.unit.extensions.ApiLevelExtension
+import com.flashcat.tools.unit.annotations.TestTargetApi
+import com.flashcat.tools.unit.extensions.ApiLevelExtension
 import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
 import fr.xgouchet.elmyr.junit5.ForgeExtension

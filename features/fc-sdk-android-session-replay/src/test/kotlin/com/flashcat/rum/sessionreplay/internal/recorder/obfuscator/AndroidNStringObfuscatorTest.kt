@@ -7,7 +7,7 @@
 package com.flashcat.rum.sessionreplay.internal.recorder.obfuscator
 
 import com.flashcat.rum.sessionreplay.forge.ForgeConfigurator
-import com.datadog.tools.unit.extensions.ApiLevelExtension
+import com.flashcat.tools.unit.extensions.ApiLevelExtension
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
 import fr.xgouchet.elmyr.junit5.ForgeExtension
 import org.assertj.core.api.Assertions.assertThat

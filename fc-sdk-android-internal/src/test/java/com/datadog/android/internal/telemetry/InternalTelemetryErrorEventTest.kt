@@ -7,7 +7,7 @@
 package com.flashcat.rum.internal.telemetry
 
 import com.flashcat.rum.internal.utils.loggableStackTrace
-import com.datadog.tools.unit.forge.aThrowable
+import com.flashcat.tools.unit.forge.aThrowable
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.junit5.ForgeExtension
 import org.assertj.core.api.Assertions.assertThat

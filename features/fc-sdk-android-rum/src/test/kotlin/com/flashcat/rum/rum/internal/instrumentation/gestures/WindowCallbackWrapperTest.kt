@@ -27,9 +27,9 @@ import com.flashcat.rum.rum.tracking.ViewAttributesProvider
 import com.flashcat.rum.rum.utils.config.GlobalRumMonitorTestConfiguration
 import com.flashcat.rum.rum.utils.forge.Configurator
 import com.flashcat.rum.rum.utils.verifyLog
-import com.datadog.tools.unit.annotations.TestConfigurationsProvider
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
-import com.datadog.tools.unit.extensions.config.TestConfiguration
+import com.flashcat.tools.unit.annotations.TestConfigurationsProvider
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.config.TestConfiguration
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.BoolForgery
 import fr.xgouchet.elmyr.annotation.Forgery

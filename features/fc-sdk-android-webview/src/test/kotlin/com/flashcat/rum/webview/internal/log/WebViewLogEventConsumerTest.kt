@@ -21,7 +21,7 @@ import com.flashcat.rum.utils.verifyLog
 import com.flashcat.rum.webview.internal.WebViewEventConsumer
 import com.flashcat.rum.webview.internal.rum.WebViewRumEventContextProvider
 import com.flashcat.rum.webview.internal.rum.domain.RumContext
-import com.datadog.tools.unit.assertj.JsonObjectAssert.Companion.assertThat
+import com.flashcat.tools.unit.assertj.JsonObjectAssert.Companion.assertThat
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import fr.xgouchet.elmyr.Forge

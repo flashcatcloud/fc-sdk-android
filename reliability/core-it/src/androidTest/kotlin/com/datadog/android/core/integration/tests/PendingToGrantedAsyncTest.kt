@@ -17,8 +17,8 @@ import com.flashcat.rum.core.configuration.Configuration
 import com.flashcat.rum.core.integration.tests.assertj.MockWebServerAssert
 import com.flashcat.rum.core.integration.tests.forge.factories.ConfigurationCoreForgeryFactory
 import com.flashcat.rum.privacy.TrackingConsent
-import com.datadog.tools.unit.ConditionWatcher
-import com.datadog.tools.unit.forge.useToolsFactories
+import com.flashcat.tools.unit.ConditionWatcher
+import com.flashcat.tools.unit.forge.useToolsFactories
 import com.google.gson.JsonObject
 import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.annotation.StringForgeryType

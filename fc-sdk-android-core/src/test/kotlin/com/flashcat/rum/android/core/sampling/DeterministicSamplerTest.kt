@@ -1,7 +1,7 @@
 package com.flashcat.rum.core.sampling
 
 import com.flashcat.rum.utils.forge.Configurator
-import com.datadog.trace.sampling.JavaDeterministicSampler
+import com.flashcat.rum.trace.sampling.JavaDeterministicSampler
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.FloatForgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration

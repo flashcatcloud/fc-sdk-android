@@ -11,7 +11,7 @@ import com.flashcat.rum.trace.api.scope.DatadogScope
 import com.flashcat.rum.trace.api.span.DatadogSpan
 import com.flashcat.rum.trace.api.span.DatadogSpanBuilder
 import com.flashcat.rum.trace.api.tracer.DatadogTracer
-import com.datadog.tools.unit.forge.BaseConfigurator
+import com.flashcat.tools.unit.forge.BaseConfigurator
 import com.squareup.sqldelight.Transacter
 import com.squareup.sqldelight.TransactionWithReturn
 import com.squareup.sqldelight.TransactionWithoutReturn

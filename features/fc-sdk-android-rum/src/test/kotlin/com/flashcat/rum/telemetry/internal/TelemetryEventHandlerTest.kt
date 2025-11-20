@@ -47,7 +47,7 @@ import com.flashcat.rum.telemetry.model.TelemetryErrorEvent
 import com.flashcat.rum.telemetry.model.TelemetryUsageEvent
 import com.flashcat.rum.trace.GlobalDatadogTracer
 import com.flashcat.rum.trace.api.tracer.DatadogTracer
-import com.datadog.tools.unit.forge.aThrowable
+import com.flashcat.tools.unit.forge.aThrowable
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.FloatForgery
 import fr.xgouchet.elmyr.annotation.Forgery

@@ -8,7 +8,7 @@ package com.flashcat.rum.rum.internal.utils
 
 import com.flashcat.rum.api.context.FlashcatContext
 import com.flashcat.rum.rum.utils.forge.Configurator
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration

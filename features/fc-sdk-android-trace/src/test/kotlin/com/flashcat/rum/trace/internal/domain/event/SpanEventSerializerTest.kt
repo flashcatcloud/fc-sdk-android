@@ -11,9 +11,9 @@ import com.flashcat.rum.core.constraints.DatadogDataConstraints
 import com.flashcat.rum.internal.utils.NULL_MAP_VALUE
 import com.flashcat.rum.trace.model.SpanEvent
 import com.flashcat.rum.utils.forge.Configurator
-import com.datadog.tools.unit.assertj.JsonObjectAssert
-import com.datadog.tools.unit.forge.anException
-import com.datadog.tools.unit.forge.exhaustiveAttributes
+import com.flashcat.tools.unit.assertj.JsonObjectAssert
+import com.flashcat.tools.unit.forge.anException
+import com.flashcat.tools.unit.forge.exhaustiveAttributes
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import fr.xgouchet.elmyr.Forge

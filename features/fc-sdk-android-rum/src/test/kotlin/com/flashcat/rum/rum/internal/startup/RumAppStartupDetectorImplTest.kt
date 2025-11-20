@@ -14,7 +14,7 @@ import android.os.Build
 import android.os.Bundle
 import com.flashcat.rum.core.internal.system.BuildSdkVersionProvider
 import com.flashcat.rum.rum.utils.forge.Configurator
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.BoolForgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration

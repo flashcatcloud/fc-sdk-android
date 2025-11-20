@@ -16,9 +16,9 @@ import com.flashcat.rum.Flashcat
 import com.flashcat.rum.api.InternalLogger
 import com.flashcat.rum.rum.utils.config.GlobalRumMonitorTestConfiguration
 import com.flashcat.rum.rum.utils.forge.Configurator
-import com.datadog.tools.unit.annotations.TestConfigurationsProvider
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
-import com.datadog.tools.unit.extensions.config.TestConfiguration
+import com.flashcat.tools.unit.annotations.TestConfigurationsProvider
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.config.TestConfiguration
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
 import fr.xgouchet.elmyr.junit5.ForgeExtension

@@ -28,11 +28,11 @@ import com.flashcat.rum.testgraphql.type.UserInput
 import com.flashcat.rum.trace.GlobalDatadogTracer
 import com.flashcat.rum.trace.Trace
 import com.flashcat.rum.trace.TraceConfiguration
-import com.datadog.tools.unit.annotations.TestConfigurationsProvider
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
-import com.datadog.tools.unit.extensions.config.TestConfiguration
-import com.datadog.tools.unit.getFieldValue
-import com.datadog.tools.unit.getStaticValue
+import com.flashcat.tools.unit.annotations.TestConfigurationsProvider
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.config.TestConfiguration
+import com.flashcat.tools.unit.getFieldValue
+import com.flashcat.tools.unit.getStaticValue
 import com.google.gson.JsonParser
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.StringForgery

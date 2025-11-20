@@ -20,7 +20,7 @@ import com.flashcat.rum.sessionreplay.utils.ColorStringFormatter
 import com.flashcat.rum.sessionreplay.utils.DrawableToColorMapper
 import com.flashcat.rum.sessionreplay.utils.ViewBoundsResolver
 import com.flashcat.rum.sessionreplay.utils.ViewIdentifierResolver
-import com.datadog.tools.unit.setStaticValue
+import com.flashcat.tools.unit.setStaticValue
 import fr.xgouchet.elmyr.annotation.Forgery
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.params.provider.Arguments

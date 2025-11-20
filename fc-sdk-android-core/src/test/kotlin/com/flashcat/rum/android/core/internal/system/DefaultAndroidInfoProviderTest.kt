@@ -18,8 +18,8 @@ import android.telephony.TelephonyManager
 import android.view.Display
 import com.flashcat.rum.api.context.DeviceType
 import com.flashcat.rum.utils.forge.Configurator
-import com.datadog.tools.unit.annotations.TestTargetApi
-import com.datadog.tools.unit.extensions.ApiLevelExtension
+import com.flashcat.tools.unit.annotations.TestTargetApi
+import com.flashcat.tools.unit.extensions.ApiLevelExtension
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.IntForgery
 import fr.xgouchet.elmyr.annotation.StringForgery
@@ -440,7 +440,8 @@ internal class DefaultAndroidInfoProviderTest {
         val mockDisplayManager = mock<DisplayManager>()
         whenever(mockContext.getSystemService(Context.DISPLAY_SERVICE))
             .thenReturn(mockDisplayManager)
-        whenever(mockDisplayManager.displays) doReturn mockDisplays.toTypedArray()
+        val displaysArray = mockDisplays.toTypedArray()
+        whenever(mockDisplayManager.displays) doReturn displaysArray
         val expectedDisplays = mockDisplays.filter {
             it.state != Display.STATE_OFF &&
                 it.state != Display.STATE_UNKNOWN

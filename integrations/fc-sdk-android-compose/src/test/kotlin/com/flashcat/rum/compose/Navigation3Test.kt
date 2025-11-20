@@ -11,7 +11,7 @@ import com.flashcat.rum.internal.attributes.ViewScopeInstrumentationType
 import com.flashcat.rum.internal.attributes.enrichWithConstantAttribute
 import com.flashcat.rum.rum.RumMonitor
 import com.flashcat.rum.rum.tracking.ComponentPredicate
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
 import fr.xgouchet.elmyr.annotation.BoolForgery
 import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.junit5.ForgeExtension

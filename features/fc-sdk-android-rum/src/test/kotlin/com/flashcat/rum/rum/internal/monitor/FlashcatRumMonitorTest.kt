@@ -61,8 +61,8 @@ import com.flashcat.rum.rum.utils.forge.Configurator
 import com.flashcat.rum.rum.utils.verifyApiUsage
 import com.flashcat.rum.rum.utils.verifyLog
 import com.flashcat.rum.telemetry.internal.TelemetryEventHandler
-import com.datadog.tools.unit.forge.aThrowable
-import com.datadog.tools.unit.forge.exhaustiveAttributes
+import com.flashcat.tools.unit.forge.aThrowable
+import com.flashcat.tools.unit.forge.exhaustiveAttributes
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.AdvancedForgery
 import fr.xgouchet.elmyr.annotation.BoolForgery

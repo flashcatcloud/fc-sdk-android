@@ -9,7 +9,7 @@ package com.flashcat.rum.rum.internal.startup
 import android.app.Activity
 import com.flashcat.rum.rum.internal.metric.FakeInternalLogger
 import com.flashcat.rum.rum.utils.forge.Configurator
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.IntForgery
 import fr.xgouchet.elmyr.annotation.LongForgery

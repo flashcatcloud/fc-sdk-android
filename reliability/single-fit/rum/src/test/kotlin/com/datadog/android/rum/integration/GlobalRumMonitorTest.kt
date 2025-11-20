@@ -14,9 +14,9 @@ import com.flashcat.rum.rum.RumConfiguration
 import com.flashcat.rum.rum.integration.tests.elmyr.RumIntegrationForgeConfigurator
 import com.flashcat.rum.rum.integration.tests.utils.MainLooperTestConfiguration
 import com.flashcat.rum.tests.assertj.StubEventsAssert.Companion.assertThat
-import com.datadog.tools.unit.annotations.TestConfigurationsProvider
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
-import com.datadog.tools.unit.extensions.config.TestConfiguration
+import com.flashcat.tools.unit.annotations.TestConfigurationsProvider
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.config.TestConfiguration
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration

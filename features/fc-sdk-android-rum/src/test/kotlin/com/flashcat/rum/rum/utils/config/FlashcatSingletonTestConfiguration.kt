@@ -9,7 +9,7 @@ package com.flashcat.rum.rum.utils.config
 import com.flashcat.rum.Flashcat
 import com.flashcat.rum.api.SdkCore
 import com.flashcat.rum.core.InternalSdkCore
-import com.datadog.tools.unit.extensions.config.MockTestConfiguration
+import com.flashcat.tools.unit.extensions.config.MockTestConfiguration
 import fr.xgouchet.elmyr.Forge
 
 // TODO RUMM-2949 Share forgeries/test configurations between modules

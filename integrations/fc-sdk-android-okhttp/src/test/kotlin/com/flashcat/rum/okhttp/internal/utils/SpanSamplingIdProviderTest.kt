@@ -14,7 +14,7 @@ import com.flashcat.rum.trace.api.from
 import com.flashcat.rum.trace.api.span.DatadogSpan
 import com.flashcat.rum.trace.api.span.DatadogSpanContext
 import com.flashcat.rum.trace.api.trace.DatadogTraceId
-import com.datadog.tools.unit.forge.BaseConfigurator
+import com.flashcat.tools.unit.forge.BaseConfigurator
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.LongForgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration

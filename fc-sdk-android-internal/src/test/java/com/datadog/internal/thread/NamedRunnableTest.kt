@@ -7,7 +7,7 @@
 package com.datadog.internal.thread
 
 import com.flashcat.rum.internal.thread.NamedRunnable
-import com.datadog.tools.unit.forge.BaseConfigurator
+import com.flashcat.tools.unit.forge.BaseConfigurator
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
 import fr.xgouchet.elmyr.junit5.ForgeExtension

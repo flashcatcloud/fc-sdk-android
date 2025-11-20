@@ -33,11 +33,11 @@ import com.flashcat.rum.trace.api.span.DatadogSpanBuilder
 import com.flashcat.rum.trace.api.span.DatadogSpanContext
 import com.flashcat.rum.trace.api.trace.DatadogTraceId
 import com.flashcat.rum.trace.api.tracer.DatadogTracer
-import com.datadog.tools.unit.annotations.TestConfigurationsProvider
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
-import com.datadog.tools.unit.extensions.config.TestConfiguration
-import com.datadog.tools.unit.forge.BaseConfigurator
-import com.datadog.tools.unit.forge.exhaustiveAttributes
+import com.flashcat.tools.unit.annotations.TestConfigurationsProvider
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.config.TestConfiguration
+import com.flashcat.tools.unit.forge.BaseConfigurator
+import com.flashcat.tools.unit.forge.exhaustiveAttributes
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.BoolForgery
 import fr.xgouchet.elmyr.annotation.Forgery

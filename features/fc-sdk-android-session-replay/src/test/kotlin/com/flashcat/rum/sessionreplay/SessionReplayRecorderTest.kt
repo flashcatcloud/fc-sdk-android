@@ -18,9 +18,9 @@ import com.flashcat.rum.sessionreplay.internal.recorder.ViewOnDrawInterceptor
 import com.flashcat.rum.sessionreplay.internal.recorder.WindowCallbackInterceptor
 import com.flashcat.rum.sessionreplay.internal.recorder.WindowInspector
 import com.flashcat.rum.sessionreplay.utils.config.ApplicationContextTestConfiguration
-import com.datadog.tools.unit.annotations.TestConfigurationsProvider
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
-import com.datadog.tools.unit.extensions.config.TestConfiguration
+import com.flashcat.tools.unit.annotations.TestConfigurationsProvider
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.config.TestConfiguration
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.junit5.ForgeExtension

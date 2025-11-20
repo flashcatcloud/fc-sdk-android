@@ -17,7 +17,7 @@ import com.flashcat.rum.compose.internal.ComposeActionTrackingStrategy
 import com.flashcat.rum.compose.internal.utils.LayoutNodeUtils
 import com.flashcat.rum.rum.tracking.Node
 import com.flashcat.rum.rum.tracking.ViewTarget
-import com.datadog.tools.unit.forge.BaseConfigurator
+import com.flashcat.tools.unit.forge.BaseConfigurator
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
 import fr.xgouchet.elmyr.junit5.ForgeExtension

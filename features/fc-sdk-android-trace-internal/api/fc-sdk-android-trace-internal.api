@@ -1,0 +1,7 @@
+public final class com/flashcat/rum/trace/internal/domain/event/BigIntegerUtils {
+	public static final field INSTANCE Lcom/flashcat/rum/trace/internal/domain/event/BigIntegerUtils;
+	public final fun leastSignificant64BitsAsDecimal (Ljava/math/BigInteger;)Ljava/lang/String;
+	public final fun leastSignificant64BitsAsHex (Ljava/math/BigInteger;)Ljava/lang/String;
+	public final fun mostSignificant64BitsAsHex (Ljava/math/BigInteger;)Ljava/lang/String;
+}
+

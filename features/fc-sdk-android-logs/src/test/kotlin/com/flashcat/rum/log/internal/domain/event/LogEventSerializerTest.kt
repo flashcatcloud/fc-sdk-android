@@ -10,9 +10,9 @@ import com.flashcat.rum.api.InternalLogger
 import com.flashcat.rum.log.assertj.containsExtraAttributes
 import com.flashcat.rum.log.model.LogEvent
 import com.flashcat.rum.utils.forge.Configurator
-import com.datadog.tools.unit.assertj.JsonObjectAssert
-import com.datadog.tools.unit.assertj.JsonObjectAssert.Companion.assertThat
-import com.datadog.tools.unit.forge.anException
+import com.flashcat.tools.unit.assertj.JsonObjectAssert
+import com.flashcat.tools.unit.assertj.JsonObjectAssert.Companion.assertThat
+import com.flashcat.tools.unit.forge.anException
 import com.google.gson.JsonParser
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.Forgery

@@ -7,7 +7,7 @@
 package forge
 
 import com.flashcat.rum.api.context.UserInfo
-import com.datadog.tools.unit.forge.exhaustiveAttributes
+import com.flashcat.tools.unit.forge.exhaustiveAttributes
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory
 

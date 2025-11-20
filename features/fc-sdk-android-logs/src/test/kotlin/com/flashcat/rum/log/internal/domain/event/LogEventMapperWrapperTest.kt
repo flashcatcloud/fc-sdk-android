@@ -10,7 +10,7 @@ import com.flashcat.rum.api.InternalLogger
 import com.flashcat.rum.event.EventMapper
 import com.flashcat.rum.log.model.LogEvent
 import com.flashcat.rum.utils.forge.Configurator
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
 import fr.xgouchet.elmyr.junit5.ForgeExtension
 import org.assertj.core.api.Assertions

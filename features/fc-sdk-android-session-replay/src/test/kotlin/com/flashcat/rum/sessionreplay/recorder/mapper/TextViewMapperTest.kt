@@ -12,7 +12,7 @@ import com.flashcat.rum.sessionreplay.model.MobileSegment.Horizontal.RIGHT
 import com.flashcat.rum.sessionreplay.model.MobileSegment.Vertical.BOTTOM
 import com.flashcat.rum.sessionreplay.model.MobileSegment.Vertical.TOP
 import com.flashcat.rum.sessionreplay.utils.OPAQUE_ALPHA_VALUE
-import com.datadog.tools.unit.setStaticValue
+import com.flashcat.tools.unit.setStaticValue
 import fr.xgouchet.elmyr.annotation.FloatForgery
 import fr.xgouchet.elmyr.annotation.IntForgery
 import fr.xgouchet.elmyr.annotation.StringForgery

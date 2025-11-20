@@ -17,8 +17,8 @@ import com.bumptech.glide.load.model.ModelLoaderFactory
 import com.bumptech.glide.module.AppGlideModule
 import com.flashcat.rum.api.SdkCore
 import com.flashcat.rum.okhttp.DatadogInterceptor
-import com.datadog.tools.unit.assertj.containsInstanceOf
-import com.datadog.tools.unit.getFieldValue
+import com.flashcat.tools.unit.assertj.containsInstanceOf
+import com.flashcat.tools.unit.getFieldValue
 import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.junit5.ForgeExtension
 import okhttp3.OkHttpClient

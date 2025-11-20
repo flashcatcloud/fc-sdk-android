@@ -20,7 +20,7 @@ import com.flashcat.rum.core.integration.tests.forge.factories.ConfigurationCore
 import com.flashcat.rum.core.integration.tests.utils.removeRandomEntries
 import com.flashcat.rum.core.thread.FlushableExecutorService
 import com.flashcat.rum.privacy.TrackingConsent
-import com.datadog.tools.unit.forge.useToolsFactories
+import com.flashcat.tools.unit.forge.useToolsFactories
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.annotation.StringForgeryType

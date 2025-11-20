@@ -15,7 +15,7 @@ import com.flashcat.rum.utils.forge.Configurator
 import com.flashcat.rum.utils.forge.aRumEventAsJson
 import com.flashcat.rum.webview.internal.rum.domain.NativeRumViewsCache
 import com.flashcat.rum.webview.internal.rum.domain.RumContext
-import com.datadog.tools.unit.assertj.JsonObjectAssert.Companion.assertThat
+import com.flashcat.tools.unit.assertj.JsonObjectAssert.Companion.assertThat
 import com.google.gson.JsonObject
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.Forgery

@@ -14,7 +14,7 @@ import com.flashcat.rum.sessionreplay.internal.recorder.optionselectormocks.Appc
 import com.flashcat.rum.sessionreplay.internal.recorder.optionselectormocks.ToolbarCustomSubclass
 import com.flashcat.rum.sessionreplay.model.MobileSegment
 import com.flashcat.rum.sessionreplay.utils.GlobalBounds
-import com.datadog.tools.unit.extensions.ApiLevelExtension
+import com.flashcat.tools.unit.extensions.ApiLevelExtension
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.annotation.LongForgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration

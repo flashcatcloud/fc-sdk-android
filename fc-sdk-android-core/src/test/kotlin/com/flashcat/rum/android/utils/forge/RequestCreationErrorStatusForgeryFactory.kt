@@ -7,7 +7,7 @@
 package com.flashcat.rum.utils.forge
 
 import com.flashcat.rum.core.internal.data.upload.UploadStatus
-import com.datadog.tools.unit.forge.anException
+import com.flashcat.tools.unit.forge.anException
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory
 

@@ -22,8 +22,8 @@ import com.flashcat.rum.sessionreplay.recorder.mapper.TextViewMapper
 import com.flashcat.rum.sessionreplay.recorder.resources.DrawableCopier
 import com.flashcat.rum.sessionreplay.utils.GlobalBounds
 import com.flashcat.rum.sessionreplay.utils.OPAQUE_ALPHA_VALUE
-import com.datadog.tools.unit.annotations.TestTargetApi
-import com.datadog.tools.unit.extensions.ApiLevelExtension
+import com.flashcat.tools.unit.annotations.TestTargetApi
+import com.flashcat.tools.unit.extensions.ApiLevelExtension
 import fr.xgouchet.elmyr.annotation.FloatForgery
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.annotation.IntForgery

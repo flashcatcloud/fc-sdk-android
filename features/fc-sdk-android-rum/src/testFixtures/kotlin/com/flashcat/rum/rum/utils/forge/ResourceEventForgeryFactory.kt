@@ -13,7 +13,7 @@ import com.flashcat.rum.rum.internal.domain.scope.download
 import com.flashcat.rum.rum.internal.domain.scope.firstByte
 import com.flashcat.rum.rum.internal.domain.scope.ssl
 import com.flashcat.rum.rum.model.ResourceEvent
-import com.datadog.tools.unit.forge.exhaustiveAttributes
+import com.flashcat.tools.unit.forge.exhaustiveAttributes
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory
 import fr.xgouchet.elmyr.jvm.ext.aTimestamp

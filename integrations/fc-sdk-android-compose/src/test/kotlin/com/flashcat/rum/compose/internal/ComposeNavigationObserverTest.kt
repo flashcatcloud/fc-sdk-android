@@ -14,7 +14,7 @@ import com.flashcat.rum.internal.attributes.LocalAttribute
 import com.flashcat.rum.internal.attributes.ViewScopeInstrumentationType
 import com.flashcat.rum.rum.RumMonitor
 import com.flashcat.rum.rum.tracking.ComponentPredicate
-import com.datadog.tools.unit.forge.BaseConfigurator
+import com.flashcat.tools.unit.forge.BaseConfigurator
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration

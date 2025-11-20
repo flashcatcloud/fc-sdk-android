@@ -14,7 +14,7 @@ import com.flashcat.rum.sessionreplay.model.MobileSegment
 import com.flashcat.rum.sessionreplay.recorder.mapper.BaseAsyncBackgroundWireframeMapper
 import com.flashcat.rum.sessionreplay.recorder.mapper.WireframeMapper
 import com.flashcat.rum.sessionreplay.utils.GlobalBounds
-import com.datadog.tools.unit.extensions.ApiLevelExtension
+import com.flashcat.tools.unit.extensions.ApiLevelExtension
 import fr.xgouchet.elmyr.annotation.FloatForgery
 import fr.xgouchet.elmyr.annotation.IntForgery
 import fr.xgouchet.elmyr.annotation.LongForgery

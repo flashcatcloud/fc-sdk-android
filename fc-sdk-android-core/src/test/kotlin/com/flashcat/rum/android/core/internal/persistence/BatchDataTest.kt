@@ -7,7 +7,7 @@
 package com.flashcat.rum.core.internal.persistence
 
 import com.flashcat.rum.utils.forge.Configurator
-import com.datadog.tools.unit.ObjectTest
+import com.flashcat.tools.unit.ObjectTest
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
 import fr.xgouchet.elmyr.junit5.ForgeExtension

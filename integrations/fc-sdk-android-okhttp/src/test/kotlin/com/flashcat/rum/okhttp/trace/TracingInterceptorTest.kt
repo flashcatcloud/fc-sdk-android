@@ -35,9 +35,9 @@ import com.flashcat.rum.trace.api.withMockPropagationHelper
 import com.flashcat.rum.trace.internal.DatadogPropagationHelper
 import com.flashcat.rum.trace.internal.DatadogTracingToolkit
 import com.flashcat.rum.trace.internal.fromHex
-import com.datadog.tools.unit.annotations.TestConfigurationsProvider
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
-import com.datadog.tools.unit.extensions.config.TestConfiguration
+import com.flashcat.tools.unit.annotations.TestConfigurationsProvider
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.config.TestConfiguration
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.BoolForgery
 import fr.xgouchet.elmyr.annotation.FloatForgery

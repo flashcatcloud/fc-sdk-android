@@ -25,9 +25,9 @@ import com.flashcat.rum.trace.api.DatadogTracingConstants
 import com.flashcat.rum.trace.api.span.DatadogSpan
 import com.flashcat.rum.trace.internal.DatadogTracingToolkit
 import com.flashcat.rum.trace.opentelemetry.OtelTracerProvider
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
-import com.datadog.tools.unit.getFieldValue
-import com.datadog.tools.unit.getStaticValue
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.getFieldValue
+import com.flashcat.tools.unit.getStaticValue
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import fr.xgouchet.elmyr.Forge

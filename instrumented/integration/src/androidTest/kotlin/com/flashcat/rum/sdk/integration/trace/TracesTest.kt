@@ -20,7 +20,7 @@ import com.flashcat.rum.trace.api.resolveMeta
 import com.flashcat.rum.trace.api.resolveMetrics
 import com.flashcat.rum.trace.api.span.DatadogSpan
 import com.flashcat.rum.trace.internal.DatadogTracingToolkit
-import com.datadog.tools.unit.assertj.JsonObjectAssert.Companion.assertThat
+import com.flashcat.tools.unit.assertj.JsonObjectAssert.Companion.assertThat
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser

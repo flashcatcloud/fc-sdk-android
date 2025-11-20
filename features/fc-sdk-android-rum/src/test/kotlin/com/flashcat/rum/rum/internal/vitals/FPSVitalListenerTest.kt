@@ -15,7 +15,7 @@ import com.flashcat.rum.rum.internal.vitals.FrameStatesAggregatorTest.Companion.
 import com.flashcat.rum.rum.internal.vitals.FrameStatesAggregatorTest.Companion.ONE_MILLISECOND_NS
 import com.flashcat.rum.rum.internal.vitals.FrameStatesAggregatorTest.Companion.ONE_SECOND_NS
 import com.flashcat.rum.rum.utils.forge.Configurator
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
 import fr.xgouchet.elmyr.annotation.BoolForgery
 import fr.xgouchet.elmyr.annotation.DoubleForgery
 import fr.xgouchet.elmyr.annotation.LongForgery

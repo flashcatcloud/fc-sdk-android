@@ -12,7 +12,7 @@ import com.flashcat.rum.sessionreplay.internal.processor.EnrichedResource.Compan
 import com.flashcat.rum.sessionreplay.internal.processor.EnrichedResource.Companion.FILENAME_KEY
 import com.flashcat.rum.sessionreplay.internal.utils.MiscUtils.safeDeserializeToJsonObject
 import com.flashcat.rum.sessionreplay.internal.utils.MiscUtils.safeGetStringFromJsonObject
-import com.datadog.tools.unit.ObjectTest
+import com.flashcat.tools.unit.ObjectTest
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration

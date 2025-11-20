@@ -11,7 +11,7 @@ import com.flashcat.rum.core.configuration.BackPressureMitigation
 import com.flashcat.rum.core.configuration.BackPressureStrategy
 import com.flashcat.rum.utils.forge.Configurator
 import com.flashcat.rum.utils.verifyLog
-import com.datadog.tools.unit.forge.aThrowable
+import com.flashcat.tools.unit.forge.aThrowable
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.annotation.IntForgery

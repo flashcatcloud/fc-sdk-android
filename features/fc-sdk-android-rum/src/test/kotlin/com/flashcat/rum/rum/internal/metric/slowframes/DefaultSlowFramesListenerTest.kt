@@ -9,7 +9,7 @@ import androidx.metrics.performance.FrameData
 import com.flashcat.rum.rum.configuration.SlowFramesConfiguration
 import com.flashcat.rum.rum.internal.domain.state.SlowFrameRecord
 import com.flashcat.rum.rum.utils.forge.Configurator
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.LongForgery
 import fr.xgouchet.elmyr.annotation.StringForgery

@@ -16,7 +16,7 @@ import com.flashcat.rum.rum.tracking.ActionTrackingStrategy
 import com.flashcat.rum.rum.tracking.InteractionPredicate
 import com.flashcat.rum.rum.tracking.NoOpActionTrackingStrategy
 import com.flashcat.rum.rum.tracking.ViewAttributesProvider
-import com.datadog.tools.unit.ObjectTest
+import com.flashcat.tools.unit.ObjectTest
 import fr.xgouchet.elmyr.Forge
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach

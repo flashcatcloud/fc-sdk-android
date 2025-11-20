@@ -10,8 +10,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.flashcat.rum.sdk.integration.RuntimeConfig
 import com.flashcat.rum.sdk.rules.HandledRequest
 import com.flashcat.rum.sdk.rules.TelemetryTestRule
-import com.datadog.tools.unit.ConditionWatcher
-import com.datadog.tools.unit.assertj.JsonObjectAssert.Companion.assertThat
+import com.flashcat.tools.unit.ConditionWatcher
+import com.flashcat.tools.unit.assertj.JsonObjectAssert.Companion.assertThat
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import org.assertj.core.api.Assertions

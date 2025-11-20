@@ -29,10 +29,10 @@ import com.flashcat.rum.trace.utils.RumContextTestsUtils.aFlashcatContextWithRum
 import com.flashcat.rum.trace.utils.RumContextTestsUtils.aRumContext
 import com.flashcat.rum.trace.utils.verifyLog
 import com.flashcat.rum.utils.forge.Configurator
-import com.datadog.tools.unit.completedFutureMock
-import com.datadog.tools.unit.completedWithErrorFutureMock
-import com.datadog.tools.unit.forge.anException
-import com.datadog.tools.unit.incompleteFutureMock
+import com.flashcat.tools.unit.completedFutureMock
+import com.flashcat.tools.unit.completedWithErrorFutureMock
+import com.flashcat.tools.unit.forge.anException
+import com.flashcat.tools.unit.incompleteFutureMock
 import com.datadog.trace.core.DDSpan
 import com.datadog.trace.core.propagation.HttpCodec
 import fr.xgouchet.elmyr.Forge

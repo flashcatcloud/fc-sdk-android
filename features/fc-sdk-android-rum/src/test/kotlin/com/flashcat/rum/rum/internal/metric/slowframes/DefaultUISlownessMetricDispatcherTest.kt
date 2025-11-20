@@ -15,8 +15,8 @@ import com.flashcat.rum.rum.internal.metric.slowframes.DefaultUISlownessMetricDi
 import com.flashcat.rum.rum.internal.metric.slowframes.DefaultUISlownessMetricDispatcher.Companion.KEY_SLOW_FRAMES
 import com.flashcat.rum.rum.internal.metric.slowframes.DefaultUISlownessMetricDispatcher.Companion.KEY_VIEW_DURATION
 import com.flashcat.rum.rum.utils.forge.Configurator
-import com.datadog.tools.unit.extensions.ApiLevelExtension
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.ApiLevelExtension
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
 import fr.xgouchet.elmyr.annotation.FloatForgery
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.annotation.LongForgery

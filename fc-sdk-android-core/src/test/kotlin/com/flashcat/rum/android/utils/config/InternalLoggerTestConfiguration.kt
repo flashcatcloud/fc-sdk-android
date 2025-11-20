@@ -8,7 +8,7 @@ package com.flashcat.rum.utils.config
 
 import com.flashcat.rum.api.InternalLogger
 import com.flashcat.rum.core.internal.utils.unboundInternalLogger
-import com.datadog.tools.unit.extensions.config.TestConfiguration
+import com.flashcat.tools.unit.extensions.config.TestConfiguration
 import fr.xgouchet.elmyr.Forge
 import org.mockito.kotlin.mock
 

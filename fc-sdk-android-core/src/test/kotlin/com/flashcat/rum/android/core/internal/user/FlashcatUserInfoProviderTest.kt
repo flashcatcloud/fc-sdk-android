@@ -8,7 +8,7 @@ package com.flashcat.rum.core.internal.user
 
 import com.flashcat.rum.api.context.UserInfo
 import com.flashcat.rum.utils.forge.Configurator
-import com.datadog.tools.unit.forge.exhaustiveAttributes
+import com.flashcat.tools.unit.forge.exhaustiveAttributes
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.AdvancedForgery
 import fr.xgouchet.elmyr.annotation.Forgery

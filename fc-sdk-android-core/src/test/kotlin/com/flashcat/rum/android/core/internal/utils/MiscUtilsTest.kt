@@ -12,8 +12,8 @@ import com.flashcat.rum.core.internal.utils.JsonSerializer.safeMapValuesToJson
 import com.flashcat.rum.internal.utils.NULL_MAP_VALUE
 import com.flashcat.rum.utils.forge.Configurator
 import com.flashcat.rum.utils.verifyLog
-import com.datadog.tools.unit.forge.anException
-import com.datadog.tools.unit.forge.exhaustiveAttributes
+import com.flashcat.tools.unit.forge.anException
+import com.flashcat.tools.unit.forge.exhaustiveAttributes
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonNull

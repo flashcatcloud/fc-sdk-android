@@ -6,7 +6,7 @@
 
 package internal
 
-import com.datadog.tools.unit.assertj.JsonObjectAssert
+import com.flashcat.tools.unit.assertj.JsonObjectAssert
 import com.google.gson.JsonObject
 
 class PointAssert(actual: JsonObject) : JsonObjectAssert(actual, true) {

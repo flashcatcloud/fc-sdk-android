@@ -15,10 +15,10 @@ import com.flashcat.rum.core.UploadWorker
 import com.flashcat.rum.core.internal.CoreFeature
 import com.flashcat.rum.utils.config.ApplicationContextTestConfiguration
 import com.flashcat.rum.utils.forge.Configurator
-import com.datadog.tools.unit.annotations.TestConfigurationsProvider
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
-import com.datadog.tools.unit.extensions.config.TestConfiguration
-import com.datadog.tools.unit.setStaticValue
+import com.flashcat.tools.unit.annotations.TestConfigurationsProvider
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.config.TestConfiguration
+import com.flashcat.tools.unit.setStaticValue
 import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
 import fr.xgouchet.elmyr.junit5.ForgeExtension

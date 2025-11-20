@@ -8,7 +8,7 @@ package com.flashcat.rum.log.assertj
 
 import com.flashcat.rum.core.internal.utils.JsonSerializer
 import com.flashcat.rum.internal.utils.NULL_MAP_VALUE
-import com.datadog.tools.unit.assertj.JsonObjectAssert
+import com.flashcat.tools.unit.assertj.JsonObjectAssert
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject

@@ -7,7 +7,7 @@
 package com.flashcat.rum.internal.forge
 
 import com.flashcat.rum.internal.tests.elmyr.InternalTelemetryErrorLogForgeryFactory
-import com.datadog.tools.unit.forge.BaseConfigurator
+import com.flashcat.tools.unit.forge.BaseConfigurator
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.jvm.useJvmFactories
 

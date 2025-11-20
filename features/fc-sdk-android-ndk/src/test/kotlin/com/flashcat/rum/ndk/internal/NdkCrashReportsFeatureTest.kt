@@ -10,7 +10,7 @@ import android.content.Context
 import com.flashcat.rum.api.InternalLogger
 import com.flashcat.rum.core.InternalSdkCore
 import com.flashcat.rum.privacy.TrackingConsent
-import com.datadog.tools.unit.setFieldValue
+import com.flashcat.tools.unit.setFieldValue
 import fr.xgouchet.elmyr.junit5.ForgeExtension
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach

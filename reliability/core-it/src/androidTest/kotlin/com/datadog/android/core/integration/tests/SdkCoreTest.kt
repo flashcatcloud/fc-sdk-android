@@ -18,8 +18,8 @@ import com.flashcat.rum.api.feature.stub.StubStorageBackedFeature
 import com.flashcat.rum.core.configuration.Configuration
 import com.flashcat.rum.core.integration.tests.forge.factories.ConfigurationCoreForgeryFactory
 import com.flashcat.rum.privacy.TrackingConsent
-import com.datadog.tools.unit.forge.exhaustiveAttributes
-import com.datadog.tools.unit.forge.useToolsFactories
+import com.flashcat.tools.unit.forge.exhaustiveAttributes
+import com.flashcat.tools.unit.forge.useToolsFactories
 import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.annotation.StringForgeryType
 import fr.xgouchet.elmyr.junit4.ForgeRule

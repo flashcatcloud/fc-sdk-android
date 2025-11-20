@@ -30,10 +30,10 @@ import com.flashcat.rum.trace.api.setTestIdGenerationStrategy
 import com.flashcat.rum.trace.api.tracer.DatadogTracerBuilder
 import com.flashcat.rum.trace.utils.RumContextTestsUtils.aflashcatContextWithRumContext
 import com.flashcat.rum.trace.utils.RumContextTestsUtils.aRumContext
-import com.datadog.tools.unit.completedFutureMock
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
-import com.datadog.tools.unit.getFieldValue
-import com.datadog.tools.unit.getStaticValue
+import com.flashcat.tools.unit.completedFutureMock
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.getFieldValue
+import com.flashcat.tools.unit.getStaticValue
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
 import fr.xgouchet.elmyr.junit5.ForgeExtension

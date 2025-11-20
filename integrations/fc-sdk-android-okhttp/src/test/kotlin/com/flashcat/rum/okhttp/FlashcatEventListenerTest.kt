@@ -13,9 +13,9 @@ import com.flashcat.rum.okhttp.utils.reset
 import com.flashcat.rum.rum.GlobalRumMonitor
 import com.flashcat.rum.rum.internal.domain.event.ResourceTiming
 import com.flashcat.rum.rum.resource.ResourceId
-import com.datadog.tools.unit.annotations.TestConfigurationsProvider
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
-import com.datadog.tools.unit.extensions.config.TestConfiguration
+import com.flashcat.tools.unit.annotations.TestConfigurationsProvider
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.config.TestConfiguration
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.annotation.IntForgery
 import fr.xgouchet.elmyr.annotation.LongForgery

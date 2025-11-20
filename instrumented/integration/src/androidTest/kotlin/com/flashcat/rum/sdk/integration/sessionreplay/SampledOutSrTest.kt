@@ -10,7 +10,7 @@ import com.flashcat.rum.privacy.TrackingConsent
 import com.flashcat.rum.sdk.integration.RuntimeConfig
 import com.flashcat.rum.sdk.rules.SessionReplayTestRule
 import com.flashcat.rum.sdk.utils.SR_SAMPLE_RATE
-import com.datadog.tools.unit.ConditionWatcher
+import com.flashcat.tools.unit.ConditionWatcher
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test

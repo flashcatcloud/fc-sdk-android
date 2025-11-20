@@ -18,7 +18,7 @@ import com.flashcat.rum.trace.internal.DatadogSpanWriterWrapper
 import com.flashcat.rum.trace.internal.DatadogTracerAdapter
 import com.flashcat.rum.trace.utils.verifyLog
 import com.flashcat.rum.utils.forge.Configurator
-import com.datadog.tools.unit.getFieldValue
+import com.flashcat.tools.unit.getFieldValue
 import com.datadog.trace.common.writer.NoOpWriter
 import com.datadog.trace.common.writer.Writer
 import com.datadog.trace.core.CoreTracer

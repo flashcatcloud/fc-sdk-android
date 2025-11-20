@@ -9,7 +9,7 @@ package com.flashcat.rum.core.internal.thread
 import com.flashcat.rum.api.InternalLogger
 import com.flashcat.rum.core.configuration.BackPressureStrategy
 import com.flashcat.rum.utils.verifyLog
-import com.datadog.tools.unit.forge.aThrowable
+import com.flashcat.tools.unit.forge.aThrowable
 import fr.xgouchet.elmyr.Forge
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test

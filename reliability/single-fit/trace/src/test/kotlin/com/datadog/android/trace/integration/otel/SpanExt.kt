@@ -7,7 +7,7 @@
 package com.flashcat.rum.trace.integration.otel
 
 import com.flashcat.rum.trace.api.span.DatadogSpan
-import com.datadog.tools.unit.getFieldValue
+import com.flashcat.tools.unit.getFieldValue
 import io.opentelemetry.api.trace.Span
 
 internal fun Span.leastSignificant64BitsTraceIdAsHex(): String {

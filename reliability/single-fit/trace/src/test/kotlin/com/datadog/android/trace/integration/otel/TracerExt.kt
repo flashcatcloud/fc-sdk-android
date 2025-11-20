@@ -9,8 +9,8 @@ package com.flashcat.rum.trace.integration.otel
 import com.flashcat.rum.api.feature.Feature
 import com.flashcat.rum.api.feature.FeatureScope
 import com.flashcat.rum.trace.integration.tests.utils.BlockingWriterWrapper
-import com.datadog.tools.unit.getFieldValue
-import com.datadog.tools.unit.setFieldValue
+import com.flashcat.tools.unit.getFieldValue
+import com.flashcat.tools.unit.setFieldValue
 import com.datadog.trace.common.writer.Writer
 
 private const val WRITER_FIELD_NAME = "coreTracerDataWriter"

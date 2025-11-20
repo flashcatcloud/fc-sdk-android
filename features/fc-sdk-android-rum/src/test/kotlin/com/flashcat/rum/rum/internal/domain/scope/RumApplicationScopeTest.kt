@@ -33,7 +33,7 @@ import com.flashcat.rum.rum.metric.interactiontonextview.LastInteractionIdentifi
 import com.flashcat.rum.rum.metric.networksettled.InitialResourceIdentifier
 import com.flashcat.rum.rum.utils.forge.Configurator
 import com.flashcat.rum.rum.utils.verifyLog
-import com.datadog.tools.unit.forge.exhaustiveAttributes
+import com.flashcat.tools.unit.forge.exhaustiveAttributes
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.BoolForgery
 import fr.xgouchet.elmyr.annotation.FloatForgery

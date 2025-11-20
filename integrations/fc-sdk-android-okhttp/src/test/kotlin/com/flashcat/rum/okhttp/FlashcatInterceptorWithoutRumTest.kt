@@ -15,7 +15,7 @@ import com.flashcat.rum.okhttp.utils.verifyLog
 import com.flashcat.rum.rum.RumResourceAttributesProvider
 import com.flashcat.rum.trace.TracingHeaderType
 import com.flashcat.rum.trace.api.tracer.DatadogTracer
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.annotation.IntForgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration

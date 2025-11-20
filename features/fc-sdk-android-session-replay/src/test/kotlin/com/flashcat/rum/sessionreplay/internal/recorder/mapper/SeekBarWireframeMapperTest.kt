@@ -13,8 +13,8 @@ import com.flashcat.rum.sessionreplay.model.MobileSegment
 import com.flashcat.rum.sessionreplay.recorder.mapper.AbstractWireframeMapperTest
 import com.flashcat.rum.sessionreplay.utils.OPAQUE_ALPHA_VALUE
 import com.flashcat.rum.sessionreplay.utils.PARTIALLY_OPAQUE_ALPHA_VALUE
-import com.datadog.tools.unit.annotations.TestTargetApi
-import com.datadog.tools.unit.extensions.ApiLevelExtension
+import com.flashcat.tools.unit.annotations.TestTargetApi
+import com.flashcat.tools.unit.extensions.ApiLevelExtension
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.IntForgery
 import fr.xgouchet.elmyr.annotation.LongForgery

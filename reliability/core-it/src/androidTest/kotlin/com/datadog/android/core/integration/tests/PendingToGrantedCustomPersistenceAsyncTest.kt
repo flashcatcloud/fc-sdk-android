@@ -25,8 +25,8 @@ import com.flashcat.rum.core.integration.tests.utils.HeapBasedPersistenceStrateg
 import com.flashcat.rum.core.persistence.PersistenceStrategy
 import com.flashcat.rum.privacy.TrackingConsent
 import com.flashcat.rum.trace.TracingHeaderType
-import com.datadog.tools.unit.ConditionWatcher
-import com.datadog.tools.unit.forge.useToolsFactories
+import com.flashcat.tools.unit.ConditionWatcher
+import com.flashcat.tools.unit.forge.useToolsFactories
 import com.google.gson.JsonObject
 import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.annotation.StringForgeryType

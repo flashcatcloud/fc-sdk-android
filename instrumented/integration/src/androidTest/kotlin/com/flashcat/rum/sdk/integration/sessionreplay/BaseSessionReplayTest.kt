@@ -16,7 +16,7 @@ import com.flashcat.rum.sdk.integration.RuntimeConfig
 import com.flashcat.rum.sdk.rules.HandledRequest
 import com.flashcat.rum.sdk.rules.SessionReplayTestRule
 import com.flashcat.rum.sdk.utils.waitFor
-import com.datadog.tools.unit.ConditionWatcher
+import com.flashcat.tools.unit.ConditionWatcher
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement

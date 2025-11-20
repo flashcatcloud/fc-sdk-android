@@ -18,7 +18,7 @@ import com.flashcat.rum.sdk.rules.HandledRequest
 import com.flashcat.rum.sdk.rules.RumMockServerActivityTestRule
 import com.flashcat.rum.sdk.utils.exhaustiveAttributes
 import com.flashcat.rum.sdk.utils.isRumUrl
-import com.datadog.tools.unit.ConditionWatcher
+import com.flashcat.tools.unit.ConditionWatcher
 import com.google.gson.JsonObject
 import okhttp3.OkHttpClient
 import okhttp3.Request

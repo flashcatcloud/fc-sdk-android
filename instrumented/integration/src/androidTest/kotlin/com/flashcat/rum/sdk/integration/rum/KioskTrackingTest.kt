@@ -16,7 +16,7 @@ import com.flashcat.rum.privacy.TrackingConsent
 import com.flashcat.rum.sdk.integration.R
 import com.flashcat.rum.sdk.rules.KioskTrackingActivityTestRule
 import com.flashcat.rum.sdk.rules.RumMockServerActivityTestRule
-import com.datadog.tools.unit.ConditionWatcher
+import com.flashcat.tools.unit.ConditionWatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

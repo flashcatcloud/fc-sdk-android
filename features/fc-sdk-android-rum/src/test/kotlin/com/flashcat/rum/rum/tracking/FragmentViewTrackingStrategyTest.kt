@@ -26,10 +26,10 @@ import com.flashcat.rum.rum.internal.tracking.OreoFragmentLifecycleCallbacks
 import com.flashcat.rum.rum.internal.utils.resolveViewUrl
 import com.flashcat.rum.rum.utils.config.GlobalRumMonitorTestConfiguration
 import com.flashcat.rum.rum.utils.forge.Configurator
-import com.datadog.tools.unit.ObjectTest
-import com.datadog.tools.unit.annotations.TestConfigurationsProvider
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
-import com.datadog.tools.unit.extensions.config.TestConfiguration
+import com.flashcat.tools.unit.ObjectTest
+import com.flashcat.tools.unit.annotations.TestConfigurationsProvider
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.config.TestConfiguration
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.IntForgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration

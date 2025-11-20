@@ -23,7 +23,7 @@ import com.flashcat.rum.core.internal.user.MutableUserInfoProvider
 import com.flashcat.rum.core.thread.FlushableExecutorService
 import com.flashcat.rum.internal.time.TimeProvider
 import com.flashcat.rum.privacy.TrackingConsent
-import com.datadog.tools.unit.extensions.config.MockTestConfiguration
+import com.flashcat.tools.unit.extensions.config.MockTestConfiguration
 import com.lyft.kronos.KronosClock
 import fr.xgouchet.elmyr.Forge
 import org.mockito.kotlin.doReturn

@@ -13,8 +13,8 @@ import com.flashcat.rum.rum.RumResourceMethod
 import com.flashcat.rum.rum.featureoperations.FailureReason
 import com.flashcat.rum.rum.internal.domain.Time
 import com.flashcat.rum.rum.model.ActionEvent
-import com.datadog.tools.unit.forge.aThrowable
-import com.datadog.tools.unit.forge.exhaustiveAttributes
+import com.flashcat.tools.unit.forge.aThrowable
+import com.flashcat.tools.unit.forge.exhaustiveAttributes
 import fr.xgouchet.elmyr.Forge
 import java.net.URL
 import java.util.UUID

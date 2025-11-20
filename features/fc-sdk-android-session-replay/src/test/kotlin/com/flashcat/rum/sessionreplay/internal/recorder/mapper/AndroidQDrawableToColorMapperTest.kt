@@ -14,8 +14,8 @@ import android.os.Build
 import com.flashcat.rum.sessionreplay.forge.ForgeConfigurator
 import com.flashcat.rum.sessionreplay.internal.recorder.mapper.AndroidMDrawableToColorMapper.Companion.fillPaintField
 import com.flashcat.rum.sessionreplay.utils.DrawableToColorMapper
-import com.datadog.tools.unit.annotations.TestTargetApi
-import com.datadog.tools.unit.extensions.ApiLevelExtension
+import com.flashcat.tools.unit.annotations.TestTargetApi
+import com.flashcat.tools.unit.extensions.ApiLevelExtension
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.IntForgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration

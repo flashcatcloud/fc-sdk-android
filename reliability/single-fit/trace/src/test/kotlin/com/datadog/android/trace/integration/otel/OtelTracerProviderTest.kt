@@ -17,8 +17,8 @@ import com.flashcat.rum.trace.integration.tests.elmyr.TraceIntegrationForgeConfi
 import com.flashcat.rum.trace.integration.tests.utils.BlockingWriterWrapper
 import com.flashcat.rum.trace.opentelemetry.OtelTracerProvider
 import com.datadog.opentelemetry.trace.OtelConventions
-import com.datadog.tools.unit.completedFutureMock
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.completedFutureMock
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
 import com.datadog.trace.api.sampling.PrioritySampling
 import com.datadog.trace.bootstrap.instrumentation.api.Tags
 import com.google.gson.JsonObject

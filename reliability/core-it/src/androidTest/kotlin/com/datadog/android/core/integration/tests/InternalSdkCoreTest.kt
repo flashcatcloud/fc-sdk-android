@@ -38,8 +38,8 @@ import com.flashcat.rum.core.integration.tests.utils.variant
 import com.flashcat.rum.core.thread.FlushableExecutorService
 import com.flashcat.rum.privacy.TrackingConsent
 import com.flashcat.rum.trace.TracingHeaderType
-import com.datadog.tools.unit.forge.exhaustiveAttributes
-import com.datadog.tools.unit.forge.useToolsFactories
+import com.flashcat.tools.unit.forge.exhaustiveAttributes
+import com.flashcat.tools.unit.forge.useToolsFactories
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.annotation.StringForgeryType

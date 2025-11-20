@@ -13,7 +13,7 @@ import com.flashcat.rum.Flashcat
 import com.flashcat.rum.privacy.TrackingConsent
 import com.flashcat.rum.sdk.integration.RuntimeConfig
 import com.flashcat.rum.sdk.rules.MockServerActivityTestRule
-import com.datadog.tools.unit.ConditionWatcher
+import com.flashcat.tools.unit.ConditionWatcher
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test

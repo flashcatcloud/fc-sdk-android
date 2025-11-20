@@ -11,7 +11,7 @@ import com.flashcat.rum.rum.GlobalRumMonitor
 import com.flashcat.rum.rum.RumMonitor
 import com.flashcat.rum.rum._RumInternalProxy
 import com.flashcat.rum.rum.internal.monitor.AdvancedRumMonitor
-import com.datadog.tools.unit.extensions.config.MockTestConfiguration
+import com.flashcat.tools.unit.extensions.config.MockTestConfiguration
 import fr.xgouchet.elmyr.Forge
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever

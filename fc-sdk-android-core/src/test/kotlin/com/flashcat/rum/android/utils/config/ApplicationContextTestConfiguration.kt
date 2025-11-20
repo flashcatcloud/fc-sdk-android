@@ -12,7 +12,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.content.res.AssetManager
 import com.flashcat.rum.core.internal.CoreFeature
-import com.datadog.tools.unit.extensions.config.MockTestConfiguration
+import com.flashcat.tools.unit.extensions.config.MockTestConfiguration
 import fr.xgouchet.elmyr.Forge
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn

@@ -12,8 +12,8 @@ import com.flashcat.rum.api.context.DeviceType
 import com.flashcat.rum.api.context.NetworkInfo
 import com.flashcat.rum.api.context.UserInfo
 import com.flashcat.rum.log.model.LogEvent
-import com.datadog.tools.unit.forge.aThrowable
-import com.datadog.tools.unit.forge.exhaustiveAttributes
+import com.flashcat.tools.unit.forge.aThrowable
+import com.flashcat.tools.unit.forge.exhaustiveAttributes
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory
 import java.util.UUID

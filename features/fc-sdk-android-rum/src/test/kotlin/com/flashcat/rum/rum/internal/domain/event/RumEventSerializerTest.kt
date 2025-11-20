@@ -21,8 +21,8 @@ import com.flashcat.rum.telemetry.model.TelemetryConfigurationEvent
 import com.flashcat.rum.telemetry.model.TelemetryDebugEvent
 import com.flashcat.rum.telemetry.model.TelemetryErrorEvent
 import com.flashcat.rum.telemetry.model.TelemetryUsageEvent
-import com.datadog.tools.unit.assertj.JsonObjectAssert.Companion.assertThat
-import com.datadog.tools.unit.forge.anException
+import com.flashcat.tools.unit.assertj.JsonObjectAssert.Companion.assertThat
+import com.flashcat.tools.unit.forge.anException
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import fr.xgouchet.elmyr.Forge

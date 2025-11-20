@@ -8,7 +8,7 @@ package com.flashcat.rum.rum.utils.forge
 
 import com.flashcat.rum.internal.utils.loggableStackTrace
 import com.flashcat.rum.telemetry.model.TelemetryErrorEvent
-import com.datadog.tools.unit.forge.aThrowable
+import com.flashcat.tools.unit.forge.aThrowable
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory
 import fr.xgouchet.elmyr.jvm.ext.aTimestamp

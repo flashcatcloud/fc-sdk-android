@@ -27,11 +27,11 @@ import com.flashcat.rum.rum.internal.toAction
 import com.flashcat.rum.rum.model.ActionEvent
 import com.flashcat.rum.rum.utils.config.GlobalRumMonitorTestConfiguration
 import com.flashcat.rum.rum.utils.forge.Configurator
-import com.datadog.tools.unit.annotations.TestConfigurationsProvider
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
-import com.datadog.tools.unit.extensions.config.TestConfiguration
-import com.datadog.tools.unit.forge.aFilteredMap
-import com.datadog.tools.unit.forge.exhaustiveAttributes
+import com.flashcat.tools.unit.annotations.TestConfigurationsProvider
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.config.TestConfiguration
+import com.flashcat.tools.unit.forge.aFilteredMap
+import com.flashcat.tools.unit.forge.exhaustiveAttributes
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.BoolForgery
 import fr.xgouchet.elmyr.annotation.Forgery

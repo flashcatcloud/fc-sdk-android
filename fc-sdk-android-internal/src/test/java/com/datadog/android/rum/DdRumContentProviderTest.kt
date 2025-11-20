@@ -13,8 +13,8 @@ import android.content.Context
 import android.net.Uri
 import android.os.Process
 import com.flashcat.rum.internal.forge.Configurator
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
-import com.datadog.tools.unit.setFieldValue
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.setFieldValue
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.annotation.IntForgery

@@ -27,8 +27,8 @@ import com.flashcat.rum.sessionreplay.utils.DefaultColorStringFormatter
 import com.flashcat.rum.sessionreplay.utils.GlobalBounds
 import com.flashcat.rum.sessionreplay.utils.OPAQUE_ALPHA_VALUE
 import com.flashcat.rum.sessionreplay.utils.verifyLog
-import com.datadog.tools.unit.annotations.TestTargetApi
-import com.datadog.tools.unit.extensions.ApiLevelExtension
+import com.flashcat.tools.unit.annotations.TestTargetApi
+import com.flashcat.tools.unit.extensions.ApiLevelExtension
 import com.google.gson.JsonObject
 import com.google.gson.JsonSyntaxException
 import fr.xgouchet.elmyr.Forge

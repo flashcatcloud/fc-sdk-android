@@ -6,8 +6,8 @@
 
 package internal
 
-import com.datadog.tools.unit.extensions.ProhibitLeavingStaticMocksExtension
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.ProhibitLeavingStaticMocksExtension
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
 import com.google.gson.JsonParser
 import forge.ForgeConfigurator
 import fr.xgouchet.elmyr.Forge

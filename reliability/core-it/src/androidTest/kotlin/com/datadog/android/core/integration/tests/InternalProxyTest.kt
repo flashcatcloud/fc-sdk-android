@@ -13,7 +13,7 @@ import com.flashcat.rum.core.InternalSdkCore
 import com.flashcat.rum.core.configuration.Configuration
 import com.flashcat.rum.core.integration.tests.forge.factories.ConfigurationCoreForgeryFactory
 import com.flashcat.rum.privacy.TrackingConsent
-import com.datadog.tools.unit.forge.useToolsFactories
+import com.flashcat.tools.unit.forge.useToolsFactories
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.junit4.ForgeRule
 import fr.xgouchet.elmyr.jvm.useJvmFactories

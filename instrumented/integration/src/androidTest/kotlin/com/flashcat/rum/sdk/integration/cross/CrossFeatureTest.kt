@@ -36,7 +36,7 @@ import com.flashcat.rum.trace.Trace
 import com.flashcat.rum.trace.TraceConfiguration
 import com.flashcat.rum.trace.api.tracer.DatadogTracer
 import com.flashcat.rum.trace.model.SpanEvent
-import com.datadog.tools.unit.ConditionWatcher
+import com.flashcat.tools.unit.ConditionWatcher
 import com.google.gson.JsonNull
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser

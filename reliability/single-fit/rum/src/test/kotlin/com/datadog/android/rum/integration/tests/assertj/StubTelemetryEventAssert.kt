@@ -7,7 +7,7 @@
 package com.flashcat.rum.rum.integration.tests.assertj
 
 import com.flashcat.rum.core.stub.StubTelemetryEvent
-import com.datadog.tools.unit.assertj.JsonObjectAssert.Companion.assertThat
+import com.flashcat.tools.unit.assertj.JsonObjectAssert.Companion.assertThat
 import com.google.gson.Gson
 import org.assertj.core.api.AbstractObjectAssert
 

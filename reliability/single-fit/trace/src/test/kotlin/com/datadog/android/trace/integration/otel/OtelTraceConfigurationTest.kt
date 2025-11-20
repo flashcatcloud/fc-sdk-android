@@ -15,7 +15,7 @@ import com.flashcat.rum.trace.integration.tests.assertj.SpansPayloadAssert
 import com.flashcat.rum.trace.integration.tests.elmyr.TraceIntegrationForgeConfigurator
 import com.flashcat.rum.trace.model.SpanEvent
 import com.flashcat.rum.trace.opentelemetry.OtelTracerProvider
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import fr.xgouchet.elmyr.Forge

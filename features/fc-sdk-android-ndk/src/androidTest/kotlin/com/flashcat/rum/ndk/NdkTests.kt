@@ -7,8 +7,8 @@
 package com.flashcat.rum.ndk
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.datadog.tools.unit.ConditionWatcher
-import com.datadog.tools.unit.assertj.JsonObjectAssert.Companion.assertThat
+import com.flashcat.tools.unit.ConditionWatcher
+import com.flashcat.tools.unit.assertj.JsonObjectAssert.Companion.assertThat
 import com.google.gson.JsonParser
 import fr.xgouchet.elmyr.junit4.ForgeRule
 import org.assertj.core.api.Assertions

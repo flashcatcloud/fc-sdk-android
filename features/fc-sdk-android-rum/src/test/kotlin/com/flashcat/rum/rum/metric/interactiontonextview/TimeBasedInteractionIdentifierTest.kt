@@ -7,7 +7,7 @@
 package com.flashcat.rum.rum.metric.interactiontonextview
 
 import com.flashcat.rum.rum.utils.forge.Configurator
-import com.datadog.tools.unit.ObjectTest
+import com.flashcat.tools.unit.ObjectTest
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.LongForgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration

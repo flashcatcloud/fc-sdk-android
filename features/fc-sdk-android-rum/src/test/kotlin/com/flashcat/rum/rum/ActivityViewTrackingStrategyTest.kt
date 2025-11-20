@@ -14,7 +14,7 @@ import com.flashcat.rum.rum.tracking.ActivityViewTrackingStrategy
 import com.flashcat.rum.rum.tracking.ComponentPredicate
 import com.flashcat.rum.rum.tracking.StubComponentPredicate
 import com.flashcat.rum.rum.utils.forge.Configurator
-import com.datadog.tools.unit.forge.anException
+import com.flashcat.tools.unit.forge.anException
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.AdvancedForgery
 import fr.xgouchet.elmyr.annotation.MapForgery

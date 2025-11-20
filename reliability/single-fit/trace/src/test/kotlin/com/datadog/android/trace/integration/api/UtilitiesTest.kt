@@ -19,7 +19,7 @@ import com.flashcat.rum.trace.api.clear
 import com.flashcat.rum.trace.integration.tests.elmyr.TraceIntegrationForgeConfigurator
 import com.flashcat.rum.trace.internal.DatadogTracingToolkit
 import com.flashcat.rum.trace.withinSpan
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import fr.xgouchet.elmyr.Forge

@@ -21,7 +21,7 @@ import com.flashcat.rum.log.LogsConfiguration
 import com.flashcat.rum.log.model.LogEvent
 import com.flashcat.rum.logs.integration.tests.elmyr.LogsIntegrationForgeConfigurator
 import com.flashcat.rum.tests.ktx.getString
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import fr.xgouchet.elmyr.Forge

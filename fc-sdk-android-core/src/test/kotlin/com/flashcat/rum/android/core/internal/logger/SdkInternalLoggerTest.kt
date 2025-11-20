@@ -17,8 +17,8 @@ import com.flashcat.rum.core.metrics.TelemetryMetricType
 import com.flashcat.rum.internal.attributes.LocalAttribute
 import com.flashcat.rum.internal.telemetry.InternalTelemetryEvent
 import com.flashcat.rum.utils.forge.Configurator
-import com.datadog.tools.unit.forge.aThrowable
-import com.datadog.tools.unit.forge.exhaustiveAttributes
+import com.flashcat.tools.unit.forge.aThrowable
+import com.flashcat.tools.unit.forge.exhaustiveAttributes
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.FloatForgery
 import fr.xgouchet.elmyr.annotation.Forgery

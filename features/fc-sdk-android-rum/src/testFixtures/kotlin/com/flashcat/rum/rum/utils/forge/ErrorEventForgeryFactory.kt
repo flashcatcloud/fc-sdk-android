@@ -8,8 +8,8 @@ package com.flashcat.rum.rum.utils.forge
 
 import com.flashcat.rum.internal.utils.loggableStackTrace
 import com.flashcat.rum.rum.model.ErrorEvent
-import com.datadog.tools.unit.forge.aThrowable
-import com.datadog.tools.unit.forge.exhaustiveAttributes
+import com.flashcat.tools.unit.forge.aThrowable
+import com.flashcat.tools.unit.forge.exhaustiveAttributes
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory
 import fr.xgouchet.elmyr.jvm.ext.aTimestamp

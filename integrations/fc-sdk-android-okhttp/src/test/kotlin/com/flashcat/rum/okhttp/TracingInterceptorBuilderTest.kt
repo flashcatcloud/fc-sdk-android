@@ -13,8 +13,8 @@ import com.flashcat.rum.okhttp.trace.TracedRequestListener
 import com.flashcat.rum.okhttp.trace.TracingInterceptor
 import com.flashcat.rum.trace.TracingHeaderType
 import com.flashcat.rum.trace.api.span.DatadogSpan
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
-import com.datadog.tools.unit.forge.BaseConfigurator
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.forge.BaseConfigurator
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.BoolForgery
 import fr.xgouchet.elmyr.annotation.FloatForgery

@@ -18,7 +18,7 @@ import com.flashcat.rum.log.model.LogEvent
 import com.flashcat.rum.utils.extension.asLogStatus
 import com.flashcat.rum.utils.extension.toIsoFormattedTimestamp
 import com.flashcat.rum.utils.forge.Configurator
-import com.datadog.tools.unit.forge.aThrowable
+import com.flashcat.tools.unit.forge.aThrowable
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.annotation.StringForgery

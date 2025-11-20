@@ -10,8 +10,8 @@ import com.flashcat.rum.api.SdkCore
 import com.flashcat.rum.rum.GlobalRumMonitor
 import com.flashcat.rum.rum.RumErrorSource
 import com.flashcat.rum.rum.RumMonitor
-import com.datadog.tools.unit.forge.BaseConfigurator
-import com.datadog.tools.unit.forge.aThrowable
+import com.flashcat.tools.unit.forge.BaseConfigurator
+import com.flashcat.tools.unit.forge.aThrowable
 import com.facebook.cache.common.CacheEvent
 import com.facebook.imagepipeline.cache.BitmapMemoryCacheKey
 import fr.xgouchet.elmyr.Forge

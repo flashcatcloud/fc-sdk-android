@@ -7,9 +7,9 @@
 package com.flashcat.rum.rum.utils.config
 
 import android.os.Looper
-import com.datadog.tools.unit.extensions.config.TestConfiguration
-import com.datadog.tools.unit.getStaticValue
-import com.datadog.tools.unit.setStaticValue
+import com.flashcat.tools.unit.extensions.config.TestConfiguration
+import com.flashcat.tools.unit.getStaticValue
+import com.flashcat.tools.unit.setStaticValue
 import fr.xgouchet.elmyr.Forge
 
 class MainLooperTestConfiguration : TestConfiguration {

@@ -11,7 +11,7 @@ import com.flashcat.rum.rum.internal.domain.scope.RumSessionScope
 import com.flashcat.rum.rum.internal.domain.scope.RumViewManagerScope
 import com.flashcat.rum.rum.model.ViewEvent
 import com.flashcat.rum.rum.utils.forge.Configurator
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.BoolForgery
 import fr.xgouchet.elmyr.annotation.Forgery

@@ -6,7 +6,7 @@
 
 package com.flashcat.rum.compose
 
-import com.datadog.tools.unit.ObjectTest
+import com.flashcat.tools.unit.ObjectTest
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.junit5.ForgeExtension
 import org.assertj.core.api.Assertions.assertThat

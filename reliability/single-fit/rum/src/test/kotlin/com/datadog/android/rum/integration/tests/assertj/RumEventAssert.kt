@@ -6,7 +6,7 @@
 
 package com.flashcat.rum.rum.integration.tests.assertj
 
-import com.datadog.tools.unit.assertj.JsonObjectAssert
+import com.flashcat.tools.unit.assertj.JsonObjectAssert
 import com.google.gson.JsonObject
 import org.assertj.core.data.Offset
 

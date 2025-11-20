@@ -24,9 +24,9 @@ import com.flashcat.rum.rum.RumResourceMethod
 import com.flashcat.rum.rum.resource.ResourceId
 import com.flashcat.rum.trace.TracingHeaderType
 import com.flashcat.rum.trace.api.tracer.DatadogTracer
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
-import com.datadog.tools.unit.forge.BaseConfigurator
-import com.datadog.tools.unit.forge.exhaustiveAttributes
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.forge.BaseConfigurator
+import com.flashcat.tools.unit.forge.exhaustiveAttributes
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.FloatForgery
 import fr.xgouchet.elmyr.annotation.Forgery

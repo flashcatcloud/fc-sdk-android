@@ -7,7 +7,7 @@
 package com.flashcat.rum.okhttp.test.elmyr
 
 import com.flashcat.rum.tests.elmyr.useCoreFactories
-import com.datadog.tools.unit.forge.BaseConfigurator
+import com.flashcat.tools.unit.forge.BaseConfigurator
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.jvm.useJvmFactories
 

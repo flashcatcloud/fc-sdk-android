@@ -17,7 +17,7 @@ import com.flashcat.rum.core.internal.metrics.MethodCalledTelemetry.Companion.ME
 import com.flashcat.rum.core.internal.metrics.MethodCalledTelemetry.Companion.METRIC_TYPE_VALUE
 import com.flashcat.rum.core.internal.metrics.MethodCalledTelemetry.Companion.OPERATION_NAME
 import com.flashcat.rum.core.metrics.PerformanceMetric.Companion.METRIC_TYPE
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.FloatForgery
 import fr.xgouchet.elmyr.annotation.StringForgery

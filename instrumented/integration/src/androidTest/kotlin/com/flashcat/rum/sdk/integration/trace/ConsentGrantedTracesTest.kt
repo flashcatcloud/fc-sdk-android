@@ -11,7 +11,7 @@ import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.flashcat.rum.privacy.TrackingConsent
 import com.flashcat.rum.sdk.rules.MockServerActivityTestRule
-import com.datadog.tools.unit.ConditionWatcher
+import com.flashcat.tools.unit.ConditionWatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

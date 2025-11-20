@@ -23,9 +23,9 @@ import com.flashcat.rum.sessionreplay.internal.storage.NoOpRecordWriter
 import com.flashcat.rum.sessionreplay.internal.storage.SessionReplayRecordWriter
 import com.flashcat.rum.sessionreplay.utils.config.ApplicationContextTestConfiguration
 import com.flashcat.rum.sessionreplay.utils.verifyLog
-import com.datadog.tools.unit.annotations.TestConfigurationsProvider
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
-import com.datadog.tools.unit.extensions.config.TestConfiguration
+import com.flashcat.tools.unit.annotations.TestConfigurationsProvider
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.config.TestConfiguration
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.BoolForgery
 import fr.xgouchet.elmyr.annotation.Forgery

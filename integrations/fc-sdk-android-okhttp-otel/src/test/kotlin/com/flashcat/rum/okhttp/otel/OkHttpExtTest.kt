@@ -8,7 +8,7 @@ package com.flashcat.rum.okhttp.otel
 
 import com.flashcat.rum.okhttp.TraceContext
 import com.flashcat.rum.trace.api.DatadogTracingConstants
-import com.datadog.tools.unit.forge.BaseConfigurator
+import com.flashcat.tools.unit.forge.BaseConfigurator
 import fr.xgouchet.elmyr.annotation.BoolForgery
 import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration

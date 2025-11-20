@@ -12,7 +12,7 @@ import com.flashcat.rum.api.storage.FeatureStorageConfiguration
 import com.flashcat.rum.api.storage.NoOpDataWriter
 import com.flashcat.rum.utils.forge.Configurator
 import com.flashcat.rum.webview.internal.storage.WebViewDataWriter
-import com.datadog.tools.unit.extensions.ApiLevelExtension
+import com.flashcat.tools.unit.extensions.ApiLevelExtension
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
 import fr.xgouchet.elmyr.junit5.ForgeExtension
 import org.assertj.core.api.Assertions.assertThat

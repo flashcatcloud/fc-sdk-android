@@ -6,7 +6,7 @@
 
 package com.flashcat.rum.sessionreplay.material.forge
 
-import com.datadog.tools.unit.forge.BaseConfigurator
+import com.flashcat.tools.unit.forge.BaseConfigurator
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.jvm.useJvmFactories
 

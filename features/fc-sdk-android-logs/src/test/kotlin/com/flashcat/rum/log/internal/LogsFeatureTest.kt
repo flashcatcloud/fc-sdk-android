@@ -27,7 +27,7 @@ import com.flashcat.rum.log.internal.storage.LogsDataWriter
 import com.flashcat.rum.log.model.LogEvent
 import com.flashcat.rum.utils.extension.toIsoFormattedTimestamp
 import com.flashcat.rum.utils.forge.Configurator
-import com.datadog.tools.unit.forge.exhaustiveAttributes
+import com.flashcat.tools.unit.forge.exhaustiveAttributes
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.annotation.LongForgery

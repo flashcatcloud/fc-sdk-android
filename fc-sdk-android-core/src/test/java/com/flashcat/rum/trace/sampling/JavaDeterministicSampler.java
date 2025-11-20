@@ -4,7 +4,7 @@
  * Copyright 2016-Present Datadog, Inc.
  */
 
-package com.datadog.trace.sampling;
+package com.flashcat.rum.trace.sampling;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;

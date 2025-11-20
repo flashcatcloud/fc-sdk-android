@@ -10,7 +10,7 @@ import androidx.compose.runtime.State
 import com.flashcat.rum.rum.RumActionType
 import com.flashcat.rum.rum.RumAttributes
 import com.flashcat.rum.rum.RumMonitor
-import com.datadog.tools.unit.forge.BaseConfigurator
+import com.flashcat.tools.unit.forge.BaseConfigurator
 import fr.xgouchet.elmyr.annotation.AdvancedForgery
 import fr.xgouchet.elmyr.annotation.MapForgery
 import fr.xgouchet.elmyr.annotation.StringForgery

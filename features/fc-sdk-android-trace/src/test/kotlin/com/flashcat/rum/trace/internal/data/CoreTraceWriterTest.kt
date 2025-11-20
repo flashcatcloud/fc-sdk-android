@@ -29,8 +29,8 @@ import com.flashcat.rum.trace.utils.RumContextTestsUtils.aFlashcatContextWithRum
 import com.flashcat.rum.trace.utils.RumContextTestsUtils.aRumContext
 import com.flashcat.rum.trace.utils.verifyLog
 import com.flashcat.rum.utils.forge.Configurator
-import com.datadog.tools.unit.completedFutureMock
-import com.datadog.tools.unit.forge.aThrowable
+import com.flashcat.tools.unit.completedFutureMock
+import com.flashcat.tools.unit.forge.aThrowable
 import com.datadog.trace.core.DDSpan
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.Forgery

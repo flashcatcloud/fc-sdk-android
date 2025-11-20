@@ -26,9 +26,9 @@ import com.flashcat.rum.core.internal.persistence.Storage
 import com.flashcat.rum.utils.config.ApplicationContextTestConfiguration
 import com.flashcat.rum.utils.config.InternalLoggerTestConfiguration
 import com.flashcat.rum.utils.forge.Configurator
-import com.datadog.tools.unit.annotations.TestConfigurationsProvider
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
-import com.datadog.tools.unit.extensions.config.TestConfiguration
+import com.flashcat.tools.unit.annotations.TestConfigurationsProvider
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.config.TestConfiguration
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.annotation.IntForgery

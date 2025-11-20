@@ -11,7 +11,7 @@ import android.content.res.AssetManager
 import android.content.res.Resources
 import com.flashcat.rum.api.SdkCore
 import com.flashcat.rum.internal.utils.toHexString
-import com.datadog.tools.unit.forge.BaseConfigurator
+import com.flashcat.tools.unit.forge.BaseConfigurator
 import fr.xgouchet.elmyr.annotation.IntForgery
 import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration

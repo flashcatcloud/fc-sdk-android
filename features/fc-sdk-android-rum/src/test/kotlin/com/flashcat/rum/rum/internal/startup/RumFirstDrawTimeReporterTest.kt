@@ -16,7 +16,7 @@ import com.flashcat.rum.api.InternalLogger
 import com.flashcat.rum.rum.internal.utils.window.RumWindowCallbackListener
 import com.flashcat.rum.rum.internal.utils.window.RumWindowCallbacksRegistry
 import com.flashcat.rum.rum.utils.forge.Configurator
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
+import com.flashcat.tools.unit.extensions.TestConfigurationExtension
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
 import fr.xgouchet.elmyr.junit5.ForgeExtension
 import org.junit.jupiter.api.BeforeEach

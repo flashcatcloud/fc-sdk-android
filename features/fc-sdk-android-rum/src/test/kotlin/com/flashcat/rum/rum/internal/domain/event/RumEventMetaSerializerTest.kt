@@ -7,7 +7,7 @@
 package com.flashcat.rum.rum.internal.domain.event
 
 import com.flashcat.rum.rum.utils.forge.Configurator
-import com.datadog.tools.unit.assertj.JsonObjectAssert.Companion.assertThat
+import com.flashcat.tools.unit.assertj.JsonObjectAssert.Companion.assertThat
 import com.google.gson.JsonParser
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
