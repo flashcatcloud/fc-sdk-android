@@ -21,6 +21,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
 import org.mockito.kotlin.verify
 import org.mockito.quality.Strictness
+import com.flashcat.android.sessionreplay.R
 
 @Extensions(
     ExtendWith(MockitoExtension::class),

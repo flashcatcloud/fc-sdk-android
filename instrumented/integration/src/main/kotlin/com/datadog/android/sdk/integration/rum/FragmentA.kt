@@ -12,7 +12,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
-import com.datadog.android.sdk.integration.R
+import com.flashcat.android.sdk.integration.R
 
 internal class FragmentA : Fragment() {
 

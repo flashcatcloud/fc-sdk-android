@@ -7,6 +7,7 @@
 package com.datadog.android.sdk.integration
 
 import android.os.Build
+import com.flashcat.android.sdk.integration.BuildConfig
 import com.datadog.android._InternalProxy
 import com.datadog.android.api.SdkCore
 import com.datadog.android.core.configuration.Configuration

@@ -16,7 +16,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.datadog.android.sdk.integration.R
+import com.flashcat.android.sdk.integration.R
 
 internal class GesturesTrackingPlaygroundActivity : AppCompatActivity() {
 

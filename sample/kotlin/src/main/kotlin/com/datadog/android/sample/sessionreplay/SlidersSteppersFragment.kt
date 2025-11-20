@@ -12,7 +12,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.NumberPicker
 import androidx.fragment.app.Fragment
-import com.datadog.android.sample.R
+import com.flashcat.android.sample.R
 
 internal class SlidersSteppersFragment : Fragment() {
 

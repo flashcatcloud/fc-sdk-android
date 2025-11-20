@@ -9,7 +9,7 @@ package com.datadog.android.sdk.integration.rum
 import android.os.Bundle
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
-import com.datadog.android.sdk.integration.R
+import com.flashcat.android.sdk.integration.R
 
 internal class KioskTrackedPlaygroundActivity : AppCompatActivity() {
 

@@ -7,6 +7,7 @@
 package com.datadog.android.wear.sample
 
 import android.app.Application
+import com.flashcat.android.wear.sample.BuildConfig
 import android.util.Log
 import com.datadog.android.Datadog
 import com.datadog.android.DatadogSite

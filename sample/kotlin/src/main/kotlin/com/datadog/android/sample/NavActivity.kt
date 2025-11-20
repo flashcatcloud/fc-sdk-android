@@ -7,6 +7,7 @@
 package com.datadog.android.sample
 
 import android.content.Intent
+import com.flashcat.android.sample.R
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -22,6 +23,7 @@ import com.datadog.android.privacy.TrackingConsent
 import com.datadog.android.sample.service.LogsForegroundService
 import com.google.android.material.snackbar.Snackbar
 import timber.log.Timber
+import com.flashcat.android.sample.BuildConfig
 
 @Suppress("UndocumentedPublicProperty", "UndocumentedPublicClass")
 class NavActivity : AppCompatActivity(), TrackingConsentChangeListener {

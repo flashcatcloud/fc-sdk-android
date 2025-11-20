@@ -27,6 +27,11 @@ android {
         minSdk = AndroidConfig.MIN_SDK
     }
     namespace = "com.flashcat.tools.benchmark"
+    
+    buildFeatures {
+        buildConfig = true
+    }
+    
     compileOptions {
         java11()
     }

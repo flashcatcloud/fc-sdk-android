@@ -7,7 +7,7 @@
 package com.datadog.benchmark.exporter
 
 import android.os.Build
-import com.flashcat.android.BuildConfig
+import com.flashcat.tools.benchmark.BuildConfig
 import com.datadog.benchmark.DatadogExporterConfiguration
 import com.datadog.benchmark.internal.BenchmarkSpanToSpanEventMapper
 import com.datadog.benchmark.internal.DatadogHttpClient

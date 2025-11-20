@@ -12,7 +12,7 @@ import android.view.View
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.fragment.app.Fragment
-import com.datadog.android.sample.R
+import com.flashcat.android.sample.R
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 internal class TabsFragment : Fragment(R.layout.fragment_tabs) {

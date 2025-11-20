@@ -6,6 +6,8 @@
 package com.datadog.android.sample
 
 import android.annotation.SuppressLint
+import com.flashcat.android.sample.R
+import com.flashcat.android.sample.BuildConfig
 import android.app.Application
 import android.content.Context
 import android.os.Build

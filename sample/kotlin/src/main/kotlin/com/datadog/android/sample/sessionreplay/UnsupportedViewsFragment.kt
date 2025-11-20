@@ -10,7 +10,7 @@ import android.content.Context
 import android.util.AttributeSet
 import android.widget.Toolbar
 import androidx.fragment.app.Fragment
-import com.datadog.android.sample.R
+import com.flashcat.android.sample.R
 import androidx.appcompat.widget.Toolbar as AppCompatToolbar
 
 internal class UnsupportedViewsFragment : Fragment(R.layout.fragment_unsupported_views)

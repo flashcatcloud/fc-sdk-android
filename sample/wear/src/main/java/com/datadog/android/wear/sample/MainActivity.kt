@@ -8,7 +8,7 @@ package com.datadog.android.wear.sample
 
 import android.app.Activity
 import android.os.Bundle
-import com.datadog.android.wear.sample.databinding.ActivityMainBinding
+import com.flashcat.android.wear.sample.databinding.ActivityMainBinding
 import io.opentelemetry.api.GlobalOpenTelemetry
 
 @Suppress("UndocumentedPublicProperty", "UndocumentedPublicClass")

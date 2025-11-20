@@ -19,7 +19,7 @@ import androidx.viewpager.widget.ViewPager
 import com.datadog.android.Datadog
 import com.datadog.android.rum.Rum
 import com.datadog.android.rum.tracking.FragmentViewTrackingStrategy
-import com.datadog.android.sdk.integration.R
+import com.flashcat.android.sdk.integration.R
 import com.datadog.android.sdk.integration.RuntimeConfig
 import com.datadog.android.sdk.utils.getTrackingConsent
 

@@ -17,7 +17,7 @@ import androidx.navigation.fragment.NavHostFragment
 import com.datadog.benchmark.sample.activities.scenarios.benchmarkActivityComponent
 import com.datadog.benchmark.sample.ui.logsheavytraffic.di.DaggerLogsHeavyTrafficComponent
 import com.datadog.benchmark.sample.utils.componentHolderViewModel
-import com.datadog.sample.benchmark.R
+import com.flashcat.sample.benchmark.R
 import javax.inject.Inject
 
 internal class LogsHeavyTrafficHostFragment : Fragment() {

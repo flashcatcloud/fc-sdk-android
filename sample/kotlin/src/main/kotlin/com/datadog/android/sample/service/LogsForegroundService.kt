@@ -19,7 +19,7 @@ import com.datadog.android.rum.RumActionType
 import com.datadog.android.rum.RumErrorSource
 import com.datadog.android.rum.RumResourceKind
 import com.datadog.android.rum.RumResourceMethod
-import com.datadog.android.sample.R
+import com.flashcat.android.sample.R
 import java.io.IOException
 import java.lang.IllegalStateException
 import java.security.SecureRandom

@@ -7,7 +7,7 @@
 package com.datadog.android.sdk.integration.sessionreplay
 
 import android.os.Bundle
-import com.datadog.android.sdk.integration.R
+import com.flashcat.android.sdk.integration.R
 
 internal open class SessionReplayPlaygroundActivity : BaseSessionReplayActivity() {
 

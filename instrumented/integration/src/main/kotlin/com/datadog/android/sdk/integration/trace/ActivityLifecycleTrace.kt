@@ -13,7 +13,7 @@ import com.datadog.android.Datadog
 import com.datadog.android.api.context.DatadogContext
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.log.Logs
-import com.datadog.android.sdk.integration.R
+import com.flashcat.android.sdk.integration.R
 import com.datadog.android.sdk.integration.RuntimeConfig
 import com.datadog.android.sdk.utils.getForgeSeed
 import com.datadog.android.sdk.utils.getTrackingConsent

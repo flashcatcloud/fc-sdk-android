@@ -16,7 +16,7 @@ import androidx.fragment.app.DialogFragment
 import com.datadog.android.Datadog
 import com.datadog.android.privacy.TrackingConsent
 import com.datadog.android.sample.Preferences
-import com.datadog.android.sample.R
+import com.flashcat.android.sample.R
 import com.datadog.android.sample.TrackingConsentChangeListener
 
 internal class GdprDialogFragment : DialogFragment() {

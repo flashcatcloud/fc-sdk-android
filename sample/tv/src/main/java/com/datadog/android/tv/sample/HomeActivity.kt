@@ -7,6 +7,7 @@
 package com.datadog.android.tv.sample
 
 import android.content.ComponentName
+import com.flashcat.android.tv.sample.R
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle

@@ -14,7 +14,7 @@ import android.widget.ArrayAdapter
 import android.widget.Spinner
 import androidx.appcompat.widget.SwitchCompat
 import androidx.fragment.app.Fragment
-import com.datadog.android.sample.R
+import com.flashcat.android.sample.R
 
 internal class DropDownSwitchersFragment : Fragment() {
 

@@ -9,7 +9,7 @@ package com.datadog.android.sample.picture
 import android.content.Context
 import android.widget.ImageView
 import com.flashcat.android.sample.BuildConfig
-import com.datadog.android.sample.R
+import com.flashcat.android.sample.R
 import com.squareup.picasso.LruCache
 import com.squareup.picasso.OkHttp3Downloader
 import com.squareup.picasso.Picasso

@@ -12,7 +12,7 @@ import androidx.lifecycle.ViewModel
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
-import com.datadog.android.sample.R
+import com.flashcat.android.sample.R
 
 internal class ImageComponentsViewModel : ViewModel() {
     internal fun fetchRemoteImage(url: String, view: View, callback: ImageLoadedCallback) {

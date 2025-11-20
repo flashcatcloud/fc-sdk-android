@@ -13,7 +13,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.datadog.android.privacy.TrackingConsent
-import com.datadog.android.sdk.integration.R
+import com.flashcat.android.sdk.integration.R
 import com.datadog.android.sdk.rules.KioskTrackingActivityTestRule
 import com.datadog.android.sdk.rules.RumMockServerActivityTestRule
 import com.datadog.tools.unit.ConditionWatcher

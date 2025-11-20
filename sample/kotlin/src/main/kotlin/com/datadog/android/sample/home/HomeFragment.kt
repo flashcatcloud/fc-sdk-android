@@ -16,7 +16,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment.Companion.findNavController
-import com.datadog.android.sample.R
+import com.flashcat.android.sample.R
 
 internal class HomeFragment :
     Fragment(),

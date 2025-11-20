@@ -29,7 +29,7 @@ import com.datadog.benchmark.sample.config.SyntheticsRun
 import com.datadog.benchmark.sample.config.SyntheticsScenario
 import com.datadog.benchmark.sample.navigation.BenchmarkNavigationPredicate
 import com.flashcat.sample.benchmark.BuildConfig
-import com.datadog.sample.benchmark.R
+import com.flashcat.sample.benchmark.R
 import dagger.Lazy
 import javax.inject.Inject
 import javax.inject.Singleton

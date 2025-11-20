@@ -15,7 +15,7 @@ import androidx.test.espresso.contrib.RecyclerViewActions
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.platform.app.InstrumentationRegistry
 import com.datadog.android.rum.RumAttributes
-import com.datadog.android.sdk.integration.R
+import com.flashcat.android.sdk.integration.R
 import com.datadog.android.sdk.rules.GesturesTrackingActivityTestRule
 
 internal abstract class GesturesTrackingTest :

@@ -13,7 +13,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.flashcat.android.BuildConfig
+import com.flashcat.android.core.integration.BuildConfig
 import com.datadog.android.Datadog
 import com.datadog.android.DatadogSite
 import com.datadog.android._InternalProxy

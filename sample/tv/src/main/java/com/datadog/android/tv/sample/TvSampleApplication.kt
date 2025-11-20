@@ -34,6 +34,7 @@ import com.datadog.android.sessionreplay.TouchPrivacy
 import com.datadog.android.sessionreplay.material.MaterialExtensionSupport
 import com.datadog.android.timber.DatadogTree
 import com.datadog.android.tv.sample.net.OkHttpDownloader
+import com.flashcat.android.tv.sample.BuildConfig
 import okhttp3.OkHttpClient
 import org.schabi.newpipe.extractor.NewPipe
 import timber.log.Timber

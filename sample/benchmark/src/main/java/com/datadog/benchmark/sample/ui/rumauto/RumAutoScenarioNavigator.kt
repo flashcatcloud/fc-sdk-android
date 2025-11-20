@@ -13,7 +13,7 @@ import com.datadog.benchmark.sample.navigation.navigate
 import com.datadog.benchmark.sample.network.rickandmorty.models.Character
 import com.datadog.benchmark.sample.network.rickandmorty.models.Episode
 import com.datadog.benchmark.sample.network.rickandmorty.models.Location
-import com.datadog.sample.benchmark.R
+import com.flashcat.sample.benchmark.R
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow

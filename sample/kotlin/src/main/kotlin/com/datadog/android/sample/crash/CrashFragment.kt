@@ -17,7 +17,7 @@ import android.widget.ArrayAdapter
 import androidx.appcompat.widget.AppCompatSpinner
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
-import com.datadog.android.sample.R
+import com.flashcat.android.sample.R
 
 @Suppress("MagicNumber")
 internal class CrashFragment :

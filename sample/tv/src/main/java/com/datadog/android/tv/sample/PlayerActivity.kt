@@ -7,6 +7,7 @@
 package com.datadog.android.tv.sample
 
 import android.os.Bundle
+import com.flashcat.android.tv.sample.R
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.datadog.android.rum.GlobalRumMonitor

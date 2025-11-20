@@ -25,7 +25,7 @@ import com.datadog.benchmark.sample.ui.rummanual.RumManualScenarioFragment
 import com.datadog.benchmark.sample.ui.sessionreplay.SessionReplayAppcompatFragment
 import com.datadog.benchmark.sample.ui.sessionreplay.SessionReplayMaterialFragment
 import com.datadog.benchmark.sample.ui.trace.TraceScenarioFragment
-import com.datadog.sample.benchmark.R
+import com.flashcat.sample.benchmark.R
 import javax.inject.Inject
 
 @Suppress("DEPRECATION")

@@ -7,7 +7,7 @@
 package com.datadog.benchmark.sample.ui.sessionreplay
 
 import androidx.navigation.NavController
-import com.datadog.sample.benchmark.R
+import com.flashcat.sample.benchmark.R
 import javax.inject.Inject
 
 internal class SessionReplayNavigationManagerImpl @Inject constructor() :

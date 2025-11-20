@@ -16,7 +16,7 @@ import android.widget.ImageView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.datadog.android.sample.Preferences
-import com.datadog.android.sample.R
+import com.flashcat.android.sample.R
 
 internal class PictureFragment :
     Fragment(), View.OnClickListener {

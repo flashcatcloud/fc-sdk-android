@@ -7,6 +7,7 @@
 package com.datadog.android.sample
 
 import android.app.Activity
+import com.flashcat.android.sample.R
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View

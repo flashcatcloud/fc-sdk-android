@@ -10,7 +10,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.CheckBox
 import androidx.fragment.app.Fragment
-import com.datadog.android.sample.R
+import com.flashcat.android.sample.R
 
 internal class RadioCheckBoxesFragment : Fragment(R.layout.fragment_radio_checkbox_components) {
 

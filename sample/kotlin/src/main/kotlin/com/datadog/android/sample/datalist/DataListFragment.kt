@@ -22,7 +22,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.datadog.android.Datadog
 import com.datadog.android.rum.ExperimentalRumApi
 import com.datadog.android.rum.GlobalRumMonitor
-import com.datadog.android.sample.R
+import com.flashcat.android.sample.R
 import com.datadog.android.sample.SampleApplication
 import com.datadog.android.sample.data.model.Log
 import com.google.android.material.floatingactionbutton.FloatingActionButton

@@ -10,7 +10,7 @@ import android.widget.ImageView
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.bumptech.glide.request.transition.DrawableCrossFadeFactory
-import com.datadog.android.sample.R
+import com.flashcat.android.sample.R
 
 internal class GlideImageLoader : ImageLoader {
 

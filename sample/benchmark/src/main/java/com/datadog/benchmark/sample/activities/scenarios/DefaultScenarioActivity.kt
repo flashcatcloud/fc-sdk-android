@@ -10,7 +10,7 @@ import android.os.Bundle
 import androidx.navigation.findNavController
 import com.datadog.benchmark.sample.config.BenchmarkConfig
 import com.datadog.benchmark.sample.navigation.NavigationGraphInitializer
-import com.datadog.sample.benchmark.R
+import com.flashcat.sample.benchmark.R
 import javax.inject.Inject
 
 internal class DefaultScenarioActivity : BaseScenarioActivity() {

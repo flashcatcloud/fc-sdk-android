@@ -15,7 +15,7 @@ import android.view.View
 import android.widget.RemoteViews
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.RumActionType
-import com.datadog.android.sample.R
+import com.flashcat.android.sample.R
 import com.datadog.android.sample.SampleApplication
 import okhttp3.Request
 import timber.log.Timber

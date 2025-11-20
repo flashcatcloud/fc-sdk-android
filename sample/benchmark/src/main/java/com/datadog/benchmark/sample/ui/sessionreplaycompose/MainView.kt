@@ -29,7 +29,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.flashcat.android.BuildConfig
+import com.flashcat.sample.benchmark.BuildConfig
 
 @Composable
 internal fun MainView() {

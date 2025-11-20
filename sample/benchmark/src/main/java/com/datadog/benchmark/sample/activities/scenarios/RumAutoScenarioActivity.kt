@@ -16,7 +16,7 @@ import com.datadog.benchmark.sample.di.activity.BenchmarkActivityComponent
 import com.datadog.benchmark.sample.navigation.NavigationGraphInitializer
 import com.datadog.benchmark.sample.ui.rumauto.RumAutoBottomNavBar
 import com.datadog.benchmark.sample.ui.rumauto.RumAutoScenarioNavigator
-import com.datadog.sample.benchmark.R
+import com.flashcat.sample.benchmark.R
 import com.datadog.sample.benchmark.databinding.FragmentRumAutoHostBinding
 import javax.inject.Inject
 

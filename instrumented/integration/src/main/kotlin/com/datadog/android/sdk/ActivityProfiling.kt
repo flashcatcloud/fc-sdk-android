@@ -8,7 +8,7 @@ package com.datadog.android.sdk
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.datadog.android.sdk.integration.R
+import com.flashcat.android.sdk.integration.R
 
 internal class ActivityProfiling : AppCompatActivity() {
 

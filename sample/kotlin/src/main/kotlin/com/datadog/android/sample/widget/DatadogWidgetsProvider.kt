@@ -12,7 +12,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
-import com.datadog.android.sample.R
+import com.flashcat.android.sample.R
 
 /**
  * Implementation of App Widget functionality.

@@ -12,7 +12,7 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.View
-import com.datadog.android.sample.R
+import com.flashcat.android.sample.R
 import kotlin.math.max
 
 internal class DividerView @JvmOverloads constructor(

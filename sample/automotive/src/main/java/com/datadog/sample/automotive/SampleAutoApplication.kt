@@ -20,6 +20,7 @@ import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.Rum
 import com.datadog.android.rum.RumConfiguration
 import com.datadog.android.rum.tracking.ActivityViewTrackingStrategy
+import com.flashcat.sample.automotive.BuildConfig
 
 @Suppress("UndocumentedPublicClass")
 class SampleAutoApplication : Application() {

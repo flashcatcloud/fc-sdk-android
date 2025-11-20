@@ -17,7 +17,7 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.datadog.android.rum.ExperimentalRumApi
 import com.datadog.android.rum.GlobalRumMonitor
-import com.datadog.android.sample.R
+import com.flashcat.android.sample.R
 import com.datadog.android.webview.WebViewTracking
 
 internal open class PagerChildFragment : Fragment() {

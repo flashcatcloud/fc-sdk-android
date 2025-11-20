@@ -7,6 +7,7 @@
 package com.datadog.android.tv.sample
 
 import android.annotation.SuppressLint
+import com.flashcat.android.tv.sample.R
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup

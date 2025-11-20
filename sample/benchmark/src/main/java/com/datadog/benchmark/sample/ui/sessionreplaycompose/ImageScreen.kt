@@ -29,7 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.datadog.sample.benchmark.R
+import com.flashcat.sample.benchmark.R
 
 @Composable
 internal fun ImageScreen() {

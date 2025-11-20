@@ -33,7 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.datadog.android.sample.R
+import com.flashcat.android.sample.R
 
 private const val SMALL_IMAGE_URL = "https://picsum.photos/100/100"
 
