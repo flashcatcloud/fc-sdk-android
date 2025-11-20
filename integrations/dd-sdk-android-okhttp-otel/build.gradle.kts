@@ -2,6 +2,7 @@
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
  * This product includes software developed at Datadog (https://www.datadoghq.com/).
  * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
  */
 
 import com.datadog.gradle.config.androidLibraryConfig
@@ -68,6 +69,7 @@ junitConfig()
 javadocConfig()
 dependencyUpdateConfig()
 publishingConfig(
-    "An OkHttp collection of extensions to be used in conjunction with OpenTelemetry Datadog SDK."
+    "An OkHttp collection of extensions to be used in conjunction with OpenTelemetry FlashCat SDK.",
+    customArtifactId = "fc-sdk-android-okhttp-otel"
 )
 detektCustomConfig()

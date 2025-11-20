@@ -2,6 +2,7 @@
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
  * This product includes software developed at Datadog (https://www.datadoghq.com/).
  * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
  */
 
 package com.datadog.android.flags.internal
@@ -25,16 +26,8 @@ internal fun DatadogSite.getFlagsEndpoint(customerDomain: String): String? {
  * @return Flags host string in format `<customerDomain>.ff-cdn.<site>.<tld>`, or null if site not supported
  */
 private fun DatadogSite.flagsHost(customerDomain: String): String? = when (this) {
-    DatadogSite.US1_FED -> null
-
     DatadogSite.STAGING -> "$customerDomain.ff-cdn.datad0g.com"
-    DatadogSite.EU1 -> buildFlagsHostString(customerDomain, tld = "eu") // No site in the host, .eu TLD
-    DatadogSite.US1 -> buildFlagsHostString(customerDomain) // No site in the host, default .com TLD
-
-    DatadogSite.US3 -> buildFlagsHostString(customerDomain, dc = "us3", tld = "com")
-    DatadogSite.US5 -> buildFlagsHostString(customerDomain, dc = "us5", tld = "com")
-    DatadogSite.AP1 -> buildFlagsHostString(customerDomain, dc = "ap1", tld = "com")
-    DatadogSite.AP2 -> buildFlagsHostString(customerDomain, dc = "ap2", tld = "com")
+    DatadogSite.CN -> buildFlagsHostString(customerDomain) // No site in the host, default .com TLD
 }
 
 private fun buildFlagsHostString(customerDomain: String, dc: String? = null, tld: String = "com"): String {

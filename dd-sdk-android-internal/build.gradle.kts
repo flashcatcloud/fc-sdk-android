@@ -79,7 +79,8 @@ junitConfig()
 javadocConfig()
 dependencyUpdateConfig()
 publishingConfig(
-    "Internal library to be used by the Datadog SDK modules."
+    "Internal library to be used by the FlashCat SDK modules.",
+    customArtifactId = "fc-sdk-android-internal"
 )
 detektCustomConfig()
 

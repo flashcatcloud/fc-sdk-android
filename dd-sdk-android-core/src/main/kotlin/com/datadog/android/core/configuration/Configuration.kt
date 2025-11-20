@@ -2,6 +2,7 @@
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
  * This product includes software developed at Datadog (https://www.datadoghq.com/).
  * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
  */
 
 package com.datadog.android.core.configuration
@@ -305,7 +306,7 @@ internal constructor(
             proxy = null,
             proxyAuth = Authenticator.NONE,
             encryption = null,
-            site = DatadogSite.US1,
+            site = DatadogSite.CN,
             batchProcessingLevel = BatchProcessingLevel.MEDIUM,
             persistenceStrategyFactory = null,
             backpressureStrategy = DEFAULT_BACKPRESSURE_STRATEGY,

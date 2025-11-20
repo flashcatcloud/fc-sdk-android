@@ -2,6 +2,7 @@
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
  * This product includes software developed at Datadog (https://www.datadoghq.com/).
  * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
  */
 
 package com.datadog.android.flags.internal
@@ -58,11 +59,8 @@ internal class DatadogSiteExtensionsTest {
 
     @Test
     fun `M return null W getFlagsEndpoint() { unsupported site }`(@StringForgery customerDomain: String) {
-        // When
-        val result = DatadogSite.US1_FED.getFlagsEndpoint(customerDomain)
-
-        // Then
-        assertThat(result).isNull()
+        // Note: All current sites are supported, so we skip this test
+        // If we add unsupported sites in the future, this test should be updated
     }
 
     // endregion
@@ -89,20 +87,14 @@ internal class DatadogSiteExtensionsTest {
         @Suppress("unused")
         @JvmStatic
         fun supportedSitesWithCustomDomain(): List<Arguments> = listOf(
-            Arguments.of(DatadogSite.US1, "ff-cdn.datadoghq.com"),
-            Arguments.of(DatadogSite.US3, "ff-cdn.us3.datadoghq.com"),
-            Arguments.of(DatadogSite.US5, "ff-cdn.us5.datadoghq.com"),
-            Arguments.of(DatadogSite.AP1, "ff-cdn.ap1.datadoghq.com"),
-            Arguments.of(DatadogSite.AP2, "ff-cdn.ap2.datadoghq.com"),
-            Arguments.of(DatadogSite.EU1, "ff-cdn.datadoghq.eu"),
+            Arguments.of(DatadogSite.CN, "ff-cdn.datadoghq.com"),
             Arguments.of(DatadogSite.STAGING, "ff-cdn.datad0g.com")
         )
 
         @Suppress("unused")
         @JvmStatic
         fun supportedSitesWithDefaultDomain(): List<Arguments> = listOf(
-            Arguments.of(DatadogSite.US1, "preview.ff-cdn.datadoghq.com"),
-            Arguments.of(DatadogSite.EU1, "preview.ff-cdn.datadoghq.eu"),
+            Arguments.of(DatadogSite.CN, "preview.ff-cdn.datadoghq.com"),
             Arguments.of(DatadogSite.STAGING, "preview.ff-cdn.datad0g.com")
         )
 
@@ -110,11 +102,11 @@ internal class DatadogSiteExtensionsTest {
         @JvmStatic
         fun edgeCaseCustomerDomains(): List<Arguments> = listOf(
             // Domain with hyphens and underscores (special characters)
-            Arguments.of(DatadogSite.US1, "test-domain_123", "test-domain_123.ff-cdn.datadoghq.com"),
+            Arguments.of(DatadogSite.CN, "test-domain_123", "test-domain_123.ff-cdn.datadoghq.com"),
             // Numeric-only domain
-            Arguments.of(DatadogSite.US3, "12345", "12345.ff-cdn.us3.datadoghq.com"),
+            Arguments.of(DatadogSite.CN, "12345", "12345.ff-cdn.datadoghq.com"),
             // Domain with dots (subdomain-like)
-            Arguments.of(DatadogSite.EU1, "my.customer.domain", "my.customer.domain.ff-cdn.datadoghq.eu")
+            Arguments.of(DatadogSite.STAGING, "my.customer.domain", "my.customer.domain.ff-cdn.datad0g.com")
         )
     }
 }

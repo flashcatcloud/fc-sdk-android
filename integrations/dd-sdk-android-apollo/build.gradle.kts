@@ -55,5 +55,6 @@ junitConfig()
 androidLibraryConfig()
 publishingConfig(
     projectDescription = "An Apollo interceptor for handling GraphQL requests to use with the " +
-        "Datadog monitoring library for Android applications."
+        "FlashCat monitoring library for Android applications.",
+    customArtifactId = "fc-sdk-android-apollo"
 )

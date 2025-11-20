@@ -27,7 +27,7 @@ class SampleApplication : Application() {
             env = ENV_NAME,
             variant = APP_VARIANT_NAME
         )
-            .useSite(DatadogSite.US1) // replace with the site you're targeting (e.g.: US3, EU1, …)
+            .useSite(DatadogSite.CN) // replace with the site you're targeting (e.g.: US3, EU1, …)
             .build()
         Datadog.initialize(this, configuration, trackingConsent)
     }

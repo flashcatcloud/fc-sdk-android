@@ -2,6 +2,7 @@
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
  * This product includes software developed at Datadog (https://www.datadoghq.com/).
  * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
  */
 
 package com.datadog.gradle.config
@@ -20,7 +21,7 @@ object AndroidConfig {
     const val MIN_SDK_FOR_AUTO = 29
     const val BUILD_TOOLS_VERSION = "36.0.0"
 
-    val VERSION = Version(3, 3, 0, Version.Type.Snapshot)
+    val VERSION = Version(0, 1, 0, Version.Type.Snapshot)
 }
 
 // TODO RUM-628 Switch to Java 17 bytecode

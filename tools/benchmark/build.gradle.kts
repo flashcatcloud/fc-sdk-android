@@ -2,6 +2,7 @@
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
  * This product includes software developed at Datadog (https://www.datadoghq.com/).
  * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
  */
 
 import com.datadog.gradle.config.AndroidConfig
@@ -60,6 +61,6 @@ junitConfig()
 dependencyUpdateConfig()
 androidLibraryConfig()
 publishingConfig(
-    projectDescription = "An internal benchmarking tool to measure the overhead of Datadog SDK",
-    customArtifactId = "dd-sdk-android-benchmark-internal"
+    projectDescription = "An internal benchmarking tool to measure the overhead of FlashCat SDK",
+    customArtifactId = "fc-sdk-android-benchmark-internal"
 )

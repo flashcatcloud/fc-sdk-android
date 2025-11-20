@@ -2,6 +2,7 @@
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
  * This product includes software developed at Datadog (https://www.datadoghq.com/).
  * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
  */
 
 package com.datadog.android.sessionreplay.internal.net
@@ -77,7 +78,7 @@ internal class ResourcesRequestFactoryTest {
     @BeforeEach
     fun `set up`(forge: Forge) {
         val fakeRumFeature = mapOf(APPLICATION_ID to fakeApplicationId)
-        whenever(mockDatadogSite.intakeEndpoint).thenReturn(DatadogSite.US1.toString())
+        whenever(mockDatadogSite.intakeEndpoint).thenReturn(DatadogSite.CN.toString())
         whenever(fakeDatadogContext.site).thenReturn(mockDatadogSite)
         val fakeFeaturesContext = mapOf(Feature.RUM_FEATURE_NAME to fakeRumFeature)
         whenever(fakeDatadogContext.featuresContext).thenReturn(fakeFeaturesContext)

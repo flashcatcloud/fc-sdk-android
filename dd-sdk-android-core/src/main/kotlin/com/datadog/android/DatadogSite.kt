@@ -2,6 +2,7 @@
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
  * This product includes software developed at Datadog (https://www.datadoghq.com/).
  * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
  */
 
 package com.datadog.android
@@ -16,54 +17,14 @@ package com.datadog.android
 enum class DatadogSite private constructor(internal val siteName: String, private val intakeHostName: String) {
 
     /**
-     *  The US1 site: [app.datadoghq.com](https://app.datadoghq.com).
+     * The CN site: [browser.flashcat.cloud](https://browser.flashcat.cloud).
      */
-    US1("us1", "browser-intake-datadoghq.com"),
+    CN("cn", "browser.flashcat.cloud"),
 
     /**
-     *  The US3 site: [us3.datadoghq.com](https://us3.datadoghq.com).
+     * The STAGING site (internal usage only): [jira.flashcat.cloud](https://jira.flashcat.cloud).
      */
-    US3("us3"),
-
-    /**
-     *  The US5 site: [us5.datadoghq.com](https://us5.datadoghq.com).
-     */
-    US5("us5"),
-
-    /**
-     *  The EU1 site: [app.datadoghq.eu](https://app.datadoghq.eu).
-     */
-    EU1("eu1", "browser-intake-datadoghq.eu"),
-
-    /**
-     *  The AP1 site: [ap1.datadoghq.com](https://ap1.datadoghq.com).
-     */
-    AP1("ap1"),
-
-    /**
-     *  The AP2 site: [ap2.datadoghq.com](https://ap2.datadoghq.com).
-     */
-    AP2("ap2"),
-
-    /**
-     *  The US1_FED site (FedRAMP compatible): [app.ddog-gov.com](https://app.ddog-gov.com).
-     */
-    US1_FED("us1_fed", "browser-intake-ddog-gov.com"),
-
-    /**
-     *  The STAGING site (internal usage only): [app.datad0g.com](https://app.datad0g.com).
-     */
-    STAGING("staging", "browser-intake-datad0g.com");
-
-    /**
-     * Constructor using the generic way to build the intake endpoint host from the site name.
-     * @param siteName Explicit site name property introduced in order to have a consistent SDK
-     * instance ID (because this value is used there) in case if enum values are renamed.
-     */
-    private constructor(siteName: String) : this(
-        siteName,
-        "browser-intake-$siteName-datadoghq.com"
-    )
+    STAGING("staging", "jira.flashcat.cloud");
 
     /** The intake endpoint url. */
     val intakeEndpoint: String = "https://$intakeHostName"

@@ -2,6 +2,7 @@
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
  * This product includes software developed at Datadog (https://www.datadoghq.com/).
  * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
  */
 
 package com.datadog.android.core.configuration
@@ -72,7 +73,7 @@ internal class ConfigurationBuilderTest {
         assertThat(config.coreConfig.proxy).isNull()
         assertThat(config.coreConfig.proxyAuth).isEqualTo(Authenticator.NONE)
         assertThat(config.coreConfig.encryption).isNull()
-        assertThat(config.coreConfig.site).isEqualTo(DatadogSite.US1)
+        assertThat(config.coreConfig.site).isEqualTo(DatadogSite.CN)
         assertThat(config.coreConfig.batchProcessingLevel).isEqualTo(BatchProcessingLevel.MEDIUM)
         assertThat(config.coreConfig.persistenceStrategyFactory).isNull()
         assertThat(config.coreConfig.backpressureStrategy.backpressureMitigation)

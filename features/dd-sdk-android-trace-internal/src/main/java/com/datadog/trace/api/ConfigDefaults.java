@@ -42,7 +42,7 @@ public final class ConfigDefaults {
   public static final boolean DEFAULT_STARTUP_LOGS_ENABLED = true;
 
   static final boolean DEFAULT_WRITER_BAGGAGE_INJECT = true;
-  static final String DEFAULT_SITE = "datadoghq.com";
+  static final String DEFAULT_SITE = "browser.flashcat.cloud";
 
   static final boolean DEFAULT_TRACE_ENABLED = true;
   static final boolean DEFAULT_TRACE_OTEL_ENABLED = false;

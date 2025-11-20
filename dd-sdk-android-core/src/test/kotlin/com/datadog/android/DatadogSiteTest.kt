@@ -2,6 +2,7 @@
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
  * This product includes software developed at Datadog (https://www.datadoghq.com/).
  * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
  */
 
 package com.datadog.android
@@ -26,42 +27,12 @@ import org.mockito.quality.Strictness
 internal class DatadogSiteTest {
 
     @Test
-    fun `M return intake endpoint W intakeEndpoint {US1}`() {
-        assertThat(DatadogSite.US1.intakeEndpoint).isEqualTo("https://browser-intake-datadoghq.com")
-    }
-
-    @Test
-    fun `M return intake endpoint W intakeEndpoint {US3}`() {
-        assertThat(DatadogSite.US3.intakeEndpoint).isEqualTo("https://browser-intake-us3-datadoghq.com")
-    }
-
-    @Test
-    fun `M return intake endpoint W intakeEndpoint {US5}`() {
-        assertThat(DatadogSite.US5.intakeEndpoint).isEqualTo("https://browser-intake-us5-datadoghq.com")
-    }
-
-    @Test
-    fun `M return intake endpoint W intakeEndpoint {US1-FED}`() {
-        assertThat(DatadogSite.US1_FED.intakeEndpoint).isEqualTo("https://browser-intake-ddog-gov.com")
-    }
-
-    @Test
-    fun `M return intake endpoint W intakeEndpoint {EU1}`() {
-        assertThat(DatadogSite.EU1.intakeEndpoint).isEqualTo("https://browser-intake-datadoghq.eu")
-    }
-
-    @Test
-    fun `M return intake endpoint W intakeEndpoint {AP1}`() {
-        assertThat(DatadogSite.AP1.intakeEndpoint).isEqualTo("https://browser-intake-ap1-datadoghq.com")
-    }
-
-    @Test
-    fun `M return intake endpoint W intakeEndpoint {AP2}`() {
-        assertThat(DatadogSite.AP2.intakeEndpoint).isEqualTo("https://browser-intake-ap2-datadoghq.com")
+    fun `M return intake endpoint W intakeEndpoint {CN}`() {
+        assertThat(DatadogSite.CN.intakeEndpoint).isEqualTo("https://browser.flashcat.cloud")
     }
 
     @Test
     fun `M return intake endpoint W intakeEndpoint {STAGING}`() {
-        assertThat(DatadogSite.STAGING.intakeEndpoint).isEqualTo("https://browser-intake-datad0g.com")
+        assertThat(DatadogSite.STAGING.intakeEndpoint).isEqualTo("https://jira.flashcat.cloud")
     }
 }

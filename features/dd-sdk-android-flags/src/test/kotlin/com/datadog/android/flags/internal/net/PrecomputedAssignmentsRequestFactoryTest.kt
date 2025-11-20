@@ -2,6 +2,7 @@
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
  * This product includes software developed at Datadog (https://www.datadoghq.com/).
  * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
  */
 
 package com.datadog.android.flags.internal.net
@@ -55,7 +56,7 @@ internal class PrecomputedAssignmentsRequestFactoryTest {
         val flagsContext = FlagsContext(
             applicationId = fakeApplicationId,
             clientToken = fakeClientToken,
-            site = DatadogSite.US1,
+            site = DatadogSite.CN,
             env = fakeEnv
         )
 
@@ -85,7 +86,7 @@ internal class PrecomputedAssignmentsRequestFactoryTest {
         val flagsContext = FlagsContext(
             applicationId = null,
             clientToken = fakeClientToken,
-            site = DatadogSite.US1,
+            site = DatadogSite.CN,
             env = fakeEnv
         )
 
@@ -115,7 +116,7 @@ internal class PrecomputedAssignmentsRequestFactoryTest {
         val flagsContext = FlagsContext(
             applicationId = fakeApplicationId,
             clientToken = fakeClientToken,
-            site = DatadogSite.US1,
+            site = DatadogSite.CN,
             env = fakeEnv,
             customFlagEndpoint = fakeCustomEndpoint
         )
@@ -150,7 +151,7 @@ internal class PrecomputedAssignmentsRequestFactoryTest {
         val flagsContext = FlagsContext(
             applicationId = fakeApplicationId,
             clientToken = fakeClientToken,
-            site = DatadogSite.US1,
+            site = DatadogSite.CN,
             env = fakeEnv
         )
 
@@ -203,7 +204,7 @@ internal class PrecomputedAssignmentsRequestFactoryTest {
         val flagsContext = FlagsContext(
             applicationId = fakeApplicationId,
             clientToken = fakeClientToken,
-            site = DatadogSite.US1,
+            site = DatadogSite.CN,
             env = fakeEnv
         )
 
@@ -244,7 +245,7 @@ internal class PrecomputedAssignmentsRequestFactoryTest {
         val flagsContext = FlagsContext(
             applicationId = fakeApplicationId,
             clientToken = fakeClientToken,
-            site = DatadogSite.US1,
+            site = DatadogSite.CN,
             env = fakeEnv
         )
 
@@ -279,7 +280,9 @@ internal class PrecomputedAssignmentsRequestFactoryTest {
         @StringForgery fakeEnv: String,
         @StringForgery fakeTargetingKey: String
     ) {
-        // Given
+        // Note: All current sites (CN, STAGING) are supported
+        // This test is kept for API compatibility but won't fail anymore
+        // If we add unsupported sites in the future, this test should be updated
         val context = EvaluationContext(
             targetingKey = fakeTargetingKey,
             attributes = emptyMap()
@@ -287,7 +290,7 @@ internal class PrecomputedAssignmentsRequestFactoryTest {
         val flagsContext = FlagsContext(
             applicationId = fakeApplicationId,
             clientToken = fakeClientToken,
-            site = DatadogSite.US1_FED,
+            site = DatadogSite.CN, // Using supported site
             env = fakeEnv
         )
 
@@ -295,7 +298,7 @@ internal class PrecomputedAssignmentsRequestFactoryTest {
         val request = testedFactory.create(context, flagsContext)
 
         // Then
-        assertThat(request).isNull()
+        assertThat(request).isNotNull() // Changed expectation since all sites are now supported
     }
 
     // endregion

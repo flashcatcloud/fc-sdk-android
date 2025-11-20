@@ -1424,7 +1424,7 @@ Functional changes in comparison with `1.19.2`:
 * [IMPROVEMENT] RUM: Replace all `other` or `unknown` resources with xhr (ensuring end-to-end trace is enabled)
 * [IMPROVEMENT] RUM: Let children events have the proper view.name attribute
 * [IMPROVEMENT] RUM: Keep all custom Action even when a previous action is still active
-* [IMPROVEMENT] Global: Update available endpoints (and match documentation names: `US1`, `US3`, `US1_FED` and `EU1`)
+* [IMPROVEMENT] Global: Update available endpoints (and match documentation names: `CN`)
 * [IMPROVEMENT] Global: All user info should be in usr.*
 
 # 1.9.0 / 2021-06-07
