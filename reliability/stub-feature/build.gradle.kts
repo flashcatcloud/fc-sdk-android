@@ -19,11 +19,11 @@ plugins {
 }
 
 android {
-    namespace = "com.datadog.android.api.feature.stub"
+    namespace = "com.flashcat.android.api.feature.stub"
 }
 
 dependencies {
-    implementation(project(":dd-sdk-android-core"))
+    implementation(project(":fc-sdk-android-core"))
     implementation(libs.kotlin)
 
     // Testing

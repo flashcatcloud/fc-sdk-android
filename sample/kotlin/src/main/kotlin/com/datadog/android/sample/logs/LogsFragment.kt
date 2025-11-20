@@ -16,7 +16,7 @@ import android.widget.Spinner
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import com.datadog.android.log.Logger
-import com.datadog.android.sample.BuildConfig
+import com.flashcat.android.sample.BuildConfig
 import com.datadog.android.sample.R
 
 @Suppress("DEPRECATION")

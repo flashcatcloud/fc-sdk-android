@@ -10,7 +10,7 @@ import android.os.AsyncTask
 import androidx.lifecycle.ViewModel
 import com.datadog.android.log.Logger
 import com.datadog.android.okhttp.otel.addParentSpan
-import com.datadog.android.sample.BuildConfig
+import com.flashcat.android.sample.BuildConfig
 import com.datadog.android.vendor.sample.LocalServer
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.common.Attributes

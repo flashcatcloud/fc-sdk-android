@@ -27,7 +27,7 @@ android {
         minSdk = AndroidConfig.MIN_SDK
     }
 
-    namespace = "com.datadog.tools.unit"
+    namespace = "com.flashcat.tools.unit"
 
     compileOptions {
         java11()

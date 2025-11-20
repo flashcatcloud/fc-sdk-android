@@ -6,7 +6,7 @@
 
 package com.datadog.android.sample.data.remote
 
-import com.datadog.android.sample.BuildConfig
+import com.flashcat.android.sample.BuildConfig
 import com.datadog.android.sample.data.model.LogsCollection
 import io.reactivex.rxjava3.core.Single
 import retrofit2.http.GET

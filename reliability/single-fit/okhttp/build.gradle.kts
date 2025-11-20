@@ -25,14 +25,14 @@ plugins {
 }
 
 android {
-    namespace = "com.datadog.android.okhttp.integration"
+    namespace = "com.flashcat.android.okhttp.integration"
 }
 
 dependencies {
-    implementation(project(":features:dd-sdk-android-trace"))
-    implementation(project(":features:dd-sdk-android-trace-otel"))
-    implementation(project(":integrations:dd-sdk-android-okhttp"))
-    implementation(project(":integrations:dd-sdk-android-okhttp-otel"))
+    implementation(project(":features:fc-sdk-android-trace"))
+    implementation(project(":features:fc-sdk-android-trace-otel"))
+    implementation(project(":integrations:fc-sdk-android-okhttp"))
+    implementation(project(":integrations:fc-sdk-android-okhttp-otel"))
     implementation(libs.kotlin)
 
     // Testing
@@ -44,12 +44,12 @@ dependencies {
             )
         }
     }
-    testImplementation(project(":dd-sdk-android-internal"))
-    testImplementation(testFixtures(project(":dd-sdk-android-core")))
-    testImplementation(testFixtures(project(":features:dd-sdk-android-trace")))
+    testImplementation(project(":fc-sdk-android-internal"))
+    testImplementation(testFixtures(project(":fc-sdk-android-core")))
+    testImplementation(testFixtures(project(":features:fc-sdk-android-trace")))
     testImplementation(project(":reliability:stub-core"))
-    testImplementation(project(":integrations:dd-sdk-android-apollo"))
-    testImplementation(project(":features:dd-sdk-android-rum"))
+    testImplementation(project(":integrations:fc-sdk-android-apollo"))
+    testImplementation(project(":features:fc-sdk-android-rum"))
     testImplementation(libs.bundles.jUnit5)
     testImplementation(libs.bundles.testTools)
     testImplementation(libs.okHttp)

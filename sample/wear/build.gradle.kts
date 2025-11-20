@@ -29,7 +29,7 @@ android {
         }
     }
 
-    namespace = "com.datadog.android.wear.sample"
+    namespace = "com.flashcat.android.wear.sample"
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
@@ -67,11 +67,11 @@ dependencies {
     implementation(libs.timber)
     coreLibraryDesugaring(libs.androidDesugaringSdk)
 
-    implementation(project(":features:dd-sdk-android-ndk"))
-    implementation(project(":features:dd-sdk-android-rum"))
-    implementation(project(":features:dd-sdk-android-logs"))
-    implementation(project(":features:dd-sdk-android-trace"))
-    implementation(project(":features:dd-sdk-android-trace-otel"))
+    implementation(project(":features:fc-sdk-android-ndk"))
+    implementation(project(":features:fc-sdk-android-rum"))
+    implementation(project(":features:fc-sdk-android-logs"))
+    implementation(project(":features:fc-sdk-android-trace"))
+    implementation(project(":features:fc-sdk-android-trace-otel"))
 
     implementation("androidx.wear:wear:1.2.0")
     implementation("androidx.core:core-ktx:1.7.0")

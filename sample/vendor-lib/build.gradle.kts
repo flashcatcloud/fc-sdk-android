@@ -41,7 +41,7 @@ android {
         )
     }
 
-    namespace = "com.datadog.android.vendor.sample"
+    namespace = "com.flashcat.android.vendor.sample"
 
     compileOptions {
         java17()
@@ -70,10 +70,10 @@ android {
 
 dependencies {
 
-    implementation(project(":features:dd-sdk-android-logs"))
-    implementation(project(":features:dd-sdk-android-trace"))
-    implementation(project(":features:dd-sdk-android-trace-otel"))
-    implementation(project(":integrations:dd-sdk-android-okhttp"))
+    implementation(project(":features:fc-sdk-android-logs"))
+    implementation(project(":features:fc-sdk-android-trace"))
+    implementation(project(":features:fc-sdk-android-trace-otel"))
+    implementation(project(":integrations:fc-sdk-android-okhttp"))
 
     implementation(libs.kotlin)
 

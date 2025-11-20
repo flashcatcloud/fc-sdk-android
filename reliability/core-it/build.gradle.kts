@@ -24,7 +24,7 @@ android {
 
     compileSdk = AndroidConfig.TARGET_SDK
     buildToolsVersion = AndroidConfig.BUILD_TOOLS_VERSION
-    namespace = "com.datadog.android.core.integration"
+    namespace = "com.flashcat.android.core.integration"
 
     defaultConfig {
         minSdk = AndroidConfig.MIN_SDK
@@ -66,7 +66,7 @@ dependencies {
     if (project.hasProperty(com.datadog.gradle.Properties.USE_DESUGARING)) {
         coreLibraryDesugaring(libs.androidDesugaringSdk)
     }
-    implementation(project(":dd-sdk-android-core"))
+    implementation(project(":fc-sdk-android-core"))
     implementation(libs.kotlin)
 
     // Testing

@@ -23,12 +23,12 @@ plugins {
 }
 
 android {
-    namespace = "com.datadog.android.core.stub"
+    namespace = "com.flashcat.android.core.stub"
 }
 
 dependencies {
-    implementation(project(":dd-sdk-android-internal"))
-    implementation(project(":dd-sdk-android-core"))
+    implementation(project(":fc-sdk-android-internal"))
+    implementation(project(":fc-sdk-android-core"))
     implementation(libs.kotlin)
 
     // Testing

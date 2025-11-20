@@ -2,6 +2,7 @@
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
  * This product includes software developed at Datadog (https://www.datadoghq.com/).
  * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
  */
 @file:Suppress("StringLiteralDuplication")
 
@@ -62,6 +63,8 @@ nexusPublishing {
             snapshotRepositoryUrl.set(uri("https://central.sonatype.com/repository/maven-snapshots/"))
         }
     }
+    // Note: Consider publishing to Aliyun Maven repository for users in China without VPN access
+    // Configuration for Aliyun can be added via environment variables or gradle properties
 }
 
 task<Delete>("clean") {

@@ -6,7 +6,7 @@
 package com.datadog.android.sample.webview
 
 import androidx.lifecycle.ViewModel
-import com.datadog.android.sample.BuildConfig
+import com.flashcat.android.sample.BuildConfig
 import com.datadog.android.vendor.sample.LocalServer
 
 internal class WebViewModel(

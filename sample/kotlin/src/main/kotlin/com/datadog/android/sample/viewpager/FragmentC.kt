@@ -7,7 +7,7 @@
 package com.datadog.android.sample.viewpager
 
 import androidx.core.os.bundleOf
-import com.datadog.android.sample.BuildConfig
+import com.flashcat.android.sample.BuildConfig
 
 internal class FragmentC : PagerChildFragment() {
 

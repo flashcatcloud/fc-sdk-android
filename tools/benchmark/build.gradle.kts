@@ -26,15 +26,15 @@ android {
         compileSdk = AndroidConfig.TARGET_SDK
         minSdk = AndroidConfig.MIN_SDK
     }
-    namespace = "com.datadog.tools.benchmark"
+    namespace = "com.flashcat.tools.benchmark"
     compileOptions {
         java11()
     }
 }
 
 dependencies {
-    implementation(project(":dd-sdk-android-core"))
-    implementation(project(":dd-sdk-android-internal"))
+    implementation(project(":fc-sdk-android-core"))
+    implementation(project(":fc-sdk-android-internal"))
     implementation(libs.kotlin)
     implementation(libs.okHttp)
     implementation(libs.openTelemetryApi)

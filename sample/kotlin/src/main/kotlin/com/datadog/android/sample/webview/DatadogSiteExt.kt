@@ -7,7 +7,7 @@
 package com.datadog.android.sample.webview
 
 import com.datadog.android.DatadogSite
-import com.datadog.android.sample.BuildConfig
+import com.flashcat.android.sample.BuildConfig
 import timber.log.Timber
 
 internal val BROWSER_SITE: String

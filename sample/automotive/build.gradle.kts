@@ -32,7 +32,7 @@ android {
         configureFlavorForAutoApp(project.rootDir)
     }
 
-    namespace = "com.datadog.sample.automotive"
+    namespace = "com.flashcat.sample.automotive"
 
     compileOptions {
         java17()
@@ -59,8 +59,8 @@ android {
 
 dependencies {
     // Datadog Libraries
-    implementation(project(":features:dd-sdk-android-logs"))
-    implementation(project(":features:dd-sdk-android-rum"))
+    implementation(project(":features:fc-sdk-android-logs"))
+    implementation(project(":features:fc-sdk-android-rum"))
 
     implementation(libs.kotlin)
 
