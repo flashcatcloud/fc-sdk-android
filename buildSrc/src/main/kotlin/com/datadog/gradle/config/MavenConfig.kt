@@ -15,7 +15,7 @@ import org.gradle.kotlin.dsl.findByType
 import org.gradle.plugins.signing.SigningExtension
 
 object MavenConfig {
-    const val GROUP_ID = "com.flashcat"
+    const val GROUP_ID = "cloud.flashcat"
     const val PUBLICATION = "release"
 }
 
