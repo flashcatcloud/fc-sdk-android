@@ -76,7 +76,7 @@ android {
 
     flavorDimensions += listOf("site")
     productFlavors {
-        val regions = arrayOf("us1", "us3", "us5", "us1_fed", "eu1", "ap1", "ap2", "staging")
+        val regions = arrayOf("cn", "staging")
 
         regions.forEachIndexed { index, region ->
             register(region) {

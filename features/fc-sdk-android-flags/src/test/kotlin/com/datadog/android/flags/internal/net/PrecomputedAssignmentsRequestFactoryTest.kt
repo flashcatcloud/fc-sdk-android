@@ -55,7 +55,7 @@ internal class PrecomputedAssignmentsRequestFactoryTest {
         val flagsContext = FlagsContext(
             applicationId = fakeApplicationId,
             clientToken = fakeClientToken,
-            site = DatadogSite.US1,
+            site = DatadogSite.CN,
             env = fakeEnv
         )
 
@@ -85,7 +85,7 @@ internal class PrecomputedAssignmentsRequestFactoryTest {
         val flagsContext = FlagsContext(
             applicationId = null,
             clientToken = fakeClientToken,
-            site = DatadogSite.US1,
+            site = DatadogSite.CN,
             env = fakeEnv
         )
 
@@ -115,7 +115,7 @@ internal class PrecomputedAssignmentsRequestFactoryTest {
         val flagsContext = FlagsContext(
             applicationId = fakeApplicationId,
             clientToken = fakeClientToken,
-            site = DatadogSite.US1,
+            site = DatadogSite.CN,
             env = fakeEnv,
             customFlagEndpoint = fakeCustomEndpoint
         )
@@ -150,7 +150,7 @@ internal class PrecomputedAssignmentsRequestFactoryTest {
         val flagsContext = FlagsContext(
             applicationId = fakeApplicationId,
             clientToken = fakeClientToken,
-            site = DatadogSite.US1,
+            site = DatadogSite.CN,
             env = fakeEnv
         )
 
@@ -203,7 +203,7 @@ internal class PrecomputedAssignmentsRequestFactoryTest {
         val flagsContext = FlagsContext(
             applicationId = fakeApplicationId,
             clientToken = fakeClientToken,
-            site = DatadogSite.US1,
+            site = DatadogSite.CN,
             env = fakeEnv
         )
 
@@ -244,7 +244,7 @@ internal class PrecomputedAssignmentsRequestFactoryTest {
         val flagsContext = FlagsContext(
             applicationId = fakeApplicationId,
             clientToken = fakeClientToken,
-            site = DatadogSite.US1,
+            site = DatadogSite.CN,
             env = fakeEnv
         )
 
@@ -287,7 +287,7 @@ internal class PrecomputedAssignmentsRequestFactoryTest {
         val flagsContext = FlagsContext(
             applicationId = fakeApplicationId,
             clientToken = fakeClientToken,
-            site = DatadogSite.US1_FED,
+            site = DatadogSite.CN_FED,
             env = fakeEnv
         )
 

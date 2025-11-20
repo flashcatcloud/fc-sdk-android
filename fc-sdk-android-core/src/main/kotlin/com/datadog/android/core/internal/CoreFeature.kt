@@ -191,7 +191,7 @@ internal class CoreFeature(
     internal var ndkCrashHandler: NdkCrashHandler = NoOpNdkCrashHandler()
 
     @Volatile
-    internal var site: DatadogSite = DatadogSite.US1
+    internal var site: DatadogSite = DatadogSite.CN
 
     @Volatile
     internal var appBuildId: String? = null

@@ -20,7 +20,7 @@ import com.datadog.android.privacy.TrackingConsent
 internal class NoOpContextProvider : ContextProvider {
     // TODO RUM-3784 this one is quite ugly. Should return type be nullable?
     override fun getContext(withFeatureContexts: Set<String>) = DatadogContext(
-        site = DatadogSite.US1,
+        site = DatadogSite.CN,
         clientToken = "",
         service = "",
         env = "",

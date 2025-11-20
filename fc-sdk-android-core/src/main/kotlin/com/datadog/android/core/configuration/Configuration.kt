@@ -305,7 +305,7 @@ internal constructor(
             proxy = null,
             proxyAuth = Authenticator.NONE,
             encryption = null,
-            site = DatadogSite.US1,
+            site = DatadogSite.CN,
             batchProcessingLevel = BatchProcessingLevel.MEDIUM,
             persistenceStrategyFactory = null,
             backpressureStrategy = DEFAULT_BACKPRESSURE_STRATEGY,

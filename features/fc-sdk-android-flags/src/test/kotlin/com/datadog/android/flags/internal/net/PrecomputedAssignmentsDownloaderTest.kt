@@ -69,7 +69,7 @@ internal class PrecomputedAssignmentsDownloaderTest {
         fakeFlagsContext = FlagsContext(
             clientToken = forge.anAlphabeticalString(),
             applicationId = forge.anAlphabeticalString(),
-            site = DatadogSite.US1,
+            site = DatadogSite.CN,
             env = "test"
         )
 

@@ -8,7 +8,7 @@
 package com.datadog.android
 
 /**
- * Defines the Datadog sites you can send tracked data to.
+ * Defines the FlashCat sites you can send tracked data to.
  *
  * @param siteName Explicit site name property introduced in order to have a consistent SDK
  * instance ID (because this value is used there) in case if enum values are renamed.
@@ -17,54 +17,18 @@ package com.datadog.android
 enum class DatadogSite private constructor(internal val siteName: String, private val intakeHostName: String) {
 
     /**
-     *  The US1 site: FlashCat US region.
+     * FlashCat production site: [https://browser.flashcat.cloud](https://browser.flashcat.cloud).
+     * This is the primary endpoint for all data collection (RUM, Logs, Traces).
      */
-    US1("us1", "api.flashcat.cloud"),
+    CN("cn", "browser.flashcat.cloud"),
 
     /**
-     *  The US3 site: FlashCat US3 region.
+     * FlashCat staging site (internal use only).
+     * For internal testing, use [com.datadog.android.rum.RumConfiguration.Builder.useCustomEndpoint],
+     * [com.datadog.android.log.LogsConfiguration.Builder.useCustomEndpoint], or
+     * [com.datadog.android.trace.TraceConfiguration.Builder.useCustomEndpoint] to override with your staging URL.
      */
-    US3("us3", "api-us3.flashcat.cloud"),
-
-    /**
-     *  The US5 site: FlashCat US5 region.
-     */
-    US5("us5", "api-us5.flashcat.cloud"),
-
-    /**
-     *  The EU1 site: FlashCat EU region.
-     */
-    EU1("eu1", "api-eu.flashcat.cloud"),
-
-    /**
-     *  The AP1 site: FlashCat AP1 region.
-     */
-    AP1("ap1", "api-ap1.flashcat.cloud"),
-
-    /**
-     *  The AP2 site: FlashCat AP2 region (China optimized).
-     */
-    AP2("ap2", "api-cn.flashcat.cloud"),
-
-    /**
-     *  The US1_FED site (FedRAMP compatible): FlashCat FedRAMP.
-     */
-    US1_FED("us1_fed", "api-fed.flashcat.cloud"),
-
-    /**
-     *  The STAGING site (internal usage only): FlashCat staging environment.
-     */
-    STAGING("staging", "api-staging.flashcat.cloud");
-
-    /**
-     * Constructor using the generic way to build the intake endpoint host from the site name.
-     * @param siteName Explicit site name property introduced in order to have a consistent SDK
-     * instance ID (because this value is used there) in case if enum values are renamed.
-     */
-    private constructor(siteName: String) : this(
-        siteName,
-        "api-$siteName.flashcat.cloud"
-    )
+    STAGING("staging", "jira.flashcat.cloud");
 
     /** The intake endpoint url. */
     val intakeEndpoint: String = "https://$intakeHostName"

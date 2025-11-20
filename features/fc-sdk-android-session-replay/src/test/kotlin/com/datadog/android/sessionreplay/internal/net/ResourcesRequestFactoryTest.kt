@@ -77,7 +77,7 @@ internal class ResourcesRequestFactoryTest {
     @BeforeEach
     fun `set up`(forge: Forge) {
         val fakeRumFeature = mapOf(APPLICATION_ID to fakeApplicationId)
-        whenever(mockDatadogSite.intakeEndpoint).thenReturn(DatadogSite.US1.toString())
+        whenever(mockDatadogSite.intakeEndpoint).thenReturn(DatadogSite.CN.toString())
         whenever(fakeDatadogContext.site).thenReturn(mockDatadogSite)
         val fakeFeaturesContext = mapOf(Feature.RUM_FEATURE_NAME to fakeRumFeature)
         whenever(fakeDatadogContext.featuresContext).thenReturn(fakeFeaturesContext)

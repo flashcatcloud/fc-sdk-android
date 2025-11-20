@@ -99,7 +99,7 @@ class TvSampleApplication : Application() {
             env = "test",
             variant = ""
         )
-            .useSite(DatadogSite.US1)
+            .useSite(DatadogSite.CN)
             .setBatchSize(BatchSize.SMALL)
             .setUploadFrequency(UploadFrequency.FREQUENT)
             .build()

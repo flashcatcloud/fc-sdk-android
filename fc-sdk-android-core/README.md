@@ -27,7 +27,7 @@ class SampleApplication : Application() {
             env = ENV_NAME,
             variant = APP_VARIANT_NAME
         )
-            .useSite(DatadogSite.US1) // replace with the site you're targeting (e.g.: US3, EU1, AP2 for China, …)
+            .useSite(DatadogSite.CN)
             .build()
         Datadog.initialize(this, configuration, trackingConsent)
     }
@@ -65,7 +65,7 @@ See the dedicated [Datadog Android Trace Collection documentation][3] to learn h
 ## Setting the Library's verbosity
 
 If you need to get information about the Library, you can set the verbosity
-level as follows: 
+level as follows:
 
 ```kotlin
     Datadog.setVerbosity(Log.INFO)
@@ -77,7 +77,7 @@ the provided level will be logged to Android's LogCat.
 ## Contributing
 
 Pull requests are welcome, but please open an issue first to discuss what you
-would like to change. For more information, read the 
+would like to change. For more information, read the
 [Contributing Guide](../CONTRIBUTING.md).
 
 ## License

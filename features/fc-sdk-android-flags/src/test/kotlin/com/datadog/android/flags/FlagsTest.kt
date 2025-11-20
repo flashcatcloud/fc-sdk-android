@@ -63,7 +63,7 @@ internal class FlagsTest {
             mockExecutorService
 
         whenever(mockDatadogContext.clientToken) doReturn fakeClientToken
-        whenever(mockDatadogContext.site) doReturn DatadogSite.US1
+        whenever(mockDatadogContext.site) doReturn DatadogSite.CN
         whenever(mockDatadogContext.env) doReturn fakeEnv
         whenever(mockSdkCore.getDatadogContext()) doReturn mockDatadogContext
         whenever(mockSdkCore.getFeature(RUM_FEATURE_NAME)) doReturn mock()

@@ -72,7 +72,7 @@ internal class ConfigurationBuilderTest {
         assertThat(config.coreConfig.proxy).isNull()
         assertThat(config.coreConfig.proxyAuth).isEqualTo(Authenticator.NONE)
         assertThat(config.coreConfig.encryption).isNull()
-        assertThat(config.coreConfig.site).isEqualTo(DatadogSite.US1)
+        assertThat(config.coreConfig.site).isEqualTo(DatadogSite.CN)
         assertThat(config.coreConfig.batchProcessingLevel).isEqualTo(BatchProcessingLevel.MEDIUM)
         assertThat(config.coreConfig.persistenceStrategyFactory).isNull()
         assertThat(config.coreConfig.backpressureStrategy.backpressureMitigation)
