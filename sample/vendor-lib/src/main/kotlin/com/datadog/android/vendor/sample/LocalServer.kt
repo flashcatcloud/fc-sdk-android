@@ -20,6 +20,7 @@ import com.datadog.android.privacy.TrackingConsent
 import com.datadog.android.trace.Trace
 import com.datadog.android.trace.TraceConfiguration
 import com.datadog.android.trace.opentelemetry.OtelTracerProvider
+import com.flashcat.android.vendor.sample.BuildConfig
 import io.ktor.server.application.install
 import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer

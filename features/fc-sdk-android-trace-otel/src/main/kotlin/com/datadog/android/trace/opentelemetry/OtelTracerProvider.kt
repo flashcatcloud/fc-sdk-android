@@ -22,6 +22,7 @@ import com.datadog.android.trace.internal.DatadogTracingToolkit.setTraceId128Bit
 import com.datadog.android.trace.opentelemetry.internal.DatadogContextStorageWrapper
 import com.datadog.android.trace.opentelemetry.internal.executeIfJavaFunctionPackageExists
 import com.datadog.opentelemetry.trace.OtelTracerBuilder
+import com.flashcat.android.trace.opentelemetry.BuildConfig
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.api.trace.TracerBuilder
 import io.opentelemetry.api.trace.TracerProvider

@@ -31,6 +31,7 @@ import com.datadog.opentelemetry.trace.OtelSpan
 import com.datadog.opentelemetry.trace.OtelSpanContext
 import com.datadog.tools.unit.completedFutureMock
 import com.datadog.tools.unit.getFieldValue
+import com.flashcat.android.trace.opentelemetry.BuildConfig
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.DoubleForgery
 import fr.xgouchet.elmyr.annotation.Forgery

@@ -7,6 +7,7 @@
 package com.datadog.android.sessionreplay
 
 import android.view.View
+import com.flashcat.android.sessionreplay.R
 
 /**
  * Allows setting a view to be "hidden" in the hierarchy in Session Replay.
