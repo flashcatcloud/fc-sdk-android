@@ -15,7 +15,9 @@ import java.util.Properties
 
 plugins {
     `maven-publish`
-    alias(libs.plugins.nexusPublishGradlePlugin)
+    signing
+    // Note: nexus-publish-plugin is no longer needed for Maven Central Portal (2024+)
+    // We use direct maven-publish instead
 }
 
 version = AndroidConfig.VERSION.name
@@ -47,25 +49,36 @@ allprojects {
     }
 }
 
-nexusPublishing {
-    this.repositories {
-        sonatype {
-            stagingProfileId = "378eecbbe2cf9"
-            val sonatypeUsername = System.getenv("CENTRAL_PUBLISHER_USERNAME")
-            val sonatypePassword = System.getenv("CENTRAL_PUBLISHER_PASSWORD")
-            if (sonatypeUsername != null) username.set(sonatypeUsername)
-            if (sonatypePassword != null) password.set(sonatypePassword)
-            // see https://github.com/gradle-nexus/publish-plugin#publishing-to-maven-central-via-sonatype-central
-            // For official documentation:
-            // staging repo publishing https://central.sonatype.org/publish/publish-portal-ossrh-staging-api/#configuration
-            // snapshot publishing https://central.sonatype.org/publish/publish-portal-snapshots/#publishing-via-other-methods
-            nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
-            snapshotRepositoryUrl.set(uri("https://central.sonatype.com/repository/maven-snapshots/"))
+// Maven Central Portal (2024+) configuration
+// No longer uses stagingProfileId or nexus-publish-plugin
+// Publishing is done through Maven Central Portal UI or API
+//
+// Credentials should be set in environment variables:
+// - MAVEN_CENTRAL_USERNAME: Your Maven Central Portal username (from generated token)
+// - MAVEN_CENTRAL_PASSWORD: Your Maven Central Portal password (from generated token)
+//
+// Publishing workflow:
+// 1. For SNAPSHOT: ./gradlew publish (publishes to Maven Central snapshot repo)
+// 2. For RELEASE: ./gradlew publish, then manually publish in Maven Central Portal UI
+
+publishing {
+    repositories {
+        maven {
+            name = "MavenCentral"
+            val releasesRepoUrl = uri("https://central.sonatype.com/api/v1/publisher/upload")
+            val snapshotsRepoUrl = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+            
+            url = if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl
+            
+            credentials {
+                username = System.getenv("MAVEN_CENTRAL_USERNAME")
+                password = System.getenv("MAVEN_CENTRAL_PASSWORD")
+            }
         }
     }
 }
 
-task<Delete>("clean") {
+tasks.named<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
 

@@ -1,5 +1,5 @@
 include:
-  - 'https://gitlab-templates.ddbuild.io/slack-notifier/v1/template.yml'
+  - "https://gitlab-templates.ddbuild.io/slack-notifier/v1/template.yml"
 
 # SETUP
 
@@ -40,10 +40,12 @@ stages:
     - exit 0
   set-publishing-credentials:
     - aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.gradle-properties --with-decryption --query "Parameter.Value" --out text >> ./gradle.properties
+    # Maven Central Portal (2024+) credentials - using generated User Token
+    - export MAVEN_CENTRAL_USERNAME=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.maven.username --with-decryption --query "Parameter.Value" --out text)
+    - export MAVEN_CENTRAL_PASSWORD=$(aws ssm get-parameter --region us-east-1 --name ci.fc-sdk-android.maven.password --with-decryption --query "Parameter.Value" --out text)
+    # GPG signing credentials
     - export GPG_PRIVATE_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.signing.gpg_private_key --with-decryption --query "Parameter.Value" --out text)
     - export GPG_PASSWORD=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.signing.gpg_passphrase --with-decryption --query "Parameter.Value" --out text)
-    - export CENTRAL_PUBLISHER_USERNAME=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.publishing.central_username --with-decryption --query "Parameter.Value" --out text)
-    - export CENTRAL_PUBLISHER_PASSWORD=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.publishing.central_password --with-decryption --query "Parameter.Value" --out text)
     - export GPG_PUBLIC_FINGERPRINT=$(aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.signing.gpg_public_key --with-decryption --query "Parameter.Value" --out text | gpg --import --import-options show-only | grep -E -o -e "[A-F0-9]{40}")
 
 # CI IMAGE
@@ -51,8 +53,8 @@ stages:
 ci-image:
   stage: ci-image
   when: manual
-  except: [ tags, schedules ]
-  tags: [ "arch:amd64" ]
+  except: [tags, schedules]
+  tags: ["arch:amd64"]
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:24.0.4-jammy
   script:
     - docker buildx build --tag $CI_IMAGE_DOCKER -f ./ci/Dockerfile.gitlab --push .
@@ -62,7 +64,7 @@ ci-image:
 create_key:
   stage: security
   when: manual
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   variables:
     PROJECT_NAME: "dd-sdk-android"
     EXPORT_TO_KEYSERVER: "true"
@@ -73,7 +75,6 @@ create_key:
     expire_in: 13 mos
     paths:
       - pubkeys
-
 
 # STATIC ANALYSIS
 
@@ -126,12 +127,11 @@ analysis:detekt-custom:
     - ./gradlew :integrations:dd-sdk-android-trace-coroutines:customDetektRules
     - ./gradlew :integrations:dd-sdk-android-tv:customDetektRules
 
-
 # TODO RUM-1622 cleanup this section
 # TESTS
 
 test:debug:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   image: $CI_IMAGE_DOCKER
   stage: test
   timeout: 1h
@@ -156,7 +156,7 @@ test:debug:
       junit: "**/build/test-results/testDebugUnitTest/*.xml"
 
 test:tools:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   image: $CI_IMAGE_DOCKER
   stage: test
   timeout: 1h
@@ -172,7 +172,7 @@ test:tools:
     - GRADLE_OPTS="-Xmx3072m" ./gradlew :unitTestTools --stacktrace --no-daemon --build-cache --gradle-user-home cache/
 
 test:kover:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   image: $CI_IMAGE_DOCKER
   stage: test
   timeout: 1h
@@ -203,7 +203,7 @@ test:kover:
 # the steps in this section should reflect our test pyramid strategy
 
 test-pyramid:core-it-min-api:
-  tags: [ "macos:sonoma", "specific:true" ]
+  tags: ["macos:sonoma", "specific:true"]
   stage: test-pyramid
   timeout: 1h
   variables:
@@ -216,7 +216,7 @@ test-pyramid:core-it-min-api:
     - !reference [.snippets, run-core-it-instrumented]
 
 test-pyramid:core-it-latest-api:
-  tags: [ "macos:sonoma", "specific:true" ]
+  tags: ["macos:sonoma", "specific:true"]
   stage: test-pyramid
   timeout: 1h
   variables:
@@ -229,7 +229,7 @@ test-pyramid:core-it-latest-api:
     - !reference [.snippets, run-core-it-instrumented]
 
 test-pyramid:core-it-median-api:
-  tags: [ "macos:sonoma", "specific:true" ]
+  tags: ["macos:sonoma", "specific:true"]
   stage: test-pyramid
   timeout: 1h
   variables:
@@ -242,7 +242,7 @@ test-pyramid:core-it-median-api:
     - !reference [.snippets, run-core-it-instrumented]
 
 test-pyramid:single-fit-logs:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   image: $CI_IMAGE_DOCKER
   stage: test-pyramid
   timeout: 1h
@@ -263,7 +263,7 @@ test-pyramid:single-fit-logs:
       junit: "**/build/test-results/testReleaseUnitTest/*.xml"
 
 test-pyramid:single-fit-rum:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   image: $CI_IMAGE_DOCKER
   stage: test-pyramid
   timeout: 1h
@@ -284,7 +284,7 @@ test-pyramid:single-fit-rum:
       junit: "**/build/test-results/testReleaseUnitTest/*.xml"
 
 test-pyramid:single-fit-trace:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   image: $CI_IMAGE_DOCKER
   stage: test-pyramid
   timeout: 1h
@@ -305,7 +305,7 @@ test-pyramid:single-fit-trace:
       junit: "**/build/test-results/testReleaseUnitTest/*.xml"
 
 test-pyramid:single-fit-okhttp:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   image: $CI_IMAGE_DOCKER
   stage: test-pyramid
   timeout: 1h
@@ -328,7 +328,7 @@ test-pyramid:single-fit-okhttp:
 # RUN INSTRUMENTED TESTS ON MIN API (23), LATEST API (34) and MEDIAN API (28)
 
 test-pyramid:legacy-integration-instrumented-min-api:
-  tags: [ "macos:sonoma", "specific:true" ]
+  tags: ["macos:sonoma", "specific:true"]
   stage: test-pyramid
   timeout: 1h
   variables:
@@ -341,7 +341,7 @@ test-pyramid:legacy-integration-instrumented-min-api:
     - !reference [.snippets, run-legacy-integration-instrumented]
 
 test-pyramid:legacy-integration-instrumented-latest-api:
-  tags: [ "macos:sonoma", "specific:true" ]
+  tags: ["macos:sonoma", "specific:true"]
   stage: test-pyramid
   timeout: 1h
   variables:
@@ -354,7 +354,7 @@ test-pyramid:legacy-integration-instrumented-latest-api:
     - !reference [.snippets, run-legacy-integration-instrumented]
 
 test-pyramid:legacy-integration-instrumented-median-api:
-  tags: [ "macos:sonoma", "specific:true" ]
+  tags: ["macos:sonoma", "specific:true"]
   stage: test-pyramid
   timeout: 1h
   variables:
@@ -367,7 +367,7 @@ test-pyramid:legacy-integration-instrumented-median-api:
     - !reference [.snippets, run-legacy-integration-instrumented]
 
 test-pyramid:detekt-api-coverage:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   image: $CI_IMAGE_DOCKER
   stage: test-pyramid
   timeout: 1h
@@ -383,12 +383,12 @@ test-pyramid:detekt-api-coverage:
     - grep -v -f apiUsage.log apiSurface.log
 
 test-pyramid:publish-e2e-synthetics:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   image: $CI_IMAGE_DOCKER
   stage: test-pyramid
   timeout: 1h
   only:
-    - develop
+    - public
   script:
     - mkdir -p ./config/
     - aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.gradle-properties --with-decryption --query "Parameter.Value" --out text >> ./gradle.properties
@@ -410,12 +410,12 @@ test-pyramid:publish-e2e-synthetics:
       - sample/kotlin/build/outputs/apk/us1/release/kotlin-us1-release.apk
 
 test-pyramid:publish-webview-synthetics:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   image: $CI_IMAGE_DOCKER
   stage: test-pyramid
   timeout: 1h
   only:
-    - develop
+    - public
   script:
     - mkdir -p ./config/
     - aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.gradle-properties --with-decryption --query "Parameter.Value" --out text >> ./gradle.properties
@@ -437,12 +437,12 @@ test-pyramid:publish-webview-synthetics:
       - sample/kotlin/build/outputs/apk/us1/release/kotlin-us1-release.apk
 
 test-pyramid:publish-staging-synthetics:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   image: $CI_IMAGE_DOCKER
   stage: test-pyramid
   timeout: 1h
   only:
-    - develop
+    - public
   script:
     - mkdir -p ./config/
     - aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.gradle-properties --with-decryption --query "Parameter.Value" --out text >> ./gradle.properties
@@ -464,12 +464,12 @@ test-pyramid:publish-staging-synthetics:
       - sample/kotlin/build/outputs/apk/staging/release/kotlin-staging-release.apk
 
 test-pyramid:publish-benchmark-synthetics:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   image: $CI_IMAGE_DOCKER
   stage: test-pyramid
   timeout: 1h
   only:
-    - develop
+    - public
   script:
     - mkdir -p ./config/
     - aws ssm get-parameter --region us-east-1 --name ci.dd-sdk-android.gradle-properties --with-decryption --query "Parameter.Value" --out text >> ./gradle.properties
@@ -493,16 +493,26 @@ test-pyramid:publish-benchmark-synthetics:
 # PUBLISH ARTIFACTS ON MAVEN
 
 publish:release-core:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :dd-sdk-android-core:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - |
+      # Maven Central Portal (2024+) publishing
+      # No longer uses closeSonatypeStagingRepository
+      if [ -n "$CI_COMMIT_TAG" ]; then
+        # Release build: publish to Maven Central Portal
+        # Note: After this, you need to manually publish in the Portal UI or use the API
+        ./gradlew :dd-sdk-android-core:publish --stacktrace --no-daemon
+      else
+        # Snapshot build: publish to snapshot repository
+        ./gradlew :dd-sdk-android-core:publish --stacktrace --no-daemon
+      fi
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -510,16 +520,16 @@ publish:release-core:
       - dd-sdk-android-core/verification-metadata.xml
 
 publish:release-internal:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
-    - !reference [ .snippets, set-publishing-credentials ]
-    - ./gradlew :dd-sdk-android-internal:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - !reference [.snippets, set-publishing-credentials]
+    - ./gradlew :dd-sdk-android-internal:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -529,16 +539,16 @@ publish:release-internal:
 # region Publish features/*
 
 publish:release-flags:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :features:dd-sdk-android-flags:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :features:dd-sdk-android-flags:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -546,34 +556,33 @@ publish:release-flags:
       - features/dd-sdk-android-flags/verification-metadata.xml
 
 publish:release-trace-api:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :features:dd-sdk-android-trace-api:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :features:dd-sdk-android-trace-api:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
       - features/dd-sdk-android-trace-api/verification-metadata.xml
 
-
 publish:release-trace-internal:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
-    - !reference [ .snippets, set-publishing-credentials ]
-    - ./gradlew :features:dd-sdk-android-trace-internal:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - !reference [.snippets, set-publishing-credentials]
+    - ./gradlew :features:dd-sdk-android-trace-internal:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -581,16 +590,16 @@ publish:release-trace-internal:
       - features/dd-sdk-android-trace-internal/verification-metadata.xml
 
 publish:release-trace:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :features:dd-sdk-android-trace:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :features:dd-sdk-android-trace:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -598,16 +607,16 @@ publish:release-trace:
       - features/dd-sdk-android-trace/verification-metadata.xml
 
 publish:release-trace-otel:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :features:dd-sdk-android-trace-otel:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :features:dd-sdk-android-trace-otel:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -615,16 +624,16 @@ publish:release-trace-otel:
       - features/dd-sdk-android-trace-otel/verification-metadata.xml
 
 publish:release-logs:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :features:dd-sdk-android-logs:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :features:dd-sdk-android-logs:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -632,16 +641,16 @@ publish:release-logs:
       - features/dd-sdk-android-logs/verification-metadata.xml
 
 publish:release-rum:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :features:dd-sdk-android-rum:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :features:dd-sdk-android-rum:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -649,16 +658,16 @@ publish:release-rum:
       - features/dd-sdk-android-rum/verification-metadata.xml
 
 publish:release-ndk:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :features:dd-sdk-android-ndk:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :features:dd-sdk-android-ndk:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -666,16 +675,16 @@ publish:release-ndk:
       - features/dd-sdk-android-ndk/verification-metadata.xml
 
 publish:release-session-replay:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :features:dd-sdk-android-session-replay:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :features:dd-sdk-android-session-replay:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -683,16 +692,16 @@ publish:release-session-replay:
       - features/dd-sdk-android-session-replay/verification-metadata.xml
 
 publish:release-session-replay-material:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :features:dd-sdk-android-session-replay-material:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :features:dd-sdk-android-session-replay-material:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -700,16 +709,16 @@ publish:release-session-replay-material:
       - features/dd-sdk-android-session-replay-material/verification-metadata.xml
 
 publish:release-session-replay-compose:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :features:dd-sdk-android-session-replay-compose:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :features:dd-sdk-android-session-replay-compose:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -717,16 +726,16 @@ publish:release-session-replay-compose:
       - features/dd-sdk-android-session-replay-compose/verification-metadata.xml
 
 publish:release-webview:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :features:dd-sdk-android-webview:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :features:dd-sdk-android-webview:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -738,16 +747,16 @@ publish:release-webview:
 # region Publish integrations/*
 
 publish:release-apollo:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-apollo:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:dd-sdk-android-apollo:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -755,16 +764,16 @@ publish:release-apollo:
       - integrations/dd-sdk-android-apollo/verification-metadata.xml
 
 publish:release-coil:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-coil:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:dd-sdk-android-coil:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -772,16 +781,16 @@ publish:release-coil:
       - integrations/dd-sdk-android-coil/verification-metadata.xml
 
 publish:release-compose:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-compose:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:dd-sdk-android-compose:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -789,16 +798,16 @@ publish:release-compose:
       - integrations/dd-sdk-android-compose/verification-metadata.xml
 
 publish:release-fresco:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-fresco:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:dd-sdk-android-fresco:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -806,16 +815,16 @@ publish:release-fresco:
       - integrations/dd-sdk-android-fresco/verification-metadata.xml
 
 publish:release-glide:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-glide:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:dd-sdk-android-glide:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -823,16 +832,16 @@ publish:release-glide:
       - integrations/dd-sdk-android-glide/verification-metadata.xml
 
 publish:release-trace-coroutines:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-trace-coroutines:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:dd-sdk-android-trace-coroutines:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -840,16 +849,16 @@ publish:release-trace-coroutines:
       - integrations/dd-sdk-android-trace-coroutines/verification-metadata.xml
 
 publish:release-rum-coroutines:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-rum-coroutines:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:dd-sdk-android-rum-coroutines:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -857,16 +866,16 @@ publish:release-rum-coroutines:
       - integrations/dd-sdk-android-rum-coroutines/verification-metadata.xml
 
 publish:release-rx:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-rx:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:dd-sdk-android-rx:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -874,16 +883,16 @@ publish:release-rx:
       - integrations/dd-sdk-android-rx/verification-metadata.xml
 
 publish:release-sqldelight:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-sqldelight:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:dd-sdk-android-sqldelight:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -891,16 +900,16 @@ publish:release-sqldelight:
       - integrations/dd-sdk-android-sqldelight/verification-metadata.xml
 
 publish:release-timber:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-timber:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:dd-sdk-android-timber:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -908,16 +917,16 @@ publish:release-timber:
       - integrations/dd-sdk-android-timber/verification-metadata.xml
 
 publish:release-android-tv:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-tv:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:dd-sdk-android-tv:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -925,16 +934,16 @@ publish:release-android-tv:
       - integrations/dd-sdk-android-tv/verification-metadata.xml
 
 publish:release-okhttp:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-okhttp:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:dd-sdk-android-okhttp:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -942,16 +951,16 @@ publish:release-okhttp:
       - integrations/dd-sdk-android-okhttp/verification-metadata.xml
 
 publish:release-okhttp-otel:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :integrations:dd-sdk-android-okhttp-otel:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :integrations:dd-sdk-android-okhttp-otel:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
@@ -961,44 +970,43 @@ publish:release-okhttp-otel:
 # endregion
 
 publish:release-benchmark:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
-    - develop
+    - public
   image: $CI_IMAGE_DOCKER
   stage: publish
   timeout: 30m
   script:
     - !reference [.snippets, set-publishing-credentials]
-    - ./gradlew :tools:benchmark:publishToSonatype closeSonatypeStagingRepository --stacktrace --no-daemon
+    - ./gradlew :tools:benchmark:publish --stacktrace --no-daemon
   artifacts:
     when: on_success
     expire_in: 7 days
     paths:
       - tools/benchmark/verification-metadata.xml
 
-
 # SLACK NOTIFICATIONS
 
-notify:publish-develop-success:
+notify:publish-public-success:
   extends: .slack-notifier-base
   stage: notify
   when: on_success
   only:
-    - develop
+    - public
   script:
-    - 'MESSAGE_TEXT=":package: $CI_PROJECT_NAME develop $CI_COMMIT_TAG: Snapshot published on :maven:, Sample app published on :synthetics:"'
+    - 'MESSAGE_TEXT=":package: $CI_PROJECT_NAME public $CI_COMMIT_SHORT_SHA: Snapshot published on :maven:"'
     - postmessage "#mobile-sdk-ops" "$MESSAGE_TEXT"
 
-notify:publish-develop-failure:
+notify:publish-public-failure:
   extends: .slack-notifier-base
   stage: notify
   when: on_failure
   only:
-    - develop
+    - public
   script:
     - BUILD_URL="$CI_PROJECT_URL/pipelines/$CI_PIPELINE_ID"
-    - 'MESSAGE_TEXT=":status_alert: $CI_PROJECT_NAME $CI_COMMIT_TAG develop pipeline <$BUILD_URL|$COMMIT_MESSAGE> failed."'
+    - 'MESSAGE_TEXT=":status_alert: $CI_PROJECT_NAME public pipeline <$BUILD_URL|$COMMIT_MESSAGE> failed."'
     - postmessage "#mobile-sdk-ops" "$MESSAGE_TEXT"
 
 notify:publish-release-success:
@@ -1024,7 +1032,7 @@ notify:publish-release-failure:
     - postmessage "#mobile-sdk-ops" "$MESSAGE_TEXT"
 
 notify:dogfood-app:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
   image: $CI_IMAGE_DOCKER
@@ -1039,7 +1047,7 @@ notify:dogfood-app:
     - python3 ./ci/scripts/dogfood.py -v $CI_COMMIT_TAG -t app
 
 notify:dogfood-demo:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
   image: $CI_IMAGE_DOCKER
@@ -1054,7 +1062,7 @@ notify:dogfood-demo:
     - python3 ./ci/scripts/dogfood.py -v $CI_COMMIT_TAG -t demo
 
 notify:dogfood-gradle-plugin:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
   image: $CI_IMAGE_DOCKER
@@ -1069,7 +1077,7 @@ notify:dogfood-gradle-plugin:
     - python3 ./ci/scripts/dogfood.py -v $CI_COMMIT_TAG -t gradle-plugin
 
 notify:merge-verification-metadata:
-  tags: [ "arch:amd64" ]
+  tags: ["arch:amd64"]
   only:
     - tags
   image: $CI_IMAGE_DOCKER
@@ -1108,4 +1116,3 @@ notify:merge-verification-metadata:
     expire_in: 3 mos
     paths:
       - verification-metadata.xml
-
