@@ -14,8 +14,8 @@ import com.flashcat.android.api.feature.Feature
 import com.datadog.android.api.feature.stub.StubStorageBackedFeature
 import com.flashcat.android.api.storage.EventType
 import com.flashcat.android.api.storage.RawBatchEvent
-import com.datadog.android.core.InternalSdkCore
-import com.datadog.android.core.configuration.Configuration
+import com.flashcat.android.core.InternalSdkCore
+import com.flashcat.android.core.configuration.Configuration
 import com.datadog.android.core.integration.tests.assertj.MockWebServerAssert
 import com.datadog.android.core.integration.tests.forge.factories.ConfigurationCoreForgeryFactory
 import com.flashcat.android.privacy.TrackingConsent

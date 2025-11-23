@@ -12,8 +12,8 @@ import com.flashcat.android.api.context.DatadogContext
 import com.flashcat.android.api.net.RequestExecutionContext
 import com.flashcat.android.api.net.RequestFactory
 import com.flashcat.android.api.storage.RawBatchEvent
-import com.datadog.android.core.internal.persistence.BatchId
-import com.datadog.android.core.internal.system.AndroidInfoProvider
+import com.flashcat.android.core.internal.persistence.BatchId
+import com.flashcat.android.core.internal.system.AndroidInfoProvider
 import com.datadog.android.internal.profiler.ExecutionTimer
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.android.utils.verifyLog

@@ -11,6 +11,8 @@ import com.flashcat.android.api.InternalLogger
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.android.utils.times
 import com.datadog.android.utils.verifyLog
+import com.flashcat.android.core.constraints.DataConstraints
+import com.flashcat.android.core.constraints.DatadogDataConstraints
 import fr.xgouchet.elmyr.Case
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.StringForgery

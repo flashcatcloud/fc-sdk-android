@@ -6,7 +6,7 @@
 
 package com.flashcat.android.event
 
-import com.datadog.android.core.persistence.Serializer
+import com.flashcat.android.core.persistence.Serializer
 
 /**
  * Combines [EventMapper] and [Serializer]. First mapping is done, then serialization.

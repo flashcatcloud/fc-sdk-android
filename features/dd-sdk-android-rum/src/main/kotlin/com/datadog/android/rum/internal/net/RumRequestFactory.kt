@@ -13,7 +13,7 @@ import com.flashcat.android.api.net.Request
 import com.flashcat.android.api.net.RequestExecutionContext
 import com.flashcat.android.api.net.RequestFactory
 import com.flashcat.android.api.storage.RawBatchEvent
-import com.datadog.android.core.internal.utils.join
+import com.flashcat.android.core.internal.utils.join
 import com.datadog.android.internal.utils.toHexString
 import com.datadog.android.rum.internal.domain.event.RumViewEventFilter
 import java.security.DigestException

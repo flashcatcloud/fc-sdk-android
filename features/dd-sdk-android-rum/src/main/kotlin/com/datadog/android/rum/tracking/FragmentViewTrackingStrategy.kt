@@ -14,7 +14,7 @@ import androidx.annotation.MainThread
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import com.flashcat.android.api.feature.Feature
-import com.datadog.android.core.internal.system.BuildSdkVersionProvider
+import com.flashcat.android.core.internal.system.BuildSdkVersionProvider
 import com.datadog.android.internal.attributes.ViewScopeInstrumentationType
 import com.datadog.android.internal.attributes.enrichWithConstantAttribute
 import com.datadog.android.rum.GlobalRumMonitor

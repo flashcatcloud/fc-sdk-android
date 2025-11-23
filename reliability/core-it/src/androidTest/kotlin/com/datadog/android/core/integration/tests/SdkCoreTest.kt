@@ -16,7 +16,7 @@ import com.flashcat.android.api.context.UserInfo
 import com.flashcat.android.api.feature.FeatureSdkCore
 import com.flashcat.android.api.feature.StorageBackedFeature
 import com.datadog.android.api.feature.stub.StubStorageBackedFeature
-import com.datadog.android.core.configuration.Configuration
+import com.flashcat.android.core.configuration.Configuration
 import com.datadog.android.core.integration.tests.forge.factories.ConfigurationCoreForgeryFactory
 import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.tools.unit.forge.exhaustiveAttributes

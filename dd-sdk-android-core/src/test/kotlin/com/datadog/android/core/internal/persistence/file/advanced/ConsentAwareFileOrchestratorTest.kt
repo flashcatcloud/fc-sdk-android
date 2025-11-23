@@ -8,8 +8,8 @@
 package com.datadog.android.core.internal.persistence.file.advanced
 
 import com.flashcat.android.api.InternalLogger
-import com.datadog.android.core.internal.persistence.file.FileOrchestrator
-import com.datadog.android.core.internal.privacy.ConsentProvider
+import com.flashcat.android.core.internal.persistence.file.FileOrchestrator
+import com.flashcat.android.core.internal.privacy.ConsentProvider
 import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.android.utils.verifyLog

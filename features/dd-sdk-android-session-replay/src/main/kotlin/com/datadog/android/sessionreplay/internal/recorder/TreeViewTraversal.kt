@@ -13,7 +13,7 @@ import android.view.ViewGroup
 import androidx.annotation.UiThread
 import com.flashcat.android.api.InternalLogger
 import com.flashcat.android.api.feature.measureMethodCallPerf
-import com.datadog.android.core.metrics.MethodCallSamplingRate
+import com.flashcat.android.core.metrics.MethodCallSamplingRate
 import com.datadog.android.sessionreplay.MapperTypeWrapper
 import com.datadog.android.sessionreplay.R
 import com.datadog.android.sessionreplay.TouchPrivacy

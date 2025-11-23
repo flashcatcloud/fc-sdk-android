@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.internal.data.privacy
 
-import com.datadog.android.core.internal.privacy.TrackingConsentProvider
+import com.flashcat.android.core.internal.privacy.TrackingConsentProvider
 import com.flashcat.android.privacy.TrackingConsent
 import com.flashcat.android.privacy.TrackingConsentProviderCallback
 import com.datadog.android.utils.forge.Configurator

@@ -120,7 +120,7 @@ interface com.datadog.android.trace.api.tracer.DatadogTracer
   fun addScopeListener(com.datadog.android.trace.api.scope.DatadogScopeListener)
 interface com.datadog.android.trace.api.tracer.DatadogTracerBuilder
   fun build(): DatadogTracer
-  fun withTracingHeadersTypes(Set<com.datadog.android.trace.TracingHeaderType>): DatadogTracerBuilder
+  fun withTracingHeadersTypes(Set<com.flashcat.android.trace.TracingHeaderType>): DatadogTracerBuilder
   fun withServiceName(String): DatadogTracerBuilder
   fun withSampleRate(Double): DatadogTracerBuilder
   fun withPartialFlushMinSpans(Int): DatadogTracerBuilder

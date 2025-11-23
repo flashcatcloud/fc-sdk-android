@@ -8,7 +8,7 @@
 package com.datadog.android.rum.internal.anr
 
 import com.flashcat.android.api.InternalLogger
-import com.datadog.android.core.feature.event.ThreadDump
+import com.flashcat.android.core.feature.event.ThreadDump
 import com.datadog.android.internal.utils.appendIfNotEmpty
 import java.io.IOException
 import java.io.InputStream

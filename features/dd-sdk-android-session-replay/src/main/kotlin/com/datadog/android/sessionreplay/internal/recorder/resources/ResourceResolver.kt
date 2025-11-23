@@ -17,7 +17,7 @@ import android.util.DisplayMetrics
 import androidx.annotation.MainThread
 import androidx.annotation.WorkerThread
 import com.flashcat.android.api.InternalLogger
-import com.datadog.android.core.internal.utils.executeSafe
+import com.flashcat.android.core.internal.utils.executeSafe
 import com.datadog.android.sessionreplay.internal.async.DataQueueHandler
 import com.datadog.android.sessionreplay.internal.utils.DrawableUtils
 import com.datadog.android.sessionreplay.internal.utils.PathUtils

@@ -8,8 +8,8 @@
 package com.datadog.android.core.internal.thread
 
 import com.flashcat.android.api.InternalLogger
-import com.datadog.android.core.configuration.BackPressureMitigation
-import com.datadog.android.core.configuration.BackPressureStrategy
+import com.flashcat.android.core.configuration.BackPressureMitigation
+import com.flashcat.android.core.configuration.BackPressureStrategy
 import com.datadog.android.utils.forge.Configurator
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.IntForgery

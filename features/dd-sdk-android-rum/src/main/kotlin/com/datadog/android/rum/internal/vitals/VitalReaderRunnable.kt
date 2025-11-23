@@ -10,7 +10,7 @@ package com.datadog.android.rum.internal.vitals
 import com.flashcat.android.api.feature.Feature
 import com.flashcat.android.api.feature.FeatureContextUpdateReceiver
 import com.flashcat.android.api.feature.FeatureSdkCore
-import com.datadog.android.core.internal.utils.scheduleSafe
+import com.flashcat.android.core.internal.utils.scheduleSafe
 import com.datadog.android.rum.internal.domain.RumContext
 import com.datadog.android.rum.internal.domain.scope.RumViewType
 import java.util.concurrent.ScheduledExecutorService

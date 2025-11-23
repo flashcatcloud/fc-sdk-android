@@ -12,8 +12,8 @@ import android.os.Looper
 import com.flashcat.android.api.InternalLogger
 import com.flashcat.android.api.feature.Feature
 import com.flashcat.android.api.feature.FeatureSdkCore
-import com.datadog.android.core.InternalSdkCore
-import com.datadog.android.core.sampling.RateBasedSampler
+import com.flashcat.android.core.InternalSdkCore
+import com.flashcat.android.core.sampling.RateBasedSampler
 import com.datadog.android.rum.internal.RumFeature
 import com.datadog.android.rum.internal.monitor.DatadogRumMonitor
 import com.datadog.android.rum.internal.monitor.NoOpAdvancedRumMonitor

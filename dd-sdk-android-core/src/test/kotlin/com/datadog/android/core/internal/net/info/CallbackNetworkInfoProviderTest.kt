@@ -14,7 +14,7 @@ import android.net.NetworkCapabilities
 import android.os.Build
 import com.flashcat.android.api.InternalLogger
 import com.flashcat.android.api.context.NetworkInfo
-import com.datadog.android.core.internal.system.BuildSdkVersionProvider
+import com.flashcat.android.core.internal.system.BuildSdkVersionProvider
 import com.datadog.android.utils.assertj.NetworkInfoAssert.Companion.assertThat
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.android.utils.verifyLog

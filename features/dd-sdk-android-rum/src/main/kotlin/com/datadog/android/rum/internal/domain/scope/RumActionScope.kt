@@ -11,7 +11,7 @@ import androidx.annotation.WorkerThread
 import com.flashcat.android.api.context.DatadogContext
 import com.flashcat.android.api.feature.EventWriteScope
 import com.flashcat.android.api.storage.DataWriter
-import com.datadog.android.core.InternalSdkCore
+import com.flashcat.android.core.InternalSdkCore
 import com.datadog.android.rum.RumActionType
 import com.datadog.android.rum.RumSessionType
 import com.datadog.android.rum.internal.FeaturesContextResolver

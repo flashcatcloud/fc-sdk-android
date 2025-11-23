@@ -7,7 +7,7 @@
 
 package com.datadog.android.utils.forge
 
-import com.datadog.android.core.internal.data.upload.UploadStatus
+import com.flashcat.android.core.internal.data.upload.UploadStatus
 import com.datadog.tools.unit.forge.anException
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory

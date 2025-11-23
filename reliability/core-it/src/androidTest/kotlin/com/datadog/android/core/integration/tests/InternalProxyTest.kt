@@ -10,8 +10,8 @@ package com.datadog.android.core.integration.tests
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.flashcat.android.Datadog
-import com.datadog.android.core.InternalSdkCore
-import com.datadog.android.core.configuration.Configuration
+import com.flashcat.android.core.InternalSdkCore
+import com.flashcat.android.core.configuration.Configuration
 import com.datadog.android.core.integration.tests.forge.factories.ConfigurationCoreForgeryFactory
 import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.tools.unit.forge.useToolsFactories

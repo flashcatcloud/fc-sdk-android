@@ -8,7 +8,7 @@
 package com.datadog.android.flags.internal.persistence
 
 import com.flashcat.android.api.InternalLogger
-import com.datadog.android.core.internal.persistence.Deserializer
+import com.flashcat.android.core.internal.persistence.Deserializer
 import com.datadog.android.flags.internal.model.FlagsStateEntry
 import com.datadog.android.flags.internal.model.JsonKeys
 import com.datadog.android.flags.internal.model.PrecomputedFlag

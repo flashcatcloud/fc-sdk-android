@@ -8,7 +8,8 @@
 package com.datadog.android.core
 
 import com.flashcat.android.Datadog
-import com.datadog.android.core.internal.DatadogCore
+import com.flashcat.android.core.internal.DatadogCore
+import com.flashcat.android.core.SdkReference
 import fr.xgouchet.elmyr.annotation.IntForgery
 import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.junit5.ForgeExtension

@@ -30,5 +30,5 @@ object Identifier {
 
     const val CAUGHT_EXCEPTION = "e"
 
-    const val PACKAGE_UTILS = "com.datadog.android.core.internal.utils"
+    const val PACKAGE_UTILS = "com.flashcat.android.core.internal.utils"
 }

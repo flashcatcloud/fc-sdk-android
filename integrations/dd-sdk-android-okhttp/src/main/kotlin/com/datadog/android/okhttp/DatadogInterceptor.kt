@@ -11,9 +11,9 @@ import com.flashcat.android.api.InternalLogger
 import com.flashcat.android.api.SdkCore
 import com.flashcat.android.api.feature.Feature
 import com.flashcat.android.api.feature.FeatureSdkCore
-import com.datadog.android.core.InternalSdkCore
-import com.datadog.android.core.configuration.Configuration
-import com.datadog.android.core.sampling.Sampler
+import com.flashcat.android.core.InternalSdkCore
+import com.flashcat.android.core.configuration.Configuration
+import com.flashcat.android.core.sampling.Sampler
 import com.datadog.android.internal.network.GraphQLHeaders
 import com.datadog.android.okhttp.internal.rum.NoOpRumResourceAttributesProvider
 import com.datadog.android.okhttp.internal.rum.buildResourceId

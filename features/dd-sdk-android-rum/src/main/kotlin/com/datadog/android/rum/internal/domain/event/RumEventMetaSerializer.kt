@@ -7,7 +7,7 @@
 
 package com.datadog.android.rum.internal.domain.event
 
-import com.datadog.android.core.persistence.Serializer
+import com.flashcat.android.core.persistence.Serializer
 
 internal class RumEventMetaSerializer : Serializer<RumEventMeta> {
     override fun serialize(model: RumEventMeta): String {

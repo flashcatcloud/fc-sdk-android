@@ -13,7 +13,7 @@ import com.flashcat.android.api.context.UserInfo
 import com.flashcat.android.api.feature.Feature
 import com.flashcat.android.api.feature.FeatureScope
 import com.datadog.android.api.feature.SdkFeatureMock
-import com.datadog.android.core.InternalSdkCore
+import com.flashcat.android.core.InternalSdkCore
 import com.flashcat.android.log.LogAttributes
 import com.datadog.android.trace.api.span.DatadogSpan
 import com.datadog.android.trace.api.span.DatadogSpanBuilder

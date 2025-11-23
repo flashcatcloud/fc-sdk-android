@@ -11,11 +11,11 @@ import androidx.work.WorkManager
 import com.flashcat.android.api.InternalLogger
 import com.flashcat.android.api.feature.Feature
 import com.flashcat.android.api.feature.FeatureSdkCore
-import com.datadog.android.core.InternalSdkCore
-import com.datadog.android.core.feature.event.JvmCrash
-import com.datadog.android.core.feature.event.ThreadDump
-import com.datadog.android.core.internal.thread.waitToIdle
-import com.datadog.android.core.internal.utils.triggerUploadWorker
+import com.flashcat.android.core.InternalSdkCore
+import com.flashcat.android.core.feature.event.JvmCrash
+import com.flashcat.android.core.feature.event.ThreadDump
+import com.flashcat.android.core.internal.thread.waitToIdle
+import com.flashcat.android.core.internal.utils.triggerUploadWorker
 import com.datadog.android.internal.utils.asString
 import com.datadog.android.internal.utils.loggableStackTrace
 import java.lang.ref.WeakReference

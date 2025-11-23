@@ -6,7 +6,7 @@
 
 package com.flashcat.android.api.storage.datastore
 
-import com.datadog.android.core.persistence.datastore.DataStoreContent
+import com.flashcat.android.core.persistence.datastore.DataStoreContent
 
 /**
  * Callback for asynchronous read operations on the datastore.

@@ -9,11 +9,11 @@ package com.datadog.android.core.internal.persistence.file.batch
 
 import com.flashcat.android.api.InternalLogger
 import com.flashcat.android.api.storage.RawBatchEvent
-import com.datadog.android.core.internal.persistence.Batch
-import com.datadog.android.core.internal.persistence.DataReader
-import com.datadog.android.core.internal.persistence.PayloadDecoration
-import com.datadog.android.core.internal.persistence.file.FileMover
-import com.datadog.android.core.internal.persistence.file.FileOrchestrator
+import com.flashcat.android.core.internal.persistence.Batch
+import com.flashcat.android.core.internal.persistence.DataReader
+import com.flashcat.android.core.internal.persistence.PayloadDecoration
+import com.flashcat.android.core.internal.persistence.file.FileMover
+import com.flashcat.android.core.internal.persistence.file.FileOrchestrator
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.android.utils.verifyLog
 import fr.xgouchet.elmyr.Forge

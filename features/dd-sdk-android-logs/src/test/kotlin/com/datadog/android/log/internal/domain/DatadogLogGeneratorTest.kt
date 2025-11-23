@@ -12,7 +12,7 @@ import com.flashcat.android.api.context.DatadogContext
 import com.flashcat.android.api.context.NetworkInfo
 import com.flashcat.android.api.context.UserInfo
 import com.flashcat.android.api.feature.Feature
-import com.datadog.android.core.feature.event.ThreadDump
+import com.flashcat.android.core.feature.event.ThreadDump
 import com.flashcat.android.log.LogAttributes
 import com.datadog.android.log.assertj.LogEventAssert.Companion.assertThat
 import com.datadog.android.log.model.LogEvent

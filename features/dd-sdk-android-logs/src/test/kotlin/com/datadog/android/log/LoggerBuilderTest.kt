@@ -12,7 +12,7 @@ import com.flashcat.android.api.feature.Feature
 import com.flashcat.android.api.feature.FeatureScope
 import com.flashcat.android.api.feature.FeatureSdkCore
 import com.flashcat.android.api.storage.DataWriter
-import com.datadog.android.core.sampling.RateBasedSampler
+import com.flashcat.android.core.sampling.RateBasedSampler
 import com.datadog.android.log.internal.LogsFeature
 import com.datadog.android.log.internal.domain.DatadogLogGenerator
 import com.datadog.android.log.internal.logger.CombinedLogHandler

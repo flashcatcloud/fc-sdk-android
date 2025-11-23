@@ -14,8 +14,8 @@ import com.flashcat.android.api.context.DatadogContext
 import com.flashcat.android.api.context.UserInfo
 import com.flashcat.android.api.feature.Feature
 import com.datadog.android.api.feature.SdkFeatureMock
-import com.datadog.android.core.sampling.DeterministicSampler.Companion.MAX_ID
-import com.datadog.android.core.sampling.DeterministicSampler.Companion.SAMPLER_HASHER
+import com.flashcat.android.core.sampling.DeterministicSampler.Companion.MAX_ID
+import com.flashcat.android.core.sampling.DeterministicSampler.Companion.SAMPLER_HASHER
 import com.datadog.android.core.stub.StubSDKCore
 import com.datadog.android.okhttp.RumContextPropagationTest.Companion.SAMPLING_THRESHOLD
 import com.datadog.android.okhttp.tests.elmyr.OkHttpConfigurator

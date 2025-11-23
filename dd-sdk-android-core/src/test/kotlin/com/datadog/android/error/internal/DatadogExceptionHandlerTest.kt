@@ -15,11 +15,11 @@ import com.flashcat.android.Datadog
 import com.flashcat.android.api.InternalLogger
 import com.flashcat.android.api.feature.Feature
 import com.flashcat.android.api.feature.FeatureScope
-import com.datadog.android.core.InternalSdkCore
-import com.datadog.android.core.UploadWorker
-import com.datadog.android.core.feature.event.JvmCrash
+import com.flashcat.android.core.InternalSdkCore
+import com.flashcat.android.core.UploadWorker
+import com.flashcat.android.core.feature.event.JvmCrash
 import com.datadog.android.core.internal.CoreFeature
-import com.datadog.android.core.internal.thread.waitToIdle
+import com.flashcat.android.core.internal.thread.waitToIdle
 import com.datadog.android.core.internal.utils.TAG_DATADOG_UPLOAD
 import com.datadog.android.core.internal.utils.UPLOAD_WORKER_NAME
 import com.datadog.android.internal.utils.loggableStackTrace

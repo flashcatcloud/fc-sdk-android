@@ -16,8 +16,8 @@ import com.flashcat.android.api.feature.FeatureScope
 import com.flashcat.android.api.storage.DataWriter
 import com.flashcat.android.api.storage.EventBatchWriter
 import com.flashcat.android.api.storage.EventType
-import com.datadog.android.core.InternalSdkCore
-import com.datadog.android.core.sampling.Sampler
+import com.flashcat.android.core.InternalSdkCore
+import com.flashcat.android.core.sampling.Sampler
 import com.datadog.android.internal.attributes.LocalAttribute
 import com.datadog.android.internal.telemetry.InternalTelemetryEvent
 import com.datadog.android.internal.telemetry.TracingHeaderTypesSet

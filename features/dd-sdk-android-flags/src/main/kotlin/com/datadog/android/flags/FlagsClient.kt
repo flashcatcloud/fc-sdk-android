@@ -13,7 +13,7 @@ import com.flashcat.android.api.SdkCore
 import com.flashcat.android.api.feature.Feature.Companion.FLAGS_FEATURE_NAME
 import com.flashcat.android.api.feature.Feature.Companion.RUM_FEATURE_NAME
 import com.flashcat.android.api.feature.FeatureSdkCore
-import com.datadog.android.core.InternalSdkCore
+import com.flashcat.android.core.InternalSdkCore
 import com.datadog.android.flags.internal.DatadogFlagsClient
 import com.datadog.android.flags.internal.DefaultRumEvaluationLogger
 import com.datadog.android.flags.internal.FlagsFeature

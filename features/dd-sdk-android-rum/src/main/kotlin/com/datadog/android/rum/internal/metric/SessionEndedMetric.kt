@@ -7,7 +7,7 @@
 
 package com.datadog.android.rum.internal.metric
 
-import com.datadog.android.core.metrics.PerformanceMetric
+import com.flashcat.android.core.metrics.PerformanceMetric
 import com.datadog.android.rum.internal.domain.scope.RumRawEvent
 import com.datadog.android.rum.internal.domain.scope.RumSessionScope
 import com.datadog.android.rum.internal.domain.scope.RumViewManagerScope

@@ -18,10 +18,10 @@ import android.os.Build
 import com.flashcat.android.api.InternalLogger
 import com.flashcat.android.api.feature.FeatureContextUpdateReceiver
 import com.flashcat.android.api.storage.NoOpDataWriter
-import com.datadog.android.core.InternalSdkCore
-import com.datadog.android.core.feature.event.JvmCrash
-import com.datadog.android.core.feature.event.ThreadDump
-import com.datadog.android.core.internal.system.BuildSdkVersionProvider
+import com.flashcat.android.core.InternalSdkCore
+import com.flashcat.android.core.feature.event.JvmCrash
+import com.flashcat.android.core.feature.event.ThreadDump
+import com.flashcat.android.core.internal.system.BuildSdkVersionProvider
 import com.flashcat.android.event.EventMapper
 import com.flashcat.android.event.MapperSerializer
 import com.datadog.android.internal.flags.RumFlagEvaluationMessage

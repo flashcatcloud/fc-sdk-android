@@ -19,8 +19,8 @@ import com.flashcat.android.api.context.TimeInfo
 import com.flashcat.android.api.context.UserInfo
 import com.flashcat.android.api.feature.Feature
 import com.flashcat.android.api.feature.FeatureScope
-import com.datadog.android.core.InternalSdkCore
-import com.datadog.android.core.internal.net.FirstPartyHostHeaderTypeResolver
+import com.flashcat.android.core.InternalSdkCore
+import com.flashcat.android.core.internal.net.FirstPartyHostHeaderTypeResolver
 import fr.xgouchet.elmyr.Forge
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.doReturn

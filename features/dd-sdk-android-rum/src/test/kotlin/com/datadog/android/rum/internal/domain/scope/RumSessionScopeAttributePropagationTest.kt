@@ -13,8 +13,8 @@ import com.flashcat.android.api.context.NetworkInfo
 import com.flashcat.android.api.feature.FeatureScope
 import com.flashcat.android.api.storage.DataWriter
 import com.flashcat.android.api.storage.EventBatchWriter
-import com.datadog.android.core.InternalSdkCore
-import com.datadog.android.core.internal.net.FirstPartyHostHeaderTypeResolver
+import com.flashcat.android.core.InternalSdkCore
+import com.flashcat.android.core.internal.net.FirstPartyHostHeaderTypeResolver
 import com.datadog.android.rum.RumSessionListener
 import com.datadog.android.rum.RumSessionType
 import com.datadog.android.rum.internal.FeaturesContextResolver

@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.internal.thread
 
-import com.datadog.android.core.configuration.BackPressureStrategy
+import com.flashcat.android.core.configuration.BackPressureStrategy
 import fr.xgouchet.elmyr.Forge
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test

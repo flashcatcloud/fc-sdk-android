@@ -1,10 +1,10 @@
-fun <T: java.io.Closeable, R> T.useMonitored(com.datadog.android.api.SdkCore = Datadog.getInstance(), (T) -> R): R
+fun <T: java.io.Closeable, R> T.useMonitored(com.flashcat.android.api.SdkCore = Datadog.getInstance(), (T) -> R): R
 annotation com.datadog.android.rum.ExperimentalRumApi
 object com.datadog.android.rum.GlobalRumMonitor
-  fun isRegistered(com.datadog.android.api.SdkCore = Datadog.getInstance()): Boolean
-  fun get(com.datadog.android.api.SdkCore = Datadog.getInstance()): RumMonitor
+  fun isRegistered(com.flashcat.android.api.SdkCore = Datadog.getInstance()): Boolean
+  fun get(com.flashcat.android.api.SdkCore = Datadog.getInstance()): RumMonitor
 object com.datadog.android.rum.Rum
-  fun enable(RumConfiguration, com.datadog.android.api.SdkCore = Datadog.getInstance())
+  fun enable(RumConfiguration, com.flashcat.android.api.SdkCore = Datadog.getInstance())
 enum com.datadog.android.rum.RumActionType
   - TAP
   - SCROLL
@@ -70,12 +70,12 @@ data class com.datadog.android.rum.RumConfiguration
     fun trackLongTasks(Long = RumFeature.DEFAULT_LONG_TASK_THRESHOLD_MS): Builder
     fun trackNonFatalAnrs(Boolean): Builder
     fun setViewEventMapper(com.datadog.android.rum.event.ViewEventMapper): Builder
-    fun setResourceEventMapper(com.datadog.android.event.EventMapper<com.datadog.android.rum.model.ResourceEvent>): Builder
-    fun setActionEventMapper(com.datadog.android.event.EventMapper<com.datadog.android.rum.model.ActionEvent>): Builder
-    fun setErrorEventMapper(com.datadog.android.event.EventMapper<com.datadog.android.rum.model.ErrorEvent>): Builder
-    fun setLongTaskEventMapper(com.datadog.android.event.EventMapper<com.datadog.android.rum.model.LongTaskEvent>): Builder
-    DEPRECATED fun setVitalEventMapper(com.datadog.android.event.EventMapper<com.datadog.android.rum.model.RumVitalOperationStepEvent>): Builder
-    fun setVitalOperationStepEventMapper(com.datadog.android.event.EventMapper<com.datadog.android.rum.model.RumVitalOperationStepEvent>): Builder
+    fun setResourceEventMapper(com.flashcat.android.event.EventMapper<com.datadog.android.rum.model.ResourceEvent>): Builder
+    fun setActionEventMapper(com.flashcat.android.event.EventMapper<com.datadog.android.rum.model.ActionEvent>): Builder
+    fun setErrorEventMapper(com.flashcat.android.event.EventMapper<com.datadog.android.rum.model.ErrorEvent>): Builder
+    fun setLongTaskEventMapper(com.flashcat.android.event.EventMapper<com.datadog.android.rum.model.LongTaskEvent>): Builder
+    DEPRECATED fun setVitalEventMapper(com.flashcat.android.event.EventMapper<com.datadog.android.rum.model.RumVitalOperationStepEvent>): Builder
+    fun setVitalOperationStepEventMapper(com.flashcat.android.event.EventMapper<com.datadog.android.rum.model.RumVitalOperationStepEvent>): Builder
     fun trackBackgroundEvents(Boolean): Builder
     fun trackFrustrations(Boolean): Builder
     fun setVitalsUpdateFrequency(com.datadog.android.rum.configuration.VitalsUpdateFrequency): Builder
@@ -170,7 +170,7 @@ class com.datadog.android.rum._RumInternalProxy
   fun enableJankStatsTracking(android.app.Activity)
   fun setSyntheticsAttributeFromIntent(android.content.Intent)
   companion object 
-    fun setTelemetryConfigurationEventMapper(com.datadog.android.rum.RumConfiguration.Builder, com.datadog.android.event.EventMapper<com.datadog.android.telemetry.model.TelemetryConfigurationEvent>): com.datadog.android.rum.RumConfiguration.Builder
+    fun setTelemetryConfigurationEventMapper(com.datadog.android.rum.RumConfiguration.Builder, com.flashcat.android.event.EventMapper<com.datadog.android.telemetry.model.TelemetryConfigurationEvent>): com.datadog.android.rum.RumConfiguration.Builder
     fun setAdditionalConfiguration(com.datadog.android.rum.RumConfiguration.Builder, Map<String, Any>): com.datadog.android.rum.RumConfiguration.Builder
     fun setComposeActionTrackingStrategy(com.datadog.android.rum.RumConfiguration.Builder, com.datadog.android.rum.tracking.ActionTrackingStrategy): com.datadog.android.rum.RumConfiguration.Builder
     fun setRumSessionTypeOverride(com.datadog.android.rum.RumConfiguration.Builder, RumSessionType): com.datadog.android.rum.RumConfiguration.Builder
@@ -185,7 +185,7 @@ enum com.datadog.android.rum.configuration.VitalsUpdateFrequency
   - AVERAGE
   - RARE
   - NEVER
-interface com.datadog.android.rum.event.ViewEventMapper : com.datadog.android.event.EventMapper<com.datadog.android.rum.model.ViewEvent>
+interface com.datadog.android.rum.event.ViewEventMapper : com.flashcat.android.event.EventMapper<com.datadog.android.rum.model.ViewEvent>
   override fun map(com.datadog.android.rum.model.ViewEvent): com.datadog.android.rum.model.ViewEvent
 enum com.datadog.android.rum.featureoperations.FailureReason
   - ERROR
@@ -221,15 +221,15 @@ class com.datadog.android.rum.metric.networksettled.TimeBasedInitialResourceIden
   override fun equals(Any?): Boolean
   override fun hashCode(): Int
   companion object 
-fun android.content.Context.getAssetAsRumResource(String, Int = AssetManager.ACCESS_STREAMING, com.datadog.android.api.SdkCore = Datadog.getInstance()): java.io.InputStream
-fun android.content.Context.getRawResAsRumResource(Int, com.datadog.android.api.SdkCore = Datadog.getInstance()): java.io.InputStream
-fun java.io.InputStream.asRumResource(String, com.datadog.android.api.SdkCore = Datadog.getInstance()): java.io.InputStream
+fun android.content.Context.getAssetAsRumResource(String, Int = AssetManager.ACCESS_STREAMING, com.flashcat.android.api.SdkCore = Datadog.getInstance()): java.io.InputStream
+fun android.content.Context.getRawResAsRumResource(Int, com.flashcat.android.api.SdkCore = Datadog.getInstance()): java.io.InputStream
+fun java.io.InputStream.asRumResource(String, com.flashcat.android.api.SdkCore = Datadog.getInstance()): java.io.InputStream
 class com.datadog.android.rum.resource.ResourceId
   constructor(String, String?)
   override fun equals(Any?): Boolean
   override fun hashCode(): Int
 class com.datadog.android.rum.resource.RumResourceInputStream : java.io.InputStream
-  constructor(java.io.InputStream, String, com.datadog.android.api.SdkCore = Datadog.getInstance())
+  constructor(java.io.InputStream, String, com.flashcat.android.api.SdkCore = Datadog.getInstance())
   override fun read(): Int
   override fun read(ByteArray): Int
   override fun read(ByteArray, Int, Int): Int
@@ -263,8 +263,8 @@ interface com.datadog.android.rum.tracking.ActionTrackingStrategy : TrackingStra
   fun findTargetForTap(android.view.View, Float, Float): ViewTarget?
   fun findTargetForScroll(android.view.View, Float, Float): ViewTarget?
 abstract class com.datadog.android.rum.tracking.ActivityLifecycleTrackingStrategy : android.app.Application.ActivityLifecycleCallbacks, TrackingStrategy
-  protected var sdkCore: com.datadog.android.api.feature.FeatureSdkCore
-  override fun register(com.datadog.android.api.SdkCore, android.content.Context)
+  protected var sdkCore: com.flashcat.android.api.feature.FeatureSdkCore
+  override fun register(com.flashcat.android.api.SdkCore, android.content.Context)
   override fun unregister(android.content.Context?)
   override fun onActivityPaused(android.app.Activity)
   override fun onActivityStarted(android.app.Activity)
@@ -273,7 +273,7 @@ abstract class com.datadog.android.rum.tracking.ActivityLifecycleTrackingStrateg
   override fun onActivityStopped(android.app.Activity)
   override fun onActivityCreated(android.app.Activity, android.os.Bundle?)
   override fun onActivityResumed(android.app.Activity)
-  protected fun <T> withSdkCore((com.datadog.android.api.feature.FeatureSdkCore) -> T): T?
+  protected fun <T> withSdkCore((com.flashcat.android.api.feature.FeatureSdkCore) -> T): T?
 class com.datadog.android.rum.tracking.ActivityViewTrackingStrategy : ActivityLifecycleTrackingStrategy, ViewTrackingStrategy
   constructor(Boolean, ComponentPredicate<android.app.Activity> = AcceptAllActivities())
   override fun onActivityResumed(android.app.Activity)
@@ -294,7 +294,7 @@ interface com.datadog.android.rum.tracking.InteractionPredicate
   fun getTargetName(Any): String?
 class com.datadog.android.rum.tracking.MixedViewTrackingStrategy : ActivityLifecycleTrackingStrategy, ViewTrackingStrategy
   constructor(Boolean, ComponentPredicate<android.app.Activity> = AcceptAllActivities(), ComponentPredicate<androidx.fragment.app.Fragment> = AcceptAllSupportFragments(), ComponentPredicate<android.app.Fragment> = AcceptAllDefaultFragment())
-  override fun register(com.datadog.android.api.SdkCore, android.content.Context)
+  override fun register(com.flashcat.android.api.SdkCore, android.content.Context)
   override fun unregister(android.content.Context?)
   override fun equals(Any?): Boolean
   override fun hashCode(): Int
@@ -307,7 +307,7 @@ class com.datadog.android.rum.tracking.NavigationViewTrackingStrategy : Activity
   fun startTracking()
   fun stopTracking()
 interface com.datadog.android.rum.tracking.TrackingStrategy
-  fun register(com.datadog.android.api.SdkCore, android.content.Context)
+  fun register(com.flashcat.android.api.SdkCore, android.content.Context)
   fun unregister(android.content.Context?)
 interface com.datadog.android.rum.tracking.ViewAttributesProvider
   fun extractAttributes(android.view.View, MutableMap<String, Any?>)

@@ -7,7 +7,7 @@
 
 package com.datadog.android.rum.internal.domain.scope
 
-import com.datadog.android.core.feature.event.ThreadDump
+import com.flashcat.android.core.feature.event.ThreadDump
 import com.datadog.android.internal.telemetry.InternalTelemetryEvent
 import com.datadog.android.rum.RumActionType
 import com.datadog.android.rum.RumErrorSource

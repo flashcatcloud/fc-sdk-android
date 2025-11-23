@@ -7,7 +7,7 @@
 
 package com.datadog.android.okhttp.utils.config
 
-import com.datadog.android.core.InternalSdkCore
+import com.flashcat.android.core.InternalSdkCore
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.RumMonitor
 import com.datadog.android.rum.internal.monitor.AdvancedNetworkRumMonitor

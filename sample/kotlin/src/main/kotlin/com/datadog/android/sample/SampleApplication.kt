@@ -15,11 +15,11 @@ import androidx.lifecycle.ViewModelProvider
 import com.flashcat.android.Datadog
 import com.flashcat.android.DatadogSite
 import com.datadog.android.compose.enableComposeActionTracking
-import com.datadog.android.core.configuration.BackPressureMitigation
-import com.datadog.android.core.configuration.BackPressureStrategy
-import com.datadog.android.core.configuration.BatchSize
-import com.datadog.android.core.configuration.Configuration
-import com.datadog.android.core.configuration.UploadFrequency
+import com.flashcat.android.core.configuration.BackPressureMitigation
+import com.flashcat.android.core.configuration.BackPressureStrategy
+import com.flashcat.android.core.configuration.BatchSize
+import com.flashcat.android.core.configuration.Configuration
+import com.flashcat.android.core.configuration.UploadFrequency
 import com.datadog.android.flags.Flags
 import com.datadog.android.flags.FlagsConfiguration
 import com.datadog.android.log.Logger

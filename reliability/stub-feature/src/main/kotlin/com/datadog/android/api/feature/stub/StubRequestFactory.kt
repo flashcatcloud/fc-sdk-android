@@ -12,7 +12,7 @@ import com.flashcat.android.api.net.Request
 import com.flashcat.android.api.net.RequestExecutionContext
 import com.flashcat.android.api.net.RequestFactory
 import com.flashcat.android.api.storage.RawBatchEvent
-import com.datadog.android.core.internal.utils.join
+import com.flashcat.android.core.internal.utils.join
 import fr.xgouchet.elmyr.Forge
 import org.json.JSONObject
 import org.mockito.kotlin.mock

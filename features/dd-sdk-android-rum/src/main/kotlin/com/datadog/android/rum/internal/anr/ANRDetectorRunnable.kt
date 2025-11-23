@@ -10,7 +10,7 @@ package com.datadog.android.rum.internal.anr
 import android.os.Handler
 import com.flashcat.android.api.InternalLogger
 import com.flashcat.android.api.feature.FeatureSdkCore
-import com.datadog.android.core.feature.event.ThreadDump
+import com.flashcat.android.core.feature.event.ThreadDump
 import com.datadog.android.internal.utils.asString
 import com.datadog.android.internal.utils.loggableStackTrace
 import com.datadog.android.rum.GlobalRumMonitor

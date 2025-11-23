@@ -19,7 +19,7 @@ import android.view.Window
 import androidx.metrics.performance.FrameData
 import androidx.metrics.performance.JankStats
 import com.flashcat.android.api.InternalLogger
-import com.datadog.android.core.internal.system.BuildSdkVersionProvider
+import com.flashcat.android.core.internal.system.BuildSdkVersionProvider
 import com.datadog.android.rum.internal.domain.FrameMetricsData
 import com.datadog.android.rum.utils.config.MainLooperTestConfiguration
 import com.datadog.android.rum.utils.forge.Configurator

@@ -7,7 +7,7 @@
 
 package com.datadog.android.rum.utils.config
 
-import com.datadog.android.core.InternalSdkCore
+import com.flashcat.android.core.InternalSdkCore
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.RumMonitor
 import com.datadog.android.rum._RumInternalProxy

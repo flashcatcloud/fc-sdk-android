@@ -11,9 +11,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.flashcat.android.Datadog
 import com.flashcat.android._InternalProxy
-import com.datadog.android.core.configuration.BatchProcessingLevel
-import com.datadog.android.core.configuration.Configuration
-import com.datadog.android.core.configuration.UploadFrequency
+import com.flashcat.android.core.configuration.BatchProcessingLevel
+import com.flashcat.android.core.configuration.Configuration
+import com.flashcat.android.core.configuration.UploadFrequency
 import com.flashcat.android.log.LogAttributes
 import com.datadog.android.log.Logger
 import com.datadog.android.log.Logs

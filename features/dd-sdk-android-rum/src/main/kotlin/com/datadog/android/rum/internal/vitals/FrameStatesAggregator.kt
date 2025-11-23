@@ -24,7 +24,7 @@ import androidx.annotation.RequiresApi
 import androidx.metrics.performance.FrameData
 import androidx.metrics.performance.JankStats
 import com.flashcat.android.api.InternalLogger
-import com.datadog.android.core.internal.system.BuildSdkVersionProvider
+import com.flashcat.android.core.internal.system.BuildSdkVersionProvider
 import com.datadog.android.rum.internal.domain.FrameMetricsData
 import java.lang.ref.WeakReference
 import java.util.WeakHashMap

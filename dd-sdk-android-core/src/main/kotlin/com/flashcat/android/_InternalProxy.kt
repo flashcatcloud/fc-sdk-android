@@ -10,8 +10,8 @@ import com.flashcat.android.api.SdkCore
 import com.flashcat.android.api.feature.Feature
 import com.flashcat.android.api.feature.FeatureScope
 import com.flashcat.android.api.feature.FeatureSdkCore
-import com.datadog.android.core.configuration.Configuration
-import com.datadog.android.core.internal.DatadogCore
+import com.flashcat.android.core.configuration.Configuration
+import com.flashcat.android.core.internal.DatadogCore
 import com.datadog.android.internal.telemetry.InternalTelemetryEvent
 import com.flashcat.android.lint.InternalApi
 

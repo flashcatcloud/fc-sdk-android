@@ -12,7 +12,7 @@ import com.flashcat.android.api.context.DatadogContext
 import com.flashcat.android.api.net.RequestExecutionContext
 import com.flashcat.android.api.net.RequestFactory
 import com.flashcat.android.api.storage.RawBatchEvent
-import com.datadog.android.core.internal.utils.join
+import com.flashcat.android.core.internal.utils.join
 import com.datadog.android.utils.forge.Configurator
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.Forgery

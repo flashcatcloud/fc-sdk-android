@@ -15,8 +15,8 @@ import com.flashcat.android.api.feature.Feature
 import com.flashcat.android.api.feature.FeatureScope
 import com.flashcat.android.api.storage.DataWriter
 import com.flashcat.android.api.storage.NoOpDataWriter
-import com.datadog.android.core.InternalSdkCore
-import com.datadog.android.core.internal.net.FirstPartyHostHeaderTypeResolver
+import com.flashcat.android.core.InternalSdkCore
+import com.flashcat.android.core.internal.net.FirstPartyHostHeaderTypeResolver
 import com.datadog.android.rum.RumSessionListener
 import com.datadog.android.rum.RumSessionType
 import com.datadog.android.rum.internal.domain.InfoProvider

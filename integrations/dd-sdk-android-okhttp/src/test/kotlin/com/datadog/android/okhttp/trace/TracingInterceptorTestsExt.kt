@@ -6,7 +6,7 @@
  */
 package com.datadog.android.okhttp.trace
 
-import com.datadog.android.core.sampling.Sampler
+import com.flashcat.android.core.sampling.Sampler
 import com.datadog.android.trace.api.propagation.DatadogPropagation
 import com.datadog.android.trace.api.span.DatadogSpan
 import com.datadog.android.trace.api.span.DatadogSpanBuilder

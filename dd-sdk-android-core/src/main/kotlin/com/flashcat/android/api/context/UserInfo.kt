@@ -6,7 +6,7 @@
 
 package com.flashcat.android.api.context
 
-import com.datadog.android.core.internal.utils.JsonSerializer
+import com.flashcat.android.core.internal.utils.JsonSerializer
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParseException

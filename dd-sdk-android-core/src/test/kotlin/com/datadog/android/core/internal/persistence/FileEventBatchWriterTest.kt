@@ -14,10 +14,10 @@ import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.core.internal.persistence.FileEventBatchWriter.Companion.ERROR_LARGE_DATA
 import com.datadog.android.core.internal.persistence.FileEventBatchWriter.Companion.NO_BATCH_FILE_AVAILABLE
 import com.datadog.android.core.internal.persistence.FileEventBatchWriter.Companion.WARNING_METADATA_WRITE_FAILED
-import com.datadog.android.core.internal.persistence.file.FileOrchestrator
-import com.datadog.android.core.internal.persistence.file.FilePersistenceConfig
-import com.datadog.android.core.internal.persistence.file.FileReaderWriter
-import com.datadog.android.core.internal.persistence.file.FileWriter
+import com.flashcat.android.core.internal.persistence.file.FileOrchestrator
+import com.flashcat.android.core.internal.persistence.file.FilePersistenceConfig
+import com.flashcat.android.core.internal.persistence.file.FileReaderWriter
+import com.flashcat.android.core.internal.persistence.file.FileWriter
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.android.utils.verifyLog
 import fr.xgouchet.elmyr.Forge

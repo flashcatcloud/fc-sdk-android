@@ -21,11 +21,11 @@ import com.flashcat.android._InternalProxy
 import com.flashcat.android.api.context.DeviceType
 import com.flashcat.android.api.feature.Feature
 import com.datadog.android.api.feature.stub.StubStorageBackedFeature
-import com.datadog.android.core.InternalSdkCore
-import com.datadog.android.core.configuration.BatchProcessingLevel
-import com.datadog.android.core.configuration.BatchSize
-import com.datadog.android.core.configuration.Configuration
-import com.datadog.android.core.configuration.UploadFrequency
+import com.flashcat.android.core.InternalSdkCore
+import com.flashcat.android.core.configuration.BatchProcessingLevel
+import com.flashcat.android.core.configuration.BatchSize
+import com.flashcat.android.core.configuration.Configuration
+import com.flashcat.android.core.configuration.UploadFrequency
 import com.datadog.android.core.integration.tests.forge.factories.ConfigurationCoreForgeryFactory
 import com.datadog.android.core.integration.tests.utils.clientToken
 import com.datadog.android.core.integration.tests.utils.env
@@ -36,7 +36,7 @@ import com.datadog.android.core.integration.tests.utils.removeRandomEntries
 import com.datadog.android.core.integration.tests.utils.service
 import com.datadog.android.core.integration.tests.utils.site
 import com.datadog.android.core.integration.tests.utils.variant
-import com.datadog.android.core.thread.FlushableExecutorService
+import com.flashcat.android.core.thread.FlushableExecutorService
 import com.flashcat.android.privacy.TrackingConsent
 import com.flashcat.android.trace.TracingHeaderType
 import com.datadog.tools.unit.forge.exhaustiveAttributes

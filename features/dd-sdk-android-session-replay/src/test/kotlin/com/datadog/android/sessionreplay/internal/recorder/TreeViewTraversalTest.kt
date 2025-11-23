@@ -19,7 +19,7 @@ import android.widget.TextView
 import androidx.drawerlayout.widget.DrawerLayout
 import com.flashcat.android.api.InternalLogger
 import com.flashcat.android.api.feature.measureMethodCallPerf
-import com.datadog.android.core.metrics.MethodCallSamplingRate
+import com.flashcat.android.core.metrics.MethodCallSamplingRate
 import com.datadog.android.sessionreplay.MapperTypeWrapper
 import com.datadog.android.sessionreplay.forge.ForgeConfigurator
 import com.datadog.android.sessionreplay.internal.async.RecordedDataQueueRefs

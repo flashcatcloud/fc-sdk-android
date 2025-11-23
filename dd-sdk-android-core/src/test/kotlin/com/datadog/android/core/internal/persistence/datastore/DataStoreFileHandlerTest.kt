@@ -10,9 +10,9 @@ package com.datadog.android.core.internal.persistence.datastore
 import com.flashcat.android.api.InternalLogger
 import com.flashcat.android.api.storage.datastore.DataStoreReadCallback
 import com.flashcat.android.api.storage.datastore.DataStoreWriteCallback
-import com.datadog.android.core.internal.persistence.Deserializer
-import com.datadog.android.core.persistence.Serializer
-import com.datadog.android.core.persistence.datastore.DataStoreContent
+import com.flashcat.android.core.internal.persistence.Deserializer
+import com.flashcat.android.core.persistence.Serializer
+import com.flashcat.android.core.persistence.datastore.DataStoreContent
 import com.datadog.android.utils.forge.Configurator
 import fr.xgouchet.elmyr.annotation.IntForgery
 import fr.xgouchet.elmyr.annotation.StringForgery

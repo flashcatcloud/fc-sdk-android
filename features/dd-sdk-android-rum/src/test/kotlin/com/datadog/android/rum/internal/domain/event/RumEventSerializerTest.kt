@@ -9,7 +9,7 @@ package com.datadog.android.rum.internal.domain.event
 
 import com.flashcat.android.api.InternalLogger
 import com.flashcat.android.api.context.UserInfo
-import com.datadog.android.core.constraints.DataConstraints
+import com.flashcat.android.core.constraints.DataConstraints
 import com.datadog.android.rum.RumAttributes
 import com.datadog.android.rum.model.ActionEvent
 import com.datadog.android.rum.model.ErrorEvent

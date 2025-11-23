@@ -7,7 +7,7 @@
 
 package com.datadog.android.okhttp
 
-import com.datadog.android.core.sampling.Sampler
+import com.flashcat.android.core.sampling.Sampler
 import com.datadog.android.okhttp.trace.DeterministicTraceSampler
 import com.datadog.android.okhttp.trace.NoOpTracedRequestListener
 import com.datadog.android.okhttp.trace.TracedRequestListener

@@ -10,8 +10,8 @@ package com.datadog.android
 import com.flashcat.android.api.feature.Feature
 import com.flashcat.android.api.feature.FeatureScope
 import com.datadog.android.core.internal.CoreFeature
-import com.datadog.android.core.internal.DatadogCore
-import com.datadog.android.core.internal.system.AppVersionProvider
+import com.flashcat.android.core.internal.DatadogCore
+import com.flashcat.android.core.internal.system.AppVersionProvider
 import com.datadog.android.internal.telemetry.InternalTelemetryEvent
 import com.datadog.android.utils.forge.Configurator
 import com.flashcat.android._InternalProxy

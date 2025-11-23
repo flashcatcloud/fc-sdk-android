@@ -8,7 +8,7 @@
 package com.datadog.android.core.configuration
 
 import com.flashcat.android.DatadogSite
-import com.datadog.android.core.persistence.PersistenceStrategy
+import com.flashcat.android.core.persistence.PersistenceStrategy
 import com.flashcat.android.security.Encryption
 import com.flashcat.android.trace.TracingHeaderType
 import com.datadog.android.utils.config.InternalLoggerTestConfiguration
@@ -17,6 +17,14 @@ import com.datadog.tools.unit.annotations.TestConfigurationsProvider
 import com.datadog.tools.unit.extensions.ApiLevelExtension
 import com.datadog.tools.unit.extensions.TestConfigurationExtension
 import com.datadog.tools.unit.extensions.config.TestConfiguration
+import com.flashcat.android.core.configuration.BackPressureMitigation
+import com.flashcat.android.core.configuration.BackPressureStrategy
+import com.flashcat.android.core.configuration.BatchProcessingLevel
+import com.flashcat.android.core.configuration.BatchSize
+import com.flashcat.android.core.configuration.Configuration
+import com.flashcat.android.core.configuration.HostsSanitizer
+import com.flashcat.android.core.configuration.UploadFrequency
+import com.flashcat.android.core.configuration.UploadSchedulerStrategy
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.BoolForgery
 import fr.xgouchet.elmyr.annotation.Forgery

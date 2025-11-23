@@ -7,7 +7,7 @@
 
 package com.datadog.android.tests.elmyr
 
-import com.datadog.android.core.feature.event.ThreadDump
+import com.flashcat.android.core.feature.event.ThreadDump
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory
 

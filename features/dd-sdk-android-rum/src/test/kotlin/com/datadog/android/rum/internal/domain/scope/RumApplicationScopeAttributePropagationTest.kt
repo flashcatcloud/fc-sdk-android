@@ -14,7 +14,7 @@ import com.flashcat.android.api.context.TimeInfo
 import com.flashcat.android.api.feature.EventWriteScope
 import com.flashcat.android.api.feature.FeatureScope
 import com.flashcat.android.api.storage.DataWriter
-import com.datadog.android.core.internal.net.FirstPartyHostHeaderTypeResolver
+import com.flashcat.android.core.internal.net.FirstPartyHostHeaderTypeResolver
 import com.datadog.android.rum.RumSessionListener
 import com.datadog.android.rum.RumSessionType
 import com.datadog.android.rum.internal.FeaturesContextResolver

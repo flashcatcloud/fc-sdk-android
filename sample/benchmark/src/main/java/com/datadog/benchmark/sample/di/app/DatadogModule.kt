@@ -12,11 +12,11 @@ import android.content.Context
 import android.util.Log
 import com.flashcat.android.Datadog
 import com.flashcat.android.api.SdkCore
-import com.datadog.android.core.configuration.BackPressureMitigation
-import com.datadog.android.core.configuration.BackPressureStrategy
-import com.datadog.android.core.configuration.BatchSize
-import com.datadog.android.core.configuration.Configuration
-import com.datadog.android.core.configuration.UploadFrequency
+import com.flashcat.android.core.configuration.BackPressureMitigation
+import com.flashcat.android.core.configuration.BackPressureStrategy
+import com.flashcat.android.core.configuration.BatchSize
+import com.flashcat.android.core.configuration.Configuration
+import com.flashcat.android.core.configuration.UploadFrequency
 import com.datadog.android.log.Logger
 import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.rum.GlobalRumMonitor

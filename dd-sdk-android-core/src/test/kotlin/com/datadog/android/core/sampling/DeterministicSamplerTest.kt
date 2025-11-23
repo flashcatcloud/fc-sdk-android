@@ -2,6 +2,8 @@ package com.datadog.android.core.sampling
 
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.trace.sampling.JavaDeterministicSampler
+import com.flashcat.android.core.sampling.DeterministicSampler
+import com.flashcat.android.core.sampling.Sampler
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.FloatForgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration

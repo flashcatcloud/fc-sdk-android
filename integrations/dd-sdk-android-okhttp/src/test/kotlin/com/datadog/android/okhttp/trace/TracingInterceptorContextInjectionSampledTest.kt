@@ -9,8 +9,8 @@ package com.datadog.android.okhttp.trace
 import com.flashcat.android.api.InternalLogger
 import com.flashcat.android.api.SdkCore
 import com.flashcat.android.api.feature.Feature
-import com.datadog.android.core.internal.net.DefaultFirstPartyHostHeaderTypeResolver
-import com.datadog.android.core.sampling.Sampler
+import com.flashcat.android.core.internal.net.DefaultFirstPartyHostHeaderTypeResolver
+import com.flashcat.android.core.sampling.Sampler
 import com.datadog.android.internal.utils.loggableStackTrace
 import com.datadog.android.okhttp.TraceContext
 import com.datadog.android.okhttp.TraceContextInjection

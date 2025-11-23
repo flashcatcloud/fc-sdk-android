@@ -7,7 +7,7 @@
 
 package com.datadog.android.test.elmyr
 
-import com.datadog.android.core.persistence.PersistenceStrategy
+import com.flashcat.android.core.persistence.PersistenceStrategy
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory
 

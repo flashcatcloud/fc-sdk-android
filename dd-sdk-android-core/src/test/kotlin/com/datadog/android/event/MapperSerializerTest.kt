@@ -7,7 +7,7 @@
 
 package com.datadog.android.event
 
-import com.datadog.android.core.persistence.Serializer
+import com.flashcat.android.core.persistence.Serializer
 import com.datadog.android.utils.forge.Configurator
 import com.flashcat.android.event.EventMapper
 import com.flashcat.android.event.MapperSerializer

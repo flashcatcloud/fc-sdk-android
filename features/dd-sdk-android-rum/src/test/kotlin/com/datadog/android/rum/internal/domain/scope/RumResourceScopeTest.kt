@@ -14,7 +14,7 @@ import com.flashcat.android.api.feature.EventWriteScope
 import com.flashcat.android.api.storage.DataWriter
 import com.flashcat.android.api.storage.EventBatchWriter
 import com.flashcat.android.api.storage.EventType
-import com.datadog.android.core.internal.net.FirstPartyHostHeaderTypeResolver
+import com.flashcat.android.core.internal.net.FirstPartyHostHeaderTypeResolver
 import com.datadog.android.internal.utils.loggableStackTrace
 import com.datadog.android.rum.RumAttributes
 import com.datadog.android.rum.RumErrorSource

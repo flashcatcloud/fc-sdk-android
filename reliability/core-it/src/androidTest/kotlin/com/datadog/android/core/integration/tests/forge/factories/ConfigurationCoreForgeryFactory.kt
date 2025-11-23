@@ -9,10 +9,10 @@ package com.datadog.android.core.integration.tests.forge.factories
 
 import com.flashcat.android.DatadogSite
 import com.flashcat.android._InternalProxy
-import com.datadog.android.core.configuration.BatchProcessingLevel
-import com.datadog.android.core.configuration.BatchSize
-import com.datadog.android.core.configuration.Configuration
-import com.datadog.android.core.configuration.UploadFrequency
+import com.flashcat.android.core.configuration.BatchProcessingLevel
+import com.flashcat.android.core.configuration.BatchSize
+import com.flashcat.android.core.configuration.Configuration
+import com.flashcat.android.core.configuration.UploadFrequency
 import com.flashcat.android.trace.TracingHeaderType
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory

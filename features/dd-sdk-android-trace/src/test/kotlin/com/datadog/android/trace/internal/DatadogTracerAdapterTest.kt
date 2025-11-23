@@ -10,7 +10,7 @@ import com.flashcat.android.api.context.DatadogContext
 import com.flashcat.android.api.feature.Feature
 import com.flashcat.android.api.feature.FeatureScope
 import com.datadog.android.api.feature.SdkFeatureMock
-import com.datadog.android.core.InternalSdkCore
+import com.flashcat.android.core.InternalSdkCore
 import com.datadog.android.trace.api.scope.DatadogScopeListener
 import com.datadog.android.trace.api.span.DatadogSpanBuilder
 import com.datadog.android.trace.utils.RumContextTestsUtils.aDatadogContextWithRumContext

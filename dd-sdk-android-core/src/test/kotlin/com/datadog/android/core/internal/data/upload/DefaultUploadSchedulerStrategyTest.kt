@@ -1,7 +1,7 @@
 package com.datadog.android.core.internal.data.upload
 
-import com.datadog.android.core.configuration.UploadSchedulerStrategy
-import com.datadog.android.core.internal.configuration.DataUploadConfiguration
+import com.flashcat.android.core.configuration.UploadSchedulerStrategy
+import com.flashcat.android.core.internal.configuration.DataUploadConfiguration
 import com.datadog.android.utils.forge.Configurator
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.annotation.IntForgery

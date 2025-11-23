@@ -9,372 +9,6 @@ public final class com/datadog/android/BuildConfig {
 	public fun <init> ()V
 }
 
-public abstract interface class com/datadog/android/core/InternalSdkCore : com/flashcat/android/api/feature/FeatureSdkCore {
-	public abstract fun deleteLastViewEvent ()V
-	public abstract fun getAllFeatures ()Ljava/util/List;
-	public abstract fun getAppStartTimeNs ()J
-	public abstract fun getDatadogContext (Ljava/util/Set;)Lcom/flashcat/android/api/context/DatadogContext;
-	public abstract fun getFirstPartyHostResolver ()Lcom/datadog/android/core/internal/net/FirstPartyHostHeaderTypeResolver;
-	public abstract fun getLastFatalAnrSent ()Ljava/lang/Long;
-	public abstract fun getLastViewEvent ()Lcom/google/gson/JsonObject;
-	public abstract fun getNetworkInfo ()Lcom/flashcat/android/api/context/NetworkInfo;
-	public abstract fun getPersistenceExecutorService ()Ljava/util/concurrent/ExecutorService;
-	public abstract fun getRootStorageDir ()Ljava/io/File;
-	public abstract fun getTrackingConsent ()Lcom/flashcat/android/privacy/TrackingConsent;
-	public abstract fun isDeveloperModeEnabled ()Z
-	public abstract fun writeLastFatalAnrSent (J)V
-	public abstract fun writeLastViewEvent ([B)V
-}
-
-public final class com/datadog/android/core/InternalSdkCore$DefaultImpls {
-	public static synthetic fun getDatadogContext$default (Lcom/datadog/android/core/InternalSdkCore;Ljava/util/Set;ILjava/lang/Object;)Lcom/flashcat/android/api/context/DatadogContext;
-}
-
-public final class com/datadog/android/core/SdkReference {
-	public fun <init> ()V
-	public fun <init> (Ljava/lang/String;)V
-	public fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
-	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun get ()Lcom/flashcat/android/api/SdkCore;
-}
-
-public final class com/datadog/android/core/UploadWorker : androidx/work/Worker {
-	public static final field Companion Lcom/datadog/android/core/UploadWorker$Companion;
-	public fun <init> (Landroid/content/Context;Landroidx/work/WorkerParameters;)V
-	public fun doWork ()Landroidx/work/ListenableWorker$Result;
-}
-
-public final class com/datadog/android/core/UploadWorker$Companion {
-}
-
-public final class com/datadog/android/core/configuration/BackPressureMitigation : java/lang/Enum {
-	public static final field DROP_OLDEST Lcom/datadog/android/core/configuration/BackPressureMitigation;
-	public static final field IGNORE_NEWEST Lcom/datadog/android/core/configuration/BackPressureMitigation;
-	public static fun valueOf (Ljava/lang/String;)Lcom/datadog/android/core/configuration/BackPressureMitigation;
-	public static fun values ()[Lcom/datadog/android/core/configuration/BackPressureMitigation;
-}
-
-public final class com/datadog/android/core/configuration/BackPressureStrategy {
-	public fun <init> (ILkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lcom/datadog/android/core/configuration/BackPressureMitigation;)V
-	public final fun component1 ()I
-	public final fun component2 ()Lkotlin/jvm/functions/Function0;
-	public final fun component3 ()Lkotlin/jvm/functions/Function1;
-	public final fun component4 ()Lcom/datadog/android/core/configuration/BackPressureMitigation;
-	public final fun copy (ILkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lcom/datadog/android/core/configuration/BackPressureMitigation;)Lcom/datadog/android/core/configuration/BackPressureStrategy;
-	public static synthetic fun copy$default (Lcom/datadog/android/core/configuration/BackPressureStrategy;ILkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lcom/datadog/android/core/configuration/BackPressureMitigation;ILjava/lang/Object;)Lcom/datadog/android/core/configuration/BackPressureStrategy;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getBackpressureMitigation ()Lcom/datadog/android/core/configuration/BackPressureMitigation;
-	public final fun getCapacity ()I
-	public final fun getOnItemDropped ()Lkotlin/jvm/functions/Function1;
-	public final fun getOnThresholdReached ()Lkotlin/jvm/functions/Function0;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class com/datadog/android/core/configuration/BatchProcessingLevel : java/lang/Enum {
-	public static final field HIGH Lcom/datadog/android/core/configuration/BatchProcessingLevel;
-	public static final field LOW Lcom/datadog/android/core/configuration/BatchProcessingLevel;
-	public static final field MEDIUM Lcom/datadog/android/core/configuration/BatchProcessingLevel;
-	public final fun getMaxBatchesPerUploadJob ()I
-	public static fun valueOf (Ljava/lang/String;)Lcom/datadog/android/core/configuration/BatchProcessingLevel;
-	public static fun values ()[Lcom/datadog/android/core/configuration/BatchProcessingLevel;
-}
-
-public final class com/datadog/android/core/configuration/BatchSize : java/lang/Enum {
-	public static final field LARGE Lcom/datadog/android/core/configuration/BatchSize;
-	public static final field MEDIUM Lcom/datadog/android/core/configuration/BatchSize;
-	public static final field SMALL Lcom/datadog/android/core/configuration/BatchSize;
-	public static fun valueOf (Ljava/lang/String;)Lcom/datadog/android/core/configuration/BatchSize;
-	public static fun values ()[Lcom/datadog/android/core/configuration/BatchSize;
-}
-
-public final class com/datadog/android/core/configuration/Configuration {
-	public static final field Companion Lcom/datadog/android/core/configuration/Configuration$Companion;
-	public final fun copy (Lcom/datadog/android/core/configuration/Configuration$Core;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLjava/util/Map;)Lcom/datadog/android/core/configuration/Configuration;
-	public static synthetic fun copy$default (Lcom/datadog/android/core/configuration/Configuration;Lcom/datadog/android/core/configuration/Configuration$Core;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLjava/util/Map;ILjava/lang/Object;)Lcom/datadog/android/core/configuration/Configuration;
-	public fun equals (Ljava/lang/Object;)Z
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class com/datadog/android/core/configuration/Configuration$Builder {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun build ()Lcom/datadog/android/core/configuration/Configuration;
-	public final fun setAdditionalConfiguration (Ljava/util/Map;)Lcom/datadog/android/core/configuration/Configuration$Builder;
-	public final fun setBackpressureStrategy (Lcom/datadog/android/core/configuration/BackPressureStrategy;)Lcom/datadog/android/core/configuration/Configuration$Builder;
-	public final fun setBatchProcessingLevel (Lcom/datadog/android/core/configuration/BatchProcessingLevel;)Lcom/datadog/android/core/configuration/Configuration$Builder;
-	public final fun setBatchSize (Lcom/datadog/android/core/configuration/BatchSize;)Lcom/datadog/android/core/configuration/Configuration$Builder;
-	public final fun setCrashReportsEnabled (Z)Lcom/datadog/android/core/configuration/Configuration$Builder;
-	public final fun setEncryption (Lcom/flashcat/android/security/Encryption;)Lcom/datadog/android/core/configuration/Configuration$Builder;
-	public final fun setFirstPartyHosts (Ljava/util/List;)Lcom/datadog/android/core/configuration/Configuration$Builder;
-	public final fun setFirstPartyHostsWithHeaderType (Ljava/util/Map;)Lcom/datadog/android/core/configuration/Configuration$Builder;
-	public final fun setPersistenceStrategyFactory (Lcom/datadog/android/core/persistence/PersistenceStrategy$Factory;)Lcom/datadog/android/core/configuration/Configuration$Builder;
-	public final fun setProxy (Ljava/net/Proxy;Lokhttp3/Authenticator;)Lcom/datadog/android/core/configuration/Configuration$Builder;
-	public final fun setUploadFrequency (Lcom/datadog/android/core/configuration/UploadFrequency;)Lcom/datadog/android/core/configuration/Configuration$Builder;
-	public final fun setUploadSchedulerStrategy (Lcom/datadog/android/core/configuration/UploadSchedulerStrategy;)Lcom/datadog/android/core/configuration/Configuration$Builder;
-	public final fun setUseDeveloperModeWhenDebuggable (Z)Lcom/datadog/android/core/configuration/Configuration$Builder;
-	public final fun useSite (Lcom/flashcat/android/DatadogSite;)Lcom/datadog/android/core/configuration/Configuration$Builder;
-}
-
-public final class com/datadog/android/core/configuration/Configuration$Companion {
-}
-
-public final class com/datadog/android/core/configuration/HostsSanitizer {
-	public fun <init> ()V
-	public final fun sanitizeHosts (Ljava/util/List;Ljava/lang/String;)Ljava/util/List;
-}
-
-public final class com/datadog/android/core/configuration/UploadFrequency : java/lang/Enum {
-	public static final field AVERAGE Lcom/datadog/android/core/configuration/UploadFrequency;
-	public static final field FREQUENT Lcom/datadog/android/core/configuration/UploadFrequency;
-	public static final field RARE Lcom/datadog/android/core/configuration/UploadFrequency;
-	public static fun valueOf (Ljava/lang/String;)Lcom/datadog/android/core/configuration/UploadFrequency;
-	public static fun values ()[Lcom/datadog/android/core/configuration/UploadFrequency;
-}
-
-public abstract interface class com/datadog/android/core/configuration/UploadSchedulerStrategy {
-	public abstract fun getMsDelayUntilNextUpload (Ljava/lang/String;ILjava/lang/Integer;Ljava/lang/Throwable;)J
-}
-
-public abstract interface class com/datadog/android/core/constraints/DataConstraints {
-	public abstract fun validateAttributes (Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;)Ljava/util/Map;
-	public abstract fun validateTags (Ljava/util/List;)Ljava/util/List;
-	public abstract fun validateTimings (Ljava/util/Map;)Ljava/util/Map;
-}
-
-public final class com/datadog/android/core/constraints/DataConstraints$DefaultImpls {
-	public static synthetic fun validateAttributes$default (Lcom/datadog/android/core/constraints/DataConstraints;Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;ILjava/lang/Object;)Ljava/util/Map;
-}
-
-public final class com/datadog/android/core/constraints/DatadogDataConstraints : com/datadog/android/core/constraints/DataConstraints {
-	public fun <init> (Lcom/flashcat/android/api/InternalLogger;)V
-	public fun validateAttributes (Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;)Ljava/util/Map;
-	public fun validateTags (Ljava/util/List;)Ljava/util/List;
-	public fun validateTimings (Ljava/util/Map;)Ljava/util/Map;
-}
-
-public abstract class com/datadog/android/core/feature/event/JvmCrash {
-	public abstract fun getMessage ()Ljava/lang/String;
-	public abstract fun getThreads ()Ljava/util/List;
-	public abstract fun getThrowable ()Ljava/lang/Throwable;
-}
-
-public final class com/datadog/android/core/feature/event/JvmCrash$Rum : com/datadog/android/core/feature/event/JvmCrash {
-	public fun <init> (Ljava/lang/Throwable;Ljava/lang/String;Ljava/util/List;)V
-	public final fun component1 ()Ljava/lang/Throwable;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/util/List;
-	public final fun copy (Ljava/lang/Throwable;Ljava/lang/String;Ljava/util/List;)Lcom/datadog/android/core/feature/event/JvmCrash$Rum;
-	public static synthetic fun copy$default (Lcom/datadog/android/core/feature/event/JvmCrash$Rum;Ljava/lang/Throwable;Ljava/lang/String;Ljava/util/List;ILjava/lang/Object;)Lcom/datadog/android/core/feature/event/JvmCrash$Rum;
-	public fun equals (Ljava/lang/Object;)Z
-	public fun getMessage ()Ljava/lang/String;
-	public fun getThreads ()Ljava/util/List;
-	public fun getThrowable ()Ljava/lang/Throwable;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class com/datadog/android/core/feature/event/ThreadDump {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/lang/String;
-	public final fun component4 ()Z
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Lcom/datadog/android/core/feature/event/ThreadDump;
-	public static synthetic fun copy$default (Lcom/datadog/android/core/feature/event/ThreadDump;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lcom/datadog/android/core/feature/event/ThreadDump;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getCrashed ()Z
-	public final fun getName ()Ljava/lang/String;
-	public final fun getStack ()Ljava/lang/String;
-	public final fun getState ()Ljava/lang/String;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class com/datadog/android/core/internal/net/DefaultFirstPartyHostHeaderTypeResolver : com/datadog/android/core/internal/net/FirstPartyHostHeaderTypeResolver {
-	public fun <init> (Ljava/util/Map;)V
-	public fun getAllHeaderTypes ()Ljava/util/Set;
-	public fun headerTypesForUrl (Ljava/lang/String;)Ljava/util/Set;
-	public fun headerTypesForUrl (Lokhttp3/HttpUrl;)Ljava/util/Set;
-	public fun isEmpty ()Z
-	public fun isFirstPartyUrl (Ljava/lang/String;)Z
-	public fun isFirstPartyUrl (Lokhttp3/HttpUrl;)Z
-}
-
-public abstract interface class com/datadog/android/core/internal/net/FirstPartyHostHeaderTypeResolver {
-	public abstract fun getAllHeaderTypes ()Ljava/util/Set;
-	public abstract fun headerTypesForUrl (Ljava/lang/String;)Ljava/util/Set;
-	public abstract fun headerTypesForUrl (Lokhttp3/HttpUrl;)Ljava/util/Set;
-	public abstract fun isEmpty ()Z
-	public abstract fun isFirstPartyUrl (Ljava/lang/String;)Z
-	public abstract fun isFirstPartyUrl (Lokhttp3/HttpUrl;)Z
-}
-
-public abstract interface class com/datadog/android/core/internal/persistence/Deserializer {
-	public abstract fun deserialize (Ljava/lang/Object;)Ljava/lang/Object;
-}
-
-public final class com/datadog/android/core/internal/persistence/file/FileExtKt {
-	public static final fun canReadSafe (Ljava/io/File;Lcom/flashcat/android/api/InternalLogger;)Z
-	public static final fun existsSafe (Ljava/io/File;Lcom/flashcat/android/api/InternalLogger;)Z
-	public static final fun listFilesSafe (Ljava/io/File;Lcom/flashcat/android/api/InternalLogger;Ljava/io/FilenameFilter;)[Ljava/io/File;
-	public static final fun readLinesSafe (Ljava/io/File;Ljava/nio/charset/Charset;Lcom/flashcat/android/api/InternalLogger;)Ljava/util/List;
-	public static synthetic fun readLinesSafe$default (Ljava/io/File;Ljava/nio/charset/Charset;Lcom/flashcat/android/api/InternalLogger;ILjava/lang/Object;)Ljava/util/List;
-	public static final fun readTextSafe (Ljava/io/File;Ljava/nio/charset/Charset;Lcom/flashcat/android/api/InternalLogger;)Ljava/lang/String;
-	public static synthetic fun readTextSafe$default (Ljava/io/File;Ljava/nio/charset/Charset;Lcom/flashcat/android/api/InternalLogger;ILjava/lang/Object;)Ljava/lang/String;
-}
-
-public abstract interface class com/datadog/android/core/internal/system/BuildSdkVersionProvider {
-	public static final field Companion Lcom/datadog/android/core/internal/system/BuildSdkVersionProvider$Companion;
-	public abstract fun getVersion ()I
-}
-
-public final class com/datadog/android/core/internal/system/BuildSdkVersionProvider$Companion {
-	public final fun getDEFAULT ()Lcom/datadog/android/core/internal/system/BuildSdkVersionProvider;
-}
-
-public final class com/datadog/android/core/internal/utils/ByteArrayExtKt {
-	public static final fun join (Ljava/util/Collection;[B[B[BLcom/flashcat/android/api/InternalLogger;)[B
-	public static synthetic fun join$default (Ljava/util/Collection;[B[B[BLcom/flashcat/android/api/InternalLogger;ILjava/lang/Object;)[B
-}
-
-public final class com/datadog/android/core/internal/utils/ConcurrencyExtKt {
-	public static final fun executeSafe (Ljava/util/concurrent/Executor;Ljava/lang/String;Lcom/flashcat/android/api/InternalLogger;Ljava/lang/Runnable;)V
-	public static final fun getSafe (Ljava/util/concurrent/Future;Ljava/lang/String;Lcom/flashcat/android/api/InternalLogger;)Ljava/lang/Object;
-	public static final fun scheduleSafe (Ljava/util/concurrent/ScheduledExecutorService;Ljava/lang/String;JLjava/util/concurrent/TimeUnit;Lcom/flashcat/android/api/InternalLogger;Ljava/lang/Runnable;)Ljava/util/concurrent/ScheduledFuture;
-	public static final fun submitSafe (Ljava/util/concurrent/ExecutorService;Ljava/lang/String;Lcom/flashcat/android/api/InternalLogger;Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
-	public static final fun submitSafe (Ljava/util/concurrent/ExecutorService;Ljava/lang/String;Lcom/flashcat/android/api/InternalLogger;Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
-}
-
-public final class com/datadog/android/core/internal/utils/JsonSerializer {
-	public static final field INSTANCE Lcom/datadog/android/core/internal/utils/JsonSerializer;
-	public final fun safeMapValuesToJson (Ljava/util/Map;Lcom/flashcat/android/api/InternalLogger;)Ljava/util/Map;
-	public final fun toJsonElement (Ljava/lang/Object;)Lcom/google/gson/JsonElement;
-}
-
-public final class com/datadog/android/core/metrics/MethodCallSamplingRate : java/lang/Enum {
-	public static final field ALL Lcom/datadog/android/core/metrics/MethodCallSamplingRate;
-	public static final field HIGH Lcom/datadog/android/core/metrics/MethodCallSamplingRate;
-	public static final field LOW Lcom/datadog/android/core/metrics/MethodCallSamplingRate;
-	public static final field MEDIUM Lcom/datadog/android/core/metrics/MethodCallSamplingRate;
-	public static final field RARE Lcom/datadog/android/core/metrics/MethodCallSamplingRate;
-	public static final field REDUCED Lcom/datadog/android/core/metrics/MethodCallSamplingRate;
-	public final fun getRate ()F
-	public static fun valueOf (Ljava/lang/String;)Lcom/datadog/android/core/metrics/MethodCallSamplingRate;
-	public static fun values ()[Lcom/datadog/android/core/metrics/MethodCallSamplingRate;
-}
-
-public abstract interface class com/datadog/android/core/metrics/PerformanceMetric {
-	public static final field Companion Lcom/datadog/android/core/metrics/PerformanceMetric$Companion;
-	public static final field METRIC_TYPE Ljava/lang/String;
-	public abstract fun stopAndSend (Z)V
-}
-
-public final class com/datadog/android/core/metrics/PerformanceMetric$Companion {
-	public static final field METRIC_TYPE Ljava/lang/String;
-}
-
-public final class com/datadog/android/core/metrics/TelemetryMetricType : java/lang/Enum {
-	public static final field MethodCalled Lcom/datadog/android/core/metrics/TelemetryMetricType;
-	public static fun valueOf (Ljava/lang/String;)Lcom/datadog/android/core/metrics/TelemetryMetricType;
-	public static fun values ()[Lcom/datadog/android/core/metrics/TelemetryMetricType;
-}
-
-public abstract interface class com/datadog/android/core/persistence/PersistenceStrategy {
-	public abstract fun currentMetadata ()[B
-	public abstract fun dropAll ()V
-	public abstract fun lockAndReadNext ()Lcom/datadog/android/core/persistence/PersistenceStrategy$Batch;
-	public abstract fun migrateData (Lcom/datadog/android/core/persistence/PersistenceStrategy;)V
-	public abstract fun unlockAndDelete (Ljava/lang/String;)V
-	public abstract fun unlockAndKeep (Ljava/lang/String;)V
-	public abstract fun write (Lcom/flashcat/android/api/storage/RawBatchEvent;[BLcom/flashcat/android/api/storage/EventType;)Z
-}
-
-public final class com/datadog/android/core/persistence/PersistenceStrategy$Batch {
-	public fun <init> (Ljava/lang/String;[BLjava/util/List;)V
-	public synthetic fun <init> (Ljava/lang/String;[BLjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()[B
-	public final fun component3 ()Ljava/util/List;
-	public final fun copy (Ljava/lang/String;[BLjava/util/List;)Lcom/datadog/android/core/persistence/PersistenceStrategy$Batch;
-	public static synthetic fun copy$default (Lcom/datadog/android/core/persistence/PersistenceStrategy$Batch;Ljava/lang/String;[BLjava/util/List;ILjava/lang/Object;)Lcom/datadog/android/core/persistence/PersistenceStrategy$Batch;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getBatchId ()Ljava/lang/String;
-	public final fun getEvents ()Ljava/util/List;
-	public final fun getMetadata ()[B
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public abstract interface class com/datadog/android/core/persistence/PersistenceStrategy$Factory {
-	public abstract fun create (Ljava/lang/String;IJ)Lcom/datadog/android/core/persistence/PersistenceStrategy;
-}
-
-public abstract interface class com/datadog/android/core/persistence/Serializer {
-	public static final field Companion Lcom/datadog/android/core/persistence/Serializer$Companion;
-	public abstract fun serialize (Ljava/lang/Object;)Ljava/lang/String;
-}
-
-public final class com/datadog/android/core/persistence/Serializer$Companion {
-}
-
-public final class com/datadog/android/core/persistence/SerializerKt {
-	public static final fun serializeToByteArray (Lcom/datadog/android/core/persistence/Serializer;Ljava/lang/Object;Lcom/flashcat/android/api/InternalLogger;)[B
-}
-
-public final class com/datadog/android/core/persistence/datastore/DataStoreContent {
-	public fun <init> (ILjava/lang/Object;)V
-	public final fun component1 ()I
-	public final fun component2 ()Ljava/lang/Object;
-	public final fun copy (ILjava/lang/Object;)Lcom/datadog/android/core/persistence/datastore/DataStoreContent;
-	public static synthetic fun copy$default (Lcom/datadog/android/core/persistence/datastore/DataStoreContent;ILjava/lang/Object;ILjava/lang/Object;)Lcom/datadog/android/core/persistence/datastore/DataStoreContent;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getData ()Ljava/lang/Object;
-	public final fun getVersionCode ()I
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
-public class com/datadog/android/core/sampling/DeterministicSampler : com/datadog/android/core/sampling/Sampler {
-	public static final field Companion Lcom/datadog/android/core/sampling/DeterministicSampler$Companion;
-	public static final field MAX_ID J
-	public static final field SAMPLER_HASHER J
-	public static final field SAMPLE_ALL_RATE F
-	public fun <init> (Lkotlin/jvm/functions/Function1;D)V
-	public fun <init> (Lkotlin/jvm/functions/Function1;F)V
-	public fun <init> (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;)V
-	public fun getSampleRate ()Ljava/lang/Float;
-	public fun sample (Ljava/lang/Object;)Z
-}
-
-public final class com/datadog/android/core/sampling/DeterministicSampler$Companion {
-}
-
-public class com/datadog/android/core/sampling/RateBasedSampler : com/datadog/android/core/sampling/Sampler {
-	public static final field SAMPLE_ALL_RATE F
-	public fun <init> (D)V
-	public fun <init> (F)V
-	public fun <init> (Lkotlin/jvm/functions/Function0;)V
-	public fun getSampleRate ()Ljava/lang/Float;
-	public fun sample (Ljava/lang/Object;)Z
-}
-
-public abstract interface class com/datadog/android/core/sampling/Sampler {
-	public abstract fun getSampleRate ()Ljava/lang/Float;
-	public abstract fun sample (Ljava/lang/Object;)Z
-}
-
-public abstract interface class com/datadog/android/core/thread/FlushableExecutorService : java/util/concurrent/ExecutorService {
-	public abstract fun drainTo (Ljava/util/Collection;)V
-}
-
-public abstract interface class com/datadog/android/core/thread/FlushableExecutorService$Factory {
-	public abstract fun create (Lcom/flashcat/android/api/InternalLogger;Ljava/lang/String;Lcom/datadog/android/core/configuration/BackPressureStrategy;)Lcom/datadog/android/core/thread/FlushableExecutorService;
-}
-
 public final class com/flashcat/android/Datadog {
 	public static final field INSTANCE Lcom/flashcat/android/Datadog;
 	public final fun _internalProxy (Ljava/lang/String;)Lcom/flashcat/android/_InternalProxy;
@@ -398,8 +32,8 @@ public final class com/flashcat/android/Datadog {
 	public static final fun getInstance (Ljava/lang/String;)Lcom/flashcat/android/api/SdkCore;
 	public static synthetic fun getInstance$default (Ljava/lang/String;ILjava/lang/Object;)Lcom/flashcat/android/api/SdkCore;
 	public static final fun getVerbosity ()I
-	public static final fun initialize (Landroid/content/Context;Lcom/datadog/android/core/configuration/Configuration;Lcom/flashcat/android/privacy/TrackingConsent;)Lcom/flashcat/android/api/SdkCore;
-	public static final fun initialize (Ljava/lang/String;Landroid/content/Context;Lcom/datadog/android/core/configuration/Configuration;Lcom/flashcat/android/privacy/TrackingConsent;)Lcom/flashcat/android/api/SdkCore;
+	public static final fun initialize (Landroid/content/Context;Lcom/flashcat/android/core/configuration/Configuration;Lcom/flashcat/android/privacy/TrackingConsent;)Lcom/flashcat/android/api/SdkCore;
+	public static final fun initialize (Ljava/lang/String;Landroid/content/Context;Lcom/flashcat/android/core/configuration/Configuration;Lcom/flashcat/android/privacy/TrackingConsent;)Lcom/flashcat/android/api/SdkCore;
 	public static final fun isInitialized ()Z
 	public static final fun isInitialized (Ljava/lang/String;)Z
 	public static synthetic fun isInitialized$default (Ljava/lang/String;ILjava/lang/Object;)Z
@@ -438,7 +72,7 @@ public final class com/flashcat/android/_InternalProxy {
 }
 
 public final class com/flashcat/android/_InternalProxy$Companion {
-	public final fun allowClearTextHttp (Lcom/datadog/android/core/configuration/Configuration$Builder;)Lcom/datadog/android/core/configuration/Configuration$Builder;
+	public final fun allowClearTextHttp (Lcom/flashcat/android/core/configuration/Configuration$Builder;)Lcom/flashcat/android/core/configuration/Configuration$Builder;
 }
 
 public final class com/flashcat/android/_InternalProxy$_TelemetryProxy {
@@ -454,7 +88,7 @@ public abstract interface class com/flashcat/android/api/InternalLogger {
 	public abstract fun log (Lcom/flashcat/android/api/InternalLogger$Level;Ljava/util/List;Lkotlin/jvm/functions/Function0;Ljava/lang/Throwable;ZLjava/util/Map;)V
 	public abstract fun logApiUsage (FLkotlin/jvm/functions/Function0;)V
 	public abstract fun logMetric (Lkotlin/jvm/functions/Function0;Ljava/util/Map;FLjava/lang/Float;)V
-	public abstract fun startPerformanceMeasure (Ljava/lang/String;Lcom/datadog/android/core/metrics/TelemetryMetricType;FLjava/lang/String;)Lcom/datadog/android/core/metrics/PerformanceMetric;
+	public abstract fun startPerformanceMeasure (Ljava/lang/String;Lcom/flashcat/android/core/metrics/TelemetryMetricType;FLjava/lang/String;)Lcom/flashcat/android/core/metrics/PerformanceMetric;
 }
 
 public final class com/flashcat/android/api/InternalLogger$Companion {
@@ -926,8 +560,8 @@ public abstract interface class com/flashcat/android/api/storage/datastore/DataS
 	public static final field Companion Lcom/flashcat/android/api/storage/datastore/DataStoreHandler$Companion;
 	public abstract fun clearAllData ()V
 	public abstract fun removeValue (Ljava/lang/String;Lcom/flashcat/android/api/storage/datastore/DataStoreWriteCallback;)V
-	public abstract fun setValue (Ljava/lang/String;Ljava/lang/Object;ILcom/flashcat/android/api/storage/datastore/DataStoreWriteCallback;Lcom/datadog/android/core/persistence/Serializer;)V
-	public abstract fun value (Ljava/lang/String;Ljava/lang/Integer;Lcom/flashcat/android/api/storage/datastore/DataStoreReadCallback;Lcom/datadog/android/core/internal/persistence/Deserializer;)V
+	public abstract fun setValue (Ljava/lang/String;Ljava/lang/Object;ILcom/flashcat/android/api/storage/datastore/DataStoreWriteCallback;Lcom/flashcat/android/core/persistence/Serializer;)V
+	public abstract fun value (Ljava/lang/String;Ljava/lang/Integer;Lcom/flashcat/android/api/storage/datastore/DataStoreReadCallback;Lcom/flashcat/android/core/internal/persistence/Deserializer;)V
 }
 
 public final class com/flashcat/android/api/storage/datastore/DataStoreHandler$Companion {
@@ -936,13 +570,13 @@ public final class com/flashcat/android/api/storage/datastore/DataStoreHandler$C
 
 public final class com/flashcat/android/api/storage/datastore/DataStoreHandler$DefaultImpls {
 	public static synthetic fun removeValue$default (Lcom/flashcat/android/api/storage/datastore/DataStoreHandler;Ljava/lang/String;Lcom/flashcat/android/api/storage/datastore/DataStoreWriteCallback;ILjava/lang/Object;)V
-	public static synthetic fun setValue$default (Lcom/flashcat/android/api/storage/datastore/DataStoreHandler;Ljava/lang/String;Ljava/lang/Object;ILcom/flashcat/android/api/storage/datastore/DataStoreWriteCallback;Lcom/datadog/android/core/persistence/Serializer;ILjava/lang/Object;)V
-	public static synthetic fun value$default (Lcom/flashcat/android/api/storage/datastore/DataStoreHandler;Ljava/lang/String;Ljava/lang/Integer;Lcom/flashcat/android/api/storage/datastore/DataStoreReadCallback;Lcom/datadog/android/core/internal/persistence/Deserializer;ILjava/lang/Object;)V
+	public static synthetic fun setValue$default (Lcom/flashcat/android/api/storage/datastore/DataStoreHandler;Ljava/lang/String;Ljava/lang/Object;ILcom/flashcat/android/api/storage/datastore/DataStoreWriteCallback;Lcom/flashcat/android/core/persistence/Serializer;ILjava/lang/Object;)V
+	public static synthetic fun value$default (Lcom/flashcat/android/api/storage/datastore/DataStoreHandler;Ljava/lang/String;Ljava/lang/Integer;Lcom/flashcat/android/api/storage/datastore/DataStoreReadCallback;Lcom/flashcat/android/core/internal/persistence/Deserializer;ILjava/lang/Object;)V
 }
 
 public abstract interface class com/flashcat/android/api/storage/datastore/DataStoreReadCallback {
 	public abstract fun onFailure ()V
-	public abstract fun onSuccess (Lcom/datadog/android/core/persistence/datastore/DataStoreContent;)V
+	public abstract fun onSuccess (Lcom/flashcat/android/core/persistence/datastore/DataStoreContent;)V
 }
 
 public abstract interface class com/flashcat/android/api/storage/datastore/DataStoreWriteCallback {
@@ -950,12 +584,378 @@ public abstract interface class com/flashcat/android/api/storage/datastore/DataS
 	public abstract fun onSuccess ()V
 }
 
+public abstract interface class com/flashcat/android/core/InternalSdkCore : com/flashcat/android/api/feature/FeatureSdkCore {
+	public abstract fun deleteLastViewEvent ()V
+	public abstract fun getAllFeatures ()Ljava/util/List;
+	public abstract fun getAppStartTimeNs ()J
+	public abstract fun getDatadogContext (Ljava/util/Set;)Lcom/flashcat/android/api/context/DatadogContext;
+	public abstract fun getFirstPartyHostResolver ()Lcom/flashcat/android/core/internal/net/FirstPartyHostHeaderTypeResolver;
+	public abstract fun getLastFatalAnrSent ()Ljava/lang/Long;
+	public abstract fun getLastViewEvent ()Lcom/google/gson/JsonObject;
+	public abstract fun getNetworkInfo ()Lcom/flashcat/android/api/context/NetworkInfo;
+	public abstract fun getPersistenceExecutorService ()Ljava/util/concurrent/ExecutorService;
+	public abstract fun getRootStorageDir ()Ljava/io/File;
+	public abstract fun getTrackingConsent ()Lcom/flashcat/android/privacy/TrackingConsent;
+	public abstract fun isDeveloperModeEnabled ()Z
+	public abstract fun writeLastFatalAnrSent (J)V
+	public abstract fun writeLastViewEvent ([B)V
+}
+
+public final class com/flashcat/android/core/InternalSdkCore$DefaultImpls {
+	public static synthetic fun getDatadogContext$default (Lcom/flashcat/android/core/InternalSdkCore;Ljava/util/Set;ILjava/lang/Object;)Lcom/flashcat/android/api/context/DatadogContext;
+}
+
+public final class com/flashcat/android/core/SdkReference {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun get ()Lcom/flashcat/android/api/SdkCore;
+}
+
+public final class com/flashcat/android/core/UploadWorker : androidx/work/Worker {
+	public static final field Companion Lcom/flashcat/android/core/UploadWorker$Companion;
+	public fun <init> (Landroid/content/Context;Landroidx/work/WorkerParameters;)V
+	public fun doWork ()Landroidx/work/ListenableWorker$Result;
+}
+
+public final class com/flashcat/android/core/UploadWorker$Companion {
+}
+
+public final class com/flashcat/android/core/configuration/BackPressureMitigation : java/lang/Enum {
+	public static final field DROP_OLDEST Lcom/flashcat/android/core/configuration/BackPressureMitigation;
+	public static final field IGNORE_NEWEST Lcom/flashcat/android/core/configuration/BackPressureMitigation;
+	public static fun valueOf (Ljava/lang/String;)Lcom/flashcat/android/core/configuration/BackPressureMitigation;
+	public static fun values ()[Lcom/flashcat/android/core/configuration/BackPressureMitigation;
+}
+
+public final class com/flashcat/android/core/configuration/BackPressureStrategy {
+	public fun <init> (ILkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lcom/flashcat/android/core/configuration/BackPressureMitigation;)V
+	public final fun component1 ()I
+	public final fun component2 ()Lkotlin/jvm/functions/Function0;
+	public final fun component3 ()Lkotlin/jvm/functions/Function1;
+	public final fun component4 ()Lcom/flashcat/android/core/configuration/BackPressureMitigation;
+	public final fun copy (ILkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lcom/flashcat/android/core/configuration/BackPressureMitigation;)Lcom/flashcat/android/core/configuration/BackPressureStrategy;
+	public static synthetic fun copy$default (Lcom/flashcat/android/core/configuration/BackPressureStrategy;ILkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lcom/flashcat/android/core/configuration/BackPressureMitigation;ILjava/lang/Object;)Lcom/flashcat/android/core/configuration/BackPressureStrategy;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBackpressureMitigation ()Lcom/flashcat/android/core/configuration/BackPressureMitigation;
+	public final fun getCapacity ()I
+	public final fun getOnItemDropped ()Lkotlin/jvm/functions/Function1;
+	public final fun getOnThresholdReached ()Lkotlin/jvm/functions/Function0;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/flashcat/android/core/configuration/BatchProcessingLevel : java/lang/Enum {
+	public static final field HIGH Lcom/flashcat/android/core/configuration/BatchProcessingLevel;
+	public static final field LOW Lcom/flashcat/android/core/configuration/BatchProcessingLevel;
+	public static final field MEDIUM Lcom/flashcat/android/core/configuration/BatchProcessingLevel;
+	public final fun getMaxBatchesPerUploadJob ()I
+	public static fun valueOf (Ljava/lang/String;)Lcom/flashcat/android/core/configuration/BatchProcessingLevel;
+	public static fun values ()[Lcom/flashcat/android/core/configuration/BatchProcessingLevel;
+}
+
+public final class com/flashcat/android/core/configuration/BatchSize : java/lang/Enum {
+	public static final field LARGE Lcom/flashcat/android/core/configuration/BatchSize;
+	public static final field MEDIUM Lcom/flashcat/android/core/configuration/BatchSize;
+	public static final field SMALL Lcom/flashcat/android/core/configuration/BatchSize;
+	public static fun valueOf (Ljava/lang/String;)Lcom/flashcat/android/core/configuration/BatchSize;
+	public static fun values ()[Lcom/flashcat/android/core/configuration/BatchSize;
+}
+
+public final class com/flashcat/android/core/configuration/Configuration {
+	public static final field Companion Lcom/flashcat/android/core/configuration/Configuration$Companion;
+	public final fun copy (Lcom/flashcat/android/core/configuration/Configuration$Core;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLjava/util/Map;)Lcom/flashcat/android/core/configuration/Configuration;
+	public static synthetic fun copy$default (Lcom/flashcat/android/core/configuration/Configuration;Lcom/flashcat/android/core/configuration/Configuration$Core;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLjava/util/Map;ILjava/lang/Object;)Lcom/flashcat/android/core/configuration/Configuration;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/flashcat/android/core/configuration/Configuration$Builder {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun build ()Lcom/flashcat/android/core/configuration/Configuration;
+	public final fun setAdditionalConfiguration (Ljava/util/Map;)Lcom/flashcat/android/core/configuration/Configuration$Builder;
+	public final fun setBackpressureStrategy (Lcom/flashcat/android/core/configuration/BackPressureStrategy;)Lcom/flashcat/android/core/configuration/Configuration$Builder;
+	public final fun setBatchProcessingLevel (Lcom/flashcat/android/core/configuration/BatchProcessingLevel;)Lcom/flashcat/android/core/configuration/Configuration$Builder;
+	public final fun setBatchSize (Lcom/flashcat/android/core/configuration/BatchSize;)Lcom/flashcat/android/core/configuration/Configuration$Builder;
+	public final fun setCrashReportsEnabled (Z)Lcom/flashcat/android/core/configuration/Configuration$Builder;
+	public final fun setEncryption (Lcom/flashcat/android/security/Encryption;)Lcom/flashcat/android/core/configuration/Configuration$Builder;
+	public final fun setFirstPartyHosts (Ljava/util/List;)Lcom/flashcat/android/core/configuration/Configuration$Builder;
+	public final fun setFirstPartyHostsWithHeaderType (Ljava/util/Map;)Lcom/flashcat/android/core/configuration/Configuration$Builder;
+	public final fun setPersistenceStrategyFactory (Lcom/flashcat/android/core/persistence/PersistenceStrategy$Factory;)Lcom/flashcat/android/core/configuration/Configuration$Builder;
+	public final fun setProxy (Ljava/net/Proxy;Lokhttp3/Authenticator;)Lcom/flashcat/android/core/configuration/Configuration$Builder;
+	public final fun setUploadFrequency (Lcom/flashcat/android/core/configuration/UploadFrequency;)Lcom/flashcat/android/core/configuration/Configuration$Builder;
+	public final fun setUploadSchedulerStrategy (Lcom/flashcat/android/core/configuration/UploadSchedulerStrategy;)Lcom/flashcat/android/core/configuration/Configuration$Builder;
+	public final fun setUseDeveloperModeWhenDebuggable (Z)Lcom/flashcat/android/core/configuration/Configuration$Builder;
+	public final fun useSite (Lcom/flashcat/android/DatadogSite;)Lcom/flashcat/android/core/configuration/Configuration$Builder;
+}
+
+public final class com/flashcat/android/core/configuration/Configuration$Companion {
+}
+
+public final class com/flashcat/android/core/configuration/HostsSanitizer {
+	public fun <init> ()V
+	public final fun sanitizeHosts (Ljava/util/List;Ljava/lang/String;)Ljava/util/List;
+}
+
+public final class com/flashcat/android/core/configuration/UploadFrequency : java/lang/Enum {
+	public static final field AVERAGE Lcom/flashcat/android/core/configuration/UploadFrequency;
+	public static final field FREQUENT Lcom/flashcat/android/core/configuration/UploadFrequency;
+	public static final field RARE Lcom/flashcat/android/core/configuration/UploadFrequency;
+	public static fun valueOf (Ljava/lang/String;)Lcom/flashcat/android/core/configuration/UploadFrequency;
+	public static fun values ()[Lcom/flashcat/android/core/configuration/UploadFrequency;
+}
+
+public abstract interface class com/flashcat/android/core/configuration/UploadSchedulerStrategy {
+	public abstract fun getMsDelayUntilNextUpload (Ljava/lang/String;ILjava/lang/Integer;Ljava/lang/Throwable;)J
+}
+
+public abstract interface class com/flashcat/android/core/constraints/DataConstraints {
+	public abstract fun validateAttributes (Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;)Ljava/util/Map;
+	public abstract fun validateTags (Ljava/util/List;)Ljava/util/List;
+	public abstract fun validateTimings (Ljava/util/Map;)Ljava/util/Map;
+}
+
+public final class com/flashcat/android/core/constraints/DataConstraints$DefaultImpls {
+	public static synthetic fun validateAttributes$default (Lcom/flashcat/android/core/constraints/DataConstraints;Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;ILjava/lang/Object;)Ljava/util/Map;
+}
+
+public final class com/flashcat/android/core/constraints/DatadogDataConstraints : com/flashcat/android/core/constraints/DataConstraints {
+	public fun <init> (Lcom/flashcat/android/api/InternalLogger;)V
+	public fun validateAttributes (Ljava/util/Map;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;)Ljava/util/Map;
+	public fun validateTags (Ljava/util/List;)Ljava/util/List;
+	public fun validateTimings (Ljava/util/Map;)Ljava/util/Map;
+}
+
+public abstract class com/flashcat/android/core/feature/event/JvmCrash {
+	public abstract fun getMessage ()Ljava/lang/String;
+	public abstract fun getThreads ()Ljava/util/List;
+	public abstract fun getThrowable ()Ljava/lang/Throwable;
+}
+
+public final class com/flashcat/android/core/feature/event/JvmCrash$Rum : com/flashcat/android/core/feature/event/JvmCrash {
+	public fun <init> (Ljava/lang/Throwable;Ljava/lang/String;Ljava/util/List;)V
+	public final fun component1 ()Ljava/lang/Throwable;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/util/List;
+	public final fun copy (Ljava/lang/Throwable;Ljava/lang/String;Ljava/util/List;)Lcom/flashcat/android/core/feature/event/JvmCrash$Rum;
+	public static synthetic fun copy$default (Lcom/flashcat/android/core/feature/event/JvmCrash$Rum;Ljava/lang/Throwable;Ljava/lang/String;Ljava/util/List;ILjava/lang/Object;)Lcom/flashcat/android/core/feature/event/JvmCrash$Rum;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getMessage ()Ljava/lang/String;
+	public fun getThreads ()Ljava/util/List;
+	public fun getThrowable ()Ljava/lang/Throwable;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/flashcat/android/core/feature/event/ThreadDump {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Lcom/flashcat/android/core/feature/event/ThreadDump;
+	public static synthetic fun copy$default (Lcom/flashcat/android/core/feature/event/ThreadDump;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Lcom/flashcat/android/core/feature/event/ThreadDump;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCrashed ()Z
+	public final fun getName ()Ljava/lang/String;
+	public final fun getStack ()Ljava/lang/String;
+	public final fun getState ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/flashcat/android/core/internal/net/DefaultFirstPartyHostHeaderTypeResolver : com/flashcat/android/core/internal/net/FirstPartyHostHeaderTypeResolver {
+	public fun <init> (Ljava/util/Map;)V
+	public fun getAllHeaderTypes ()Ljava/util/Set;
+	public fun headerTypesForUrl (Ljava/lang/String;)Ljava/util/Set;
+	public fun headerTypesForUrl (Lokhttp3/HttpUrl;)Ljava/util/Set;
+	public fun isEmpty ()Z
+	public fun isFirstPartyUrl (Ljava/lang/String;)Z
+	public fun isFirstPartyUrl (Lokhttp3/HttpUrl;)Z
+}
+
+public abstract interface class com/flashcat/android/core/internal/net/FirstPartyHostHeaderTypeResolver {
+	public abstract fun getAllHeaderTypes ()Ljava/util/Set;
+	public abstract fun headerTypesForUrl (Ljava/lang/String;)Ljava/util/Set;
+	public abstract fun headerTypesForUrl (Lokhttp3/HttpUrl;)Ljava/util/Set;
+	public abstract fun isEmpty ()Z
+	public abstract fun isFirstPartyUrl (Ljava/lang/String;)Z
+	public abstract fun isFirstPartyUrl (Lokhttp3/HttpUrl;)Z
+}
+
+public abstract interface class com/flashcat/android/core/internal/persistence/Deserializer {
+	public abstract fun deserialize (Ljava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class com/flashcat/android/core/internal/persistence/file/FileExtKt {
+	public static final fun canReadSafe (Ljava/io/File;Lcom/flashcat/android/api/InternalLogger;)Z
+	public static final fun existsSafe (Ljava/io/File;Lcom/flashcat/android/api/InternalLogger;)Z
+	public static final fun listFilesSafe (Ljava/io/File;Lcom/flashcat/android/api/InternalLogger;Ljava/io/FilenameFilter;)[Ljava/io/File;
+	public static final fun readLinesSafe (Ljava/io/File;Ljava/nio/charset/Charset;Lcom/flashcat/android/api/InternalLogger;)Ljava/util/List;
+	public static synthetic fun readLinesSafe$default (Ljava/io/File;Ljava/nio/charset/Charset;Lcom/flashcat/android/api/InternalLogger;ILjava/lang/Object;)Ljava/util/List;
+	public static final fun readTextSafe (Ljava/io/File;Ljava/nio/charset/Charset;Lcom/flashcat/android/api/InternalLogger;)Ljava/lang/String;
+	public static synthetic fun readTextSafe$default (Ljava/io/File;Ljava/nio/charset/Charset;Lcom/flashcat/android/api/InternalLogger;ILjava/lang/Object;)Ljava/lang/String;
+}
+
+public abstract interface class com/flashcat/android/core/internal/system/BuildSdkVersionProvider {
+	public static final field Companion Lcom/flashcat/android/core/internal/system/BuildSdkVersionProvider$Companion;
+	public abstract fun getVersion ()I
+}
+
+public final class com/flashcat/android/core/internal/system/BuildSdkVersionProvider$Companion {
+	public final fun getDEFAULT ()Lcom/flashcat/android/core/internal/system/BuildSdkVersionProvider;
+}
+
+public final class com/flashcat/android/core/internal/utils/ByteArrayExtKt {
+	public static final fun join (Ljava/util/Collection;[B[B[BLcom/flashcat/android/api/InternalLogger;)[B
+	public static synthetic fun join$default (Ljava/util/Collection;[B[B[BLcom/flashcat/android/api/InternalLogger;ILjava/lang/Object;)[B
+}
+
+public final class com/flashcat/android/core/internal/utils/ConcurrencyExtKt {
+	public static final fun executeSafe (Ljava/util/concurrent/Executor;Ljava/lang/String;Lcom/flashcat/android/api/InternalLogger;Ljava/lang/Runnable;)V
+	public static final fun getSafe (Ljava/util/concurrent/Future;Ljava/lang/String;Lcom/flashcat/android/api/InternalLogger;)Ljava/lang/Object;
+	public static final fun scheduleSafe (Ljava/util/concurrent/ScheduledExecutorService;Ljava/lang/String;JLjava/util/concurrent/TimeUnit;Lcom/flashcat/android/api/InternalLogger;Ljava/lang/Runnable;)Ljava/util/concurrent/ScheduledFuture;
+	public static final fun submitSafe (Ljava/util/concurrent/ExecutorService;Ljava/lang/String;Lcom/flashcat/android/api/InternalLogger;Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
+	public static final fun submitSafe (Ljava/util/concurrent/ExecutorService;Ljava/lang/String;Lcom/flashcat/android/api/InternalLogger;Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
+}
+
+public final class com/flashcat/android/core/internal/utils/JsonSerializer {
+	public static final field INSTANCE Lcom/flashcat/android/core/internal/utils/JsonSerializer;
+	public final fun safeMapValuesToJson (Ljava/util/Map;Lcom/flashcat/android/api/InternalLogger;)Ljava/util/Map;
+	public final fun toJsonElement (Ljava/lang/Object;)Lcom/google/gson/JsonElement;
+}
+
+public final class com/flashcat/android/core/metrics/MethodCallSamplingRate : java/lang/Enum {
+	public static final field ALL Lcom/flashcat/android/core/metrics/MethodCallSamplingRate;
+	public static final field HIGH Lcom/flashcat/android/core/metrics/MethodCallSamplingRate;
+	public static final field LOW Lcom/flashcat/android/core/metrics/MethodCallSamplingRate;
+	public static final field MEDIUM Lcom/flashcat/android/core/metrics/MethodCallSamplingRate;
+	public static final field RARE Lcom/flashcat/android/core/metrics/MethodCallSamplingRate;
+	public static final field REDUCED Lcom/flashcat/android/core/metrics/MethodCallSamplingRate;
+	public final fun getRate ()F
+	public static fun valueOf (Ljava/lang/String;)Lcom/flashcat/android/core/metrics/MethodCallSamplingRate;
+	public static fun values ()[Lcom/flashcat/android/core/metrics/MethodCallSamplingRate;
+}
+
+public abstract interface class com/flashcat/android/core/metrics/PerformanceMetric {
+	public static final field Companion Lcom/flashcat/android/core/metrics/PerformanceMetric$Companion;
+	public static final field METRIC_TYPE Ljava/lang/String;
+	public abstract fun stopAndSend (Z)V
+}
+
+public final class com/flashcat/android/core/metrics/PerformanceMetric$Companion {
+	public static final field METRIC_TYPE Ljava/lang/String;
+}
+
+public final class com/flashcat/android/core/metrics/TelemetryMetricType : java/lang/Enum {
+	public static final field MethodCalled Lcom/flashcat/android/core/metrics/TelemetryMetricType;
+	public static fun valueOf (Ljava/lang/String;)Lcom/flashcat/android/core/metrics/TelemetryMetricType;
+	public static fun values ()[Lcom/flashcat/android/core/metrics/TelemetryMetricType;
+}
+
+public abstract interface class com/flashcat/android/core/persistence/PersistenceStrategy {
+	public abstract fun currentMetadata ()[B
+	public abstract fun dropAll ()V
+	public abstract fun lockAndReadNext ()Lcom/flashcat/android/core/persistence/PersistenceStrategy$Batch;
+	public abstract fun migrateData (Lcom/flashcat/android/core/persistence/PersistenceStrategy;)V
+	public abstract fun unlockAndDelete (Ljava/lang/String;)V
+	public abstract fun unlockAndKeep (Ljava/lang/String;)V
+	public abstract fun write (Lcom/flashcat/android/api/storage/RawBatchEvent;[BLcom/flashcat/android/api/storage/EventType;)Z
+}
+
+public final class com/flashcat/android/core/persistence/PersistenceStrategy$Batch {
+	public fun <init> (Ljava/lang/String;[BLjava/util/List;)V
+	public synthetic fun <init> (Ljava/lang/String;[BLjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()[B
+	public final fun component3 ()Ljava/util/List;
+	public final fun copy (Ljava/lang/String;[BLjava/util/List;)Lcom/flashcat/android/core/persistence/PersistenceStrategy$Batch;
+	public static synthetic fun copy$default (Lcom/flashcat/android/core/persistence/PersistenceStrategy$Batch;Ljava/lang/String;[BLjava/util/List;ILjava/lang/Object;)Lcom/flashcat/android/core/persistence/PersistenceStrategy$Batch;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBatchId ()Ljava/lang/String;
+	public final fun getEvents ()Ljava/util/List;
+	public final fun getMetadata ()[B
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/flashcat/android/core/persistence/PersistenceStrategy$Factory {
+	public abstract fun create (Ljava/lang/String;IJ)Lcom/flashcat/android/core/persistence/PersistenceStrategy;
+}
+
+public abstract interface class com/flashcat/android/core/persistence/Serializer {
+	public static final field Companion Lcom/flashcat/android/core/persistence/Serializer$Companion;
+	public abstract fun serialize (Ljava/lang/Object;)Ljava/lang/String;
+}
+
+public final class com/flashcat/android/core/persistence/Serializer$Companion {
+}
+
+public final class com/flashcat/android/core/persistence/SerializerKt {
+	public static final fun serializeToByteArray (Lcom/flashcat/android/core/persistence/Serializer;Ljava/lang/Object;Lcom/flashcat/android/api/InternalLogger;)[B
+}
+
+public final class com/flashcat/android/core/persistence/datastore/DataStoreContent {
+	public fun <init> (ILjava/lang/Object;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/lang/Object;
+	public final fun copy (ILjava/lang/Object;)Lcom/flashcat/android/core/persistence/datastore/DataStoreContent;
+	public static synthetic fun copy$default (Lcom/flashcat/android/core/persistence/datastore/DataStoreContent;ILjava/lang/Object;ILjava/lang/Object;)Lcom/flashcat/android/core/persistence/datastore/DataStoreContent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getData ()Ljava/lang/Object;
+	public final fun getVersionCode ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public class com/flashcat/android/core/sampling/DeterministicSampler : com/flashcat/android/core/sampling/Sampler {
+	public static final field Companion Lcom/flashcat/android/core/sampling/DeterministicSampler$Companion;
+	public static final field MAX_ID J
+	public static final field SAMPLER_HASHER J
+	public static final field SAMPLE_ALL_RATE F
+	public fun <init> (Lkotlin/jvm/functions/Function1;D)V
+	public fun <init> (Lkotlin/jvm/functions/Function1;F)V
+	public fun <init> (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;)V
+	public fun getSampleRate ()Ljava/lang/Float;
+	public fun sample (Ljava/lang/Object;)Z
+}
+
+public final class com/flashcat/android/core/sampling/DeterministicSampler$Companion {
+}
+
+public class com/flashcat/android/core/sampling/RateBasedSampler : com/flashcat/android/core/sampling/Sampler {
+	public static final field SAMPLE_ALL_RATE F
+	public fun <init> (D)V
+	public fun <init> (F)V
+	public fun <init> (Lkotlin/jvm/functions/Function0;)V
+	public fun getSampleRate ()Ljava/lang/Float;
+	public fun sample (Ljava/lang/Object;)Z
+}
+
+public abstract interface class com/flashcat/android/core/sampling/Sampler {
+	public abstract fun getSampleRate ()Ljava/lang/Float;
+	public abstract fun sample (Ljava/lang/Object;)Z
+}
+
+public abstract interface class com/flashcat/android/core/thread/FlushableExecutorService : java/util/concurrent/ExecutorService {
+	public abstract fun drainTo (Ljava/util/Collection;)V
+}
+
+public abstract interface class com/flashcat/android/core/thread/FlushableExecutorService$Factory {
+	public abstract fun create (Lcom/flashcat/android/api/InternalLogger;Ljava/lang/String;Lcom/flashcat/android/core/configuration/BackPressureStrategy;)Lcom/flashcat/android/core/thread/FlushableExecutorService;
+}
+
 public abstract interface class com/flashcat/android/event/EventMapper {
 	public abstract fun map (Ljava/lang/Object;)Ljava/lang/Object;
 }
 
-public final class com/flashcat/android/event/MapperSerializer : com/datadog/android/core/persistence/Serializer {
-	public fun <init> (Lcom/flashcat/android/event/EventMapper;Lcom/datadog/android/core/persistence/Serializer;)V
+public final class com/flashcat/android/event/MapperSerializer : com/flashcat/android/core/persistence/Serializer {
+	public fun <init> (Lcom/flashcat/android/event/EventMapper;Lcom/flashcat/android/core/persistence/Serializer;)V
 	public fun serialize (Ljava/lang/Object;)Ljava/lang/String;
 }
 

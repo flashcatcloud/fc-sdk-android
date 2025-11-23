@@ -11,7 +11,7 @@ import android.content.Context
 import com.flashcat.android.api.InternalLogger
 import com.flashcat.android.api.feature.Feature
 import com.flashcat.android.api.feature.FeatureSdkCore
-import com.datadog.android.core.InternalSdkCore
+import com.flashcat.android.core.InternalSdkCore
 import com.datadog.android.internal.utils.allowThreadDiskReads
 import com.datadog.android.internal.utils.allowThreadDiskWrites
 import com.flashcat.android.privacy.TrackingConsent

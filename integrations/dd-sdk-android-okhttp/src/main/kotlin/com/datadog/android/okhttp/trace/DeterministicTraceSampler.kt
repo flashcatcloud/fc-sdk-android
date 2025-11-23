@@ -8,7 +8,7 @@
 package com.datadog.android.okhttp.trace
 
 import androidx.annotation.FloatRange
-import com.datadog.android.core.sampling.DeterministicSampler
+import com.flashcat.android.core.sampling.DeterministicSampler
 import com.datadog.android.okhttp.internal.utils.SpanSamplingIdProvider
 import com.datadog.android.trace.api.span.DatadogSpan
 

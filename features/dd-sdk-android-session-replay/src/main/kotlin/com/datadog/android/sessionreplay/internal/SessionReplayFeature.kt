@@ -17,8 +17,8 @@ import com.flashcat.android.api.feature.FeatureSdkCore
 import com.flashcat.android.api.feature.StorageBackedFeature
 import com.flashcat.android.api.net.RequestFactory
 import com.flashcat.android.api.storage.FeatureStorageConfiguration
-import com.datadog.android.core.sampling.RateBasedSampler
-import com.datadog.android.core.sampling.Sampler
+import com.flashcat.android.core.sampling.RateBasedSampler
+import com.flashcat.android.core.sampling.Sampler
 import com.datadog.android.sessionreplay.ImagePrivacy
 import com.datadog.android.sessionreplay.MapperTypeWrapper
 import com.datadog.android.sessionreplay.SessionReplayInternalCallback

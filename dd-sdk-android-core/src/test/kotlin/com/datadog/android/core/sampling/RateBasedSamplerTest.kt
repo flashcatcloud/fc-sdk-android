@@ -8,6 +8,7 @@
 package com.datadog.android.core.sampling
 
 import com.datadog.android.utils.forge.Configurator
+import com.flashcat.android.core.sampling.RateBasedSampler
 import fr.xgouchet.elmyr.annotation.FloatForgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
 import fr.xgouchet.elmyr.junit5.ForgeExtension

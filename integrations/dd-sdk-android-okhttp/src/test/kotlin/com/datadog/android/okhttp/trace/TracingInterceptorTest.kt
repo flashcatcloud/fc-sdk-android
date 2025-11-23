@@ -10,8 +10,8 @@ import com.flashcat.android.api.InternalLogger
 import com.flashcat.android.api.SdkCore
 import com.flashcat.android.api.context.DatadogContext
 import com.flashcat.android.api.feature.Feature
-import com.datadog.android.core.internal.net.DefaultFirstPartyHostHeaderTypeResolver
-import com.datadog.android.core.sampling.Sampler
+import com.flashcat.android.core.internal.net.DefaultFirstPartyHostHeaderTypeResolver
+import com.flashcat.android.core.sampling.Sampler
 import com.datadog.android.internal.telemetry.TracingHeaderTypesSet
 import com.datadog.android.internal.utils.loggableStackTrace
 import com.datadog.android.okhttp.TraceContext

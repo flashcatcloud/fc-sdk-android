@@ -7,7 +7,7 @@
 
 package com.datadog.android.rum.internal.startup
 
-import com.datadog.android.core.InternalSdkCore
+import com.flashcat.android.core.InternalSdkCore
 import com.datadog.android.rum.DdRumContentProvider
 
 internal interface RumAppStartupTelemetryReporter {

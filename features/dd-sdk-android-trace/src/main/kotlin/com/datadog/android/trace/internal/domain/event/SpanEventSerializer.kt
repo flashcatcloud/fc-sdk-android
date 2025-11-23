@@ -9,8 +9,8 @@ package com.datadog.android.trace.internal.domain.event
 
 import com.flashcat.android.api.InternalLogger
 import com.flashcat.android.api.context.DatadogContext
-import com.datadog.android.core.constraints.DataConstraints
-import com.datadog.android.core.constraints.DatadogDataConstraints
+import com.flashcat.android.core.constraints.DataConstraints
+import com.flashcat.android.core.constraints.DatadogDataConstraints
 import com.datadog.android.internal.utils.NULL_MAP_VALUE
 import com.datadog.android.trace.internal.storage.ContextAwareSerializer
 import com.datadog.android.trace.model.SpanEvent

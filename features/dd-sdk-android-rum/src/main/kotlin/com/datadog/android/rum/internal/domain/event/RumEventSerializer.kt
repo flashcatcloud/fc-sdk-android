@@ -8,10 +8,10 @@
 package com.datadog.android.rum.internal.domain.event
 
 import com.flashcat.android.api.InternalLogger
-import com.datadog.android.core.constraints.DataConstraints
-import com.datadog.android.core.constraints.DatadogDataConstraints
-import com.datadog.android.core.internal.utils.JsonSerializer.safeMapValuesToJson
-import com.datadog.android.core.persistence.Serializer
+import com.flashcat.android.core.constraints.DataConstraints
+import com.flashcat.android.core.constraints.DatadogDataConstraints
+import com.flashcat.android.core.internal.utils.JsonSerializer.safeMapValuesToJson
+import com.flashcat.android.core.persistence.Serializer
 import com.datadog.android.rum.RumAttributes
 import com.datadog.android.rum.model.ActionEvent
 import com.datadog.android.rum.model.ErrorEvent

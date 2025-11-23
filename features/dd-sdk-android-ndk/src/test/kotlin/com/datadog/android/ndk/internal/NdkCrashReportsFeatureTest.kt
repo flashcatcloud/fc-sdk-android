@@ -9,7 +9,7 @@ package com.datadog.android.ndk.internal
 
 import android.content.Context
 import com.flashcat.android.api.InternalLogger
-import com.datadog.android.core.InternalSdkCore
+import com.flashcat.android.core.InternalSdkCore
 import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.tools.unit.setFieldValue
 import fr.xgouchet.elmyr.junit5.ForgeExtension

@@ -12,8 +12,8 @@ import com.flashcat.android.api.InternalLogger
 import com.flashcat.android.api.context.DatadogContext
 import com.flashcat.android.api.feature.EventWriteScope
 import com.flashcat.android.api.storage.DataWriter
-import com.datadog.android.core.InternalSdkCore
-import com.datadog.android.core.internal.net.FirstPartyHostHeaderTypeResolver
+import com.flashcat.android.core.InternalSdkCore
+import com.flashcat.android.core.internal.net.FirstPartyHostHeaderTypeResolver
 import com.datadog.android.internal.utils.loggableStackTrace
 import com.datadog.android.rum.RumAttributes
 import com.datadog.android.rum.RumErrorSource

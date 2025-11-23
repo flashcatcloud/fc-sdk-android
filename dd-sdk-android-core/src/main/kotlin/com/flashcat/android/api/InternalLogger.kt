@@ -7,9 +7,9 @@
 package com.flashcat.android.api
 
 import androidx.annotation.FloatRange
-import com.datadog.android.core.internal.logger.SdkInternalLogger
-import com.datadog.android.core.metrics.PerformanceMetric
-import com.datadog.android.core.metrics.TelemetryMetricType
+import com.flashcat.android.core.internal.logger.SdkInternalLogger
+import com.flashcat.android.core.metrics.PerformanceMetric
+import com.flashcat.android.core.metrics.TelemetryMetricType
 import com.datadog.android.internal.telemetry.InternalTelemetryEvent
 import com.flashcat.android.lint.InternalApi
 import com.datadog.tools.annotation.NoOpImplementation

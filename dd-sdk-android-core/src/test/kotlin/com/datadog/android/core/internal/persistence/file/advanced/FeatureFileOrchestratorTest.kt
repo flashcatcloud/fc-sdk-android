@@ -8,10 +8,10 @@
 package com.datadog.android.core.internal.persistence.file.advanced
 
 import com.flashcat.android.api.InternalLogger
-import com.datadog.android.core.internal.metrics.MetricsDispatcher
-import com.datadog.android.core.internal.persistence.file.FilePersistenceConfig
-import com.datadog.android.core.internal.persistence.file.batch.BatchFileOrchestrator
-import com.datadog.android.core.internal.privacy.ConsentProvider
+import com.flashcat.android.core.internal.metrics.MetricsDispatcher
+import com.flashcat.android.core.internal.persistence.file.FilePersistenceConfig
+import com.flashcat.android.core.internal.persistence.file.batch.BatchFileOrchestrator
+import com.flashcat.android.core.internal.privacy.ConsentProvider
 import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.utils.forge.Configurator
 import fr.xgouchet.elmyr.annotation.Forgery

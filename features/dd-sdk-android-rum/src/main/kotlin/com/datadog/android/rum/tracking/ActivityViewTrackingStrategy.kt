@@ -12,7 +12,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.annotation.MainThread
 import com.flashcat.android.api.InternalLogger
-import com.datadog.android.core.internal.utils.scheduleSafe
+import com.flashcat.android.core.internal.utils.scheduleSafe
 import com.datadog.android.internal.attributes.ViewScopeInstrumentationType
 import com.datadog.android.internal.attributes.enrichWithConstantAttribute
 import com.datadog.android.rum.GlobalRumMonitor

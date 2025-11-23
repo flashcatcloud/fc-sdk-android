@@ -11,7 +11,7 @@ import android.util.Log
 import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.flashcat.android.Datadog
-import com.datadog.android.core.configuration.Configuration
+import com.flashcat.android.core.configuration.Configuration
 import com.datadog.android.log.Logger
 import com.datadog.android.log.Logs
 import com.datadog.android.log.LogsConfiguration

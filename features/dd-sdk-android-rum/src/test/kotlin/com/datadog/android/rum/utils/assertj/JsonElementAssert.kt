@@ -7,7 +7,7 @@
 
 package com.datadog.android.rum.utils.assertj
 
-import com.datadog.android.core.internal.utils.JsonSerializer
+import com.flashcat.android.core.internal.utils.JsonSerializer
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonNull

@@ -12,7 +12,7 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.flashcat.android.Datadog
 import com.flashcat.android.api.context.DatadogContext
-import com.datadog.android.core.InternalSdkCore
+import com.flashcat.android.core.InternalSdkCore
 import com.datadog.android.log.Logs
 import com.datadog.android.sdk.integration.R
 import com.datadog.android.sdk.integration.RuntimeConfig

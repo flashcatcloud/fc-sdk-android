@@ -7,8 +7,8 @@
 
 package com.datadog.android.utils.forge
 
-import com.datadog.android.core.internal.persistence.BatchData
-import com.datadog.android.core.internal.persistence.BatchId
+import com.flashcat.android.core.internal.persistence.BatchData
+import com.flashcat.android.core.internal.persistence.BatchId
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory
 

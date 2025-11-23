@@ -9,11 +9,11 @@ package com.datadog.android.core.internal.persistence.datastore
 
 import com.flashcat.android.api.InternalLogger
 import com.flashcat.android.api.storage.datastore.DataStoreWriteCallback
-import com.datadog.android.core.internal.persistence.datastore.DatastoreFileWriter.Companion.FAILED_TO_SERIALIZE_DATA_ERROR
-import com.datadog.android.core.internal.persistence.file.FileReaderWriter
-import com.datadog.android.core.internal.persistence.file.deleteSafe
-import com.datadog.android.core.internal.persistence.file.existsSafe
-import com.datadog.android.core.persistence.Serializer
+import com.flashcat.android.core.internal.persistence.datastore.DatastoreFileWriter.Companion.FAILED_TO_SERIALIZE_DATA_ERROR
+import com.flashcat.android.core.internal.persistence.file.FileReaderWriter
+import com.flashcat.android.core.internal.persistence.file.deleteSafe
+import com.flashcat.android.core.internal.persistence.file.existsSafe
+import com.flashcat.android.core.persistence.Serializer
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.android.utils.verifyLog
 import fr.xgouchet.elmyr.annotation.StringForgery

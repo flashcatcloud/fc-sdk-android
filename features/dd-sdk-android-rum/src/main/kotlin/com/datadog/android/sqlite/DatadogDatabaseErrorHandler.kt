@@ -11,7 +11,7 @@ import android.database.DatabaseErrorHandler
 import android.database.DefaultDatabaseErrorHandler
 import android.database.sqlite.SQLiteDatabase
 import com.flashcat.android.api.InternalLogger
-import com.datadog.android.core.SdkReference
+import com.flashcat.android.core.SdkReference
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.RumAttributes
 import com.datadog.android.rum.RumErrorSource

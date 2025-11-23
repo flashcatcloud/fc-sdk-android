@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.stub
 
-import com.datadog.android.core.internal.net.FirstPartyHostHeaderTypeResolver
+import com.flashcat.android.core.internal.net.FirstPartyHostHeaderTypeResolver
 import com.flashcat.android.trace.TracingHeaderType
 import okhttp3.HttpUrl
 

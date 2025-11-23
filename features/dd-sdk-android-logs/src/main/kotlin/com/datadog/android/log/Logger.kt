@@ -13,7 +13,7 @@ import com.flashcat.android.api.InternalLogger
 import com.flashcat.android.api.SdkCore
 import com.flashcat.android.api.feature.Feature
 import com.flashcat.android.api.feature.FeatureSdkCore
-import com.datadog.android.core.sampling.RateBasedSampler
+import com.flashcat.android.core.sampling.RateBasedSampler
 import com.datadog.android.internal.utils.NULL_MAP_VALUE
 import com.datadog.android.log.internal.LogsFeature
 import com.datadog.android.log.internal.domain.DatadogLogGenerator

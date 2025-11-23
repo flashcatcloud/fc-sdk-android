@@ -13,8 +13,8 @@ import com.flashcat.android.api.storage.DataWriter
 import com.flashcat.android.api.storage.EventBatchWriter
 import com.flashcat.android.api.storage.EventType
 import com.flashcat.android.api.storage.RawBatchEvent
-import com.datadog.android.core.persistence.Serializer
-import com.datadog.android.core.persistence.serializeToByteArray
+import com.flashcat.android.core.persistence.Serializer
+import com.flashcat.android.core.persistence.serializeToByteArray
 import com.datadog.android.log.model.LogEvent
 
 internal class LogsDataWriter(

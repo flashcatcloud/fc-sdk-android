@@ -7,7 +7,7 @@
 package com.flashcat.android.ndk.internal
 
 import com.flashcat.android.api.InternalLogger
-import com.datadog.android.core.internal.persistence.Deserializer
+import com.flashcat.android.core.internal.persistence.Deserializer
 import com.google.gson.JsonParseException
 import java.util.Locale
 

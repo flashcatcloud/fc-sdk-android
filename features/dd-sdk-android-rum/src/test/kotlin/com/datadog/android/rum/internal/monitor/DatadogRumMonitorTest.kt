@@ -17,9 +17,9 @@ import com.flashcat.android.api.feature.EventWriteScope
 import com.flashcat.android.api.feature.Feature
 import com.flashcat.android.api.feature.FeatureScope
 import com.flashcat.android.api.storage.DataWriter
-import com.datadog.android.core.InternalSdkCore
-import com.datadog.android.core.feature.event.ThreadDump
-import com.datadog.android.core.internal.net.FirstPartyHostHeaderTypeResolver
+import com.flashcat.android.core.InternalSdkCore
+import com.flashcat.android.core.feature.event.ThreadDump
+import com.flashcat.android.core.internal.net.FirstPartyHostHeaderTypeResolver
 import com.datadog.android.internal.telemetry.InternalTelemetryEvent
 import com.datadog.android.rum.DdRumContentProvider
 import com.datadog.android.rum.ExperimentalRumApi

@@ -11,7 +11,7 @@ import android.app.Application
 import android.util.Log
 import com.flashcat.android.Datadog
 import com.flashcat.android.DatadogSite
-import com.datadog.android.core.configuration.Configuration
+import com.flashcat.android.core.configuration.Configuration
 import com.datadog.android.log.Logs
 import com.datadog.android.log.LogsConfiguration
 import com.flashcat.android.privacy.TrackingConsent

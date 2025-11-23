@@ -13,7 +13,7 @@ import android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
 import android.app.Application
 import android.os.Build
 import android.os.Bundle
-import com.datadog.android.core.internal.system.BuildSdkVersionProvider
+import com.flashcat.android.core.internal.system.BuildSdkVersionProvider
 import com.datadog.android.rum.utils.forge.Configurator
 import com.datadog.tools.unit.extensions.TestConfigurationExtension
 import fr.xgouchet.elmyr.Forge

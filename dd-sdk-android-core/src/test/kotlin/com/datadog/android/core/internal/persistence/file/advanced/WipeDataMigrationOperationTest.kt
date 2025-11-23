@@ -8,7 +8,7 @@
 package com.datadog.android.core.internal.persistence.file.advanced
 
 import com.flashcat.android.api.InternalLogger
-import com.datadog.android.core.internal.persistence.file.FileMover
+import com.flashcat.android.core.internal.persistence.file.FileMover
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.android.utils.verifyLog
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration

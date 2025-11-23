@@ -7,7 +7,7 @@
 
 package com.datadog.android.utils.forge
 
-import com.datadog.android.core.internal.metrics.BatchClosedMetadata
+import com.flashcat.android.core.internal.metrics.BatchClosedMetadata
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory
 

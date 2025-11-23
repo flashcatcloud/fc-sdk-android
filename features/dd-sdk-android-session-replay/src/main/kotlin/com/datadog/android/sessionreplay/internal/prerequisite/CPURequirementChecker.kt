@@ -8,7 +8,7 @@
 package com.datadog.android.sessionreplay.internal.prerequisite
 
 import com.flashcat.android.api.InternalLogger
-import com.datadog.android.core.internal.persistence.file.listFilesSafe
+import com.flashcat.android.core.internal.persistence.file.listFilesSafe
 import com.datadog.android.internal.utils.allowThreadDiskReads
 import java.io.File
 

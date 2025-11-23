@@ -13,8 +13,8 @@ import com.flashcat.android.api.feature.Feature
 import com.flashcat.android.api.feature.FeatureSdkCore
 import com.flashcat.android.api.storage.DataWriter
 import com.flashcat.android.api.storage.EventType
-import com.datadog.android.core.sampling.RateBasedSampler
-import com.datadog.android.core.sampling.Sampler
+import com.flashcat.android.core.sampling.RateBasedSampler
+import com.flashcat.android.core.sampling.Sampler
 import com.datadog.android.log.internal.LogsFeature
 import com.datadog.android.log.internal.domain.LogGenerator
 import com.datadog.android.log.model.LogEvent

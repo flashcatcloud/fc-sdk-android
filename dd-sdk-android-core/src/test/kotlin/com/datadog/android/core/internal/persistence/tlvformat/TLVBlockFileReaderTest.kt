@@ -8,8 +8,8 @@
 package com.datadog.android.core.internal.persistence.tlvformat
 
 import com.flashcat.android.api.InternalLogger
-import com.datadog.android.core.internal.persistence.file.FileReaderWriter
-import com.datadog.android.core.internal.persistence.tlvformat.TLVBlockFileReader.Companion.FAILED_TO_DESERIALIZE_ERROR
+import com.flashcat.android.core.internal.persistence.file.FileReaderWriter
+import com.flashcat.android.core.internal.persistence.tlvformat.TLVBlockFileReader.Companion.FAILED_TO_DESERIALIZE_ERROR
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.android.utils.verifyLog
 import fr.xgouchet.elmyr.annotation.IntForgery

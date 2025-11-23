@@ -11,7 +11,7 @@ import com.flashcat.android.api.InternalLogger
 import com.flashcat.android.api.storage.EventBatchWriter
 import com.flashcat.android.api.storage.EventType
 import com.flashcat.android.api.storage.RawBatchEvent
-import com.datadog.android.core.persistence.Serializer
+import com.flashcat.android.core.persistence.Serializer
 import com.datadog.android.rum.internal.domain.event.RumEventMeta
 import com.datadog.android.rum.model.ActionEvent
 import com.datadog.android.rum.model.ErrorEvent

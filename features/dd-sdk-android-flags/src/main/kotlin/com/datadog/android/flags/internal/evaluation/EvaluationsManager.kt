@@ -8,7 +8,7 @@
 package com.datadog.android.flags.internal.evaluation
 
 import com.flashcat.android.api.InternalLogger
-import com.datadog.android.core.internal.utils.executeSafe
+import com.flashcat.android.core.internal.utils.executeSafe
 import com.datadog.android.flags.internal.net.PrecomputedAssignmentsReader
 import com.datadog.android.flags.internal.repository.FlagsRepository
 import com.datadog.android.flags.internal.repository.net.PrecomputeMapper

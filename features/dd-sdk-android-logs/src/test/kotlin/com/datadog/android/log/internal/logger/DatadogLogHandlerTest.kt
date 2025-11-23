@@ -15,7 +15,7 @@ import com.flashcat.android.api.feature.FeatureSdkCore
 import com.flashcat.android.api.storage.DataWriter
 import com.flashcat.android.api.storage.EventBatchWriter
 import com.flashcat.android.api.storage.EventType
-import com.datadog.android.core.sampling.Sampler
+import com.flashcat.android.core.sampling.Sampler
 import com.flashcat.android.log.LogAttributes
 import com.datadog.android.log.assertj.LogEventAssert.Companion.assertThat
 import com.datadog.android.log.internal.LogsFeature

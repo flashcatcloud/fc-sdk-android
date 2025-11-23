@@ -27,11 +27,11 @@ import com.flashcat.android.api.net.RequestFactory
 import com.flashcat.android.api.storage.DataWriter
 import com.flashcat.android.api.storage.FeatureStorageConfiguration
 import com.flashcat.android.api.storage.NoOpDataWriter
-import com.datadog.android.core.InternalSdkCore
-import com.datadog.android.core.feature.event.JvmCrash
-import com.datadog.android.core.internal.system.BuildSdkVersionProvider
-import com.datadog.android.core.internal.utils.executeSafe
-import com.datadog.android.core.internal.utils.scheduleSafe
+import com.flashcat.android.core.InternalSdkCore
+import com.flashcat.android.core.feature.event.JvmCrash
+import com.flashcat.android.core.internal.system.BuildSdkVersionProvider
+import com.flashcat.android.core.internal.utils.executeSafe
+import com.flashcat.android.core.internal.utils.scheduleSafe
 import com.flashcat.android.event.EventMapper
 import com.flashcat.android.event.MapperSerializer
 import com.flashcat.android.event.NoOpEventMapper

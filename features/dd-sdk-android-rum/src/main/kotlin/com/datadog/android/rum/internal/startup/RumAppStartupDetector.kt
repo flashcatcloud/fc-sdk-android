@@ -8,8 +8,8 @@
 package com.datadog.android.rum.internal.startup
 
 import android.app.Application
-import com.datadog.android.core.InternalSdkCore
-import com.datadog.android.core.internal.system.BuildSdkVersionProvider
+import com.flashcat.android.core.InternalSdkCore
+import com.flashcat.android.core.internal.system.BuildSdkVersionProvider
 import com.datadog.android.rum.DdRumContentProvider
 
 internal interface RumAppStartupDetector {

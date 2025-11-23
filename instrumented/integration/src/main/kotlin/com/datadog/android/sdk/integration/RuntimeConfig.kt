@@ -10,8 +10,8 @@ package com.datadog.android.sdk.integration
 import android.os.Build
 import com.flashcat.android._InternalProxy
 import com.flashcat.android.api.SdkCore
-import com.datadog.android.core.configuration.Configuration
-import com.datadog.android.core.configuration.UploadFrequency
+import com.flashcat.android.core.configuration.Configuration
+import com.flashcat.android.core.configuration.UploadFrequency
 import com.datadog.android.log.Logger
 import com.datadog.android.log.LogsConfiguration
 import com.datadog.android.rum.RumConfiguration

@@ -18,7 +18,7 @@ import androidx.fragment.app.FragmentManager
 import com.flashcat.android.api.InternalLogger
 import com.flashcat.android.api.feature.Feature
 import com.flashcat.android.api.feature.FeatureScope
-import com.datadog.android.core.internal.system.BuildSdkVersionProvider
+import com.flashcat.android.core.internal.system.BuildSdkVersionProvider
 import com.datadog.android.internal.attributes.ViewScopeInstrumentationType
 import com.datadog.android.internal.attributes.enrichWithConstantAttribute
 import com.datadog.android.rum.internal.RumFeature

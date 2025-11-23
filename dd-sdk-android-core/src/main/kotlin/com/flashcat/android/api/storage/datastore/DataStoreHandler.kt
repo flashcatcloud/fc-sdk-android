@@ -6,8 +6,8 @@
 
 package com.flashcat.android.api.storage.datastore
 
-import com.datadog.android.core.internal.persistence.Deserializer
-import com.datadog.android.core.persistence.Serializer
+import com.flashcat.android.core.internal.persistence.Deserializer
+import com.flashcat.android.core.persistence.Serializer
 
 /**
  * Interface for the datastore.

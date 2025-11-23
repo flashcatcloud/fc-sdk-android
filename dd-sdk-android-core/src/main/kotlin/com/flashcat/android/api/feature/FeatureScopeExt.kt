@@ -9,8 +9,8 @@ package com.flashcat.android.api.feature
 import androidx.annotation.AnyThread
 import com.flashcat.android.api.InternalLogger
 import com.flashcat.android.api.context.DatadogContext
-import com.datadog.android.core.internal.SdkFeature
-import com.datadog.android.core.metrics.TelemetryMetricType
+import com.flashcat.android.core.internal.SdkFeature
+import com.flashcat.android.core.metrics.TelemetryMetricType
 import com.flashcat.android.lint.InternalApi
 import java.util.concurrent.Future
 

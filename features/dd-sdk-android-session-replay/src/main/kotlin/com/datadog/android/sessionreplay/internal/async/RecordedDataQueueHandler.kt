@@ -11,8 +11,8 @@ import androidx.annotation.MainThread
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.WorkerThread
 import com.flashcat.android.api.InternalLogger
-import com.datadog.android.core.internal.utils.executeSafe
-import com.datadog.android.core.sampling.RateBasedSampler
+import com.flashcat.android.core.internal.utils.executeSafe
+import com.flashcat.android.core.sampling.RateBasedSampler
 import com.datadog.android.sessionreplay.internal.processor.RecordedDataProcessor
 import com.datadog.android.sessionreplay.internal.processor.RumContextDataHandler
 import com.datadog.android.sessionreplay.model.MobileSegment

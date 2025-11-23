@@ -8,8 +8,8 @@
 package com.datadog.android.core.internal.utils
 
 import com.flashcat.android.api.InternalLogger
-import com.datadog.android.core.internal.utils.JsonSerializer.ITEM_SERIALIZATION_ERROR
-import com.datadog.android.core.internal.utils.JsonSerializer.safeMapValuesToJson
+import com.flashcat.android.core.internal.utils.JsonSerializer.ITEM_SERIALIZATION_ERROR
+import com.flashcat.android.core.internal.utils.JsonSerializer.safeMapValuesToJson
 import com.datadog.android.internal.utils.NULL_MAP_VALUE
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.android.utils.verifyLog

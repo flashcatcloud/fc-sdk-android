@@ -10,7 +10,7 @@ import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.metrics.performance.FrameData
-import com.datadog.android.core.internal.system.BuildSdkVersionProvider
+import com.flashcat.android.core.internal.system.BuildSdkVersionProvider
 import com.datadog.android.rum.internal.domain.FrameMetricsData
 import java.util.concurrent.TimeUnit
 

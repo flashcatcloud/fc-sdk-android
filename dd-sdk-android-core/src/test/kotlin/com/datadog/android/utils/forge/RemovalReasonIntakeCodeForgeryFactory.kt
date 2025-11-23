@@ -7,7 +7,7 @@
 
 package com.datadog.android.utils.forge
 
-import com.datadog.android.core.internal.metrics.RemovalReason
+import com.flashcat.android.core.internal.metrics.RemovalReason
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory
 

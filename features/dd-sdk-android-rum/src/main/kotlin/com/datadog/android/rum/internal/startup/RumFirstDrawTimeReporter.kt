@@ -10,7 +10,7 @@ package com.datadog.android.rum.internal.startup
 import android.app.Activity
 import android.os.Handler
 import android.os.Looper
-import com.datadog.android.core.InternalSdkCore
+import com.flashcat.android.core.InternalSdkCore
 import com.datadog.android.rum.internal.utils.window.RumWindowCallbacksRegistryImpl
 
 internal interface RumFirstDrawTimeReporter {

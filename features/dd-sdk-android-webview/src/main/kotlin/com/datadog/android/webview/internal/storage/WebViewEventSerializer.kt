@@ -7,7 +7,7 @@
 
 package com.datadog.android.webview.internal.storage
 
-import com.datadog.android.core.persistence.Serializer
+import com.flashcat.android.core.persistence.Serializer
 import com.google.gson.JsonObject
 
 internal class WebViewEventSerializer :

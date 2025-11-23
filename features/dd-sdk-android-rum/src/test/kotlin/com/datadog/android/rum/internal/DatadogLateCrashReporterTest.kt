@@ -17,9 +17,9 @@ import com.flashcat.android.api.feature.FeatureScope
 import com.flashcat.android.api.storage.DataWriter
 import com.flashcat.android.api.storage.EventBatchWriter
 import com.flashcat.android.api.storage.EventType
-import com.datadog.android.core.InternalSdkCore
-import com.datadog.android.core.feature.event.ThreadDump
-import com.datadog.android.core.internal.persistence.Deserializer
+import com.flashcat.android.core.InternalSdkCore
+import com.flashcat.android.core.feature.event.ThreadDump
+import com.flashcat.android.core.internal.persistence.Deserializer
 import com.datadog.android.rum.RumErrorSource
 import com.datadog.android.rum.assertj.ErrorEventAssert
 import com.datadog.android.rum.assertj.ViewEventAssert

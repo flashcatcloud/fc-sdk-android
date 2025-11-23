@@ -17,7 +17,7 @@ import androidx.fragment.app.FragmentManager
 import com.flashcat.android.api.InternalLogger
 import com.flashcat.android.api.SdkCore
 import com.flashcat.android.api.feature.FeatureSdkCore
-import com.datadog.android.core.internal.utils.scheduleSafe
+import com.flashcat.android.core.internal.utils.scheduleSafe
 import com.datadog.android.rum.RumMonitor
 import com.datadog.android.rum.internal.RumFeature
 import com.datadog.android.rum.internal.utils.resolveViewName

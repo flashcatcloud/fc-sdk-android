@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.Density
 import com.flashcat.android.Datadog
 import com.flashcat.android.api.InternalLogger
 import com.flashcat.android.api.feature.FeatureSdkCore
-import com.datadog.android.core.sampling.RateBasedSampler
+import com.flashcat.android.core.sampling.RateBasedSampler
 import com.datadog.android.sessionreplay.ImagePrivacy
 import com.datadog.android.sessionreplay.TextAndInputPrivacy
 import com.datadog.android.sessionreplay.TouchPrivacy

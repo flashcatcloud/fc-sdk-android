@@ -8,7 +8,7 @@
 package com.datadog.android.rum.internal.domain.event
 
 import com.flashcat.android.api.InternalLogger
-import com.datadog.android.core.internal.persistence.Deserializer
+import com.flashcat.android.core.internal.persistence.Deserializer
 import com.google.gson.JsonParseException
 
 internal class RumEventMetaDeserializer(

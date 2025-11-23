@@ -8,7 +8,7 @@
 package com.datadog.android.webview.internal
 
 import android.webkit.JavascriptInterface
-import com.datadog.android.core.configuration.HostsSanitizer
+import com.flashcat.android.core.configuration.HostsSanitizer
 import com.google.gson.JsonArray
 
 /**

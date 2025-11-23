@@ -10,7 +10,7 @@ package com.datadog.android.rum.assertj
 import com.flashcat.android.api.context.AccountInfo
 import com.flashcat.android.api.context.NetworkInfo
 import com.flashcat.android.api.context.UserInfo
-import com.datadog.android.core.feature.event.ThreadDump
+import com.flashcat.android.core.feature.event.ThreadDump
 import com.datadog.android.rum.RumErrorSource
 import com.datadog.android.rum.RumResourceMethod
 import com.datadog.android.rum.internal.domain.RumContext

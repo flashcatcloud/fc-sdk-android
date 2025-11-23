@@ -10,7 +10,7 @@ package com.datadog.trace.sampling;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.datadog.android.core.sampling.Sampler;
+import com.flashcat.android.core.sampling.Sampler;
 
 /**
  * This is a pseudo-duplicate of the java implementation for testing purposes only to ensure

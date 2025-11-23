@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.internal.configuration
 
-import com.datadog.android.core.configuration.UploadFrequency
+import com.flashcat.android.core.configuration.UploadFrequency
 import com.datadog.android.utils.forge.Configurator
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.Forgery

@@ -9,7 +9,7 @@ package com.datadog.android.core.integration.tests.assertj
 
 import com.datadog.android.api.feature.stub.StubRequestFactory
 import com.flashcat.android.api.storage.RawBatchEvent
-import com.datadog.android.core.configuration.Configuration
+import com.flashcat.android.core.configuration.Configuration
 import com.datadog.android.core.integration.tests.utils.HandledRequest
 import com.datadog.android.core.integration.tests.utils.MockWebServerWrapper
 import com.flashcat.android.privacy.TrackingConsent
