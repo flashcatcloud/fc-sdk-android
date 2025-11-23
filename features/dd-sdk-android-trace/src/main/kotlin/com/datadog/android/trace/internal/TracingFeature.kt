@@ -8,11 +8,11 @@
 package com.datadog.android.trace.internal
 
 import android.content.Context
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureSdkCore
-import com.datadog.android.api.feature.StorageBackedFeature
-import com.datadog.android.api.net.RequestFactory
-import com.datadog.android.api.storage.FeatureStorageConfiguration
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.feature.StorageBackedFeature
+import com.flashcat.android.api.net.RequestFactory
+import com.flashcat.android.api.storage.FeatureStorageConfiguration
 import com.datadog.android.trace.InternalCoreWriterProvider
 import com.datadog.android.trace.event.SpanEventMapper
 import com.datadog.android.trace.internal.data.CoreTraceWriter

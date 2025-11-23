@@ -14,7 +14,7 @@ import android.os.Build.VERSION
 import android.widget.ProgressBar
 import androidx.annotation.RequiresApi
 import androidx.annotation.UiThread
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.internal.utils.densityNormalized
 import com.datadog.android.sessionreplay.TextAndInputPrivacy
 import com.datadog.android.sessionreplay.model.MobileSegment

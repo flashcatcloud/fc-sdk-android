@@ -7,7 +7,7 @@
 
 package com.datadog.android.rum.resource
 
-import com.datadog.android.api.SdkCore
+import com.flashcat.android.api.SdkCore
 import com.datadog.tools.unit.forge.BaseConfigurator
 import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration

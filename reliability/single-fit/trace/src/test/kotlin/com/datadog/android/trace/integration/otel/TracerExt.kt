@@ -7,8 +7,8 @@
 
 package com.datadog.android.trace.integration.otel
 
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureScope
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureScope
 import com.datadog.android.trace.integration.tests.utils.BlockingWriterWrapper
 import com.datadog.tools.unit.getFieldValue
 import com.datadog.tools.unit.setFieldValue

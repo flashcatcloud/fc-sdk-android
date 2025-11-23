@@ -7,8 +7,8 @@
 
 package com.datadog.android.core.internal
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.SdkCore
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.SdkCore
 
 /**
  * A Registry for all [SdkCore] instances, allowing customers to retrieve the one

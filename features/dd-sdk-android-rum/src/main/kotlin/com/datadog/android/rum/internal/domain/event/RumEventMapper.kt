@@ -7,9 +7,9 @@
 
 package com.datadog.android.rum.internal.domain.event
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.event.EventMapper
-import com.datadog.android.event.NoOpEventMapper
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.event.EventMapper
+import com.flashcat.android.event.NoOpEventMapper
 import com.datadog.android.rum.model.ActionEvent
 import com.datadog.android.rum.model.ErrorEvent
 import com.datadog.android.rum.model.LongTaskEvent

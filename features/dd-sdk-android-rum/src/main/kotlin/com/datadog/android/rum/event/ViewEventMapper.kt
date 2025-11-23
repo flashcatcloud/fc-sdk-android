@@ -7,7 +7,7 @@
 
 package com.datadog.android.rum.event
 
-import com.datadog.android.event.EventMapper
+import com.flashcat.android.event.EventMapper
 import com.datadog.android.rum.model.ViewEvent
 
 /**

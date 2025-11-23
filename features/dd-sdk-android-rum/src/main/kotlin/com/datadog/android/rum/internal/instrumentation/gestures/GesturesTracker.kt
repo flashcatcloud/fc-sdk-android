@@ -9,7 +9,7 @@ package com.datadog.android.rum.internal.instrumentation.gestures
 
 import android.content.Context
 import android.view.Window
-import com.datadog.android.api.SdkCore
+import com.flashcat.android.api.SdkCore
 import com.datadog.tools.annotation.NoOpImplementation
 
 @NoOpImplementation

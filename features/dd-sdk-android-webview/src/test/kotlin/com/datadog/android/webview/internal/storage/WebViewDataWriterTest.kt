@@ -7,10 +7,10 @@
 
 package com.datadog.android.webview.internal.storage
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.storage.EventBatchWriter
-import com.datadog.android.api.storage.EventType
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.storage.EventBatchWriter
+import com.flashcat.android.api.storage.EventType
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.core.persistence.Serializer
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.android.utils.verifyLog

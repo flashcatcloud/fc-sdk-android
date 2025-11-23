@@ -12,8 +12,8 @@ import android.content.res.Configuration
 import android.content.res.Resources
 import android.content.res.Resources.Theme
 import android.view.View
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.core.metrics.PerformanceMetric
 import com.datadog.android.core.metrics.TelemetryMetricType
 import com.datadog.android.sessionreplay.ImagePrivacy

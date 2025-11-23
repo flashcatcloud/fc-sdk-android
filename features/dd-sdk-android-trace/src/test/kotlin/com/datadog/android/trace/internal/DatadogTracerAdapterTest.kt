@@ -6,9 +6,9 @@
  */
 package com.datadog.android.trace.internal
 
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureScope
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureScope
 import com.datadog.android.api.feature.SdkFeatureMock
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.trace.api.scope.DatadogScopeListener

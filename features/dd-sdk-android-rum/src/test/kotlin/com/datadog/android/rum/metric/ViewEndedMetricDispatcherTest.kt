@@ -6,8 +6,8 @@
  */
 package com.datadog.android.rum.metric
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.InternalLogger.Target
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger.Target
 import com.datadog.android.internal.attributes.ViewScopeInstrumentationType
 import com.datadog.android.rum.internal.domain.scope.RumViewType
 import com.datadog.android.rum.internal.metric.NoValueReason

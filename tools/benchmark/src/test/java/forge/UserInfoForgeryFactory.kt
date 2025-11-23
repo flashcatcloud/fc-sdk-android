@@ -7,7 +7,7 @@
 
 package forge
 
-import com.datadog.android.api.context.UserInfo
+import com.flashcat.android.api.context.UserInfo
 import com.datadog.tools.unit.forge.exhaustiveAttributes
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory

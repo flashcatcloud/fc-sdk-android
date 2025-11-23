@@ -6,9 +6,9 @@
  */
 package com.datadog.android.okhttp
 
-import com.datadog.android.Datadog
-import com.datadog.android.api.SdkCore
-import com.datadog.android.api.feature.Feature
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.SdkCore
+import com.flashcat.android.api.feature.Feature
 import com.datadog.android.core.stub.StubEvent
 import com.datadog.android.core.stub.StubSDKCore
 import com.datadog.android.okhttp.tests.assertj.SpansPayloadAssert

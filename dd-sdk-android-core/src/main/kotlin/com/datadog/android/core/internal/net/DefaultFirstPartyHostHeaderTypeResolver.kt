@@ -7,8 +7,8 @@
 
 package com.datadog.android.core.internal.net
 
-import com.datadog.android.lint.InternalApi
-import com.datadog.android.trace.TracingHeaderType
+import com.flashcat.android.lint.InternalApi
+import com.flashcat.android.trace.TracingHeaderType
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.util.Locale

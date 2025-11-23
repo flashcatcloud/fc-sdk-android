@@ -7,11 +7,11 @@
 
 package com.datadog.android.api.feature.stub
 
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.net.Request
-import com.datadog.android.api.net.RequestExecutionContext
-import com.datadog.android.api.net.RequestFactory
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.net.Request
+import com.flashcat.android.api.net.RequestExecutionContext
+import com.flashcat.android.api.net.RequestFactory
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.core.internal.utils.join
 import fr.xgouchet.elmyr.Forge
 import org.json.JSONObject

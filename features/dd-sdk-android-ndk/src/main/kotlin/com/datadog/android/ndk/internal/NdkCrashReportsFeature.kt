@@ -8,14 +8,14 @@
 package com.datadog.android.ndk.internal
 
 import android.content.Context
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.internal.utils.allowThreadDiskReads
 import com.datadog.android.internal.utils.allowThreadDiskWrites
-import com.datadog.android.privacy.TrackingConsent
-import com.datadog.android.privacy.TrackingConsentProviderCallback
+import com.flashcat.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsentProviderCallback
 import java.io.File
 import java.lang.NullPointerException
 import java.util.concurrent.TimeUnit

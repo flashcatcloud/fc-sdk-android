@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.internal.thread
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.core.configuration.BackPressureStrategy
 import com.datadog.android.utils.verifyLog
 import com.datadog.tools.unit.forge.aThrowable

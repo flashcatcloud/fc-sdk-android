@@ -12,7 +12,7 @@ import android.os.Handler
 import android.os.Message
 import android.view.View
 import android.view.ViewTreeObserver
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.rum.internal.utils.window.RumWindowCallbackListener
 import com.datadog.android.rum.internal.utils.window.RumWindowCallbacksRegistry
 

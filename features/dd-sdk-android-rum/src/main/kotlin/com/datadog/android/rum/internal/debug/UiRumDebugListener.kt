@@ -21,8 +21,8 @@ import android.widget.TextView
 import androidx.annotation.AnyThread
 import androidx.annotation.MainThread
 import androidx.annotation.UiThread
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.rum.internal.monitor.AdvancedRumMonitor
 import com.datadog.android.rum.internal.monitor.NoOpAdvancedRumMonitor
 import kotlin.math.pow

@@ -8,7 +8,7 @@ package com.datadog.android.trace.api.tracer
 
 import androidx.annotation.FloatRange
 import androidx.annotation.IntRange
-import com.datadog.android.trace.TracingHeaderType
+import com.flashcat.android.trace.TracingHeaderType
 import com.datadog.tools.annotation.NoOpImplementation
 
 /**

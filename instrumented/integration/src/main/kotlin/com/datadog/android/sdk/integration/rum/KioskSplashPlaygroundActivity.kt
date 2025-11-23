@@ -11,9 +11,9 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
-import com.datadog.android.Datadog
+import com.flashcat.android.Datadog
 import com.datadog.android.log.Logs
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.Rum
 import com.datadog.android.rum.tracking.ActivityViewTrackingStrategy

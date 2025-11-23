@@ -7,8 +7,8 @@
 
 package com.datadog.android.okhttp
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.Feature
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.Feature
 import com.datadog.android.core.internal.net.DefaultFirstPartyHostHeaderTypeResolver
 import com.datadog.android.core.sampling.Sampler
 import com.datadog.android.okhttp.trace.TracedRequestListener

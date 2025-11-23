@@ -9,7 +9,7 @@ package com.datadog.android.core.internal.system
 
 import android.os.Build
 import androidx.annotation.ChecksSdkIntAtLeast
-import com.datadog.android.lint.InternalApi
+import com.flashcat.android.lint.InternalApi
 
 /**
  * Wrapper around [Build.VERSION.SDK_INT] in order to simplify mocking in tests.

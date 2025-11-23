@@ -10,8 +10,8 @@ package com.datadog.android.rum.internal.instrumentation.gestures
 import android.app.Activity
 import android.view.View
 import android.view.Window
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.rum.internal.tracking.NoOpInteractionPredicate
 import com.datadog.android.rum.tracking.ActionTrackingStrategy
 import com.datadog.android.rum.tracking.InteractionPredicate

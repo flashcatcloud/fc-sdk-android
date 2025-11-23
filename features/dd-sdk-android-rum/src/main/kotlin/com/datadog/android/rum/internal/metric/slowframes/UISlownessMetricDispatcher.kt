@@ -6,8 +6,8 @@
  */
 package com.datadog.android.rum.internal.metric.slowframes
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.InternalLogger.Target
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger.Target
 import com.datadog.android.rum.configuration.SlowFramesConfiguration
 import com.datadog.tools.annotation.NoOpImplementation
 import java.util.concurrent.ConcurrentHashMap

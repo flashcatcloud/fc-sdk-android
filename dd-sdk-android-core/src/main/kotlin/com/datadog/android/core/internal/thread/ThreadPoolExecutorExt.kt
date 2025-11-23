@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.internal.thread
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 

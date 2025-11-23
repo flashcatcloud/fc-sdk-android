@@ -8,7 +8,7 @@
 package com.datadog.android.rum.internal.metric.interactiontonextview
 
 import androidx.annotation.VisibleForTesting
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.rum.internal.metric.NoValueReason
 import com.datadog.android.rum.internal.metric.ViewInitializationMetricsConfig
 import com.datadog.android.rum.internal.metric.ViewInitializationMetricsState

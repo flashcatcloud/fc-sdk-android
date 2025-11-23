@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.internal.persistence.tlvformat
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import java.nio.ByteBuffer
 import java.util.Locale
 

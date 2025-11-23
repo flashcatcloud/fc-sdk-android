@@ -7,7 +7,7 @@
 
 package com.datadog.opentelemetry.trace
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.trace.api.span.DatadogSpanBuilder
 import com.datadog.android.trace.api.tracer.DatadogTracer
 import com.datadog.android.trace.opentelemetry.utils.forge.Configurator

@@ -7,10 +7,10 @@
 
 package com.datadog.android.webview.internal.log
 
-import com.datadog.android.api.feature.FeatureSdkCore
-import com.datadog.android.api.net.RequestFactory
-import com.datadog.android.api.storage.FeatureStorageConfiguration
-import com.datadog.android.api.storage.NoOpDataWriter
+import com.flashcat.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.net.RequestFactory
+import com.flashcat.android.api.storage.FeatureStorageConfiguration
+import com.flashcat.android.api.storage.NoOpDataWriter
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.android.webview.internal.storage.WebViewDataWriter
 import com.datadog.tools.unit.extensions.ApiLevelExtension

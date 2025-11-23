@@ -10,7 +10,7 @@ package com.datadog.android.sessionreplay.internal.async
 import androidx.annotation.MainThread
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.WorkerThread
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.core.internal.utils.executeSafe
 import com.datadog.android.core.sampling.RateBasedSampler
 import com.datadog.android.sessionreplay.internal.processor.RecordedDataProcessor

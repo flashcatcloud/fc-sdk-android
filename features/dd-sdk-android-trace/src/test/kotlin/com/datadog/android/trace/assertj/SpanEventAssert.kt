@@ -7,11 +7,11 @@
 
 package com.datadog.android.trace.assertj
 
-import com.datadog.android.api.context.AccountInfo
-import com.datadog.android.api.context.DeviceInfo
-import com.datadog.android.api.context.DeviceType
-import com.datadog.android.api.context.NetworkInfo
-import com.datadog.android.api.context.UserInfo
+import com.flashcat.android.api.context.AccountInfo
+import com.flashcat.android.api.context.DeviceInfo
+import com.flashcat.android.api.context.DeviceType
+import com.flashcat.android.api.context.NetworkInfo
+import com.flashcat.android.api.context.UserInfo
 import com.datadog.android.trace.internal.domain.event.CoreTracerSpanToSpanEventMapper
 import com.datadog.android.trace.internal.domain.event.TRACE_ID_META_KEY
 import com.datadog.android.trace.model.SpanEvent

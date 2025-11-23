@@ -10,13 +10,13 @@ package com.datadog.android.flags.internal
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.util.Log
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.Feature.Companion.FLAGS_FEATURE_NAME
-import com.datadog.android.api.feature.Feature.Companion.RUM_FEATURE_NAME
-import com.datadog.android.api.feature.FeatureContextUpdateReceiver
-import com.datadog.android.api.feature.FeatureSdkCore
-import com.datadog.android.api.feature.StorageBackedFeature
-import com.datadog.android.api.storage.FeatureStorageConfiguration
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.Feature.Companion.FLAGS_FEATURE_NAME
+import com.flashcat.android.api.feature.Feature.Companion.RUM_FEATURE_NAME
+import com.flashcat.android.api.feature.FeatureContextUpdateReceiver
+import com.flashcat.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.feature.StorageBackedFeature
+import com.flashcat.android.api.storage.FeatureStorageConfiguration
 import com.datadog.android.flags.FlagsClient
 import com.datadog.android.flags.FlagsConfiguration
 import com.datadog.android.flags.internal.net.ExposuresRequestFactory
@@ -24,7 +24,7 @@ import com.datadog.android.flags.internal.net.PrecomputedAssignmentsRequestFacto
 import com.datadog.android.flags.internal.storage.ExposureEventRecordWriter
 import com.datadog.android.flags.internal.storage.NoOpRecordWriter
 import com.datadog.android.flags.internal.storage.RecordWriter
-import com.datadog.android.log.LogAttributes.RUM_APPLICATION_ID
+import com.flashcat.android.log.LogAttributes.RUM_APPLICATION_ID
 
 /**
  * Type alias for a function that logs a message with a given level.

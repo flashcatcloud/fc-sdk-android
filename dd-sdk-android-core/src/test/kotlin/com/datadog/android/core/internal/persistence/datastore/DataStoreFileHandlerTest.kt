@@ -7,9 +7,9 @@
 
 package com.datadog.android.core.internal.persistence.datastore
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.storage.datastore.DataStoreReadCallback
-import com.datadog.android.api.storage.datastore.DataStoreWriteCallback
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.storage.datastore.DataStoreReadCallback
+import com.flashcat.android.api.storage.datastore.DataStoreWriteCallback
 import com.datadog.android.core.internal.persistence.Deserializer
 import com.datadog.android.core.persistence.Serializer
 import com.datadog.android.core.persistence.datastore.DataStoreContent

@@ -9,7 +9,7 @@ package com.datadog.android.sessionreplay.recorder.mapper
 
 import android.widget.ImageView
 import androidx.annotation.UiThread
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.internal.utils.ImageViewUtils
 import com.datadog.android.internal.utils.densityNormalized
 import com.datadog.android.sessionreplay.internal.utils.toWireframeClip

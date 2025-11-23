@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.configuration
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.utils.config.InternalLoggerTestConfiguration
 import com.datadog.tools.unit.annotations.TestConfigurationsProvider
 import com.datadog.tools.unit.extensions.TestConfigurationExtension

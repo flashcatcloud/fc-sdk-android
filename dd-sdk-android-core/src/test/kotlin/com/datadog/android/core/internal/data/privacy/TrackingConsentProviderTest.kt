@@ -8,8 +8,8 @@
 package com.datadog.android.core.internal.data.privacy
 
 import com.datadog.android.core.internal.privacy.TrackingConsentProvider
-import com.datadog.android.privacy.TrackingConsent
-import com.datadog.android.privacy.TrackingConsentProviderCallback
+import com.flashcat.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsentProviderCallback
 import com.datadog.android.utils.forge.Configurator
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration

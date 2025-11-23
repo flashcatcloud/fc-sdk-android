@@ -7,9 +7,9 @@
 
 package com.datadog.android.rum.assertj
 
-import com.datadog.android.api.context.AccountInfo
-import com.datadog.android.api.context.NetworkInfo
-import com.datadog.android.api.context.UserInfo
+import com.flashcat.android.api.context.AccountInfo
+import com.flashcat.android.api.context.NetworkInfo
+import com.flashcat.android.api.context.UserInfo
 import com.datadog.android.core.feature.event.ThreadDump
 import com.datadog.android.rum.RumErrorSource
 import com.datadog.android.rum.RumResourceMethod

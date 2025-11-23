@@ -8,14 +8,14 @@
 package com.datadog.android.logs.integration
 
 import android.util.Log
-import com.datadog.android.api.context.NetworkInfo
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.StorageBackedFeature
-import com.datadog.android.api.net.RequestExecutionContext
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.context.NetworkInfo
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.StorageBackedFeature
+import com.flashcat.android.api.net.RequestExecutionContext
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.core.stub.StubSDKCore
-import com.datadog.android.event.EventMapper
-import com.datadog.android.log.LogAttributes
+import com.flashcat.android.event.EventMapper
+import com.flashcat.android.log.LogAttributes
 import com.datadog.android.log.Logger
 import com.datadog.android.log.Logs
 import com.datadog.android.log.LogsConfiguration

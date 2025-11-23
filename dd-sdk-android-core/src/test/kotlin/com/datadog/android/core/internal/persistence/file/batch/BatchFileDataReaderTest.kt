@@ -7,8 +7,8 @@
 
 package com.datadog.android.core.internal.persistence.file.batch
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.core.internal.persistence.Batch
 import com.datadog.android.core.internal.persistence.DataReader
 import com.datadog.android.core.internal.persistence.PayloadDecoration

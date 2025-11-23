@@ -9,8 +9,8 @@ package com.datadog.android.rum.internal.instrumentation.gestures
 
 import android.content.Context
 import android.view.Window
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.SdkCore
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.SdkCore
 import com.datadog.android.rum.tracking.ActionTrackingStrategy
 import com.datadog.android.rum.tracking.InteractionPredicate
 import com.datadog.android.rum.tracking.ViewAttributesProvider

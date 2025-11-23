@@ -18,8 +18,8 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
-import com.datadog.android.Datadog
-import com.datadog.android.api.SdkCore
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.SdkCore
 import com.datadog.android.compose.internal.ComposeNavigationObserver
 import com.datadog.android.compose.internal.InstrumentationType
 import com.datadog.android.compose.internal.SupportLibrary

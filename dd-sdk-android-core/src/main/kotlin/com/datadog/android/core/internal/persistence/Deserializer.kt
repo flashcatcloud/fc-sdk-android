@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.internal.persistence
 
-import com.datadog.android.lint.InternalApi
+import com.flashcat.android.lint.InternalApi
 
 /**
  * The Deserializer<P, R> generic interface. Should be implemented by any custom deserializer.

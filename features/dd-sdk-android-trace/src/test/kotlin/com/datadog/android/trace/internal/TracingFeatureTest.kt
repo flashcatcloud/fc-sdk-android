@@ -7,10 +7,10 @@
 
 package com.datadog.android.trace.internal
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureSdkCore
-import com.datadog.android.api.storage.FeatureStorageConfiguration
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.storage.FeatureStorageConfiguration
 import com.datadog.android.trace.event.SpanEventMapper
 import com.datadog.android.trace.internal.data.CoreTraceWriter
 import com.datadog.android.trace.internal.domain.event.CoreTracerSpanToSpanEventMapper

@@ -9,10 +9,10 @@ package com.datadog.android.flags.internal
 
 import android.content.Context
 import android.content.pm.ApplicationInfo
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.Feature.Companion.FLAGS_FEATURE_NAME
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.Feature.Companion.FLAGS_FEATURE_NAME
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.flags.FlagsConfiguration
 import com.datadog.android.flags.internal.storage.ExposureEventRecordWriter
 import com.datadog.android.flags.internal.storage.NoOpRecordWriter

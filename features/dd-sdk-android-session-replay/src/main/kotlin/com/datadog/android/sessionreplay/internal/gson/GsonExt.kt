@@ -7,7 +7,7 @@
 
 package com.datadog.android.sessionreplay.internal.gson
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject

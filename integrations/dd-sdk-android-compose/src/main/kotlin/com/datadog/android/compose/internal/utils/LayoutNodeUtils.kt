@@ -17,9 +17,9 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsModifier
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
-import com.datadog.android.Datadog
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.compose.DatadogSemanticsPropertyKey
 import com.datadog.android.rum.RumAttributes.ACTION_TARGET_ROLE
 import com.datadog.android.rum.RumAttributes.ACTION_TARGET_SELECTED

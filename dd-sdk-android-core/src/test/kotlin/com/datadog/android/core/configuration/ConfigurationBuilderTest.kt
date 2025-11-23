@@ -7,10 +7,10 @@
 
 package com.datadog.android.core.configuration
 
-import com.datadog.android.DatadogSite
+import com.flashcat.android.DatadogSite
 import com.datadog.android.core.persistence.PersistenceStrategy
-import com.datadog.android.security.Encryption
-import com.datadog.android.trace.TracingHeaderType
+import com.flashcat.android.security.Encryption
+import com.flashcat.android.trace.TracingHeaderType
 import com.datadog.android.utils.config.InternalLoggerTestConfiguration
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.tools.unit.annotations.TestConfigurationsProvider

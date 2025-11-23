@@ -9,14 +9,14 @@ package com.datadog.android.sessionreplay.internal
 
 import android.app.Application
 import android.content.Context
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.SdkCore
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureEventReceiver
-import com.datadog.android.api.feature.FeatureSdkCore
-import com.datadog.android.api.feature.StorageBackedFeature
-import com.datadog.android.api.net.RequestFactory
-import com.datadog.android.api.storage.FeatureStorageConfiguration
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.SdkCore
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureEventReceiver
+import com.flashcat.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.feature.StorageBackedFeature
+import com.flashcat.android.api.net.RequestFactory
+import com.flashcat.android.api.storage.FeatureStorageConfiguration
 import com.datadog.android.core.sampling.RateBasedSampler
 import com.datadog.android.core.sampling.Sampler
 import com.datadog.android.sessionreplay.ImagePrivacy

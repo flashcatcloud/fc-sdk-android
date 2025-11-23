@@ -7,7 +7,7 @@
 
 package com.datadog.android.sdk.integration.sessionreplay.sensitivefields
 
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.sdk.integration.sessionreplay.BaseSessionReplayTest
 import com.datadog.android.sdk.integration.sessionreplay.SessionReplaySensitiveFieldsActivity
 import com.datadog.android.sdk.rules.SessionReplayTestRule

@@ -7,12 +7,11 @@
 
 package com.datadog.android.rum.coroutines
 
-import com.datadog.android.Datadog
-import com.datadog.android.api.SdkCore
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.SdkCore
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.RumErrorSource
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 
 internal const val ERROR_FLOW: String = "Coroutine Flow error"

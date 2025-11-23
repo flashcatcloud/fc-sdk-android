@@ -7,8 +7,8 @@
 
 package com.datadog.android.core.internal
 
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.feature.Feature
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.feature.Feature
 
 internal interface ContextProvider {
     // TODO RUM-3784 lifecycle checks may be needed for the cases when context is requested

@@ -7,8 +7,10 @@
 
 package com.datadog.android.ndk.internal
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.utils.forge.Configurator
+import com.flashcat.android.ndk.internal.NdkCrashLog
+import com.flashcat.android.ndk.internal.NdkCrashLogDeserializer
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
 import fr.xgouchet.elmyr.junit5.ForgeExtension

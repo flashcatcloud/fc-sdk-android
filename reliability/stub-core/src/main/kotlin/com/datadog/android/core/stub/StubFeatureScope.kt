@@ -7,12 +7,12 @@
 
 package com.datadog.android.core.stub
 
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.feature.EventWriteScope
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureScope
-import com.datadog.android.api.storage.EventBatchWriter
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.feature.EventWriteScope
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureScope
+import com.flashcat.android.api.storage.EventBatchWriter
+import com.flashcat.android.api.storage.RawBatchEvent
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.mockingDetails
 import org.mockito.kotlin.any

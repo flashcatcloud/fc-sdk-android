@@ -6,10 +6,10 @@
  */
 package com.datadog.android.trace
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureScope
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureScope
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.trace.DatadogTracing.ErrorMessages.DEFAULT_SERVICE_NAME_IS_MISSING_ERROR_MESSAGE
 import com.datadog.android.trace.DatadogTracing.ErrorMessages.TRACING_NOT_ENABLED_ERROR_MESSAGE
 import com.datadog.android.trace.DatadogTracing.ErrorMessages.WRITER_PROVIDER_INTERFACE_NOT_IMPLEMENTED_ERROR_MESSAGE

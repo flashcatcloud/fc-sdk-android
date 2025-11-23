@@ -7,9 +7,9 @@
 
 package com.datadog.android.flags.internal
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.Feature.Companion.RUM_FEATURE_NAME
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.Feature.Companion.RUM_FEATURE_NAME
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.flags.FlagsConfiguration
 import com.datadog.android.flags.internal.evaluation.EvaluationsManager
 import com.datadog.android.flags.internal.model.PrecomputedFlag

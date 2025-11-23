@@ -7,8 +7,8 @@
 
 package com.datadog.android.sessionreplay.internal
 
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.sessionreplay.internal.processor.EnrichedRecord
 
 internal class SessionReplayRecordCallback(

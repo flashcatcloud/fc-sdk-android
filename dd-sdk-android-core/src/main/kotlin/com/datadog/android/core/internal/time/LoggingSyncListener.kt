@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.internal.time
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.lyft.kronos.SyncListener
 
 internal class LoggingSyncListener(private val internalLogger: InternalLogger) : SyncListener {

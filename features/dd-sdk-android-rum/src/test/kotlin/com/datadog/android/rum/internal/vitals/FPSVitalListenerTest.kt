@@ -8,7 +8,7 @@ package com.datadog.android.rum.internal.vitals
 
 import android.os.Build
 import androidx.metrics.performance.FrameData
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.core.internal.system.BuildSdkVersionProvider
 import com.datadog.android.rum.internal.domain.FrameMetricsData
 import com.datadog.android.rum.internal.vitals.FrameStatesAggregatorTest.Companion.MAX_FPS

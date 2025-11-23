@@ -11,7 +11,7 @@ import android.app.Application
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequest
 import androidx.work.impl.WorkManagerImpl
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.core.UploadWorker
 import com.datadog.android.core.internal.CoreFeature
 import com.datadog.android.utils.config.ApplicationContextTestConfiguration

@@ -9,7 +9,7 @@ package com.datadog.android.rum.internal.domain.display
 
 import android.content.Context
 import android.provider.Settings
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 
 internal class SystemSettingsWrapper(
     private val applicationContext: Context,

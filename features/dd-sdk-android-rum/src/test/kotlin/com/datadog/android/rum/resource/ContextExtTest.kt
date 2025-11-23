@@ -10,7 +10,7 @@ package com.datadog.android.rum.resource
 import android.content.Context
 import android.content.res.AssetManager
 import android.content.res.Resources
-import com.datadog.android.api.SdkCore
+import com.flashcat.android.api.SdkCore
 import com.datadog.android.internal.utils.toHexString
 import com.datadog.tools.unit.forge.BaseConfigurator
 import fr.xgouchet.elmyr.annotation.IntForgery

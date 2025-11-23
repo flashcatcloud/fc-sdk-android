@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.internal.data.upload
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import okhttp3.Interceptor
 import okhttp3.MediaType
 import okhttp3.MultipartBody

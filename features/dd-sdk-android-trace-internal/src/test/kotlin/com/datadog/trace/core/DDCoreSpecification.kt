@@ -7,7 +7,7 @@
 
 package com.datadog.trace.core
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.tools.unit.getFieldValue
 import com.datadog.trace.DDSpecification
 import com.datadog.trace.api.DDSpanId

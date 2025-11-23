@@ -21,7 +21,7 @@ import android.provider.Settings.Secure.ACCESSIBILITY_DISPLAY_INVERSION_ENABLED
 import android.view.View
 import android.view.accessibility.AccessibilityManager
 import android.view.accessibility.AccessibilityManager.TouchExplorationStateChangeListener
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.rum.internal.domain.InfoProvider
 import java.util.concurrent.atomic.AtomicLong
 

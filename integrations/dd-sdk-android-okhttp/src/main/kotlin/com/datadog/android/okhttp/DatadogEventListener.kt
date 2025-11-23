@@ -7,8 +7,8 @@
 
 package com.datadog.android.okhttp
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.SdkCore
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.SdkCore
 import com.datadog.android.core.SdkReference
 import com.datadog.android.okhttp.DatadogEventListener.Factory
 import com.datadog.android.okhttp.internal.rum.buildResourceId

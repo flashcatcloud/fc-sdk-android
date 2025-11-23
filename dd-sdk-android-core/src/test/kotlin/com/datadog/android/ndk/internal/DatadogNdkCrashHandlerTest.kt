@@ -7,14 +7,16 @@
 
 package com.datadog.android.ndk.internal
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureScope
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureScope
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.core.internal.persistence.Deserializer
 import com.datadog.android.core.internal.persistence.file.FileReader
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.android.utils.verifyLog
+import com.flashcat.android.ndk.internal.DatadogNdkCrashHandler
+import com.flashcat.android.ndk.internal.NdkCrashLog
 import com.google.gson.JsonObject
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.Forgery

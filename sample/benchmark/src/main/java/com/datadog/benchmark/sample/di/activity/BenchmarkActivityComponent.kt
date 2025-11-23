@@ -10,7 +10,7 @@
 package com.datadog.benchmark.sample.di.activity
 
 import android.content.Context
-import com.datadog.android.api.SdkCore
+import com.flashcat.android.api.SdkCore
 import com.datadog.android.log.Logger
 import com.datadog.android.rum.RumMonitor
 import com.datadog.benchmark.DatadogBaseMeter

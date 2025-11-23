@@ -15,7 +15,7 @@ import android.graphics.Paint
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import androidx.annotation.RequiresApi
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.sessionreplay.utils.DrawableToColorMapper
 import com.datadog.android.sessionreplay.utils.MAX_ALPHA_VALUE
 

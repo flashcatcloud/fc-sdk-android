@@ -7,8 +7,8 @@
 
 package com.datadog.android.core
 
-import com.datadog.android.Datadog
-import com.datadog.android.api.SdkCore
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.SdkCore
 import com.datadog.android.core.internal.DatadogCore
 import java.util.concurrent.atomic.AtomicReference
 

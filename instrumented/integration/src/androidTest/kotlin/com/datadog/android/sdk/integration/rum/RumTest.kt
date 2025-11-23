@@ -8,7 +8,7 @@
 package com.datadog.android.sdk.integration.rum
 
 import android.app.Activity
-import com.datadog.android.Datadog
+import com.flashcat.android.Datadog
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.sdk.assertj.HeadersAssert
 import com.datadog.android.sdk.integration.RuntimeConfig

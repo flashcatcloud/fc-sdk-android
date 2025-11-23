@@ -9,7 +9,7 @@ package com.datadog.android.sessionreplay.internal.recorder
 
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.LayerDrawable
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.sessionreplay.forge.ForgeConfigurator
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
 import fr.xgouchet.elmyr.junit5.ForgeExtension

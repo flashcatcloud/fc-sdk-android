@@ -9,7 +9,7 @@ package com.datadog.android.okhttp.trace
 
 import com.datadog.android.okhttp.internal.trace.toInternalTracingHeaderType
 import com.datadog.android.okhttp.internal.utils.forge.OkHttpConfigurator
-import com.datadog.android.trace.TracingHeaderType
+import com.flashcat.android.trace.TracingHeaderType
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
 import fr.xgouchet.elmyr.junit5.ForgeExtension

@@ -8,7 +8,7 @@
 package com.datadog.android.okhttp.internal.utils
 
 import com.datadog.android.internal.utils.toHexString
-import com.datadog.android.log.LogAttributes
+import com.flashcat.android.log.LogAttributes
 import com.datadog.android.okhttp.trace.newSpanMock
 import com.datadog.android.trace.api.ZERO
 import com.datadog.android.trace.api.from

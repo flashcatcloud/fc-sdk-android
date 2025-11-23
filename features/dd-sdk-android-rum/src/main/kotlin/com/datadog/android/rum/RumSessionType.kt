@@ -7,7 +7,7 @@
 
 package com.datadog.android.rum
 
-import com.datadog.android.lint.InternalApi
+import com.flashcat.android.lint.InternalApi
 
 /**
  * Enum representing the RUM session type.

@@ -7,7 +7,7 @@
 
 package com.datadog.android.flags.internal
 
-import com.datadog.android.api.feature.FeatureScope
+import com.flashcat.android.api.feature.FeatureScope
 import com.datadog.android.internal.flags.RumFlagEvaluationMessage
 import com.datadog.tools.annotation.NoOpImplementation
 

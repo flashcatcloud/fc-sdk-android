@@ -7,15 +7,15 @@
 
 package com.datadog.android.log.internal.domain
 
-import com.datadog.android.api.context.AccountInfo
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.context.DeviceInfo
-import com.datadog.android.api.context.DeviceType
-import com.datadog.android.api.context.NetworkInfo
-import com.datadog.android.api.context.UserInfo
-import com.datadog.android.api.feature.Feature
+import com.flashcat.android.api.context.AccountInfo
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.context.DeviceInfo
+import com.flashcat.android.api.context.DeviceType
+import com.flashcat.android.api.context.NetworkInfo
+import com.flashcat.android.api.context.UserInfo
+import com.flashcat.android.api.feature.Feature
 import com.datadog.android.core.feature.event.ThreadDump
-import com.datadog.android.log.LogAttributes
+import com.flashcat.android.log.LogAttributes
 import com.datadog.android.log.internal.utils.buildLogDateFormat
 import com.datadog.android.log.model.LogEvent
 import java.util.Date

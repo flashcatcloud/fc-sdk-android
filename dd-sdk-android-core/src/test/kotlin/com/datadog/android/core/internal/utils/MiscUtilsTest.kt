@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.internal.utils
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.core.internal.utils.JsonSerializer.ITEM_SERIALIZATION_ERROR
 import com.datadog.android.core.internal.utils.JsonSerializer.safeMapValuesToJson
 import com.datadog.android.internal.utils.NULL_MAP_VALUE

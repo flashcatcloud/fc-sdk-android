@@ -13,8 +13,8 @@ import android.os.Looper
 import android.view.Window
 import androidx.annotation.MainThread
 import androidx.annotation.VisibleForTesting
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.internal.time.TimeProvider
 import com.datadog.android.sessionreplay.ImagePrivacy
 import com.datadog.android.sessionreplay.MapperTypeWrapper

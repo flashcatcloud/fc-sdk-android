@@ -8,7 +8,7 @@
 package com.datadog.android.sdk.rules
 
 import android.content.Intent
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.sdk.integration.telemetry.TelemetryPlaygroundActivity
 
 internal class TelemetryTestRule(

@@ -7,7 +7,7 @@
 
 package com.datadog.android.sample.webview
 
-import com.datadog.android.DatadogSite
+import com.flashcat.android.DatadogSite
 import com.datadog.android.sample.BuildConfig
 import timber.log.Timber
 

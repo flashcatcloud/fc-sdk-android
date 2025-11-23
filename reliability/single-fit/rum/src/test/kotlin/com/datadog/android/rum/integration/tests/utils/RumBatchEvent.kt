@@ -7,7 +7,7 @@
 
 package com.datadog.android.rum.integration.tests.utils
 
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.google.gson.JsonElement
 
 data class RumBatchEvent(

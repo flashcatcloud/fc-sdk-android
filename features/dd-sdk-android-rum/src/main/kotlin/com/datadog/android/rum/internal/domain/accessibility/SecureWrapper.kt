@@ -10,7 +10,7 @@ package com.datadog.android.rum.internal.domain.accessibility
 import android.content.Context
 import android.provider.Settings
 import android.provider.Settings.SettingNotFoundException
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 
 internal class SecureWrapper {
     @Suppress("UnsafeThirdPartyFunctionCall")

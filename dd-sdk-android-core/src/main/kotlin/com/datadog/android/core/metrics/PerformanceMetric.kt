@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.metrics
 
-import com.datadog.android.lint.InternalApi
+import com.flashcat.android.lint.InternalApi
 
 /**
  * Base class for performance metric events.

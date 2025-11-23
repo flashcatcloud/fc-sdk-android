@@ -7,13 +7,13 @@
 
 package com.datadog.android.utils.forge
 
-import com.datadog.android.DatadogSite
+import com.flashcat.android.DatadogSite
 import com.datadog.android.core.configuration.BackPressureMitigation
 import com.datadog.android.core.configuration.BackPressureStrategy
 import com.datadog.android.core.configuration.Configuration
 import com.datadog.android.core.persistence.PersistenceStrategy
 import com.datadog.android.security.NoOpEncryption
-import com.datadog.android.trace.TracingHeaderType
+import com.flashcat.android.trace.TracingHeaderType
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory
 import okhttp3.Authenticator

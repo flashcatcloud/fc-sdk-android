@@ -6,15 +6,15 @@
  */
 package com.datadog.android.trace.internal
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.context.AccountInfo
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.context.UserInfo
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureScope
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.context.AccountInfo
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.context.UserInfo
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureScope
 import com.datadog.android.api.feature.SdkFeatureMock
 import com.datadog.android.core.InternalSdkCore
-import com.datadog.android.log.LogAttributes
+import com.flashcat.android.log.LogAttributes
 import com.datadog.android.trace.api.span.DatadogSpan
 import com.datadog.android.trace.api.span.DatadogSpanBuilder
 import com.datadog.android.trace.internal.RumContextPropagator.Companion.DATADOG_INITIAL_CONTEXT

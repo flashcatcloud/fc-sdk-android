@@ -7,7 +7,7 @@
 
 package com.datadog.android.log.internal.domain.event
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.log.assertj.containsExtraAttributes
 import com.datadog.android.log.model.LogEvent
 import com.datadog.android.utils.forge.Configurator

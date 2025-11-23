@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.internal.persistence.file.advanced
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.core.internal.persistence.file.single.SingleFileOrchestrator
 import com.datadog.android.utils.forge.Configurator
 import fr.xgouchet.elmyr.annotation.StringForgery

@@ -9,7 +9,7 @@ package com.datadog.android.sessionreplay.recorder.mapper
 
 import android.graphics.drawable.Drawable
 import android.view.View
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.sessionreplay.model.MobileSegment
 import com.datadog.android.sessionreplay.utils.ColorStringFormatter
 import com.datadog.android.sessionreplay.utils.DrawableToColorMapper

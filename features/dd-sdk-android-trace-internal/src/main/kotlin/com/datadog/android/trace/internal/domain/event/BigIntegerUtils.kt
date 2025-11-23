@@ -7,7 +7,7 @@
 
 package com.datadog.android.trace.internal.domain.event
 
-import com.datadog.android.lint.InternalApi
+import com.flashcat.android.lint.InternalApi
 import java.math.BigInteger
 
 // TODO RUM-9902 Make internal internal after opentracing code removal. Required for DdSpanToSpanEventMapperTest

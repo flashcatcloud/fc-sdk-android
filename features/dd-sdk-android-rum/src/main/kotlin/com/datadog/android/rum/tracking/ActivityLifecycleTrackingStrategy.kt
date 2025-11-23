@@ -12,9 +12,9 @@ import android.app.Application
 import android.content.Context
 import android.os.Bundle
 import androidx.annotation.MainThread
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.SdkCore
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.SdkCore
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.internal.RumFeature
 

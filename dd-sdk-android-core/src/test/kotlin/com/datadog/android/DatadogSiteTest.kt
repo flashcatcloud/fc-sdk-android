@@ -8,6 +8,7 @@
 package com.datadog.android
 
 import com.datadog.android.utils.forge.Configurator
+import com.flashcat.android.DatadogSite
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
 import fr.xgouchet.elmyr.junit5.ForgeExtension
 import org.assertj.core.api.Assertions.assertThat

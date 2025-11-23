@@ -8,8 +8,8 @@
 package com.datadog.android.core.internal.utils
 
 import androidx.annotation.CheckResult
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.lint.InternalApi
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.lint.InternalApi
 import java.util.Locale
 import java.util.concurrent.Callable
 import java.util.concurrent.CancellationException

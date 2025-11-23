@@ -7,9 +7,9 @@
 
 package com.datadog.android.rum
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.SdkCore
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.SdkCore
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.rum.internal.monitor.NoOpAdvancedRumMonitor
 import com.datadog.android.rum.utils.forge.Configurator
 import com.datadog.android.rum.utils.verifyLog

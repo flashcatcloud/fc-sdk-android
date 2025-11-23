@@ -7,8 +7,8 @@
 
 package com.datadog.android.rum.internal.domain.scope
 
-import com.datadog.android.api.context.DeviceType
-import com.datadog.android.api.context.NetworkInfo
+import com.flashcat.android.api.context.DeviceType
+import com.flashcat.android.api.context.NetworkInfo
 import com.datadog.android.rum.RumActionType
 import com.datadog.android.rum.RumErrorSource
 import com.datadog.android.rum.RumResourceKind

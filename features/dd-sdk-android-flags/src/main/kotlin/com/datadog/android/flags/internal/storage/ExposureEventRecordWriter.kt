@@ -7,10 +7,10 @@
 
 package com.datadog.android.flags.internal.storage
 
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureSdkCore
-import com.datadog.android.api.storage.EventType
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.storage.EventType
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.flags.model.ExposureEvent
 
 internal class ExposureEventRecordWriter(private val sdkCore: FeatureSdkCore) : RecordWriter {

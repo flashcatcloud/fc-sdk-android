@@ -17,7 +17,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentPagerAdapter
 import androidx.viewpager.widget.ViewPager
-import com.datadog.android.Datadog
+import com.flashcat.android.Datadog
 import com.datadog.android.rum.Rum
 import com.datadog.android.rum.tracking.FragmentViewTrackingStrategy
 import com.datadog.android.sdk.integration.R

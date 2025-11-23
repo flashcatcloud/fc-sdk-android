@@ -8,7 +8,7 @@
 package com.datadog.android.sessionreplay.material.internal
 
 import androidx.cardview.widget.CardView
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.sessionreplay.model.MobileSegment
 import com.datadog.android.sessionreplay.recorder.MappingContext
 import com.datadog.android.sessionreplay.recorder.mapper.BaseViewGroupMapper

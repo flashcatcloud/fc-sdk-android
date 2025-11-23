@@ -8,15 +8,15 @@
 package com.datadog.android.rum.internal
 
 import android.app.ApplicationExitInfo
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.context.UserInfo
-import com.datadog.android.api.feature.EventWriteScope
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureScope
-import com.datadog.android.api.storage.DataWriter
-import com.datadog.android.api.storage.EventBatchWriter
-import com.datadog.android.api.storage.EventType
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.context.UserInfo
+import com.flashcat.android.api.feature.EventWriteScope
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureScope
+import com.flashcat.android.api.storage.DataWriter
+import com.flashcat.android.api.storage.EventBatchWriter
+import com.flashcat.android.api.storage.EventType
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.core.feature.event.ThreadDump
 import com.datadog.android.core.internal.persistence.Deserializer

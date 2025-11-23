@@ -8,8 +8,8 @@
 package com.datadog.android.core.persistence
 
 import androidx.annotation.WorkerThread
-import com.datadog.android.api.storage.EventType
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.storage.EventType
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.tools.annotation.NoOpImplementation
 
 /**

@@ -8,8 +8,8 @@
 package com.datadog.android.sessionreplay.internal
 
 import android.content.Context
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.sessionreplay.forge.ForgeConfigurator
 import com.datadog.android.sessionreplay.internal.net.ResourcesRequestFactory
 import com.datadog.android.sessionreplay.internal.storage.NoOpResourcesWriter

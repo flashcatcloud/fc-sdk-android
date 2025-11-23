@@ -7,7 +7,7 @@
 
 package com.datadog.trace.logger
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.utils.forge.Configurator
 import com.datadog.utils.verifyLog
 import fr.xgouchet.elmyr.Forge

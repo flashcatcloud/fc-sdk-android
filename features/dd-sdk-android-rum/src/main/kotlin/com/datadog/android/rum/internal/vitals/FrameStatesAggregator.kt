@@ -23,7 +23,7 @@ import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
 import androidx.metrics.performance.FrameData
 import androidx.metrics.performance.JankStats
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.core.internal.system.BuildSdkVersionProvider
 import com.datadog.android.rum.internal.domain.FrameMetricsData
 import java.lang.ref.WeakReference

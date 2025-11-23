@@ -7,7 +7,7 @@
 
 package com.datadog.android.okhttp
 
-import com.datadog.android.api.context.TimeInfo
+import com.flashcat.android.api.context.TimeInfo
 import com.datadog.android.okhttp.test.elmyr.OkHttpIntegrationForgeConfigurator
 import com.datadog.android.okhttp.utils.config.GlobalRumMonitorTestConfiguration
 import com.datadog.android.okhttp.utils.reset

@@ -18,7 +18,7 @@ import static io.opentelemetry.api.trace.SpanKind.INTERNAL;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.datadog.android.api.InternalLogger;
+import com.flashcat.android.api.InternalLogger;
 import com.datadog.android.trace.api.DatadogTracingConstants;
 import com.datadog.android.trace.api.span.DatadogSpan;
 import com.datadog.android.trace.api.span.DatadogSpanBuilder;

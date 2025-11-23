@@ -8,16 +8,16 @@
 package com.datadog.android.core.integration.tests
 
 import androidx.test.core.app.ApplicationProvider
-import com.datadog.android.Datadog
-import com.datadog.android.api.feature.Feature
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.feature.Feature
 import com.datadog.android.api.feature.stub.StubStorageBackedFeature
-import com.datadog.android.api.storage.EventType
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.storage.EventType
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.core.configuration.Configuration
 import com.datadog.android.core.integration.tests.assertj.MockWebServerAssert
 import com.datadog.android.core.integration.tests.forge.factories.ConfigurationCoreForgeryFactory
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.tools.unit.ConditionWatcher
 import com.datadog.tools.unit.forge.useToolsFactories
 import com.google.gson.JsonObject

@@ -7,9 +7,9 @@
 
 package com.datadog.android.core.internal.persistence
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.EventWriteScope
-import com.datadog.android.api.storage.EventBatchWriter
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.EventWriteScope
+import com.flashcat.android.api.storage.EventBatchWriter
 import com.datadog.android.core.internal.utils.executeSafe
 import java.util.concurrent.Executor
 

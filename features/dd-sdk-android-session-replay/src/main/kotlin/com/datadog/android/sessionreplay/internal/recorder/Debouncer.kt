@@ -9,8 +9,8 @@ package com.datadog.android.sessionreplay.internal.recorder
 
 import android.os.Handler
 import android.os.Looper
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureSdkCore
 import java.util.concurrent.TimeUnit
 
 internal class Debouncer(

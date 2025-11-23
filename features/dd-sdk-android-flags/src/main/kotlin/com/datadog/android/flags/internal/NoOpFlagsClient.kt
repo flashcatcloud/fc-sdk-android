@@ -7,7 +7,7 @@
 
 package com.datadog.android.flags.internal
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.flags.FlagsClient
 import com.datadog.android.flags.model.ErrorCode
 import com.datadog.android.flags.model.EvaluationContext

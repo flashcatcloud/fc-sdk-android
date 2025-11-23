@@ -9,7 +9,7 @@ package com.datadog.android.sessionreplay.internal.recorder
 
 import android.view.View
 import android.view.ViewTreeObserver
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.core.metrics.MethodCallSamplingRate
 import com.datadog.android.sessionreplay.ImagePrivacy
 import com.datadog.android.sessionreplay.TextAndInputPrivacy

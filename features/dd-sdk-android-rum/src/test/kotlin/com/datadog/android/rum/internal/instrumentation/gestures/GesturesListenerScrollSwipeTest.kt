@@ -15,7 +15,7 @@ import android.widget.Button
 import android.widget.ListAdapter
 import androidx.compose.ui.platform.ComposeView
 import androidx.core.view.ScrollingView
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.rum.RumActionType
 import com.datadog.android.rum.RumAttributes
 import com.datadog.android.rum.tracking.ActionTrackingStrategy

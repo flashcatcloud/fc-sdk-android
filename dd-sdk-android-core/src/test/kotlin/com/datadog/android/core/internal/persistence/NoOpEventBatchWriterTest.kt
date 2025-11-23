@@ -7,9 +7,9 @@
 
 package com.datadog.android.core.internal.persistence
 
-import com.datadog.android.api.storage.EventBatchWriter
-import com.datadog.android.api.storage.EventType
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.storage.EventBatchWriter
+import com.flashcat.android.api.storage.EventType
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.utils.forge.Configurator
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.Forgery

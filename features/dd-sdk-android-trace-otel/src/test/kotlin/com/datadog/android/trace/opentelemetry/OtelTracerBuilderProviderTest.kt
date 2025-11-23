@@ -8,13 +8,13 @@
 package com.datadog.android.trace.opentelemetry
 
 import android.content.Context
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureScope
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureScope
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.api.feature.SdkFeatureMock
-import com.datadog.android.api.feature.getContextFuture
+import com.flashcat.android.api.feature.getContextFuture
 import com.datadog.android.trace.InternalCoreWriterProvider
 import com.datadog.android.trace.api.DatadogTracingConstants
 import com.datadog.android.trace.api.forceSamplingDecision

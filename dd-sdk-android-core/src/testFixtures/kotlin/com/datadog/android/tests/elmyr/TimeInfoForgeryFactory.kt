@@ -7,7 +7,7 @@
 
 package com.datadog.android.tests.elmyr
 
-import com.datadog.android.api.context.TimeInfo
+import com.flashcat.android.api.context.TimeInfo
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory
 

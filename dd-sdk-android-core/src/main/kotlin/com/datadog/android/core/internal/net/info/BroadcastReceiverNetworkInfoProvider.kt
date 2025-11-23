@@ -16,7 +16,7 @@ import android.content.IntentFilter
 import android.net.ConnectivityManager
 import android.os.Build
 import android.telephony.TelephonyManager
-import com.datadog.android.api.context.NetworkInfo
+import com.flashcat.android.api.context.NetworkInfo
 import com.datadog.android.core.internal.receiver.ThreadSafeReceiver
 import com.datadog.android.core.internal.system.BuildSdkVersionProvider
 import android.net.NetworkInfo as AndroidNetworkInfo

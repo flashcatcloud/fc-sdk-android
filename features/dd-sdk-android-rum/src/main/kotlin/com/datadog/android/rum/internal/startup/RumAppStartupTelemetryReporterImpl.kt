@@ -7,7 +7,7 @@
 
 package com.datadog.android.rum.internal.startup
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 
 internal class RumAppStartupTelemetryReporterImpl(
     private val internalLogger: InternalLogger,

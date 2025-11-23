@@ -7,9 +7,9 @@
 
 package com.datadog.android.core.internal.metrics
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.context.DeviceInfo
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.context.DeviceInfo
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.core.internal.metrics.MethodCalledTelemetry.Companion.CALLER_CLASS
 import com.datadog.android.core.internal.metrics.MethodCalledTelemetry.Companion.EXECUTION_TIME

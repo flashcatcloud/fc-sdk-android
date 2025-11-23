@@ -17,8 +17,8 @@ import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.TextView
 import androidx.drawerlayout.widget.DrawerLayout
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.measureMethodCallPerf
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.measureMethodCallPerf
 import com.datadog.android.core.metrics.MethodCallSamplingRate
 import com.datadog.android.sessionreplay.MapperTypeWrapper
 import com.datadog.android.sessionreplay.forge.ForgeConfigurator

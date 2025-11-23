@@ -7,16 +7,16 @@
 
 package com.datadog.android.core.internal.persistence
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.storage.EventBatchWriter
-import com.datadog.android.api.storage.EventType
-import com.datadog.android.api.storage.FeatureStorageConfiguration
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.storage.EventBatchWriter
+import com.flashcat.android.api.storage.EventType
+import com.flashcat.android.api.storage.FeatureStorageConfiguration
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.core.internal.metrics.RemovalReason
 import com.datadog.android.core.internal.privacy.ConsentProvider
 import com.datadog.android.core.persistence.PersistenceStrategy
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.utils.forge.Configurator
 import fr.xgouchet.elmyr.annotation.BoolForgery
 import fr.xgouchet.elmyr.annotation.Forgery

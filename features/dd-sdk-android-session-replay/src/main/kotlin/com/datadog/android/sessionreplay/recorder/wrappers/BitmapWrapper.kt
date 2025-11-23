@@ -10,8 +10,8 @@ package com.datadog.android.sessionreplay.recorder.wrappers
 import android.graphics.Bitmap
 import android.graphics.Bitmap.Config
 import android.util.DisplayMetrics
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.lint.InternalApi
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.lint.InternalApi
 
 /**
  * Wraps the Bitmap class to catch potential crashes.

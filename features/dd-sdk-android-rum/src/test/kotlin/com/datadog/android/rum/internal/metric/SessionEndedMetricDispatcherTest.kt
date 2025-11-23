@@ -7,7 +7,7 @@
 
 package com.datadog.android.rum.internal.metric
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.rum.internal.domain.scope.RumSessionScope
 import com.datadog.android.rum.model.ViewEvent
 import com.datadog.android.rum.utils.forge.Configurator

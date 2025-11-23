@@ -7,8 +7,8 @@
 
 package com.datadog.android.okhttp.utils.config
 
-import com.datadog.android.Datadog
-import com.datadog.android.api.SdkCore
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.SdkCore
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.tools.unit.extensions.config.MockTestConfiguration
 import fr.xgouchet.elmyr.Forge

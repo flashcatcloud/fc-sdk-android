@@ -10,12 +10,12 @@ package com.datadog.android.sdk.integration.security
 import android.util.Log
 import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
-import com.datadog.android.Datadog
+import com.flashcat.android.Datadog
 import com.datadog.android.core.configuration.Configuration
 import com.datadog.android.log.Logger
 import com.datadog.android.log.Logs
 import com.datadog.android.log.LogsConfiguration
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.Rum
 import com.datadog.android.rum.RumActionType
@@ -23,7 +23,7 @@ import com.datadog.android.rum.RumConfiguration
 import com.datadog.android.rum.RumMonitor
 import com.datadog.android.rum.RumResourceKind
 import com.datadog.android.rum.RumResourceMethod
-import com.datadog.android.security.Encryption
+import com.flashcat.android.security.Encryption
 import com.datadog.android.sessionreplay.SessionReplay
 import com.datadog.android.sessionreplay.SessionReplayConfiguration
 import com.datadog.android.trace.DatadogTracing

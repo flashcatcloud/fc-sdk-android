@@ -19,7 +19,7 @@ import android.util.TypedValue
 import android.view.Display
 import android.view.WindowManager
 import android.view.WindowMetrics
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.internal.utils.densityNormalized
 import com.datadog.android.sessionreplay.forge.ForgeConfigurator
 import com.datadog.android.sessionreplay.internal.utils.MiscUtils.DESERIALIZE_JSON_ERROR

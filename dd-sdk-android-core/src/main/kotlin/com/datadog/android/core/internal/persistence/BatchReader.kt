@@ -8,7 +8,7 @@
 package com.datadog.android.core.internal.persistence
 
 import androidx.annotation.WorkerThread
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.storage.RawBatchEvent
 
 internal interface BatchReader {
 

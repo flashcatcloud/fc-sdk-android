@@ -9,14 +9,14 @@ package com.datadog.android.core.internal
 
 import android.app.Application
 import android.content.Context
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.feature.EventWriteScope
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureEventReceiver
-import com.datadog.android.api.feature.StorageBackedFeature
-import com.datadog.android.api.storage.FeatureStorageConfiguration
-import com.datadog.android.api.storage.datastore.DataStoreHandler
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.feature.EventWriteScope
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureEventReceiver
+import com.flashcat.android.api.feature.StorageBackedFeature
+import com.flashcat.android.api.storage.FeatureStorageConfiguration
+import com.flashcat.android.api.storage.datastore.DataStoreHandler
 import com.datadog.android.core.configuration.BatchProcessingLevel
 import com.datadog.android.core.configuration.BatchSize
 import com.datadog.android.core.configuration.UploadFrequency
@@ -45,8 +45,8 @@ import com.datadog.android.core.internal.persistence.file.batch.BatchFileOrchest
 import com.datadog.android.core.persistence.PersistenceStrategy
 import com.datadog.android.internal.profiler.BenchmarkMeter
 import com.datadog.android.internal.profiler.BenchmarkSdkUploads
-import com.datadog.android.privacy.TrackingConsent
-import com.datadog.android.privacy.TrackingConsentProviderCallback
+import com.flashcat.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsentProviderCallback
 import com.datadog.android.utils.config.ApplicationContextTestConfiguration
 import com.datadog.android.utils.config.CoreFeatureTestConfiguration
 import com.datadog.android.utils.forge.Configurator

@@ -16,7 +16,7 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.Drawable.ConstantState
 import android.util.AndroidRuntimeException
 import android.util.DisplayMetrics
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.sessionreplay.forge.ForgeConfigurator
 import com.datadog.android.sessionreplay.internal.recorder.resources.BitmapCachesManager
 import com.datadog.android.sessionreplay.internal.recorder.resources.ResourceResolver

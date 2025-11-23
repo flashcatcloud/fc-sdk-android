@@ -10,7 +10,7 @@ package com.datadog.opentelemetry.trace;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.datadog.android.api.InternalLogger;
+import com.flashcat.android.api.InternalLogger;
 import com.datadog.android.trace.api.DatadogTracingConstants;
 import com.datadog.android.trace.api.span.DatadogSpanContext;
 import com.datadog.android.trace.api.trace.DatadogTraceId;

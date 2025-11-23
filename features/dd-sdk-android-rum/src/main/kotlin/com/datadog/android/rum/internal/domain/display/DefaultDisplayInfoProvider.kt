@@ -14,7 +14,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.provider.Settings.System.SCREEN_BRIGHTNESS
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.rum.internal.domain.InfoProvider
 import kotlin.math.roundToInt
 

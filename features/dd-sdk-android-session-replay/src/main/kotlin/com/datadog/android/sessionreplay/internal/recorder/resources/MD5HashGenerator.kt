@@ -7,7 +7,7 @@
 
 package com.datadog.android.sessionreplay.internal.recorder.resources
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.internal.utils.toHexString
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException

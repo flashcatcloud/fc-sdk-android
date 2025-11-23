@@ -7,7 +7,7 @@
 
 package com.datadog.android.sdk.integration.sessionreplay
 
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.sdk.rules.SessionReplayTestRule
 import org.junit.Rule
 import org.junit.Test

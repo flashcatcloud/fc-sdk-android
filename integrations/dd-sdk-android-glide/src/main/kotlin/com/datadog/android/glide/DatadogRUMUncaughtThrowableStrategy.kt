@@ -8,7 +8,7 @@
 package com.datadog.android.glide
 
 import com.bumptech.glide.load.engine.executor.GlideExecutor
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.core.SdkReference
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.RumErrorSource

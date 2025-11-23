@@ -7,7 +7,7 @@
 
 package com.datadog.android.utils.forge
 
-import com.datadog.android.api.storage.FeatureStorageConfiguration
+import com.flashcat.android.api.storage.FeatureStorageConfiguration
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory
 

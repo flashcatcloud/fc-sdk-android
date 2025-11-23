@@ -17,7 +17,7 @@ import android.os.Build
 import android.os.LocaleList
 import android.telephony.TelephonyManager
 import android.view.Display
-import com.datadog.android.api.context.DeviceType
+import com.flashcat.android.api.context.DeviceType
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.tools.unit.annotations.TestTargetApi
 import com.datadog.tools.unit.extensions.ApiLevelExtension

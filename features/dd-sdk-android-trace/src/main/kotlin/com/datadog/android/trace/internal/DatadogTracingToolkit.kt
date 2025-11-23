@@ -6,7 +6,7 @@
  */
 package com.datadog.android.trace.internal
 
-import com.datadog.android.lint.InternalApi
+import com.flashcat.android.lint.InternalApi
 import com.datadog.android.trace.api.scope.DatadogScope
 import com.datadog.android.trace.api.span.DatadogSpan
 import com.datadog.android.trace.api.span.DatadogSpanContext

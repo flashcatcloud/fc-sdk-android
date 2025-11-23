@@ -8,7 +8,7 @@
 package com.datadog.android.sessionreplay.internal.recorder.mapper
 
 import android.view.View
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.sessionreplay.forge.ForgeConfigurator
 import com.datadog.android.sessionreplay.internal.recorder.mapper.HiddenViewMapper.Companion.HIDDEN_VIEW_PLACEHOLDER_TEXT
 import com.datadog.android.sessionreplay.model.MobileSegment

@@ -7,11 +7,11 @@
 
 package com.datadog.android.trace.internal.domain.event
 
-import com.datadog.android.api.context.AccountInfo
-import com.datadog.android.api.context.DeviceInfo
-import com.datadog.android.api.context.DeviceType
-import com.datadog.android.api.context.NetworkInfo
-import com.datadog.android.api.context.UserInfo
+import com.flashcat.android.api.context.AccountInfo
+import com.flashcat.android.api.context.DeviceInfo
+import com.flashcat.android.api.context.DeviceType
+import com.flashcat.android.api.context.NetworkInfo
+import com.flashcat.android.api.context.UserInfo
 import com.datadog.android.trace.model.SpanEvent
 
 internal abstract class BaseSpanEventMapper<T> : ContextAwareMapper<T, SpanEvent> {

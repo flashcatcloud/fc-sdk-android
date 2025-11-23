@@ -7,7 +7,7 @@
 
 package com.datadog.android.trace
 
-import com.datadog.android.lint.InternalApi
+import com.flashcat.android.lint.InternalApi
 import com.datadog.android.trace.api.span.DatadogSpanWriter
 
 /**

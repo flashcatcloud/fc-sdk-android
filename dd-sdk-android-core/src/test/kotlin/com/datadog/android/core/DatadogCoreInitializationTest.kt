@@ -10,8 +10,8 @@ package com.datadog.android.core
 import android.app.Application
 import android.content.pm.ApplicationInfo
 import android.util.Log
-import com.datadog.android.Datadog
-import com.datadog.android.api.feature.Feature
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.feature.Feature
 import com.datadog.android.core.configuration.BatchProcessingLevel
 import com.datadog.android.core.configuration.BatchSize
 import com.datadog.android.core.configuration.Configuration
@@ -21,10 +21,10 @@ import com.datadog.android.core.internal.DatadogContextProvider
 import com.datadog.android.core.internal.DatadogCore
 import com.datadog.android.core.internal.SdkFeature
 import com.datadog.android.core.thread.FlushableExecutorService
-import com.datadog.android.error.internal.CrashReportsFeature
+import com.flashcat.android.error.internal.CrashReportsFeature
 import com.datadog.android.internal.telemetry.InternalTelemetryEvent
-import com.datadog.android.privacy.TrackingConsent
-import com.datadog.android.security.Encryption
+import com.flashcat.android.privacy.TrackingConsent
+import com.flashcat.android.security.Encryption
 import com.datadog.android.utils.config.ApplicationContextTestConfiguration
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.android.utils.forge.CustomAttributes

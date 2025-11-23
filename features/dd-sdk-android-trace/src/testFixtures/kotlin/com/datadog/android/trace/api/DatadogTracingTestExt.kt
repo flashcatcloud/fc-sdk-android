@@ -7,7 +7,7 @@
 
 package com.datadog.android.trace.api
 
-import com.datadog.android.api.context.DatadogContext
+import com.flashcat.android.api.context.DatadogContext
 import com.datadog.android.trace.GlobalDatadogTracer
 import com.datadog.android.trace.api.span.DatadogSpan
 import com.datadog.android.trace.api.span.DatadogSpanContext

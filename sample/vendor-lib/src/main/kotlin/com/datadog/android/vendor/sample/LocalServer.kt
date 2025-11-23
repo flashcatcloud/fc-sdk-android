@@ -9,15 +9,15 @@ package com.datadog.android.vendor.sample
 
 import android.content.Context
 import android.util.Log
-import com.datadog.android.Datadog
-import com.datadog.android.DatadogSite
+import com.flashcat.android.Datadog
+import com.flashcat.android.DatadogSite
 import com.datadog.android.core.configuration.BatchSize
 import com.datadog.android.core.configuration.Configuration
 import com.datadog.android.core.configuration.UploadFrequency
 import com.datadog.android.log.Logger
 import com.datadog.android.log.Logs
 import com.datadog.android.log.LogsConfiguration
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.trace.Trace
 import com.datadog.android.trace.TraceConfiguration
 import com.datadog.android.trace.opentelemetry.OtelTracerProvider

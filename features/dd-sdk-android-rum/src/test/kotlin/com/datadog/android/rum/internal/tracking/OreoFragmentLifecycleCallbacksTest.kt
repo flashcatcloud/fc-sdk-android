@@ -16,8 +16,8 @@ import android.app.Fragment
 import android.app.FragmentManager
 import android.os.Build
 import android.view.Window
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.core.internal.system.BuildSdkVersionProvider
 import com.datadog.android.rum.RumMonitor
 import com.datadog.android.rum.internal.RumFeature

@@ -9,8 +9,8 @@ package com.datadog.android.tv.sample
 
 import android.app.Application
 import android.util.Log
-import com.datadog.android.Datadog
-import com.datadog.android.DatadogSite
+import com.flashcat.android.Datadog
+import com.flashcat.android.DatadogSite
 import com.datadog.android.core.configuration.BatchSize
 import com.datadog.android.core.configuration.Configuration
 import com.datadog.android.core.configuration.UploadFrequency
@@ -21,7 +21,7 @@ import com.datadog.android.log.LogsConfiguration
 import com.datadog.android.okhttp.DatadogEventListener
 import com.datadog.android.okhttp.DatadogInterceptor
 import com.datadog.android.okhttp.trace.TracingInterceptor
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.Rum
 import com.datadog.android.rum.RumConfiguration

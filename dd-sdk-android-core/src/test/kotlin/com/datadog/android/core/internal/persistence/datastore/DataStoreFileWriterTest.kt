@@ -7,8 +7,8 @@
 
 package com.datadog.android.core.internal.persistence.datastore
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.storage.datastore.DataStoreWriteCallback
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.storage.datastore.DataStoreWriteCallback
 import com.datadog.android.core.internal.persistence.datastore.DatastoreFileWriter.Companion.FAILED_TO_SERIALIZE_DATA_ERROR
 import com.datadog.android.core.internal.persistence.file.FileReaderWriter
 import com.datadog.android.core.internal.persistence.file.deleteSafe

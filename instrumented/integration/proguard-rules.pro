@@ -7,7 +7,7 @@
 -keepnames class kotlin.jvm.** { *; }
 
 # Required because we need access to Datadog.stop() by reflection
--keepnames class com.datadog.android.Datadog {
+-keepnames class com.flashcat.android.Datadog {
     *;
 }
 

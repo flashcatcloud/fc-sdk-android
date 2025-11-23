@@ -14,8 +14,8 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.os.Build
 import androidx.annotation.RequiresApi
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.context.NetworkInfo
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.context.NetworkInfo
 import com.datadog.android.core.internal.system.BuildSdkVersionProvider
 
 @RequiresApi(Build.VERSION_CODES.N)

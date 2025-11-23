@@ -7,9 +7,9 @@
 
 package com.datadog.android.okhttp
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.SdkCore
-import com.datadog.android.api.feature.Feature
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.SdkCore
+import com.flashcat.android.api.feature.Feature
 import com.datadog.android.internal.network.GraphQLHeaders
 import com.datadog.android.okhttp.internal.rum.NoOpRumResourceAttributesProvider
 import com.datadog.android.okhttp.trace.DeterministicTraceSampler
@@ -23,7 +23,7 @@ import com.datadog.android.rum.RumResourceAttributesProvider
 import com.datadog.android.rum.RumResourceKind
 import com.datadog.android.rum.RumResourceMethod
 import com.datadog.android.rum.resource.ResourceId
-import com.datadog.android.trace.TracingHeaderType
+import com.flashcat.android.trace.TracingHeaderType
 import com.datadog.android.trace.api.tracer.DatadogTracer
 import com.datadog.tools.unit.extensions.TestConfigurationExtension
 import com.datadog.tools.unit.forge.BaseConfigurator

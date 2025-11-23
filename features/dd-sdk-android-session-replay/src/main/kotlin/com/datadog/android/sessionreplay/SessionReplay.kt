@@ -8,11 +8,11 @@
 package com.datadog.android.sessionreplay
 
 import androidx.annotation.VisibleForTesting
-import com.datadog.android.Datadog
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.SdkCore
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.SdkCore
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.sessionreplay.internal.SessionReplayFeature
 import com.datadog.android.sessionreplay.internal.TouchPrivacyManager
 import java.lang.ref.WeakReference

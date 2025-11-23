@@ -7,7 +7,7 @@
 
 package com.datadog.android.webview.internal.replay
 
-import com.datadog.android.api.context.DatadogContext
+import com.flashcat.android.api.context.DatadogContext
 import com.datadog.android.webview.internal.rum.TimestampOffsetProvider
 import com.datadog.android.webview.internal.rum.domain.RumContext
 import com.google.gson.JsonArray

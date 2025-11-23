@@ -16,9 +16,9 @@ import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.os.Build
 import android.os.Process
-import com.datadog.android.Datadog
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.core.configuration.Configuration
 import com.datadog.android.core.internal.net.info.BroadcastReceiverNetworkInfoProvider
 import com.datadog.android.core.internal.net.info.CallbackNetworkInfoProvider
@@ -38,10 +38,10 @@ import com.datadog.android.core.internal.user.NoOpMutableUserInfoProvider
 import com.datadog.android.core.persistence.PersistenceStrategy
 import com.datadog.android.core.thread.FlushableExecutorService
 import com.datadog.android.internal.time.DefaultTimeProvider
-import com.datadog.android.ndk.internal.DatadogNdkCrashHandler
+import com.flashcat.android.ndk.internal.DatadogNdkCrashHandler
 import com.datadog.android.ndk.internal.NoOpNdkCrashHandler
-import com.datadog.android.privacy.TrackingConsent
-import com.datadog.android.security.Encryption
+import com.flashcat.android.privacy.TrackingConsent
+import com.flashcat.android.security.Encryption
 import com.datadog.android.utils.config.ApplicationContextTestConfiguration
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.android.utils.verifyLog

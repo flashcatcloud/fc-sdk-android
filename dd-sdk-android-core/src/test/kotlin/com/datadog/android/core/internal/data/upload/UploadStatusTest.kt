@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.internal.data.upload
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.android.utils.verifyLog
 import fr.xgouchet.elmyr.annotation.Forgery

@@ -9,8 +9,8 @@ package com.datadog.android.rum
 
 import android.app.Activity
 import android.content.Intent
-import com.datadog.android.event.EventMapper
-import com.datadog.android.lint.InternalApi
+import com.flashcat.android.event.EventMapper
+import com.flashcat.android.lint.InternalApi
 import com.datadog.android.rum.RumConfiguration.Builder
 import com.datadog.android.rum.internal.monitor.AdvancedRumMonitor
 import com.datadog.android.rum.tracking.ActionTrackingStrategy

@@ -10,8 +10,8 @@ package com.datadog.android.sdk.integration.trace
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import com.datadog.android.Datadog
-import com.datadog.android.api.context.DatadogContext
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.context.DatadogContext
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.log.Logs
 import com.datadog.android.sdk.integration.R

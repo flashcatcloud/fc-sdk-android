@@ -4,7 +4,7 @@ import static com.datadog.trace.util.AgentThreadFactory.AgentThread.TRACE_MONITO
 import static com.datadog.trace.util.AgentThreadFactory.THREAD_JOIN_TIMOUT_MS;
 import static com.datadog.trace.util.AgentThreadFactory.newAgentThread;
 
-import com.datadog.android.api.InternalLogger;
+import com.flashcat.android.api.InternalLogger;
 import com.datadog.trace.api.Config;
 import com.datadog.trace.api.time.TimeSource;
 import com.datadog.trace.core.monitor.HealthMetrics;

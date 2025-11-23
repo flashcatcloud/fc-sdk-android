@@ -9,7 +9,7 @@ package com.datadog.android.sessionreplay.internal.recorder
 
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.LayerDrawable
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 
 internal fun LayerDrawable.safeGetDrawable(index: Int, logger: InternalLogger = InternalLogger.UNBOUND): Drawable? {
     return if (index < 0 || index >= this.numberOfLayers) {

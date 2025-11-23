@@ -7,12 +7,12 @@
 package com.datadog.android.okhttp
 
 import android.content.Context
-import com.datadog.android.Datadog
-import com.datadog.android.api.SdkCore
-import com.datadog.android.api.context.AccountInfo
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.context.UserInfo
-import com.datadog.android.api.feature.Feature
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.SdkCore
+import com.flashcat.android.api.context.AccountInfo
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.context.UserInfo
+import com.flashcat.android.api.feature.Feature
 import com.datadog.android.api.feature.SdkFeatureMock
 import com.datadog.android.core.sampling.DeterministicSampler.Companion.MAX_ID
 import com.datadog.android.core.sampling.DeterministicSampler.Companion.SAMPLER_HASHER
@@ -24,7 +24,7 @@ import com.datadog.android.trace.DatadogTracing
 import com.datadog.android.trace.GlobalDatadogTracer
 import com.datadog.android.trace.Trace
 import com.datadog.android.trace.TraceConfiguration
-import com.datadog.android.trace.TracingHeaderType
+import com.flashcat.android.trace.TracingHeaderType
 import com.datadog.android.trace.api.TestIdGenerationStrategy
 import com.datadog.android.trace.api.replace
 import com.datadog.android.trace.api.setTestIdGenerationStrategy

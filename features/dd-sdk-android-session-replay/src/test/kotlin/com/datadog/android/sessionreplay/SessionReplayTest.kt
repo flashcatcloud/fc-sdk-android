@@ -7,10 +7,10 @@
 
 package com.datadog.android.sessionreplay
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureScope
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureScope
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.sessionreplay.SessionReplay.IS_ALREADY_REGISTERED_WARNING
 import com.datadog.android.sessionreplay.forge.ForgeConfigurator
 import com.datadog.android.sessionreplay.internal.SessionReplayFeature

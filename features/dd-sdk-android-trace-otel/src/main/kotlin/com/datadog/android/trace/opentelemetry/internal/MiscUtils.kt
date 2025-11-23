@@ -8,7 +8,7 @@
 package com.datadog.android.trace.opentelemetry.internal
 
 import android.os.Build
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 
 internal const val NEEDS_DESUGARING_ERROR_MESSAGE =
     "Trying to use OpenTelemetry SDK support for Android 23 and below. " +

@@ -12,7 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
-import com.datadog.android.api.InternalLogger;
+import com.flashcat.android.api.InternalLogger;
 import com.datadog.trace.api.Config;
 import com.datadog.trace.api.DDSpanId;
 import com.datadog.trace.api.DDTraceId;

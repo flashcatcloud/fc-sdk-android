@@ -12,7 +12,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import com.datadog.android.Datadog
+import com.flashcat.android.Datadog
 import com.datadog.android.rum.Rum
 import com.datadog.android.rum.tracking.ActivityViewTrackingStrategy
 import com.datadog.android.sdk.integration.R

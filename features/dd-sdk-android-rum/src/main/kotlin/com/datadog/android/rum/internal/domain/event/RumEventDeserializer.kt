@@ -7,7 +7,7 @@
 
 package com.datadog.android.rum.internal.domain.event
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.core.internal.persistence.Deserializer
 import com.datadog.android.rum.model.ActionEvent
 import com.datadog.android.rum.model.ErrorEvent

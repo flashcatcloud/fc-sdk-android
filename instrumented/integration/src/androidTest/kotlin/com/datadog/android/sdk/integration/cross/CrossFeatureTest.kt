@@ -9,17 +9,17 @@ package com.datadog.android.sdk.integration.cross
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.datadog.android.Datadog
-import com.datadog.android._InternalProxy
+import com.flashcat.android.Datadog
+import com.flashcat.android._InternalProxy
 import com.datadog.android.core.configuration.BatchProcessingLevel
 import com.datadog.android.core.configuration.Configuration
 import com.datadog.android.core.configuration.UploadFrequency
-import com.datadog.android.log.LogAttributes
+import com.flashcat.android.log.LogAttributes
 import com.datadog.android.log.Logger
 import com.datadog.android.log.Logs
 import com.datadog.android.log.LogsConfiguration
 import com.datadog.android.log.model.LogEvent
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.Rum
 import com.datadog.android.rum.RumActionType

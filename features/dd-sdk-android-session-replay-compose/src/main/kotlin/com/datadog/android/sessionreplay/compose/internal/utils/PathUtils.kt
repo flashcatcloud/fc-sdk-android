@@ -9,7 +9,7 @@ package com.datadog.android.sessionreplay.compose.internal.utils
 
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asAndroidPath
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 
 internal class PathUtils(
     private val logger: InternalLogger

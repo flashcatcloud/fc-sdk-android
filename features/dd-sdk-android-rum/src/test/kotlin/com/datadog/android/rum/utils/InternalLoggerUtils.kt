@@ -9,7 +9,7 @@
 
 package com.datadog.android.rum.utils
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.internal.telemetry.InternalTelemetryEvent
 import com.datadog.android.rum.utils.assertj.InternalApiUsageEventAssert
 import org.assertj.core.api.Assertions.assertThat

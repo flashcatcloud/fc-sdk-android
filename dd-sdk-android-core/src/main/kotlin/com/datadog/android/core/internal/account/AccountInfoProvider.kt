@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.internal.account
 
-import com.datadog.android.api.context.AccountInfo
+import com.flashcat.android.api.context.AccountInfo
 import com.datadog.tools.annotation.NoOpImplementation
 
 @NoOpImplementation

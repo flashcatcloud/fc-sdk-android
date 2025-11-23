@@ -7,8 +7,8 @@
 
 package com.datadog.android.rum.internal
 
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.feature.Feature
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.feature.Feature
 import com.datadog.android.rum.utils.forge.Configurator
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.LongForgery

@@ -7,14 +7,14 @@
 
 package com.datadog.android.flags.internal.storage
 
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.feature.EventWriteScope
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureScope
-import com.datadog.android.api.feature.FeatureSdkCore
-import com.datadog.android.api.storage.EventBatchWriter
-import com.datadog.android.api.storage.EventType
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.feature.EventWriteScope
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureScope
+import com.flashcat.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.storage.EventBatchWriter
+import com.flashcat.android.api.storage.EventType
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.flags.model.ExposureEvent
 import com.datadog.android.flags.utils.forge.ForgeConfigurator
 import fr.xgouchet.elmyr.Forge

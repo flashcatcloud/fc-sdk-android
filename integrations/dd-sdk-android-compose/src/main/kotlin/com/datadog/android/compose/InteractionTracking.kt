@@ -17,8 +17,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
-import com.datadog.android.Datadog
-import com.datadog.android.api.SdkCore
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.SdkCore
 import com.datadog.android.compose.internal.TapActionTracker
 import com.datadog.android.compose.internal.trackScroll
 import com.datadog.android.compose.internal.trackSwipe

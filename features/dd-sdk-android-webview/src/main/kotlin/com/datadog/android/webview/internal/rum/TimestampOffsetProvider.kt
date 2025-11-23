@@ -7,8 +7,8 @@
 
 package com.datadog.android.webview.internal.rum
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.context.DatadogContext
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.context.DatadogContext
 
 internal class TimestampOffsetProvider(private val internalLogger: InternalLogger) {
 

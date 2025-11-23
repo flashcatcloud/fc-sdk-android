@@ -8,10 +8,10 @@
 package com.datadog.android.okhttp.trace
 
 import androidx.annotation.FloatRange
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.SdkCore
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.SdkCore
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.core.SdkReference
 import com.datadog.android.core.configuration.Configuration
@@ -25,7 +25,7 @@ import com.datadog.android.okhttp.TraceContextInjection
 import com.datadog.android.okhttp.internal.trace.toInternalTracingHeaderType
 import com.datadog.android.trace.DatadogTracing
 import com.datadog.android.trace.GlobalDatadogTracer
-import com.datadog.android.trace.TracingHeaderType
+import com.flashcat.android.trace.TracingHeaderType
 import com.datadog.android.trace.api.DatadogTracingConstants.PrioritySampling
 import com.datadog.android.trace.api.DatadogTracingConstants.Tags
 import com.datadog.android.trace.api.span.DatadogSpan

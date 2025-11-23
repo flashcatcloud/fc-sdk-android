@@ -9,8 +9,8 @@ package com.datadog.android.coil
 
 import android.net.Uri
 import coil.request.ImageRequest
-import com.datadog.android.Datadog
-import com.datadog.android.api.SdkCore
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.SdkCore
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.RumErrorSource
 import okhttp3.HttpUrl

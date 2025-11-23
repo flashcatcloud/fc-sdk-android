@@ -11,7 +11,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Path
 import android.graphics.PathMeasure
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.sessionreplay.internal.recorder.resources.BitmapCachesManager
 import com.datadog.android.sessionreplay.internal.recorder.resources.HashGenerator
 import com.datadog.android.sessionreplay.internal.utils.PathUtils.Companion.DEFAULT_MAX_PATH_LENGTH

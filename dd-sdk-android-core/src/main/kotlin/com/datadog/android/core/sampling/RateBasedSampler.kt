@@ -8,7 +8,7 @@
 package com.datadog.android.core.sampling
 
 import androidx.annotation.FloatRange
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import java.security.SecureRandom
 
 /**

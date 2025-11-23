@@ -8,7 +8,7 @@
 package com.datadog.android.core.internal.persistence.tlvformat
 
 import androidx.annotation.WorkerThread
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.core.internal.persistence.file.FileReaderWriter
 import com.datadog.android.core.internal.utils.copyOfRangeSafe
 import com.datadog.android.core.internal.utils.toInt

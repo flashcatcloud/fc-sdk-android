@@ -8,7 +8,7 @@
 package com.datadog.android.rum.tracking
 
 import android.view.View
-import com.datadog.android.lint.InternalApi
+import com.flashcat.android.lint.InternalApi
 import java.lang.ref.WeakReference
 
 /**

@@ -24,7 +24,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
-import com.datadog.android.lint.InternalApi;
+import com.flashcat.android.lint.InternalApi;
 
 import java.util.List;
 

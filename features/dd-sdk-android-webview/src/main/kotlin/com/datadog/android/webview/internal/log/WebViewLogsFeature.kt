@@ -8,13 +8,13 @@
 package com.datadog.android.webview.internal.log
 
 import android.content.Context
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.FeatureSdkCore
-import com.datadog.android.api.feature.StorageBackedFeature
-import com.datadog.android.api.net.RequestFactory
-import com.datadog.android.api.storage.DataWriter
-import com.datadog.android.api.storage.FeatureStorageConfiguration
-import com.datadog.android.api.storage.NoOpDataWriter
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.feature.StorageBackedFeature
+import com.flashcat.android.api.net.RequestFactory
+import com.flashcat.android.api.storage.DataWriter
+import com.flashcat.android.api.storage.FeatureStorageConfiguration
+import com.flashcat.android.api.storage.NoOpDataWriter
 import com.datadog.android.webview.internal.storage.WebViewDataWriter
 import com.datadog.android.webview.internal.storage.WebViewEventSerializer
 import com.google.gson.JsonObject

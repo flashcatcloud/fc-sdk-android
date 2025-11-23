@@ -22,9 +22,9 @@ import androidx.navigation.R
 import androidx.navigation.fragment.DialogFragmentNavigator
 import androidx.navigation.fragment.FragmentNavigator
 import androidx.navigation.fragment.NavHostFragment
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureScope
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureScope
 import com.datadog.android.internal.attributes.ViewScopeInstrumentationType
 import com.datadog.android.rum.internal.RumFeature
 import com.datadog.android.rum.utils.config.GlobalRumMonitorTestConfiguration

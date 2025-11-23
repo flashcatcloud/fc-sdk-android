@@ -7,10 +7,10 @@
 
 package com.datadog.android.compose.internal
 
-import com.datadog.android.Datadog
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.SdkCore
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.SdkCore
+import com.flashcat.android.api.feature.FeatureSdkCore
 
 internal fun sendTelemetry(
     autoInstrumented: Boolean = false,

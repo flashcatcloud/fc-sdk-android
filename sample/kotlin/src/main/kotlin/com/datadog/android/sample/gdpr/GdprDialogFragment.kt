@@ -14,8 +14,8 @@ import android.view.ViewGroup
 import android.widget.RadioGroup
 import androidx.annotation.IdRes
 import androidx.fragment.app.DialogFragment
-import com.datadog.android.Datadog
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.Datadog
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.sample.Preferences
 import com.datadog.android.sample.R
 import com.datadog.android.sample.TrackingConsentChangeListener

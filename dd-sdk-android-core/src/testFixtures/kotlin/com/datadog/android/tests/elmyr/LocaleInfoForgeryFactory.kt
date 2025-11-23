@@ -7,7 +7,7 @@
 
 package com.datadog.android.tests.elmyr
 
-import com.datadog.android.api.context.LocaleInfo
+import com.flashcat.android.api.context.LocaleInfo
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory
 

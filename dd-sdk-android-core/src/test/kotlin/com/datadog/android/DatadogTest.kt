@@ -10,8 +10,8 @@ package com.datadog.android
 import android.app.Application
 import android.content.Context
 import android.net.ConnectivityManager
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.SdkCore
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.SdkCore
 import com.datadog.android.core.configuration.Configuration
 import com.datadog.android.core.internal.CoreFeature
 import com.datadog.android.core.internal.DatadogCore
@@ -20,7 +20,7 @@ import com.datadog.android.core.internal.NoOpInternalSdkCore
 import com.datadog.android.core.internal.SdkCoreRegistry
 import com.datadog.android.core.internal.Sha256HashGenerator
 import com.datadog.android.internal.utils.loggableStackTrace
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.utils.config.ApplicationContextTestConfiguration
 import com.datadog.android.utils.config.InternalLoggerTestConfiguration
 import com.datadog.android.utils.forge.Configurator
@@ -30,6 +30,7 @@ import com.datadog.tools.unit.annotations.TestConfigurationsProvider
 import com.datadog.tools.unit.extensions.ProhibitLeavingStaticMocksExtension
 import com.datadog.tools.unit.extensions.TestConfigurationExtension
 import com.datadog.tools.unit.extensions.config.TestConfiguration
+import com.flashcat.android.Datadog
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.AdvancedForgery
 import fr.xgouchet.elmyr.annotation.Forgery

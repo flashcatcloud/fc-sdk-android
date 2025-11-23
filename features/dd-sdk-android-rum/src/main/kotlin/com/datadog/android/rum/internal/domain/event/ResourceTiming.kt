@@ -7,7 +7,7 @@
 
 package com.datadog.android.rum.internal.domain.event
 
-import com.datadog.android.lint.InternalApi
+import com.flashcat.android.lint.InternalApi
 
 /**
  * Timings for the resource connection.

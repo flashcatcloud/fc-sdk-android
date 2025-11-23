@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.internal
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.core.internal.utils.unboundInternalLogger
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException

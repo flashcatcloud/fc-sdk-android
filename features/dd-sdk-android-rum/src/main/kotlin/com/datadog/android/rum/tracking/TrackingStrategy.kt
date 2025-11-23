@@ -8,7 +8,7 @@
 package com.datadog.android.rum.tracking
 
 import android.content.Context
-import com.datadog.android.api.SdkCore
+import com.flashcat.android.api.SdkCore
 import com.datadog.tools.annotation.NoOpImplementation
 
 /**

@@ -7,9 +7,9 @@
 
 package com.datadog.android.okhttp
 
-import com.datadog.android.Datadog
-import com.datadog.android.api.SdkCore
-import com.datadog.android.api.feature.Feature
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.SdkCore
+import com.flashcat.android.api.feature.Feature
 import com.datadog.android.core.stub.StubSDKCore
 import com.datadog.android.internal.utils.toHexString
 import com.datadog.android.okhttp.otel.addParentSpan
@@ -21,7 +21,7 @@ import com.datadog.android.trace.DatadogTracing
 import com.datadog.android.trace.GlobalDatadogTracer
 import com.datadog.android.trace.Trace
 import com.datadog.android.trace.TraceConfiguration
-import com.datadog.android.trace.TracingHeaderType
+import com.flashcat.android.trace.TracingHeaderType
 import com.datadog.android.trace.api.DatadogTracingConstants
 import com.datadog.android.trace.api.span.DatadogSpan
 import com.datadog.android.trace.internal.DatadogTracingToolkit

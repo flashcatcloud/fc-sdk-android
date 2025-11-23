@@ -7,8 +7,8 @@
 
 package com.datadog.android.trace
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.trace.event.NoOpSpanEventMapper
 import com.datadog.android.trace.event.SpanEventMapper
 import com.datadog.android.utils.forge.Configurator

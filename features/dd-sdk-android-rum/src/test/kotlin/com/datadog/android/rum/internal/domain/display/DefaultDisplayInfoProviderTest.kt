@@ -11,7 +11,7 @@ import android.content.ContentResolver
 import android.content.Context
 import android.os.Handler
 import android.provider.Settings.System.SCREEN_BRIGHTNESS
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test

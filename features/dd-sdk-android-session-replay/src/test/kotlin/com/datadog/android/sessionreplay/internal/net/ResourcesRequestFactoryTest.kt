@@ -7,17 +7,17 @@
 
 package com.datadog.android.sessionreplay.internal.net
 
-import com.datadog.android.DatadogSite
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.net.Request
-import com.datadog.android.api.net.RequestExecutionContext
-import com.datadog.android.api.net.RequestFactory
-import com.datadog.android.api.net.RequestFactory.Companion.HEADER_API_KEY
-import com.datadog.android.api.net.RequestFactory.Companion.HEADER_EVP_ORIGIN
-import com.datadog.android.api.net.RequestFactory.Companion.HEADER_EVP_ORIGIN_VERSION
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.DatadogSite
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.net.Request
+import com.flashcat.android.api.net.RequestExecutionContext
+import com.flashcat.android.api.net.RequestFactory
+import com.flashcat.android.api.net.RequestFactory.Companion.HEADER_API_KEY
+import com.flashcat.android.api.net.RequestFactory.Companion.HEADER_EVP_ORIGIN
+import com.flashcat.android.api.net.RequestFactory.Companion.HEADER_EVP_ORIGIN_VERSION
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.sessionreplay.forge.ForgeConfigurator
 import com.datadog.android.sessionreplay.internal.net.ResourcesRequestFactory.Companion.APPLICATION_ID
 import com.datadog.android.sessionreplay.internal.net.ResourcesRequestFactory.Companion.UPLOAD_DESCRIPTION

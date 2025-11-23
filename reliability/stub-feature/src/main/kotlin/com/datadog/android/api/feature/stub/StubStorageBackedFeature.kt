@@ -8,9 +8,9 @@
 package com.datadog.android.api.feature.stub
 
 import android.content.Context
-import com.datadog.android.api.feature.StorageBackedFeature
-import com.datadog.android.api.net.RequestFactory
-import com.datadog.android.api.storage.FeatureStorageConfiguration
+import com.flashcat.android.api.feature.StorageBackedFeature
+import com.flashcat.android.api.net.RequestFactory
+import com.flashcat.android.api.storage.FeatureStorageConfiguration
 import fr.xgouchet.elmyr.Forge
 
 /**

@@ -9,8 +9,8 @@ package com.datadog.android.sessionreplay.recorder.wrappers
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.lint.InternalApi
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.lint.InternalApi
 
 /**
  * Wraps the Canvas class to catch potential crashes.

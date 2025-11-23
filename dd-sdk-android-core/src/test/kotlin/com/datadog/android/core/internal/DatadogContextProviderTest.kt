@@ -8,11 +8,11 @@
 package com.datadog.android.core.internal
 
 import android.app.Application
-import com.datadog.android.api.context.AccountInfo
-import com.datadog.android.api.context.NetworkInfo
-import com.datadog.android.api.context.UserInfo
+import com.flashcat.android.api.context.AccountInfo
+import com.flashcat.android.api.context.NetworkInfo
+import com.flashcat.android.api.context.UserInfo
 import com.datadog.android.core.internal.system.AndroidInfoProvider
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.utils.config.ApplicationContextTestConfiguration
 import com.datadog.android.utils.config.CoreFeatureTestConfiguration
 import com.datadog.android.utils.forge.Configurator

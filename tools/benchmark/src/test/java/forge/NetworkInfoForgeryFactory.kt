@@ -7,7 +7,7 @@
 
 package forge
 
-import com.datadog.android.api.context.NetworkInfo
+import com.flashcat.android.api.context.NetworkInfo
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory
 

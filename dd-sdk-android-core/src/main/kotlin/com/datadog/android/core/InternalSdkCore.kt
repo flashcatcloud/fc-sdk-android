@@ -9,13 +9,13 @@ package com.datadog.android.core
 
 import androidx.annotation.AnyThread
 import androidx.annotation.WorkerThread
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.context.NetworkInfo
-import com.datadog.android.api.feature.FeatureScope
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.context.NetworkInfo
+import com.flashcat.android.api.feature.FeatureScope
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.core.internal.net.FirstPartyHostHeaderTypeResolver
-import com.datadog.android.lint.InternalApi
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.lint.InternalApi
+import com.flashcat.android.privacy.TrackingConsent
 import com.google.gson.JsonObject
 import java.io.File
 import java.util.concurrent.ExecutorService

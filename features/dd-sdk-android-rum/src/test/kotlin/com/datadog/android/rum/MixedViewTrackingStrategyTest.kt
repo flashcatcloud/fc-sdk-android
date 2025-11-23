@@ -8,7 +8,7 @@
 package com.datadog.android.rum
 
 import android.os.Bundle
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.rum.tracking.ActivityViewTrackingStrategy
 import com.datadog.android.rum.tracking.FragmentViewTrackingStrategy
 import com.datadog.android.rum.tracking.MixedViewTrackingStrategy

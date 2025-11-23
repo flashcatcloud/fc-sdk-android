@@ -8,8 +8,8 @@
 package com.datadog.android.core.internal.persistence.datastore
 
 import androidx.annotation.WorkerThread
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.storage.datastore.DataStoreReadCallback
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.storage.datastore.DataStoreReadCallback
 import com.datadog.android.core.internal.persistence.Deserializer
 import com.datadog.android.core.internal.persistence.file.existsSafe
 import com.datadog.android.core.internal.persistence.tlvformat.TLVBlock

@@ -7,11 +7,11 @@
 
 package com.datadog.android.core.internal
 
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.context.DeviceInfo
-import com.datadog.android.api.context.LocaleInfo
-import com.datadog.android.api.context.ProcessInfo
-import com.datadog.android.api.context.TimeInfo
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.context.DeviceInfo
+import com.flashcat.android.api.context.LocaleInfo
+import com.flashcat.android.api.context.ProcessInfo
+import com.flashcat.android.api.context.TimeInfo
 import java.util.concurrent.TimeUnit
 
 internal class DatadogContextProvider(

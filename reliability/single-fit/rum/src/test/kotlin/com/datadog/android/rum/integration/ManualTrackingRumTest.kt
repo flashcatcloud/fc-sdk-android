@@ -7,7 +7,7 @@
 
 package com.datadog.android.rum.integration
 
-import com.datadog.android.api.feature.Feature
+import com.flashcat.android.api.feature.Feature
 import com.datadog.android.core.stub.StubSDKCore
 import com.datadog.android.rum.ExperimentalRumApi
 import com.datadog.android.rum.GlobalRumMonitor

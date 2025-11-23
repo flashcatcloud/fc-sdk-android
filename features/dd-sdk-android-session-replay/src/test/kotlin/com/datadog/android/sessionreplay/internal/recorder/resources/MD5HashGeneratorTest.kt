@@ -7,7 +7,7 @@
 
 package com.datadog.android.sessionreplay.internal.recorder.resources
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.junit5.ForgeExtension
 import org.assertj.core.api.Assertions

@@ -7,7 +7,7 @@
 
 package com.datadog.android.trace.integration.api
 
-import com.datadog.android.api.feature.Feature
+import com.flashcat.android.api.feature.Feature
 import com.datadog.android.core.stub.StubSDKCore
 import com.datadog.android.tests.ktx.getInt
 import com.datadog.android.tests.ktx.getLong

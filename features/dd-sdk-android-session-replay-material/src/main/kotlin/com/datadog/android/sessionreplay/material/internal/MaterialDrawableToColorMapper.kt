@@ -8,7 +8,7 @@
 package com.datadog.android.sessionreplay.material.internal
 
 import android.graphics.drawable.Drawable
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.sessionreplay.utils.DrawableToColorMapper
 import com.google.android.material.shape.MaterialShapeDrawable
 

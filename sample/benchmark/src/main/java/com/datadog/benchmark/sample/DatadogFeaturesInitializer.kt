@@ -8,7 +8,7 @@
 package com.datadog.benchmark.sample
 
 import android.content.Intent
-import com.datadog.android.api.SdkCore
+import com.flashcat.android.api.SdkCore
 import com.datadog.android.compose.enableComposeActionTracking
 import com.datadog.android.log.Logs
 import com.datadog.android.log.LogsConfiguration

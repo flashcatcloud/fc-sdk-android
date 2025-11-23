@@ -7,11 +7,11 @@
 
 package com.datadog.android.core.configuration
 
-import com.datadog.android.Datadog
-import com.datadog.android.DatadogSite
+import com.flashcat.android.Datadog
+import com.flashcat.android.DatadogSite
 import com.datadog.android.core.persistence.PersistenceStrategy
-import com.datadog.android.security.Encryption
-import com.datadog.android.trace.TracingHeaderType
+import com.flashcat.android.security.Encryption
+import com.flashcat.android.trace.TracingHeaderType
 import okhttp3.Authenticator
 import java.net.Proxy
 

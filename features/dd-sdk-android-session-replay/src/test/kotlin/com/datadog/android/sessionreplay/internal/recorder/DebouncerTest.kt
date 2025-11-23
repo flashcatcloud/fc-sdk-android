@@ -8,9 +8,9 @@
 package com.datadog.android.sessionreplay.internal.recorder
 
 import android.os.Handler
-import com.datadog.android.api.feature.Feature.Companion.RUM_FEATURE_NAME
-import com.datadog.android.api.feature.FeatureScope
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.feature.Feature.Companion.RUM_FEATURE_NAME
+import com.flashcat.android.api.feature.FeatureScope
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.sessionreplay.forge.ForgeConfigurator
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.BoolForgery

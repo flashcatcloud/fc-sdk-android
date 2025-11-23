@@ -9,7 +9,7 @@ package com.datadog.android.sdk.rules
 
 import android.app.Activity
 import android.app.ActivityManager
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.rum.DdRumContentProvider
 
 internal class KioskTrackingActivityTestRule<T : Activity>(

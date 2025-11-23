@@ -9,16 +9,16 @@ package com.datadog.android.core.integration.tests
 
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.datadog.android.Datadog
-import com.datadog.android.api.SdkCore
-import com.datadog.android.api.context.AccountInfo
-import com.datadog.android.api.context.UserInfo
-import com.datadog.android.api.feature.FeatureSdkCore
-import com.datadog.android.api.feature.StorageBackedFeature
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.SdkCore
+import com.flashcat.android.api.context.AccountInfo
+import com.flashcat.android.api.context.UserInfo
+import com.flashcat.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.feature.StorageBackedFeature
 import com.datadog.android.api.feature.stub.StubStorageBackedFeature
 import com.datadog.android.core.configuration.Configuration
 import com.datadog.android.core.integration.tests.forge.factories.ConfigurationCoreForgeryFactory
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.tools.unit.forge.exhaustiveAttributes
 import com.datadog.tools.unit.forge.useToolsFactories
 import fr.xgouchet.elmyr.annotation.StringForgery

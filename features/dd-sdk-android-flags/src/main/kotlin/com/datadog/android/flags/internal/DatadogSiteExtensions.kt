@@ -7,7 +7,7 @@
 
 package com.datadog.android.flags.internal
 
-import com.datadog.android.DatadogSite
+import com.flashcat.android.DatadogSite
 
 /**
  * Gets the complete flags endpoint URL.

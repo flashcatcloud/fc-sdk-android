@@ -8,7 +8,7 @@
 package com.datadog.android.webview.internal
 
 import androidx.annotation.WorkerThread
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.webview.internal.log.WebViewLogEventConsumer
 import com.datadog.android.webview.internal.replay.WebViewReplayEventConsumer
 import com.datadog.android.webview.internal.rum.WebViewRumEventConsumer

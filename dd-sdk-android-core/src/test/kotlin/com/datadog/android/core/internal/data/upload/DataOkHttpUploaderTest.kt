@@ -7,11 +7,11 @@
 
 package com.datadog.android.core.internal.data.upload
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.net.RequestExecutionContext
-import com.datadog.android.api.net.RequestFactory
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.net.RequestExecutionContext
+import com.flashcat.android.api.net.RequestFactory
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.core.internal.persistence.BatchId
 import com.datadog.android.core.internal.system.AndroidInfoProvider
 import com.datadog.android.internal.profiler.ExecutionTimer
@@ -59,7 +59,7 @@ import org.mockito.quality.Strictness
 import java.io.IOException
 import java.net.UnknownHostException
 import java.util.Locale
-import com.datadog.android.api.net.Request as DatadogRequest
+import com.flashcat.android.api.net.Request as DatadogRequest
 
 @Extensions(
     ExtendWith(MockitoExtension::class),

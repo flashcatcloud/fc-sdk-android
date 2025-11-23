@@ -9,7 +9,7 @@ package com.datadog.android.sessionreplay.internal.recorder.resources
 
 import android.content.Context
 import android.graphics.Bitmap
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.sessionreplay.forge.ForgeConfigurator
 import com.datadog.android.utils.verifyLog
 import fr.xgouchet.elmyr.annotation.IntForgery

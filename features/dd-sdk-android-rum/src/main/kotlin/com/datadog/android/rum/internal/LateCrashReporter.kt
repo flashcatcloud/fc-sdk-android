@@ -11,7 +11,7 @@ import android.app.ApplicationExitInfo
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.WorkerThread
-import com.datadog.android.api.storage.DataWriter
+import com.flashcat.android.api.storage.DataWriter
 import com.google.gson.JsonObject
 
 internal interface LateCrashReporter {

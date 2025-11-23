@@ -8,10 +8,10 @@
 package com.datadog.android.sessionreplay.internal
 
 import android.app.Application
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureContextUpdateReceiver
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureContextUpdateReceiver
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.core.sampling.Sampler
 import com.datadog.android.sessionreplay.NoOpSessionReplayInternalCallback
 import com.datadog.android.sessionreplay.SessionReplayConfiguration

@@ -8,7 +8,7 @@
 package com.datadog.android.rx
 
 import android.annotation.SuppressLint
-import com.datadog.android.api.SdkCore
+import com.flashcat.android.api.SdkCore
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.RumErrorSource
 import com.datadog.android.rum.RumMonitor

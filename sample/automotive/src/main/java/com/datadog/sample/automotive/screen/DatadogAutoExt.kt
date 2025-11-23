@@ -10,8 +10,8 @@ package com.datadog.sample.automotive.screen
 import androidx.car.app.Screen
 import androidx.car.app.model.Action
 import androidx.car.app.model.OnClickListener
-import com.datadog.android.Datadog
-import com.datadog.android.api.SdkCore
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.SdkCore
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.RumActionType
 

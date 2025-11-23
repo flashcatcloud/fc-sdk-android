@@ -11,8 +11,8 @@ import android.graphics.Rect
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.UiThread
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.measureMethodCallPerf
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.measureMethodCallPerf
 import com.datadog.android.core.metrics.MethodCallSamplingRate
 import com.datadog.android.sessionreplay.MapperTypeWrapper
 import com.datadog.android.sessionreplay.R

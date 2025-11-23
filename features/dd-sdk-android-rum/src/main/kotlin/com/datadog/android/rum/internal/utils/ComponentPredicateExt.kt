@@ -7,7 +7,7 @@
 
 package com.datadog.android.rum.internal.utils
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.rum.tracking.ComponentPredicate
 
 /**

@@ -7,11 +7,11 @@
 
 package com.datadog.android.flags
 
-import com.datadog.android.DatadogSite
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.feature.Feature.Companion.FLAGS_FEATURE_NAME
-import com.datadog.android.api.feature.Feature.Companion.RUM_FEATURE_NAME
+import com.flashcat.android.DatadogSite
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.feature.Feature.Companion.FLAGS_FEATURE_NAME
+import com.flashcat.android.api.feature.Feature.Companion.RUM_FEATURE_NAME
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.flags.FlagsClient.Companion.FLAGS_CLIENT_EXECUTOR_NAME
 import com.datadog.android.flags.internal.FlagsFeature

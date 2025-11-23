@@ -7,7 +7,7 @@
 
 package com.datadog.android.flags.internal
 
-import com.datadog.android.api.feature.FeatureScope
+import com.flashcat.android.api.feature.FeatureScope
 import com.datadog.android.flags.utils.forge.ForgeConfigurator
 import com.datadog.android.internal.flags.RumFlagEvaluationMessage
 import fr.xgouchet.elmyr.Forge

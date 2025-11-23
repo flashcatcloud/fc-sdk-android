@@ -7,7 +7,7 @@
 
 package com.datadog.android.utils.assertj
 
-import com.datadog.android.api.context.NetworkInfo
+import com.flashcat.android.api.context.NetworkInfo
 import org.assertj.core.api.AbstractObjectAssert
 import org.assertj.core.api.Assertions.assertThat
 

@@ -7,8 +7,8 @@
 
 package com.datadog.android.flags.internal.model
 
-import com.datadog.android.DatadogSite
-import com.datadog.android.api.context.DatadogContext
+import com.flashcat.android.DatadogSite
+import com.flashcat.android.api.context.DatadogContext
 import com.datadog.android.flags.FlagsConfiguration
 
 /**

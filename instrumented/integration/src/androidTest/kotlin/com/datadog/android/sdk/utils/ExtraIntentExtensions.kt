@@ -8,7 +8,7 @@
 package com.datadog.android.sdk.utils
 
 import android.content.Intent
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 
 fun Intent.addExtras(map: Map<String, Any?>) {
     map.forEach {

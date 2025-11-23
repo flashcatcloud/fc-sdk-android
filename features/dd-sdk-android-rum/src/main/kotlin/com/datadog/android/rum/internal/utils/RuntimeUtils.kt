@@ -7,7 +7,7 @@
 
 package com.datadog.android.rum.internal.utils
 
-import com.datadog.android.api.context.UserInfo
+import com.flashcat.android.api.context.UserInfo
 
 internal fun UserInfo.hasUserData(): Boolean {
     return id != null || name != null ||

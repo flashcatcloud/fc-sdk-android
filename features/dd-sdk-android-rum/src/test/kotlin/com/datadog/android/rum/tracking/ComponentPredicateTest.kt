@@ -8,7 +8,7 @@
 package com.datadog.android.rum.tracking
 
 import android.app.Activity
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.rum.internal.utils.resolveViewName
 import com.datadog.android.rum.internal.utils.resolveViewUrl
 import com.datadog.android.rum.internal.utils.runIfValid

@@ -11,8 +11,8 @@ import android.view.View
 import android.view.ViewTreeObserver
 import androidx.annotation.MainThread
 import androidx.annotation.UiThread
-import com.datadog.android.api.feature.FeatureSdkCore
-import com.datadog.android.api.feature.measureMethodCallPerf
+import com.flashcat.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.feature.measureMethodCallPerf
 import com.datadog.android.sessionreplay.ImagePrivacy
 import com.datadog.android.sessionreplay.TextAndInputPrivacy
 import com.datadog.android.sessionreplay.internal.TouchPrivacyManager

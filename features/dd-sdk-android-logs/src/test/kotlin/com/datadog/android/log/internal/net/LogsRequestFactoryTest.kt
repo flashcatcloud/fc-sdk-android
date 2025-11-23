@@ -7,11 +7,11 @@
 
 package com.datadog.android.log.internal.net
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.net.RequestExecutionContext
-import com.datadog.android.api.net.RequestFactory
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.net.RequestExecutionContext
+import com.flashcat.android.api.net.RequestFactory
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.core.internal.utils.join
 import com.datadog.android.utils.forge.Configurator
 import fr.xgouchet.elmyr.Forge

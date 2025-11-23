@@ -7,7 +7,7 @@
 
 package com.datadog.android.rum.internal.domain.event
 
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.rum.utils.forge.Configurator
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.Forgery

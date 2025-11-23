@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.internal.time
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.utils.verifyLog
 import com.datadog.tools.unit.forge.aThrowable
 import fr.xgouchet.elmyr.Forge

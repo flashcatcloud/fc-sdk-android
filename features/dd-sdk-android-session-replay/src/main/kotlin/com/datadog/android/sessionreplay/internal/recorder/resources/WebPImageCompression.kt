@@ -10,7 +10,7 @@ package com.datadog.android.sessionreplay.internal.recorder.resources
 import android.graphics.Bitmap
 import android.os.Build
 import androidx.annotation.WorkerThread
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import java.io.ByteArrayOutputStream
 
 /**

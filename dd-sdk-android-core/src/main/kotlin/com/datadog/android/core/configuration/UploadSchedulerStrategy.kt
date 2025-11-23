@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.configuration
 
-import com.datadog.android.api.feature.Feature
+import com.flashcat.android.api.feature.Feature
 
 /**
  * Defines the strategy used to schedule the waiting period between batch uploads.

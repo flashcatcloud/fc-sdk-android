@@ -14,8 +14,8 @@ import android.content.Intent
 import android.util.Log
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.ActivityTestRule
-import com.datadog.android.Datadog
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.Datadog
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.sdk.integration.RuntimeConfig
 import com.datadog.android.sdk.okhttp.RecordingDispatcher

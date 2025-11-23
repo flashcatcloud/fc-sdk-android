@@ -7,8 +7,8 @@
 
 package com.datadog.android.log
 
-import com.datadog.android.event.EventMapper
-import com.datadog.android.event.NoOpEventMapper
+import com.flashcat.android.event.EventMapper
+import com.flashcat.android.event.NoOpEventMapper
 import com.datadog.android.log.model.LogEvent
 
 /**

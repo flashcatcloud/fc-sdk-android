@@ -7,8 +7,8 @@
 
 package com.datadog.android.timber
 
-import com.datadog.android.Datadog
-import com.datadog.android.api.SdkCore
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.SdkCore
 import com.datadog.android.log.Logger
 import timber.log.Timber
 

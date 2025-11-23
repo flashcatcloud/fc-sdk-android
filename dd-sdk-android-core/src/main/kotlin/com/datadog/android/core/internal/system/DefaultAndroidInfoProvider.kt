@@ -15,7 +15,7 @@ import android.hardware.display.DisplayManager
 import android.os.Build
 import android.telephony.TelephonyManager
 import android.view.Display
-import com.datadog.android.api.context.DeviceType
+import com.flashcat.android.api.context.DeviceType
 import java.util.Locale
 import java.util.TimeZone
 

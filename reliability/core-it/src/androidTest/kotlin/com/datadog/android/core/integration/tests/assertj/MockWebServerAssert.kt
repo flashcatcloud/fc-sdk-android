@@ -8,11 +8,11 @@
 package com.datadog.android.core.integration.tests.assertj
 
 import com.datadog.android.api.feature.stub.StubRequestFactory
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.core.configuration.Configuration
 import com.datadog.android.core.integration.tests.utils.HandledRequest
 import com.datadog.android.core.integration.tests.utils.MockWebServerWrapper
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import org.assertj.core.api.AbstractAssert
 import org.assertj.core.api.Assertions.assertThat
 

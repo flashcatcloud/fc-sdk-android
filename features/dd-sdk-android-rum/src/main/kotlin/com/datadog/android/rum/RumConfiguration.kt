@@ -9,7 +9,7 @@ package com.datadog.android.rum
 
 import android.os.Looper
 import androidx.annotation.FloatRange
-import com.datadog.android.event.EventMapper
+import com.flashcat.android.event.EventMapper
 import com.datadog.android.rum.configuration.SlowFramesConfiguration
 import com.datadog.android.rum.configuration.VitalsUpdateFrequency
 import com.datadog.android.rum.event.ViewEventMapper

@@ -6,8 +6,8 @@
  */
 package com.datadog.android.trace.internal
 
-import com.datadog.android.api.feature.FeatureSdkCore
-import com.datadog.android.trace.TracingHeaderType
+import com.flashcat.android.api.feature.FeatureSdkCore
+import com.flashcat.android.trace.TracingHeaderType
 import com.datadog.android.trace.api.DatadogTracingConstants.TracerConfig
 import com.datadog.android.trace.internal.DatadogTracerBuilderAdapter.Companion.DEFAULT_URL_AS_RESOURCE_NAME
 import com.datadog.android.utils.forge.Configurator

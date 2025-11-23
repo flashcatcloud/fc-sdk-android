@@ -9,12 +9,12 @@ package com.datadog.android.core
 
 import android.app.Application
 import android.os.Build
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.context.NetworkInfo
-import com.datadog.android.api.context.TimeInfo
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureContextUpdateReceiver
-import com.datadog.android.api.feature.FeatureEventReceiver
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.context.NetworkInfo
+import com.flashcat.android.api.context.TimeInfo
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureContextUpdateReceiver
+import com.flashcat.android.api.feature.FeatureEventReceiver
 import com.datadog.android.core.configuration.Configuration
 import com.datadog.android.core.internal.CoreFeature
 import com.datadog.android.core.internal.DatadogCore
@@ -31,8 +31,8 @@ import com.datadog.android.core.internal.user.MutableUserInfoProvider
 import com.datadog.android.core.thread.FlushableExecutorService
 import com.datadog.android.internal.time.DefaultTimeProvider
 import com.datadog.android.internal.time.TimeProvider
-import com.datadog.android.ndk.internal.NdkCrashHandler
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.ndk.internal.NdkCrashHandler
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.utils.config.ApplicationContextTestConfiguration
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.android.utils.verifyLog

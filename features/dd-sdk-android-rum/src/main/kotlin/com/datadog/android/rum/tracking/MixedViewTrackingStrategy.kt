@@ -10,7 +10,7 @@ package com.datadog.android.rum.tracking
 import android.app.Activity
 import android.content.Context
 import androidx.fragment.app.Fragment
-import com.datadog.android.api.SdkCore
+import com.flashcat.android.api.SdkCore
 
 /**
  * A [ViewTrackingStrategy] that will track [Activity] and [Fragment] as RUM View Events.

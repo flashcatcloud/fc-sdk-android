@@ -7,7 +7,7 @@
 
 package com.datadog.android.trace.event
 
-import com.datadog.android.event.EventMapper
+import com.flashcat.android.event.EventMapper
 import com.datadog.android.trace.model.SpanEvent
 import com.datadog.tools.annotation.NoOpImplementation
 

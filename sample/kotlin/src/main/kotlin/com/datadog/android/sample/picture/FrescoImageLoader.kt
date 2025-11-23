@@ -10,7 +10,7 @@ package com.datadog.android.sample.picture
 import android.content.Context
 import android.net.Uri
 import android.widget.ImageView
-import com.datadog.android.Datadog
+import com.flashcat.android.Datadog
 import com.datadog.android.fresco.DatadogFrescoCacheListener
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.RumErrorSource

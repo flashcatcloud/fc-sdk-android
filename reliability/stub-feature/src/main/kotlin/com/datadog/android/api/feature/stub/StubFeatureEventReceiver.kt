@@ -7,7 +7,7 @@
 
 package com.datadog.android.api.feature.stub
 
-import com.datadog.android.api.feature.FeatureEventReceiver
+import com.flashcat.android.api.feature.FeatureEventReceiver
 
 /**
  * A stub implementation of [FeatureEventReceiver].

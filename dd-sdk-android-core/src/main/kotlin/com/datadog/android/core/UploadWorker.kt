@@ -11,10 +11,10 @@ import android.content.Context
 import androidx.annotation.WorkerThread
 import androidx.work.Worker
 import androidx.work.WorkerParameters
-import com.datadog.android.Datadog
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.core.internal.NoOpInternalSdkCore
 import com.datadog.android.core.internal.SdkFeature
 import com.datadog.android.core.internal.data.upload.DataUploader

@@ -7,8 +7,8 @@
 
 package com.datadog.android.core.internal.persistence.file.batch
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.android.utils.verifyLog
 import fr.xgouchet.elmyr.Forge

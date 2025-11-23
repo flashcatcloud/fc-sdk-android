@@ -9,13 +9,13 @@ package com.datadog.android.core.internal.persistence.file.advanced
 
 import androidx.annotation.AnyThread
 import androidx.annotation.WorkerThread
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.core.internal.persistence.file.FileOrchestrator
 import com.datadog.android.core.internal.persistence.file.NoOpFileOrchestrator
 import com.datadog.android.core.internal.privacy.ConsentProvider
 import com.datadog.android.core.internal.utils.executeSafe
-import com.datadog.android.privacy.TrackingConsent
-import com.datadog.android.privacy.TrackingConsentProviderCallback
+import com.flashcat.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsentProviderCallback
 import java.io.File
 import java.util.concurrent.ExecutorService
 

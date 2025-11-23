@@ -9,9 +9,9 @@ package com.datadog.android.core.integration.tests
 
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.datadog.android.Datadog
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.api.feature.stub.StubContextUpdateReceiver
 import com.datadog.android.api.feature.stub.StubFeatureEventReceiver
 import com.datadog.android.api.feature.stub.StubStorageBackedFeature
@@ -20,7 +20,7 @@ import com.datadog.android.core.configuration.Configuration
 import com.datadog.android.core.integration.tests.forge.factories.ConfigurationCoreForgeryFactory
 import com.datadog.android.core.integration.tests.utils.removeRandomEntries
 import com.datadog.android.core.thread.FlushableExecutorService
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.tools.unit.forge.useToolsFactories
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.annotation.StringForgery

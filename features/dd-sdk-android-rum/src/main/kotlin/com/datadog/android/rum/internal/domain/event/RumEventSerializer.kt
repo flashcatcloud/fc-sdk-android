@@ -7,7 +7,7 @@
 
 package com.datadog.android.rum.internal.domain.event
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.core.constraints.DataConstraints
 import com.datadog.android.core.constraints.DatadogDataConstraints
 import com.datadog.android.core.internal.utils.JsonSerializer.safeMapValuesToJson

@@ -10,7 +10,7 @@ package com.datadog.android.rum.internal.vitals
 import android.view.Window
 import androidx.annotation.UiThread
 import androidx.metrics.performance.JankStats
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 
 internal interface JankStatsProvider {
 

@@ -15,7 +15,7 @@ import android.graphics.drawable.Drawable
 import android.util.DisplayMetrics
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.WorkerThread
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.core.internal.utils.executeSafe
 import com.datadog.android.sessionreplay.internal.recorder.resources.BitmapCachesManager
 import com.datadog.android.sessionreplay.internal.recorder.resources.ResourceResolver

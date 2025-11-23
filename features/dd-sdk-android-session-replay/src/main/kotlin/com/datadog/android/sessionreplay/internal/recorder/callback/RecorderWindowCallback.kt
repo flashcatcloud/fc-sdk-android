@@ -12,7 +12,7 @@ import android.graphics.Point
 import android.view.MotionEvent
 import android.view.Window
 import androidx.annotation.MainThread
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.internal.time.TimeProvider
 import com.datadog.android.internal.utils.densityNormalized
 import com.datadog.android.sessionreplay.ImagePrivacy

@@ -11,7 +11,7 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.DrawableContainer
 import android.widget.CompoundButton
 import androidx.annotation.UiThread
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.internal.utils.densityNormalized
 import com.datadog.android.sessionreplay.recorder.mapper.TextViewMapper
 import com.datadog.android.sessionreplay.utils.ColorStringFormatter

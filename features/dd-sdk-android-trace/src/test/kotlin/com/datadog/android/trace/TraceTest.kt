@@ -7,7 +7,7 @@
 
 package com.datadog.android.trace
 
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.trace.internal.TracingFeature
 import com.datadog.android.trace.internal.net.TracesRequestFactory
 import com.datadog.android.utils.forge.Configurator

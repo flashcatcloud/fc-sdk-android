@@ -11,7 +11,7 @@ import android.graphics.Rect
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.text.Layout
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.sessionreplay.ImagePrivacy
 import com.datadog.android.sessionreplay.material.forge.ForgeConfigurator
 import com.datadog.android.sessionreplay.material.internal.ChipWireframeMapper

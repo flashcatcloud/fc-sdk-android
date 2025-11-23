@@ -11,7 +11,7 @@ import android.app.ActivityManager
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import com.datadog.android.Datadog
+import com.flashcat.android.Datadog
 import com.datadog.android.rum.DdRumContentProvider
 import com.datadog.android.rum.Rum
 import com.datadog.android.rum.tracking.ActivityViewTrackingStrategy

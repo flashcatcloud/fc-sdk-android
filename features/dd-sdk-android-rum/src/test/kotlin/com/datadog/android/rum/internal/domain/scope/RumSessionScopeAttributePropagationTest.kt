@@ -7,12 +7,12 @@
 
 package com.datadog.android.rum.internal.domain.scope
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.context.NetworkInfo
-import com.datadog.android.api.feature.FeatureScope
-import com.datadog.android.api.storage.DataWriter
-import com.datadog.android.api.storage.EventBatchWriter
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.context.NetworkInfo
+import com.flashcat.android.api.feature.FeatureScope
+import com.flashcat.android.api.storage.DataWriter
+import com.flashcat.android.api.storage.EventBatchWriter
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.core.internal.net.FirstPartyHostHeaderTypeResolver
 import com.datadog.android.rum.RumSessionListener

@@ -1,7 +1,7 @@
 public final class com/datadog/android/trace/DatadogTracing {
 	public static final field INSTANCE Lcom/datadog/android/trace/DatadogTracing;
-	public static final fun newTracerBuilder (Lcom/datadog/android/api/SdkCore;)Lcom/datadog/android/trace/api/tracer/DatadogTracerBuilder;
-	public static synthetic fun newTracerBuilder$default (Lcom/datadog/android/api/SdkCore;ILjava/lang/Object;)Lcom/datadog/android/trace/api/tracer/DatadogTracerBuilder;
+	public static final fun newTracerBuilder (Lcom/flashcat/android/api/SdkCore;)Lcom/datadog/android/trace/api/tracer/DatadogTracerBuilder;
+	public static synthetic fun newTracerBuilder$default (Lcom/flashcat/android/api/SdkCore;ILjava/lang/Object;)Lcom/datadog/android/trace/api/tracer/DatadogTracerBuilder;
 }
 
 public final class com/datadog/android/trace/GlobalDatadogTracer {
@@ -24,8 +24,8 @@ public final class com/datadog/android/trace/SpanExtKt {
 public final class com/datadog/android/trace/Trace {
 	public static final field INSTANCE Lcom/datadog/android/trace/Trace;
 	public static final fun enable (Lcom/datadog/android/trace/TraceConfiguration;)V
-	public static final fun enable (Lcom/datadog/android/trace/TraceConfiguration;Lcom/datadog/android/api/SdkCore;)V
-	public static synthetic fun enable$default (Lcom/datadog/android/trace/TraceConfiguration;Lcom/datadog/android/api/SdkCore;ILjava/lang/Object;)V
+	public static final fun enable (Lcom/datadog/android/trace/TraceConfiguration;Lcom/flashcat/android/api/SdkCore;)V
+	public static synthetic fun enable$default (Lcom/datadog/android/trace/TraceConfiguration;Lcom/flashcat/android/api/SdkCore;ILjava/lang/Object;)V
 }
 
 public final class com/datadog/android/trace/TraceConfiguration {
@@ -44,7 +44,7 @@ public final class com/datadog/android/trace/TraceConfiguration$Builder {
 	public final fun useCustomEndpoint (Ljava/lang/String;)Lcom/datadog/android/trace/TraceConfiguration$Builder;
 }
 
-public abstract interface class com/datadog/android/trace/event/SpanEventMapper : com/datadog/android/event/EventMapper {
+public abstract interface class com/datadog/android/trace/event/SpanEventMapper : com/flashcat/android/event/EventMapper {
 	public abstract fun map (Lcom/datadog/android/trace/model/SpanEvent;)Lcom/datadog/android/trace/model/SpanEvent;
 }
 

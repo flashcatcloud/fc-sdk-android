@@ -7,11 +7,11 @@
 package com.datadog.android.trace.internal
 
 import android.util.Log
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.internal.utils.loggableStackTrace
-import com.datadog.android.log.LogAttributes
+import com.flashcat.android.log.LogAttributes
 import com.datadog.android.trace.api.DatadogTracingConstants
 import com.datadog.android.trace.api.span.DatadogSpan
 

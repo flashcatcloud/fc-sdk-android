@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.internal.user
 
-import com.datadog.android.api.context.UserInfo
+import com.flashcat.android.api.context.UserInfo
 
 internal class DatadogUserInfoProvider : MutableUserInfoProvider {
 

@@ -7,7 +7,7 @@
 
 package com.datadog.android.api.feature.stub
 
-import com.datadog.android.api.feature.FeatureContextUpdateReceiver
+import com.flashcat.android.api.feature.FeatureContextUpdateReceiver
 
 /**
  * A stub implementation of [FeatureContextUpdateReceiver].

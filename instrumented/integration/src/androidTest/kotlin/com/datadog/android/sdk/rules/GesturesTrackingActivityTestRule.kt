@@ -10,8 +10,8 @@ package com.datadog.android.sdk.rules
 import android.app.Activity
 import android.app.ActivityManager
 import androidx.test.platform.app.InstrumentationRegistry
-import com.datadog.android.Datadog
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.Datadog
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.rum.DdRumContentProvider
 import com.datadog.android.rum.Rum
 import com.datadog.android.rum.tracking.ActivityViewTrackingStrategy

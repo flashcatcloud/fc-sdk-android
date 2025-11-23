@@ -7,7 +7,7 @@
 
 package com.datadog.android.sessionreplay
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.sessionreplay.internal.prerequisite.CPURequirementChecker
 import com.datadog.android.sessionreplay.internal.prerequisite.MemoryRequirementChecker
 import com.datadog.android.sessionreplay.internal.prerequisite.SystemRequirementChecker

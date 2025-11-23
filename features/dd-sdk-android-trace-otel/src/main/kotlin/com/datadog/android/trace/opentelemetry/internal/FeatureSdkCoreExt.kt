@@ -7,8 +7,8 @@
 
 package com.datadog.android.trace.opentelemetry.internal
 
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureSdkCore
 
 private const val SPAN_ID_KEY = "span_id"
 private const val TRACE_ID_KEY = "trace_id"

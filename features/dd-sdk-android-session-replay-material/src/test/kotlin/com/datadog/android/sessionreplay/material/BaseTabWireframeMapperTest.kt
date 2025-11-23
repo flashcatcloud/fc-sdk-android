@@ -8,7 +8,7 @@
 package com.datadog.android.sessionreplay.material
 
 import android.widget.TextView
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.sessionreplay.material.internal.TabWireframeMapper
 import com.datadog.android.sessionreplay.material.internal.densityNormalized
 import com.datadog.android.sessionreplay.model.MobileSegment

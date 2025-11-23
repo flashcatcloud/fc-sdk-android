@@ -7,8 +7,8 @@
 
 package com.datadog.android.core.internal.account
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.context.AccountInfo
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.context.AccountInfo
 import com.datadog.android.core.internal.account.DatadogAccountInfoProvider.Companion.MSG_ACCOUNT_NULL
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.tools.unit.forge.exhaustiveAttributes

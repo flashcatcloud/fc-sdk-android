@@ -5,7 +5,7 @@ import static com.datadog.trace.bootstrap.instrumentation.api.AgentTracer.NoopAg
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import com.datadog.android.api.InternalLogger;
+import com.flashcat.android.api.InternalLogger;
 import com.datadog.trace.api.Config;
 import com.datadog.trace.api.Stateful;
 import com.datadog.trace.api.scopemanager.ExtendedScopeListener;

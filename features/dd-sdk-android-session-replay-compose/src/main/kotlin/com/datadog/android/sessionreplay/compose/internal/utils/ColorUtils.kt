@@ -8,7 +8,7 @@
 package com.datadog.android.sessionreplay.compose.internal.utils
 
 import android.graphics.Color
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import java.util.Locale
 import kotlin.math.pow
 

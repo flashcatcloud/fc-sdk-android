@@ -8,7 +8,7 @@
 package com.datadog.android.core.internal.persistence.file
 
 import androidx.annotation.WorkerThread
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.core.internal.utils.use
 import java.io.File
 import java.io.FileOutputStream

@@ -11,8 +11,8 @@ import android.content.Context
 import android.content.res.AssetManager
 import android.content.res.Resources
 import androidx.annotation.RawRes
-import com.datadog.android.Datadog
-import com.datadog.android.api.SdkCore
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.SdkCore
 import com.datadog.android.internal.utils.toHexString
 import java.io.InputStream
 

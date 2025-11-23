@@ -7,8 +7,8 @@
 
 package forge
 
-import com.datadog.android.api.context.NetworkInfo
-import com.datadog.android.api.context.UserInfo
+import com.flashcat.android.api.context.NetworkInfo
+import com.flashcat.android.api.context.UserInfo
 import com.datadog.android.internal.utils.toHexString
 import com.datadog.benchmark.internal.model.SpanEvent
 import fr.xgouchet.elmyr.Forge

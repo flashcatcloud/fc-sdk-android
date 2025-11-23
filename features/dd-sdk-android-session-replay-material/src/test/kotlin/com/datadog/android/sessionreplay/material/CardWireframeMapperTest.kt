@@ -9,7 +9,7 @@ package com.datadog.android.sessionreplay.material
 
 import android.content.res.ColorStateList
 import androidx.cardview.widget.CardView
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.sessionreplay.material.forge.ForgeConfigurator
 import com.datadog.android.sessionreplay.material.internal.CardWireframeMapper
 import com.datadog.android.sessionreplay.model.MobileSegment

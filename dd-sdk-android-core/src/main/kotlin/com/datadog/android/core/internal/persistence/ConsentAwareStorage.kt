@@ -9,9 +9,9 @@ package com.datadog.android.core.internal.persistence
 
 import androidx.annotation.AnyThread
 import androidx.annotation.WorkerThread
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.feature.EventWriteScope
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.feature.EventWriteScope
 import com.datadog.android.core.internal.data.upload.DataOkHttpUploader.Companion.HTTP_ACCEPTED
 import com.datadog.android.core.internal.metrics.BenchmarkUploads
 import com.datadog.android.core.internal.metrics.MetricsDispatcher
@@ -24,7 +24,7 @@ import com.datadog.android.core.internal.persistence.file.batch.BatchFileReaderW
 import com.datadog.android.core.internal.persistence.file.existsSafe
 import com.datadog.android.core.internal.persistence.file.lengthSafe
 import com.datadog.android.core.internal.utils.executeSafe
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import java.io.File
 import java.util.Locale
 import java.util.concurrent.ExecutorService

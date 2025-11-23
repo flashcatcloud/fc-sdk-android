@@ -7,8 +7,8 @@
 
 package com.datadog.android.trace.internal.domain.event
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.event.EventMapper
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.event.EventMapper
 import com.datadog.android.trace.event.SpanEventMapper
 import com.datadog.android.trace.model.SpanEvent
 import java.util.Locale

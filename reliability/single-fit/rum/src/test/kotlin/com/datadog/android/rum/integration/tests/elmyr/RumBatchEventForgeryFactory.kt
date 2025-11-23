@@ -7,7 +7,7 @@
 
 package com.datadog.android.rum.integration.tests.elmyr
 
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.rum.integration.tests.utils.RumBatchEvent
 import com.datadog.android.rum.model.ActionEvent
 import com.datadog.android.rum.model.ErrorEvent

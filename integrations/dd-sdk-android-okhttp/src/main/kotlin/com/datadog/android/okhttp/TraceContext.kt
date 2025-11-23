@@ -7,7 +7,7 @@
 
 package com.datadog.android.okhttp
 
-import com.datadog.android.lint.InternalApi
+import com.flashcat.android.lint.InternalApi
 
 /**
  * The context of a trace to be propagated through the OkHttp requests for Datadog tracing.

@@ -7,8 +7,8 @@
 
 package com.datadog.android.tests.elmyr
 
-import com.datadog.android.api.context.DeviceInfo
-import com.datadog.android.api.context.DeviceType
+import com.flashcat.android.api.context.DeviceInfo
+import com.flashcat.android.api.context.DeviceType
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory
 

@@ -10,7 +10,7 @@ package com.datadog.android.sessionreplay
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.sessionreplay.SessionReplayConfiguration.Builder.Companion.DUPLICATE_EXTENSION_DETECTED
 import com.datadog.android.sessionreplay.SessionReplayConfiguration.Builder.Companion.DUPLICATE_MAPPER_DETECTED
 import com.datadog.android.sessionreplay.SessionReplayConfiguration.Builder.Companion.SAMPLE_IN_ALL_SESSIONS

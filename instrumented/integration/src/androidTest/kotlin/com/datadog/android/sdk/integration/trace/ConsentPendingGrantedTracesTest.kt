@@ -10,8 +10,8 @@ package com.datadog.android.sdk.integration.trace
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
-import com.datadog.android.Datadog
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.Datadog
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.sdk.rules.MockServerActivityTestRule
 import com.datadog.tools.unit.ConditionWatcher
 import org.junit.Rule

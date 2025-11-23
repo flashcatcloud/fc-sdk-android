@@ -7,7 +7,7 @@
 
 package com.datadog.android.rum.internal.monitor
 
-import com.datadog.android.lint.InternalApi
+import com.flashcat.android.lint.InternalApi
 import com.datadog.android.rum.RumAttributes
 import com.datadog.android.rum.RumErrorSource
 import com.datadog.android.rum.RumMonitor

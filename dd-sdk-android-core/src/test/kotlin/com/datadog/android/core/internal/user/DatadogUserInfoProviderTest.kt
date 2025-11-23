@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.internal.user
 
-import com.datadog.android.api.context.UserInfo
+import com.flashcat.android.api.context.UserInfo
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.tools.unit.forge.exhaustiveAttributes
 import fr.xgouchet.elmyr.Forge

@@ -6,7 +6,7 @@
  */
 package com.datadog.android.trace.internal
 
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.trace.api.scope.DatadogScopeListener
 import com.datadog.android.trace.api.tracer.DatadogTracer
 

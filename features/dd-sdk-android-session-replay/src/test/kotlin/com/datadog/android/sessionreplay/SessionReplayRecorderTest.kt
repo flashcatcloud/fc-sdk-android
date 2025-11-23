@@ -11,7 +11,7 @@ import android.app.Application
 import android.os.Handler
 import android.view.View
 import android.view.Window
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.sessionreplay.internal.LifecycleCallback
 import com.datadog.android.sessionreplay.internal.async.RecordedDataQueueHandler
 import com.datadog.android.sessionreplay.internal.recorder.SessionReplayRecorder

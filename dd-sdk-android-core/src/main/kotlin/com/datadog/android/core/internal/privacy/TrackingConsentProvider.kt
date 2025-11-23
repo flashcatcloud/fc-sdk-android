@@ -7,8 +7,8 @@
 
 package com.datadog.android.core.internal.privacy
 
-import com.datadog.android.privacy.TrackingConsent
-import com.datadog.android.privacy.TrackingConsentProviderCallback
+import com.flashcat.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsentProviderCallback
 import java.util.LinkedList
 
 internal class TrackingConsentProvider(consent: TrackingConsent) :

@@ -16,7 +16,7 @@ import android.view.View
 import android.widget.TextView
 import androidx.annotation.UiThread
 import androidx.annotation.VisibleForTesting
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.internal.utils.densityNormalized
 import com.datadog.android.sessionreplay.ImagePrivacy
 import com.datadog.android.sessionreplay.internal.recorder.ViewUtilsInternal

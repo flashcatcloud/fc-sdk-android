@@ -7,10 +7,10 @@
 
 package com.datadog.android.trace.utils
 
-import com.datadog.android.api.context.AccountInfo
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.context.UserInfo
-import com.datadog.android.api.feature.Feature
+import com.flashcat.android.api.context.AccountInfo
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.context.UserInfo
+import com.flashcat.android.api.feature.Feature
 import fr.xgouchet.elmyr.Forge
 import java.util.UUID
 

@@ -7,20 +7,20 @@
 
 package com.datadog.android.core.internal
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.SdkCore
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.context.NetworkInfo
-import com.datadog.android.api.context.TimeInfo
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureContextUpdateReceiver
-import com.datadog.android.api.feature.FeatureEventReceiver
-import com.datadog.android.api.feature.FeatureScope
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.SdkCore
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.context.NetworkInfo
+import com.flashcat.android.api.context.TimeInfo
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureContextUpdateReceiver
+import com.flashcat.android.api.feature.FeatureEventReceiver
+import com.flashcat.android.api.feature.FeatureScope
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.core.internal.logger.SdkInternalLogger
 import com.datadog.android.core.internal.net.DefaultFirstPartyHostHeaderTypeResolver
 import com.datadog.android.core.internal.net.FirstPartyHostHeaderTypeResolver
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import com.google.gson.JsonObject
 import okhttp3.Call
 import okhttp3.OkHttpClient

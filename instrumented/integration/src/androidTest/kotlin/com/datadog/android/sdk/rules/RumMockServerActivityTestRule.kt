@@ -9,7 +9,7 @@ package com.datadog.android.sdk.rules
 
 import android.app.Activity
 import android.content.Intent
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.rum.tracking.ActivityViewTrackingStrategy
 import com.datadog.android.sdk.utils.addExtras
 

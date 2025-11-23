@@ -9,7 +9,7 @@ package com.datadog.android.sdk.integration.sessionreplay.chekboxandradio
 
 import android.os.Build
 import androidx.test.filters.SdkSuppress
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.sdk.integration.sessionreplay.BaseSessionReplayTest
 import com.datadog.android.sdk.integration.sessionreplay.SessionReplayRadioCheckboxFieldsActivity
 import com.datadog.android.sdk.rules.SessionReplayTestRule

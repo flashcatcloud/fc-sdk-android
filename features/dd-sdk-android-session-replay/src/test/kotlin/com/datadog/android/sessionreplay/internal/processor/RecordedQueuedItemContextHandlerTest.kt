@@ -7,7 +7,7 @@
 
 package com.datadog.android.sessionreplay.internal.processor
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.internal.time.TimeProvider
 import com.datadog.android.sessionreplay.forge.ForgeConfigurator
 import com.datadog.android.sessionreplay.internal.utils.RumContextProvider

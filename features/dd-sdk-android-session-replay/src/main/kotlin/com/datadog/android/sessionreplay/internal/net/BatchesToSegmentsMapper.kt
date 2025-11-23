@@ -7,8 +7,8 @@
 
 package com.datadog.android.sessionreplay.internal.net
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.context.DatadogContext
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.context.DatadogContext
 import com.datadog.android.sessionreplay.internal.gson.safeGetAsJsonArray
 import com.datadog.android.sessionreplay.internal.gson.safeGetAsJsonObject
 import com.datadog.android.sessionreplay.internal.gson.safeGetAsLong

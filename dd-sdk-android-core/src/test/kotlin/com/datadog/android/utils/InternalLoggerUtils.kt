@@ -9,7 +9,7 @@
 
 package com.datadog.android.utils
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import org.assertj.core.api.Assertions.assertThat
 import org.mockito.ArgumentMatchers.isA
 import org.mockito.kotlin.argumentCaptor

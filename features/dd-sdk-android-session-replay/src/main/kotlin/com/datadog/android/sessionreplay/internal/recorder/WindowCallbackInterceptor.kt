@@ -9,7 +9,7 @@ package com.datadog.android.sessionreplay.internal.recorder
 
 import android.content.Context
 import android.view.Window
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.internal.time.TimeProvider
 import com.datadog.android.sessionreplay.ImagePrivacy
 import com.datadog.android.sessionreplay.TextAndInputPrivacy

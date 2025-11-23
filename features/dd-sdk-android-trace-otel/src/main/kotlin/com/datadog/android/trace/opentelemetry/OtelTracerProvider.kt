@@ -9,14 +9,14 @@ package com.datadog.android.trace.opentelemetry
 
 import androidx.annotation.FloatRange
 import androidx.annotation.IntRange
-import com.datadog.android.Datadog
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.SdkCore
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.SdkCore
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.trace.DatadogTracing
 import com.datadog.android.trace.InternalCoreWriterProvider
-import com.datadog.android.trace.TracingHeaderType
+import com.flashcat.android.trace.TracingHeaderType
 import com.datadog.android.trace.api.tracer.DatadogTracer
 import com.datadog.android.trace.internal.DatadogTracingToolkit
 import com.datadog.android.trace.internal.DatadogTracingToolkit.setTraceId128BitGenerationEnabled

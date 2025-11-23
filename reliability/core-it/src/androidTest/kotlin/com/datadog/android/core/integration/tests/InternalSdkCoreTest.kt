@@ -15,11 +15,11 @@ import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.datadog.android.BuildConfig
-import com.datadog.android.Datadog
-import com.datadog.android.DatadogSite
-import com.datadog.android._InternalProxy
-import com.datadog.android.api.context.DeviceType
-import com.datadog.android.api.feature.Feature
+import com.flashcat.android.Datadog
+import com.flashcat.android.DatadogSite
+import com.flashcat.android._InternalProxy
+import com.flashcat.android.api.context.DeviceType
+import com.flashcat.android.api.feature.Feature
 import com.datadog.android.api.feature.stub.StubStorageBackedFeature
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.core.configuration.BatchProcessingLevel
@@ -37,8 +37,8 @@ import com.datadog.android.core.integration.tests.utils.service
 import com.datadog.android.core.integration.tests.utils.site
 import com.datadog.android.core.integration.tests.utils.variant
 import com.datadog.android.core.thread.FlushableExecutorService
-import com.datadog.android.privacy.TrackingConsent
-import com.datadog.android.trace.TracingHeaderType
+import com.flashcat.android.privacy.TrackingConsent
+import com.flashcat.android.trace.TracingHeaderType
 import com.datadog.tools.unit.forge.exhaustiveAttributes
 import com.datadog.tools.unit.forge.useToolsFactories
 import fr.xgouchet.elmyr.annotation.Forgery

@@ -8,7 +8,7 @@
 package com.datadog.android.sessionreplay.internal.recorder.obfuscator
 
 import android.os.Build
-import com.datadog.android.lint.InternalApi
+import com.flashcat.android.lint.InternalApi
 
 /**
  * Obfuscates string of text in session replay.

@@ -7,10 +7,10 @@
 
 package com.datadog.android.core.internal.persistence.file.batch
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.core.internal.persistence.file.FileWriter
-import com.datadog.android.security.Encryption
+import com.flashcat.android.security.Encryption
 
 internal interface BatchFileReaderWriter : FileWriter<RawBatchEvent>, BatchFileReader {
 

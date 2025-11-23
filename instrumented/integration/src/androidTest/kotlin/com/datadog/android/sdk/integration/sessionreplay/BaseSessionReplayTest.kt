@@ -11,7 +11,7 @@ import android.app.Activity
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.platform.app.InstrumentationRegistry
-import com.datadog.android.Datadog
+import com.flashcat.android.Datadog
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.sdk.integration.RuntimeConfig
 import com.datadog.android.sdk.rules.HandledRequest

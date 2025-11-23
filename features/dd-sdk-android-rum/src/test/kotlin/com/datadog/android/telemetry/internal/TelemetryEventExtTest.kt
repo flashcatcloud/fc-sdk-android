@@ -7,7 +7,7 @@
 
 package com.datadog.android.telemetry.internal
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.rum.utils.forge.Configurator
 import com.datadog.android.rum.utils.forge.aStringNotMatchingSet
 import com.datadog.android.rum.utils.verifyLog

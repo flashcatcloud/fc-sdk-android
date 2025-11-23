@@ -7,7 +7,7 @@
 
 package com.datadog.android.sessionreplay
 
-import com.datadog.android.lint.InternalApi
+import com.flashcat.android.lint.InternalApi
 
 /**
  * Internal API for queuing custom resources in Session Replay.

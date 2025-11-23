@@ -7,9 +7,9 @@
 
 package com.datadog.android.rum.integration
 
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.StorageBackedFeature
-import com.datadog.android.api.net.RequestExecutionContext
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.StorageBackedFeature
+import com.flashcat.android.api.net.RequestExecutionContext
 import com.datadog.android.core.stub.StubSDKCore
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.Rum

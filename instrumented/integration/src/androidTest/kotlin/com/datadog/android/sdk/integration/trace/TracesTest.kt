@@ -9,7 +9,7 @@ package com.datadog.android.sdk.integration.trace
 
 import android.util.Log
 import androidx.test.platform.app.InstrumentationRegistry
-import com.datadog.android.api.context.DatadogContext
+import com.flashcat.android.api.context.DatadogContext
 import com.datadog.android.sdk.assertj.HeadersAssert
 import com.datadog.android.sdk.assertj.HeadersAssert.Companion.assertThat
 import com.datadog.android.sdk.integration.RuntimeConfig

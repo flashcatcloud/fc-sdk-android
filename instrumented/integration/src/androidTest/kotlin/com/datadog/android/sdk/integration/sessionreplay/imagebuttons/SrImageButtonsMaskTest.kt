@@ -7,7 +7,7 @@
 
 package com.datadog.android.sdk.integration.sessionreplay.imagebuttons
 
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.sdk.integration.sessionreplay.BaseSessionReplayTest
 import com.datadog.android.sdk.integration.sessionreplay.SessionReplayImageButtonsActivity
 import com.datadog.android.sdk.rules.SessionReplayTestRule

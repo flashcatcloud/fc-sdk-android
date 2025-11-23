@@ -8,6 +8,7 @@
 package com.datadog.android.ndk.internal
 
 import com.datadog.android.utils.forge.Configurator
+import com.flashcat.android.ndk.internal.NdkCrashLog
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
 import fr.xgouchet.elmyr.junit5.ForgeExtension

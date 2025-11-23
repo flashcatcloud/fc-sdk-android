@@ -7,8 +7,8 @@
 
 package com.datadog.android.core.internal.account
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.context.AccountInfo
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.context.AccountInfo
 
 internal class DatadogAccountInfoProvider(
     private val internalLogger: InternalLogger

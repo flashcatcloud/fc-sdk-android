@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.stub
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.core.metrics.PerformanceMetric
 import com.datadog.android.core.metrics.TelemetryMetricType
 import com.datadog.android.internal.telemetry.InternalTelemetryEvent

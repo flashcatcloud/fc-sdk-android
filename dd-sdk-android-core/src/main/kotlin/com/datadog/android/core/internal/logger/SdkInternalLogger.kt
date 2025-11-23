@@ -9,10 +9,10 @@ package com.datadog.android.core.internal.logger
 
 import android.util.Log
 import com.datadog.android.BuildConfig
-import com.datadog.android.Datadog
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.feature.Feature
-import com.datadog.android.api.feature.FeatureSdkCore
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.feature.Feature
+import com.flashcat.android.api.feature.FeatureSdkCore
 import com.datadog.android.core.internal.metrics.MethodCalledTelemetry
 import com.datadog.android.core.metrics.PerformanceMetric
 import com.datadog.android.core.metrics.TelemetryMetricType

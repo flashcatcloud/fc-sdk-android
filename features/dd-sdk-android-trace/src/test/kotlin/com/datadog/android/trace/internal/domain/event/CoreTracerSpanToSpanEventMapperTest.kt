@@ -7,8 +7,8 @@
 
 package com.datadog.android.trace.internal.domain.event
 
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.log.LogAttributes
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.log.LogAttributes
 import com.datadog.android.trace.assertj.SpanEventAssert.Companion.assertThat
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.trace.api.DDSpanId

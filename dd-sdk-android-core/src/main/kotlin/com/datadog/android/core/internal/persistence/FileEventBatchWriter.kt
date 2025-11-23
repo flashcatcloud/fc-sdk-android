@@ -8,10 +8,10 @@
 package com.datadog.android.core.internal.persistence
 
 import androidx.annotation.WorkerThread
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.storage.EventBatchWriter
-import com.datadog.android.api.storage.EventType
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.storage.EventBatchWriter
+import com.flashcat.android.api.storage.EventType
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.core.internal.persistence.file.FileOrchestrator
 import com.datadog.android.core.internal.persistence.file.FilePersistenceConfig
 import com.datadog.android.core.internal.persistence.file.FileReaderWriter

@@ -8,7 +8,7 @@
 package com.datadog.android.sessionreplay.recorder.wrappers
 
 import android.graphics.Bitmap
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.sessionreplay.forge.ForgeConfigurator
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
 import fr.xgouchet.elmyr.junit5.ForgeExtension

@@ -10,9 +10,9 @@ package com.datadog.android.okhttp
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
 import com.apollographql.apollo.network.okHttpClient
-import com.datadog.android.Datadog
-import com.datadog.android.api.SdkCore
-import com.datadog.android.api.feature.Feature
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.SdkCore
+import com.flashcat.android.api.feature.Feature
 import com.datadog.android.apollo.DatadogApolloInterceptor
 import com.datadog.android.core.stub.StubSDKCore
 import com.datadog.android.internal.network.GraphQLHeaders

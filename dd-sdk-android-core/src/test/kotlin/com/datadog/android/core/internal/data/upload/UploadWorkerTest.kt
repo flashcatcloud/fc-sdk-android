@@ -12,9 +12,9 @@ import androidx.work.Data
 import androidx.work.ListenableWorker
 import androidx.work.Worker
 import androidx.work.WorkerParameters
-import com.datadog.android.Datadog
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.Datadog
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.core.UploadWorker
 import com.datadog.android.core.internal.NoOpInternalSdkCore

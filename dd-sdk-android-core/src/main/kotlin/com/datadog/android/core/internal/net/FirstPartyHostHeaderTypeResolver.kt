@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.internal.net
 
-import com.datadog.android.trace.TracingHeaderType
+import com.flashcat.android.trace.TracingHeaderType
 import okhttp3.HttpUrl
 
 /**

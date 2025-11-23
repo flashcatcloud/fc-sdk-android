@@ -10,7 +10,7 @@ package com.datadog.android.sessionreplay.internal.recorder.mapper
 import androidx.annotation.UiThread
 import androidx.appcompat.widget.ActionBarContainer
 import androidx.appcompat.widget.DatadogActionBarContainerAccessor
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.sessionreplay.model.MobileSegment
 import com.datadog.android.sessionreplay.recorder.MappingContext
 import com.datadog.android.sessionreplay.recorder.mapper.BaseViewGroupMapper

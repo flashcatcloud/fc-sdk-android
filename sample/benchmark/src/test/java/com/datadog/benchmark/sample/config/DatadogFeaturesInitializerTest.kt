@@ -7,7 +7,7 @@
 
 package com.datadog.benchmark.sample.config
 
-import com.datadog.android.api.SdkCore
+import com.flashcat.android.api.SdkCore
 import com.datadog.android.log.Logs
 import com.datadog.android.rum.Rum
 import com.datadog.android.rum.RumMonitor

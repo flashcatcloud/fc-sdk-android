@@ -9,20 +9,20 @@ package com.datadog.android.core.internal.persistence
 
 import androidx.annotation.AnyThread
 import androidx.annotation.WorkerThread
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.feature.EventWriteScope
-import com.datadog.android.api.storage.EventBatchWriter
-import com.datadog.android.api.storage.EventType
-import com.datadog.android.api.storage.FeatureStorageConfiguration
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.feature.EventWriteScope
+import com.flashcat.android.api.storage.EventBatchWriter
+import com.flashcat.android.api.storage.EventType
+import com.flashcat.android.api.storage.FeatureStorageConfiguration
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.core.internal.metrics.RemovalReason
 import com.datadog.android.core.internal.privacy.ConsentProvider
 import com.datadog.android.core.internal.utils.executeSafe
 import com.datadog.android.core.persistence.NoOpPersistenceStrategy
 import com.datadog.android.core.persistence.PersistenceStrategy
-import com.datadog.android.privacy.TrackingConsent
-import com.datadog.android.privacy.TrackingConsentProviderCallback
+import com.flashcat.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsentProviderCallback
 import java.util.concurrent.ExecutorService
 
 internal class AbstractStorage(

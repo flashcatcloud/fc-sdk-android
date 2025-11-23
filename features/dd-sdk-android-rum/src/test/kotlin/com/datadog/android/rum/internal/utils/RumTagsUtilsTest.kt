@@ -7,7 +7,7 @@
 
 package com.datadog.android.rum.internal.utils
 
-import com.datadog.android.api.context.DatadogContext
+import com.flashcat.android.api.context.DatadogContext
 import com.datadog.android.rum.utils.forge.Configurator
 import com.datadog.tools.unit.extensions.TestConfigurationExtension
 import fr.xgouchet.elmyr.Forge

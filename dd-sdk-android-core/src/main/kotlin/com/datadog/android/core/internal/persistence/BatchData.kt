@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.internal.persistence
 
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.storage.RawBatchEvent
 
 internal data class BatchData(
     val id: BatchId,

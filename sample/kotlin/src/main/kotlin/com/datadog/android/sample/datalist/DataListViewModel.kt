@@ -9,7 +9,7 @@ package com.datadog.android.sample.datalist
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.datadog.android.Datadog
+import com.flashcat.android.Datadog
 import com.datadog.android.rx.sendErrorToDatadog
 import com.datadog.android.sample.data.DataRepository
 import com.datadog.android.sample.data.model.Log

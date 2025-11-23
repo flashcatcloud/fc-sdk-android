@@ -7,9 +7,9 @@
 
 package com.datadog.android.tests.elmyr
 
-import com.datadog.android.DatadogSite
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.DatadogSite
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.privacy.TrackingConsent
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory
 import java.util.Locale

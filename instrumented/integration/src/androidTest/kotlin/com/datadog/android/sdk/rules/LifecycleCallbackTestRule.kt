@@ -10,7 +10,7 @@ package com.datadog.android.sdk.rules
 import android.app.Activity
 import android.app.Application
 import androidx.test.platform.app.InstrumentationRegistry
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.tools.unit.getFieldValue
 
 internal open class LifecycleCallbackTestRule<T : Activity>(

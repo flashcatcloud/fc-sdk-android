@@ -16,7 +16,7 @@ import android.graphics.drawable.Drawable.ConstantState
 import android.util.DisplayMetrics
 import android.view.View
 import android.widget.ImageView
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.internal.utils.ImageViewUtils
 import com.datadog.android.sessionreplay.ImagePrivacy
 import com.datadog.android.sessionreplay.forge.ForgeConfigurator

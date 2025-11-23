@@ -7,16 +7,16 @@
 
 package com.datadog.android.core.internal
 
-import com.datadog.android.DatadogSite
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.context.DeviceInfo
-import com.datadog.android.api.context.DeviceType
-import com.datadog.android.api.context.LocaleInfo
-import com.datadog.android.api.context.NetworkInfo
-import com.datadog.android.api.context.ProcessInfo
-import com.datadog.android.api.context.TimeInfo
-import com.datadog.android.api.context.UserInfo
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.DatadogSite
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.context.DeviceInfo
+import com.flashcat.android.api.context.DeviceType
+import com.flashcat.android.api.context.LocaleInfo
+import com.flashcat.android.api.context.NetworkInfo
+import com.flashcat.android.api.context.ProcessInfo
+import com.flashcat.android.api.context.TimeInfo
+import com.flashcat.android.api.context.UserInfo
+import com.flashcat.android.privacy.TrackingConsent
 
 internal class NoOpContextProvider : ContextProvider {
     // TODO RUM-3784 this one is quite ugly. Should return type be nullable?

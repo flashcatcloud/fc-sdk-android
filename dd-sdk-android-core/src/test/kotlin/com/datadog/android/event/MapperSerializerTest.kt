@@ -9,6 +9,8 @@ package com.datadog.android.event
 
 import com.datadog.android.core.persistence.Serializer
 import com.datadog.android.utils.forge.Configurator
+import com.flashcat.android.event.EventMapper
+import com.flashcat.android.event.MapperSerializer
 import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
 import fr.xgouchet.elmyr.junit5.ForgeExtension

@@ -9,8 +9,8 @@ package com.datadog.android.core.internal.persistence
 
 import androidx.annotation.AnyThread
 import androidx.annotation.WorkerThread
-import com.datadog.android.api.context.DatadogContext
-import com.datadog.android.api.feature.EventWriteScope
+import com.flashcat.android.api.context.DatadogContext
+import com.flashcat.android.api.feature.EventWriteScope
 import com.datadog.android.core.internal.metrics.RemovalReason
 import com.datadog.tools.annotation.NoOpImplementation
 

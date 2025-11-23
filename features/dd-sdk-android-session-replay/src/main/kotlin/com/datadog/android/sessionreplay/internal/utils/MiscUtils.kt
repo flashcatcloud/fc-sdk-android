@@ -13,7 +13,7 @@ import android.graphics.Point
 import android.os.Build
 import android.util.TypedValue
 import android.view.WindowManager
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.internal.utils.densityNormalized
 import com.datadog.android.sessionreplay.recorder.SystemInformation
 import com.datadog.android.sessionreplay.utils.DefaultColorStringFormatter

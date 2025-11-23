@@ -8,10 +8,10 @@
 package com.datadog.android.core.internal.persistence.file.advanced
 
 import androidx.annotation.WorkerThread
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.core.internal.persistence.file.FileMover
 import com.datadog.android.core.internal.persistence.file.FileOrchestrator
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 
 internal class ConsentAwareFileMigrator(
     private val fileMover: FileMover,

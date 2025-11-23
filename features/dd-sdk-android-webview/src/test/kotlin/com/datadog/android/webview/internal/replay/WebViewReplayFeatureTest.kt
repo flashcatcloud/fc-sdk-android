@@ -8,9 +8,9 @@
 package com.datadog.android.webview.internal.replay
 
 import android.content.Context
-import com.datadog.android.api.feature.FeatureSdkCore
-import com.datadog.android.api.net.RequestFactory
-import com.datadog.android.api.storage.NoOpDataWriter
+import com.flashcat.android.api.feature.FeatureSdkCore
+import com.flashcat.android.api.net.RequestFactory
+import com.flashcat.android.api.storage.NoOpDataWriter
 import com.datadog.android.utils.forge.Configurator
 import com.datadog.android.webview.internal.storage.WebViewDataWriter
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration

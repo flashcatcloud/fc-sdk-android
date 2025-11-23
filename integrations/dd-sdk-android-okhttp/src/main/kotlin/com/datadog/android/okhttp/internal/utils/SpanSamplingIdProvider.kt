@@ -7,7 +7,7 @@
 
 package com.datadog.android.okhttp.internal.utils
 
-import com.datadog.android.log.LogAttributes
+import com.flashcat.android.log.LogAttributes
 import com.datadog.android.trace.api.span.DatadogSpan
 
 private const val HEX_RADIX = 16

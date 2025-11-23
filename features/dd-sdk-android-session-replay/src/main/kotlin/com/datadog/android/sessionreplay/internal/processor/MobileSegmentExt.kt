@@ -7,7 +7,7 @@
 
 package com.datadog.android.sessionreplay.internal.processor
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.sessionreplay.model.MobileSegment
 
 internal fun MobileSegment.Wireframe.copy(clip: MobileSegment.WireframeClip?): MobileSegment.Wireframe {

@@ -9,7 +9,7 @@ package com.datadog.android.sample
 
 import android.content.Context
 import androidx.preference.PreferenceManager
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.sample.datalist.DataSourceType
 import com.datadog.android.sample.picture.ImageLoaderType
 import timber.log.Timber

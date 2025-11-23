@@ -13,7 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import androidx.fragment.app.Fragment
-import com.datadog.android.Datadog
+import com.flashcat.android.Datadog
 import com.datadog.android.sample.Preferences
 import com.datadog.android.sample.R
 import com.datadog.android.trace.withinSpan

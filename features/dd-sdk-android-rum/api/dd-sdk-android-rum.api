@@ -1,6 +1,6 @@
 public final class com/datadog/android/rum/CloseableExtKt {
-	public static final fun useMonitored (Ljava/io/Closeable;Lcom/datadog/android/api/SdkCore;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
-	public static synthetic fun useMonitored$default (Ljava/io/Closeable;Lcom/datadog/android/api/SdkCore;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
+	public static final fun useMonitored (Ljava/io/Closeable;Lcom/flashcat/android/api/SdkCore;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static synthetic fun useMonitored$default (Ljava/io/Closeable;Lcom/flashcat/android/api/SdkCore;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public abstract interface annotation class com/datadog/android/rum/ExperimentalRumApi : java/lang/annotation/Annotation {
@@ -9,18 +9,18 @@ public abstract interface annotation class com/datadog/android/rum/ExperimentalR
 public final class com/datadog/android/rum/GlobalRumMonitor {
 	public static final field INSTANCE Lcom/datadog/android/rum/GlobalRumMonitor;
 	public static final fun get ()Lcom/datadog/android/rum/RumMonitor;
-	public static final fun get (Lcom/datadog/android/api/SdkCore;)Lcom/datadog/android/rum/RumMonitor;
-	public static synthetic fun get$default (Lcom/datadog/android/api/SdkCore;ILjava/lang/Object;)Lcom/datadog/android/rum/RumMonitor;
+	public static final fun get (Lcom/flashcat/android/api/SdkCore;)Lcom/datadog/android/rum/RumMonitor;
+	public static synthetic fun get$default (Lcom/flashcat/android/api/SdkCore;ILjava/lang/Object;)Lcom/datadog/android/rum/RumMonitor;
 	public static final fun isRegistered ()Z
-	public static final fun isRegistered (Lcom/datadog/android/api/SdkCore;)Z
-	public static synthetic fun isRegistered$default (Lcom/datadog/android/api/SdkCore;ILjava/lang/Object;)Z
+	public static final fun isRegistered (Lcom/flashcat/android/api/SdkCore;)Z
+	public static synthetic fun isRegistered$default (Lcom/flashcat/android/api/SdkCore;ILjava/lang/Object;)Z
 }
 
 public final class com/datadog/android/rum/Rum {
 	public static final field INSTANCE Lcom/datadog/android/rum/Rum;
 	public static final fun enable (Lcom/datadog/android/rum/RumConfiguration;)V
-	public static final fun enable (Lcom/datadog/android/rum/RumConfiguration;Lcom/datadog/android/api/SdkCore;)V
-	public static synthetic fun enable$default (Lcom/datadog/android/rum/RumConfiguration;Lcom/datadog/android/api/SdkCore;ILjava/lang/Object;)V
+	public static final fun enable (Lcom/datadog/android/rum/RumConfiguration;Lcom/flashcat/android/api/SdkCore;)V
+	public static synthetic fun enable$default (Lcom/datadog/android/rum/RumConfiguration;Lcom/flashcat/android/api/SdkCore;ILjava/lang/Object;)V
 }
 
 public final class com/datadog/android/rum/RumActionType : java/lang/Enum {
@@ -96,19 +96,19 @@ public final class com/datadog/android/rum/RumConfiguration$Builder {
 	public final fun build ()Lcom/datadog/android/rum/RumConfiguration;
 	public final fun collectAccessibility (Z)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun disableUserInteractionTracking ()Lcom/datadog/android/rum/RumConfiguration$Builder;
-	public final fun setActionEventMapper (Lcom/datadog/android/event/EventMapper;)Lcom/datadog/android/rum/RumConfiguration$Builder;
-	public final fun setErrorEventMapper (Lcom/datadog/android/event/EventMapper;)Lcom/datadog/android/rum/RumConfiguration$Builder;
+	public final fun setActionEventMapper (Lcom/flashcat/android/event/EventMapper;)Lcom/datadog/android/rum/RumConfiguration$Builder;
+	public final fun setErrorEventMapper (Lcom/flashcat/android/event/EventMapper;)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun setInitialResourceIdentifier (Lcom/datadog/android/rum/metric/networksettled/InitialResourceIdentifier;)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun setLastInteractionIdentifier (Lcom/datadog/android/rum/metric/interactiontonextview/LastInteractionIdentifier;)Lcom/datadog/android/rum/RumConfiguration$Builder;
-	public final fun setLongTaskEventMapper (Lcom/datadog/android/event/EventMapper;)Lcom/datadog/android/rum/RumConfiguration$Builder;
-	public final fun setResourceEventMapper (Lcom/datadog/android/event/EventMapper;)Lcom/datadog/android/rum/RumConfiguration$Builder;
+	public final fun setLongTaskEventMapper (Lcom/flashcat/android/event/EventMapper;)Lcom/datadog/android/rum/RumConfiguration$Builder;
+	public final fun setResourceEventMapper (Lcom/flashcat/android/event/EventMapper;)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun setSessionListener (Lcom/datadog/android/rum/RumSessionListener;)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun setSessionSampleRate (F)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun setSlowFramesConfiguration (Lcom/datadog/android/rum/configuration/SlowFramesConfiguration;)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun setTelemetrySampleRate (F)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun setViewEventMapper (Lcom/datadog/android/rum/event/ViewEventMapper;)Lcom/datadog/android/rum/RumConfiguration$Builder;
-	public final fun setVitalEventMapper (Lcom/datadog/android/event/EventMapper;)Lcom/datadog/android/rum/RumConfiguration$Builder;
-	public final fun setVitalOperationStepEventMapper (Lcom/datadog/android/event/EventMapper;)Lcom/datadog/android/rum/RumConfiguration$Builder;
+	public final fun setVitalEventMapper (Lcom/flashcat/android/event/EventMapper;)Lcom/datadog/android/rum/RumConfiguration$Builder;
+	public final fun setVitalOperationStepEventMapper (Lcom/flashcat/android/event/EventMapper;)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun setVitalsUpdateFrequency (Lcom/datadog/android/rum/configuration/VitalsUpdateFrequency;)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun trackAnonymousUser (Z)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun trackBackgroundEvents (Z)Lcom/datadog/android/rum/RumConfiguration$Builder;
@@ -262,7 +262,7 @@ public final class com/datadog/android/rum/_RumInternalProxy$Companion {
 	public final fun setComposeActionTrackingStrategy (Lcom/datadog/android/rum/RumConfiguration$Builder;Lcom/datadog/android/rum/tracking/ActionTrackingStrategy;)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun setDisableJankStats (Lcom/datadog/android/rum/RumConfiguration$Builder;Z)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun setRumSessionTypeOverride (Lcom/datadog/android/rum/RumConfiguration$Builder;Lcom/datadog/android/rum/RumSessionType;)Lcom/datadog/android/rum/RumConfiguration$Builder;
-	public final fun setTelemetryConfigurationEventMapper (Lcom/datadog/android/rum/RumConfiguration$Builder;Lcom/datadog/android/event/EventMapper;)Lcom/datadog/android/rum/RumConfiguration$Builder;
+	public final fun setTelemetryConfigurationEventMapper (Lcom/datadog/android/rum/RumConfiguration$Builder;Lcom/flashcat/android/event/EventMapper;)Lcom/datadog/android/rum/RumConfiguration$Builder;
 }
 
 public final class com/datadog/android/rum/configuration/SlowFramesConfiguration {
@@ -290,7 +290,7 @@ public final class com/datadog/android/rum/configuration/VitalsUpdateFrequency :
 	public static fun values ()[Lcom/datadog/android/rum/configuration/VitalsUpdateFrequency;
 }
 
-public abstract interface class com/datadog/android/rum/event/ViewEventMapper : com/datadog/android/event/EventMapper {
+public abstract interface class com/datadog/android/rum/event/ViewEventMapper : com/flashcat/android/event/EventMapper {
 	public abstract fun map (Lcom/datadog/android/rum/model/ViewEvent;)Lcom/datadog/android/rum/model/ViewEvent;
 }
 
@@ -7731,15 +7731,15 @@ public final class com/datadog/android/rum/model/ViewEvent$Viewport$Companion {
 }
 
 public final class com/datadog/android/rum/resource/ContextExtKt {
-	public static final fun getAssetAsRumResource (Landroid/content/Context;Ljava/lang/String;ILcom/datadog/android/api/SdkCore;)Ljava/io/InputStream;
-	public static synthetic fun getAssetAsRumResource$default (Landroid/content/Context;Ljava/lang/String;ILcom/datadog/android/api/SdkCore;ILjava/lang/Object;)Ljava/io/InputStream;
-	public static final fun getRawResAsRumResource (Landroid/content/Context;ILcom/datadog/android/api/SdkCore;)Ljava/io/InputStream;
-	public static synthetic fun getRawResAsRumResource$default (Landroid/content/Context;ILcom/datadog/android/api/SdkCore;ILjava/lang/Object;)Ljava/io/InputStream;
+	public static final fun getAssetAsRumResource (Landroid/content/Context;Ljava/lang/String;ILcom/flashcat/android/api/SdkCore;)Ljava/io/InputStream;
+	public static synthetic fun getAssetAsRumResource$default (Landroid/content/Context;Ljava/lang/String;ILcom/flashcat/android/api/SdkCore;ILjava/lang/Object;)Ljava/io/InputStream;
+	public static final fun getRawResAsRumResource (Landroid/content/Context;ILcom/flashcat/android/api/SdkCore;)Ljava/io/InputStream;
+	public static synthetic fun getRawResAsRumResource$default (Landroid/content/Context;ILcom/flashcat/android/api/SdkCore;ILjava/lang/Object;)Ljava/io/InputStream;
 }
 
 public final class com/datadog/android/rum/resource/InputStreamExtKt {
-	public static final fun asRumResource (Ljava/io/InputStream;Ljava/lang/String;Lcom/datadog/android/api/SdkCore;)Ljava/io/InputStream;
-	public static synthetic fun asRumResource$default (Ljava/io/InputStream;Ljava/lang/String;Lcom/datadog/android/api/SdkCore;ILjava/lang/Object;)Ljava/io/InputStream;
+	public static final fun asRumResource (Ljava/io/InputStream;Ljava/lang/String;Lcom/flashcat/android/api/SdkCore;)Ljava/io/InputStream;
+	public static synthetic fun asRumResource$default (Ljava/io/InputStream;Ljava/lang/String;Lcom/flashcat/android/api/SdkCore;ILjava/lang/Object;)Ljava/io/InputStream;
 }
 
 public final class com/datadog/android/rum/resource/ResourceId {
@@ -7752,12 +7752,12 @@ public final class com/datadog/android/rum/resource/ResourceId {
 
 public final class com/datadog/android/rum/resource/RumResourceInputStream : java/io/InputStream {
 	public fun <init> (Ljava/io/InputStream;Ljava/lang/String;)V
-	public fun <init> (Ljava/io/InputStream;Ljava/lang/String;Lcom/datadog/android/api/SdkCore;)V
-	public synthetic fun <init> (Ljava/io/InputStream;Ljava/lang/String;Lcom/datadog/android/api/SdkCore;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/io/InputStream;Ljava/lang/String;Lcom/flashcat/android/api/SdkCore;)V
+	public synthetic fun <init> (Ljava/io/InputStream;Ljava/lang/String;Lcom/flashcat/android/api/SdkCore;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun available ()I
 	public fun close ()V
 	public final fun getDelegate ()Ljava/io/InputStream;
-	public final fun getSdkCore ()Lcom/datadog/android/api/SdkCore;
+	public final fun getSdkCore ()Lcom/flashcat/android/api/SdkCore;
 	public final fun getUrl ()Ljava/lang/String;
 	public fun mark (I)V
 	public fun markSupported ()Z
@@ -7814,9 +7814,9 @@ public abstract interface class com/datadog/android/rum/tracking/ActionTrackingS
 }
 
 public abstract class com/datadog/android/rum/tracking/ActivityLifecycleTrackingStrategy : android/app/Application$ActivityLifecycleCallbacks, com/datadog/android/rum/tracking/TrackingStrategy {
-	protected field sdkCore Lcom/datadog/android/api/feature/FeatureSdkCore;
+	protected field sdkCore Lcom/flashcat/android/api/feature/FeatureSdkCore;
 	public fun <init> ()V
-	protected final fun getSdkCore ()Lcom/datadog/android/api/feature/FeatureSdkCore;
+	protected final fun getSdkCore ()Lcom/flashcat/android/api/feature/FeatureSdkCore;
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityDestroyed (Landroid/app/Activity;)V
 	public fun onActivityPaused (Landroid/app/Activity;)V
@@ -7824,8 +7824,8 @@ public abstract class com/datadog/android/rum/tracking/ActivityLifecycleTracking
 	public fun onActivitySaveInstanceState (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityStarted (Landroid/app/Activity;)V
 	public fun onActivityStopped (Landroid/app/Activity;)V
-	public fun register (Lcom/datadog/android/api/SdkCore;Landroid/content/Context;)V
-	protected final fun setSdkCore (Lcom/datadog/android/api/feature/FeatureSdkCore;)V
+	public fun register (Lcom/flashcat/android/api/SdkCore;Landroid/content/Context;)V
+	protected final fun setSdkCore (Lcom/flashcat/android/api/feature/FeatureSdkCore;)V
 	public fun unregister (Landroid/content/Context;)V
 	protected final fun withSdkCore (Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 }
@@ -7872,7 +7872,7 @@ public final class com/datadog/android/rum/tracking/MixedViewTrackingStrategy : 
 	public synthetic fun <init> (ZLcom/datadog/android/rum/tracking/ComponentPredicate;Lcom/datadog/android/rum/tracking/ComponentPredicate;Lcom/datadog/android/rum/tracking/ComponentPredicate;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I
-	public fun register (Lcom/datadog/android/api/SdkCore;Landroid/content/Context;)V
+	public fun register (Lcom/flashcat/android/api/SdkCore;Landroid/content/Context;)V
 	public fun unregister (Landroid/content/Context;)V
 }
 
@@ -7902,7 +7902,7 @@ public final class com/datadog/android/rum/tracking/Node {
 }
 
 public abstract interface class com/datadog/android/rum/tracking/TrackingStrategy {
-	public abstract fun register (Lcom/datadog/android/api/SdkCore;Landroid/content/Context;)V
+	public abstract fun register (Lcom/flashcat/android/api/SdkCore;Landroid/content/Context;)V
 	public abstract fun unregister (Landroid/content/Context;)V
 }
 

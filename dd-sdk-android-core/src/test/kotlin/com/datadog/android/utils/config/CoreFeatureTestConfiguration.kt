@@ -8,7 +8,7 @@
 package com.datadog.android.utils.config
 
 import android.content.Context
-import com.datadog.android.DatadogSite
+import com.flashcat.android.DatadogSite
 import com.datadog.android.core.configuration.BatchSize
 import com.datadog.android.core.configuration.UploadFrequency
 import com.datadog.android.core.internal.CoreFeature
@@ -23,7 +23,7 @@ import com.datadog.android.core.internal.system.SystemInfoProvider
 import com.datadog.android.core.internal.user.MutableUserInfoProvider
 import com.datadog.android.core.thread.FlushableExecutorService
 import com.datadog.android.internal.time.TimeProvider
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.tools.unit.extensions.config.MockTestConfiguration
 import com.lyft.kronos.KronosClock
 import fr.xgouchet.elmyr.Forge

@@ -7,7 +7,7 @@
 
 package com.datadog.android.sessionreplay
 
-import com.datadog.android.lint.InternalApi
+import com.flashcat.android.lint.InternalApi
 
 /**
  * This class exposes internal methods that are used by other Datadog modules and cross platform

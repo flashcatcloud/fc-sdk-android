@@ -7,8 +7,8 @@
 
 package com.datadog.android.core.internal.utils
 
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.lint.InternalApi
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.lint.InternalApi
 import java.nio.ByteBuffer
 
 /**

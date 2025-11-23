@@ -7,7 +7,7 @@
 
 package com.datadog.android.api.feature
 
-import com.datadog.android.api.context.DatadogContext
+import com.flashcat.android.api.context.DatadogContext
 import com.datadog.android.core.internal.SdkFeature
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn

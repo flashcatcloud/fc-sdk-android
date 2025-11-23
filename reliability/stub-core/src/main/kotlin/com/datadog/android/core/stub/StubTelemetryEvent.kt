@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.stub
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 
 /**
  * Stubs a telemetry event.

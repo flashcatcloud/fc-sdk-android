@@ -8,7 +8,7 @@
 package com.datadog.android.sessionreplay.internal.processor
 
 import androidx.annotation.MainThread
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.internal.time.TimeProvider
 import com.datadog.android.sessionreplay.internal.utils.RumContextProvider
 import java.util.Locale

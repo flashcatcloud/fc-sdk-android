@@ -12,7 +12,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import androidx.annotation.MainThread
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 
 internal class BitmapCachesManager(
     private val resourcesLRUCache: Cache<String, ByteArray>,

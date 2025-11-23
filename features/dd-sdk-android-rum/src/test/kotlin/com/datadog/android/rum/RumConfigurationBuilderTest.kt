@@ -7,9 +7,9 @@
 
 package com.datadog.android.rum
 
-import com.datadog.android.api.feature.FeatureSdkCore
-import com.datadog.android.event.EventMapper
-import com.datadog.android.event.NoOpEventMapper
+import com.flashcat.android.api.feature.FeatureSdkCore
+import com.flashcat.android.event.EventMapper
+import com.flashcat.android.event.NoOpEventMapper
 import com.datadog.android.rum.assertj.ConfigurationRumAssert
 import com.datadog.android.rum.configuration.SlowFramesConfiguration
 import com.datadog.android.rum.configuration.VitalsUpdateFrequency

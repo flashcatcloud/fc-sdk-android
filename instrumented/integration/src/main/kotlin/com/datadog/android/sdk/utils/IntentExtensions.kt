@@ -9,7 +9,7 @@ package com.datadog.android.sdk.utils
 
 import android.content.Intent
 import android.os.Build
-import com.datadog.android.privacy.TrackingConsent
+import com.flashcat.android.privacy.TrackingConsent
 import com.datadog.android.sessionreplay.SessionReplayPrivacy
 
 internal const val TRACKING_CONSENT_KEY = "tracking_consent"

@@ -8,11 +8,11 @@
 package com.datadog.android.log.internal.storage
 
 import androidx.annotation.WorkerThread
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.storage.DataWriter
-import com.datadog.android.api.storage.EventBatchWriter
-import com.datadog.android.api.storage.EventType
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.storage.DataWriter
+import com.flashcat.android.api.storage.EventBatchWriter
+import com.flashcat.android.api.storage.EventType
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.core.persistence.Serializer
 import com.datadog.android.core.persistence.serializeToByteArray
 import com.datadog.android.log.model.LogEvent

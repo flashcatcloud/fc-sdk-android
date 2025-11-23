@@ -8,8 +8,8 @@
 package com.datadog.android.sessionreplay.internal.net
 
 import androidx.annotation.VisibleForTesting
-import com.datadog.android.api.InternalLogger
-import com.datadog.android.api.storage.RawBatchEvent
+import com.flashcat.android.api.InternalLogger
+import com.flashcat.android.api.storage.RawBatchEvent
 import com.datadog.android.sessionreplay.internal.processor.EnrichedResource.Companion.APPLICATION_ID_KEY
 import com.datadog.android.sessionreplay.internal.processor.EnrichedResource.Companion.APPLICATION_KEY
 import com.datadog.android.sessionreplay.internal.processor.EnrichedResource.Companion.FILENAME_KEY

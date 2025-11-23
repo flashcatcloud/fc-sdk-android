@@ -7,9 +7,9 @@
 
 package com.datadog.android.core.configuration
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.core.internal.utils.unboundInternalLogger
-import com.datadog.android.lint.InternalApi
+import com.flashcat.android.lint.InternalApi
 import java.net.MalformedURLException
 import java.net.URL
 import java.util.Locale

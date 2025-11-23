@@ -7,7 +7,7 @@
 
 package com.datadog.android.sessionreplay.internal.async
 
-import com.datadog.android.api.InternalLogger
+import com.flashcat.android.api.InternalLogger
 import com.datadog.android.core.sampling.RateBasedSampler
 import com.datadog.android.sessionreplay.forge.ForgeConfigurator
 import com.datadog.android.sessionreplay.internal.async.RecordedDataQueueHandler.Companion.ITEM_DROPPED_EXPIRED_MESSAGE
