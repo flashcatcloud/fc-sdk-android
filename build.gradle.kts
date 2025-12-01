@@ -16,8 +16,6 @@ import java.util.Properties
 plugins {
     `maven-publish`
     signing
-    // Note: nexus-publish-plugin is no longer needed for Maven Central Portal (2024+)
-    // We use direct maven-publish instead
 }
 
 version = AndroidConfig.VERSION.name
@@ -49,33 +47,47 @@ allprojects {
     }
 }
 
-// Maven Central Portal (2024+) configuration
-// No longer uses stagingProfileId or nexus-publish-plugin
-// Publishing is done through Maven Central Portal UI or API
+// Maven Central Portal (2024+) configuration for SNAPSHOT publishing
+// Using Gradle's maven-publish plugin with snapshot repository
 //
-// Credentials should be set in environment variables:
+// Credentials must be set via environment variables:
 // - MAVEN_CENTRAL_USERNAME: Your Maven Central Portal username (from generated token)
 // - MAVEN_CENTRAL_PASSWORD: Your Maven Central Portal password (from generated token)
 //
 // Publishing workflow:
-// 1. For SNAPSHOT: ./gradlew publish (publishes to Maven Central snapshot repo)
-// 2. For RELEASE: ./gradlew publish, then manually publish in Maven Central Portal UI
+// 1. For SNAPSHOT: ./gradlew publishAllPublicationsToSnapshotRepository
+// 2. For RELEASE: Upload to Maven Central Portal UI manually
 
-publishing {
-    repositories {
-        maven {
-            name = "MavenCentral"
-            val releasesRepoUrl = uri("https://central.sonatype.com/api/v1/publisher/upload")
-            val snapshotsRepoUrl = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
-            
-            url = if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl
-            
-            credentials {
-                username = System.getenv("MAVEN_CENTRAL_USERNAME")
-                password = System.getenv("MAVEN_CENTRAL_PASSWORD")
+// Load credentials from environment variables only
+val mavenCentralUsername = System.getenv("MAVEN_CENTRAL_USERNAME")
+val mavenCentralPassword = System.getenv("MAVEN_CENTRAL_PASSWORD")
+
+// Configure snapshot repository for all subprojects
+subprojects {
+    plugins.withId("maven-publish") {
+        configure<PublishingExtension> {
+            repositories {
+                maven {
+                    name = "Snapshot"
+                    url = uri("https://central.sonatype.com/repository/maven-snapshots/")
+                    credentials {
+                        username = mavenCentralUsername
+                        password = mavenCentralPassword
+                    }
+                }
             }
         }
     }
+}
+
+// Convenience task to publish all snapshot versions
+tasks.register("publishAllSnapshots") {
+    description = "Publish all SNAPSHOT versions to Maven Central Portal"
+    group = "publishing"
+    
+    dependsOn(subprojects.mapNotNull {
+        it.tasks.findByName("publishAllPublicationsToSnapshotRepository")
+    })
 }
 
 tasks.named<Delete>("clean") {
@@ -268,3 +280,5 @@ tasks.register("listAllPublishedArtifactIds") {
         }
     }
 }
+
+

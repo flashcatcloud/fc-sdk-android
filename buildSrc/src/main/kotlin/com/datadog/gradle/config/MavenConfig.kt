@@ -9,6 +9,7 @@ package com.datadog.gradle.config
 
 import com.android.build.gradle.LibraryExtension
 import org.gradle.api.Project
+import org.gradle.api.GradleException
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.kotlin.dsl.findByType
@@ -91,10 +92,25 @@ fun Project.publishingConfig(
         }
 
         signingExtension.apply {
-            val privateKey = System.getenv("GPG_PRIVATE_KEY")
-            val password = System.getenv("GPG_PASSWORD")
-            isRequired = !hasProperty("dd-skip-signing")
-            useInMemoryPgpKeys(privateKey, password)
+            // Check if signing should be skipped
+            val shouldSkipSigning = hasProperty("dd-skip-signing")
+            isRequired = !shouldSkipSigning
+            
+            if (!shouldSkipSigning) {
+                // Load credentials from environment variables only
+                val privateKey = System.getenv("GPG_PRIVATE_KEY")
+                val password = System.getenv("GPG_PASSWORD")
+
+                if (privateKey.isNullOrBlank() || password.isNullOrBlank()) {
+                    throw GradleException(
+                        "Missing GPG credentials. Please set GPG_PRIVATE_KEY and GPG_PASSWORD " +
+                            "via environment variables."
+                    )
+                }
+
+                useInMemoryPgpKeys(privateKey, password)
+            }
+            
             sign(publishingExtension.publications.getByName(MavenConfig.PUBLICATION))
         }
     }
