@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.internal
 
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android.api.context.DatadogContext
 import com.datadog.android.api.context.DeviceInfo
 import com.datadog.android.api.context.DeviceType
@@ -21,7 +21,7 @@ import com.datadog.android.privacy.TrackingConsent
 internal class NoOpContextProvider : ContextProvider {
     // TODO RUM-3784 this one is quite ugly. Should return type be nullable?
     override fun getContext(withFeatureContexts: Set<String>) = DatadogContext(
-        site = DatadogSite.CN,
+        site = FlashcatSite.CN,
         clientToken = "",
         service = "",
         env = "",

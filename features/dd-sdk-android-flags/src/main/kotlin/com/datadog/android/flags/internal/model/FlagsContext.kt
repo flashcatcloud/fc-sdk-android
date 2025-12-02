@@ -7,7 +7,7 @@
 
 package com.datadog.android.flags.internal.model
 
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android.api.context.DatadogContext
 import com.datadog.android.flags.FlagsConfiguration
 
@@ -27,7 +27,7 @@ import com.datadog.android.flags.FlagsConfiguration
 internal data class FlagsContext(
     val applicationId: String?,
     val clientToken: String,
-    val site: DatadogSite,
+    val site: FlashcatSite,
     val env: String,
     val customExposureEndpoint: String? = null,
     val customFlagEndpoint: String? = null

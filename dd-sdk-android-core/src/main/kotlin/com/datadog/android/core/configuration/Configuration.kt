@@ -8,7 +8,7 @@
 package com.datadog.android.core.configuration
 
 import com.datadog.android.Datadog
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android.core.persistence.PersistenceStrategy
 import com.datadog.android.security.Encryption
 import com.datadog.android.trace.TracingHeaderType
@@ -40,7 +40,7 @@ internal constructor(
         val proxy: Proxy?,
         val proxyAuth: Authenticator,
         val encryption: Encryption?,
-        val site: DatadogSite,
+        val site: FlashcatSite,
         val batchProcessingLevel: BatchProcessingLevel,
         val persistenceStrategyFactory: PersistenceStrategy.Factory?,
         val backpressureStrategy: BackPressureStrategy,
@@ -156,7 +156,7 @@ internal constructor(
         /**
          * Let the SDK target your preferred Datadog's site.
          */
-        fun useSite(site: DatadogSite): Builder {
+        fun useSite(site: FlashcatSite): Builder {
             coreConfig = coreConfig.copy(needsClearTextHttp = false, site = site)
             return this
         }
@@ -306,7 +306,7 @@ internal constructor(
             proxy = null,
             proxyAuth = Authenticator.NONE,
             encryption = null,
-            site = DatadogSite.CN,
+            site = FlashcatSite.CN,
             batchProcessingLevel = BatchProcessingLevel.MEDIUM,
             persistenceStrategyFactory = null,
             backpressureStrategy = DEFAULT_BACKPRESSURE_STRATEGY,

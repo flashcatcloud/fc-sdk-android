@@ -681,7 +681,7 @@ This is the first official production version of SDK v3 containing the new archi
 * [IMPROVEMENT] Synchronize SR info with webviews. See [#1990](https://github.com/DataDog/dd-sdk-android/pull/1990)
 * [IMPROVEMENT] Core: Start sending batches immediately after feature is initialized. See [#1991](https://github.com/DataDog/dd-sdk-android/pull/1991)
 * [IMRPOVEMENT] Create RUM Feature Integration Tests. See [#2004](https://github.com/DataDog/dd-sdk-android/pull/2004)
-* [IMRROVEMENT] Make constructors of `DatadogSite` private. See [#2010](https://github.com/DataDog/dd-sdk-android/pull/2010)
+* [IMRROVEMENT] Make constructors of `FlashcatSite` private. See [#2010](https://github.com/DataDog/dd-sdk-android/pull/2010)
 * [IMRROVEMENT] Log warning about tag modification only once. See [#2017](https://github.com/DataDog/dd-sdk-android/pull/2017)
 * [IMRROVEMENT] Add status code in user-facing message in case of `UnknownError` during batch upload. See [#2018](https://github.com/DataDog/dd-sdk-android/pull/2018)
 * [MAINTENANCE] Next dev iteration. See [#1972](https://github.com/DataDog/dd-sdk-android/pull/1972)

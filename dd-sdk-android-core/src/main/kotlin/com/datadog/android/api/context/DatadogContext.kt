@@ -7,7 +7,7 @@
 
 package com.datadog.android.api.context
 
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android.privacy.TrackingConsent
 
 /**
@@ -37,7 +37,7 @@ import com.datadog.android.privacy.TrackingConsent
  * the parent SDK instance
  */
 data class DatadogContext(
-    val site: DatadogSite,
+    val site: FlashcatSite,
     val clientToken: String,
     val service: String,
     val env: String,

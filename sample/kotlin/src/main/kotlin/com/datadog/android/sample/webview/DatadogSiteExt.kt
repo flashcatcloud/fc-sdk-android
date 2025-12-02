@@ -7,24 +7,24 @@
 
 package com.datadog.android.sample.webview
 
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android.sample.BuildConfig
 import timber.log.Timber
 
 internal val BROWSER_SITE: String
     get() {
         return try {
-            DatadogSite.valueOf(BuildConfig.DD_SITE_NAME)
+            FlashcatSite.valueOf(BuildConfig.DD_SITE_NAME)
         } catch (e: IllegalArgumentException) {
             Timber.e("Error setting site to ${BuildConfig.DD_SITE_NAME}")
             null
         }.browserSite()
     }
 
-private fun DatadogSite?.browserSite(): String {
+private fun FlashcatSite?.browserSite(): String {
     return when (this) {
-        DatadogSite.CN -> "flashcat.cloud"
-        DatadogSite.STAGING -> "flashcat.cloud"
+        FlashcatSite.CN -> "flashcat.cloud"
+        FlashcatSite.STAGING -> "flashcat.cloud"
         null -> "flashcat.cloud"
     }
 }

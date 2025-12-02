@@ -7,7 +7,7 @@
 
 package com.datadog.android.flags
 
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android.api.InternalLogger
 import com.datadog.android.api.context.DatadogContext
 import com.datadog.android.api.feature.Feature.Companion.FLAGS_FEATURE_NAME
@@ -64,7 +64,7 @@ internal class FlagsTest {
             mockExecutorService
 
         whenever(mockDatadogContext.clientToken) doReturn fakeClientToken
-        whenever(mockDatadogContext.site) doReturn DatadogSite.CN
+        whenever(mockDatadogContext.site) doReturn FlashcatSite.CN
         whenever(mockDatadogContext.env) doReturn fakeEnv
         whenever(mockSdkCore.getDatadogContext()) doReturn mockDatadogContext
         whenever(mockSdkCore.getFeature(RUM_FEATURE_NAME)) doReturn mock()

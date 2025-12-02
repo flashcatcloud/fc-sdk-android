@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.integration.tests.forge.factories
 
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android._InternalProxy
 import com.datadog.android.core.configuration.BatchProcessingLevel
 import com.datadog.android.core.configuration.BatchSize
@@ -31,7 +31,7 @@ internal class ConfigurationCoreForgeryFactory :
         )
             .setUseDeveloperModeWhenDebuggable(forge.aBool())
             // this needs to be before allowing the clear text traffic as it invalidates this option
-            .useSite(forge.aValueFrom(DatadogSite::class.java))
+            .useSite(forge.aValueFrom(FlashcatSite::class.java))
             .setFirstPartyHostsWithHeaderType(
                 forge.aMap {
                     val fakeUrl = forge.aStringMatching("https://[a-z0-9]+\\.com")

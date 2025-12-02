@@ -10,7 +10,7 @@ package com.datadog.android.wear.sample
 import android.app.Application
 import android.util.Log
 import com.datadog.android.Datadog
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android.core.configuration.Configuration
 import com.datadog.android.log.Logs
 import com.datadog.android.log.LogsConfiguration
@@ -105,7 +105,7 @@ class WearApplication : Application() {
         )
 
         try {
-            configBuilder.useSite(DatadogSite.valueOf(BuildConfig.DD_SITE_NAME))
+            configBuilder.useSite(FlashcatSite.valueOf(BuildConfig.DD_SITE_NAME))
         } catch (e: IllegalArgumentException) {
             Timber.e("Error setting site to ${BuildConfig.DD_SITE_NAME}")
         }

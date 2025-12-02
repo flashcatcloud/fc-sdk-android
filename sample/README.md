@@ -3,7 +3,7 @@
 ## Getting Started
 
 These sample apps are configured based on configuration JSON files which need to be added in `config` folder in your root directory.
-For each flavor, you must provide a config file named `[flavorName].json`. By default, flavors should match one of the existing sites in the `DatadogSite` enum (for example: `cn`, `staging`).
+For each flavor, you must provide a config file named `[flavorName].json`. By default, flavors should match one of the existing sites in the `FlashcatSite` enum (for example: `cn`, `staging`).
 
 Example of a minimal sample app configuration file:
 
@@ -29,7 +29,7 @@ To allow the download of logs (to test the `Data List` screen), add the followin
 
 ### Staging
 
-If you need to target a site that is not part of the `DatadogSite` enum, configure custom endpoints using the following attributes:
+If you need to target a site that is not part of the `FlashcatSite` enum, configure custom endpoints using the following attributes:
 
 ```json
 {

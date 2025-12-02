@@ -7,7 +7,7 @@
 
 package com.datadog.android.utils.forge
 
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android.core.configuration.BackPressureMitigation
 import com.datadog.android.core.configuration.BackPressureStrategy
 import com.datadog.android.core.configuration.Configuration
@@ -48,7 +48,7 @@ internal class ConfigurationCoreForgeryFactory :
             proxy = proxy,
             proxyAuth = auth,
             encryption = forge.aNullable { NoOpEncryption() },
-            site = forge.aValueFrom(DatadogSite::class.java),
+            site = forge.aValueFrom(FlashcatSite::class.java),
             batchProcessingLevel = forge.getForgery(),
             persistenceStrategyFactory = forge.aNullable {
                 mock<PersistenceStrategy.Factory>().apply {

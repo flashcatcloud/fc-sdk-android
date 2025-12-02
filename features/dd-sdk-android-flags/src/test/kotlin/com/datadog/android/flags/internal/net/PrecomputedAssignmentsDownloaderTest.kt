@@ -7,7 +7,7 @@
 
 package com.datadog.android.flags.internal.net
 
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android.api.InternalLogger
 import com.datadog.android.flags.internal.model.FlagsContext
 import com.datadog.android.flags.model.EvaluationContext
@@ -70,7 +70,7 @@ internal class PrecomputedAssignmentsDownloaderTest {
         fakeFlagsContext = FlagsContext(
             clientToken = forge.anAlphabeticalString(),
             applicationId = forge.anAlphabeticalString(),
-            site = DatadogSite.CN,
+            site = FlashcatSite.CN,
             env = "test"
         )
 

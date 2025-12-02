@@ -7,7 +7,7 @@
 
 package com.datadog.android.flags.internal.net
 
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android.api.InternalLogger
 import com.datadog.android.flags.internal.model.FlagsContext
 import com.datadog.android.flags.model.EvaluationContext
@@ -56,7 +56,7 @@ internal class PrecomputedAssignmentsRequestFactoryTest {
         val flagsContext = FlagsContext(
             applicationId = fakeApplicationId,
             clientToken = fakeClientToken,
-            site = DatadogSite.CN,
+            site = FlashcatSite.CN,
             env = fakeEnv
         )
 
@@ -86,7 +86,7 @@ internal class PrecomputedAssignmentsRequestFactoryTest {
         val flagsContext = FlagsContext(
             applicationId = null,
             clientToken = fakeClientToken,
-            site = DatadogSite.CN,
+            site = FlashcatSite.CN,
             env = fakeEnv
         )
 
@@ -116,7 +116,7 @@ internal class PrecomputedAssignmentsRequestFactoryTest {
         val flagsContext = FlagsContext(
             applicationId = fakeApplicationId,
             clientToken = fakeClientToken,
-            site = DatadogSite.CN,
+            site = FlashcatSite.CN,
             env = fakeEnv,
             customFlagEndpoint = fakeCustomEndpoint
         )
@@ -151,7 +151,7 @@ internal class PrecomputedAssignmentsRequestFactoryTest {
         val flagsContext = FlagsContext(
             applicationId = fakeApplicationId,
             clientToken = fakeClientToken,
-            site = DatadogSite.CN,
+            site = FlashcatSite.CN,
             env = fakeEnv
         )
 
@@ -204,7 +204,7 @@ internal class PrecomputedAssignmentsRequestFactoryTest {
         val flagsContext = FlagsContext(
             applicationId = fakeApplicationId,
             clientToken = fakeClientToken,
-            site = DatadogSite.CN,
+            site = FlashcatSite.CN,
             env = fakeEnv
         )
 
@@ -245,7 +245,7 @@ internal class PrecomputedAssignmentsRequestFactoryTest {
         val flagsContext = FlagsContext(
             applicationId = fakeApplicationId,
             clientToken = fakeClientToken,
-            site = DatadogSite.CN,
+            site = FlashcatSite.CN,
             env = fakeEnv
         )
 
@@ -290,7 +290,7 @@ internal class PrecomputedAssignmentsRequestFactoryTest {
         val flagsContext = FlagsContext(
             applicationId = fakeApplicationId,
             clientToken = fakeClientToken,
-            site = DatadogSite.CN, // Using supported site
+            site = FlashcatSite.CN, // Using supported site
             env = fakeEnv
         )
 

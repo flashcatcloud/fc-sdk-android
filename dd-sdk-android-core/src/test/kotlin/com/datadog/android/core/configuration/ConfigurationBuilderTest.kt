@@ -7,7 +7,7 @@
 
 package com.datadog.android.core.configuration
 
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android.core.persistence.PersistenceStrategy
 import com.datadog.android.security.Encryption
 import com.datadog.android.trace.TracingHeaderType
@@ -73,7 +73,7 @@ internal class ConfigurationBuilderTest {
         assertThat(config.coreConfig.proxy).isNull()
         assertThat(config.coreConfig.proxyAuth).isEqualTo(Authenticator.NONE)
         assertThat(config.coreConfig.encryption).isNull()
-        assertThat(config.coreConfig.site).isEqualTo(DatadogSite.CN)
+        assertThat(config.coreConfig.site).isEqualTo(FlashcatSite.CN)
         assertThat(config.coreConfig.batchProcessingLevel).isEqualTo(BatchProcessingLevel.MEDIUM)
         assertThat(config.coreConfig.persistenceStrategyFactory).isNull()
         assertThat(config.coreConfig.backpressureStrategy.backpressureMitigation)
@@ -106,7 +106,7 @@ internal class ConfigurationBuilderTest {
 
     @Test
     fun `M build config with custom site W useSite() and build()`(
-        @Forgery site: DatadogSite
+        @Forgery site: FlashcatSite
     ) {
         // When
         val config = testedBuilder.useSite(site).build()

@@ -8,13 +8,13 @@
 package com.datadog.android
 
 /**
- * Defines the Datadog sites you can send tracked data to.
+ * Defines the Flashcat sites you can send tracked data to.
  *
  * @param siteName Explicit site name property introduced in order to have a consistent SDK
  * instance ID (because this value is used there) in case if enum values are renamed.
  * @param intakeHostName the host name for the given site.
  */
-enum class DatadogSite private constructor(internal val siteName: String, private val intakeHostName: String) {
+enum class FlashcatSite private constructor(internal val siteName: String, private val intakeHostName: String) {
 
     /**
      * The CN site: [browser.flashcat.cloud](https://browser.flashcat.cloud).

@@ -7,12 +7,12 @@
 
 package com.datadog.android.core.integration.tests.utils
 
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android.core.configuration.Configuration
 import com.datadog.android.trace.TracingHeaderType
 import com.datadog.tools.unit.getFieldValue
 
-fun Configuration.site(): DatadogSite {
+fun Configuration.site(): FlashcatSite {
     return this.getFieldValue<Any, Configuration>("coreConfig").getFieldValue("site")
 }
 

@@ -24,15 +24,15 @@ import org.mockito.quality.Strictness
 )
 @MockitoSettings(strictness = Strictness.LENIENT)
 @ForgeConfiguration(Configurator::class)
-internal class DatadogSiteTest {
+internal class FlashcatSiteTest {
 
     @Test
     fun `M return intake endpoint W intakeEndpoint {CN}`() {
-        assertThat(DatadogSite.CN.intakeEndpoint).isEqualTo("https://browser.flashcat.cloud")
+        assertThat(FlashcatSite.CN.intakeEndpoint).isEqualTo("https://browser.flashcat.cloud")
     }
 
     @Test
     fun `M return intake endpoint W intakeEndpoint {STAGING}`() {
-        assertThat(DatadogSite.STAGING.intakeEndpoint).isEqualTo("https://jira.flashcat.cloud")
+        assertThat(FlashcatSite.STAGING.intakeEndpoint).isEqualTo("https://jira.flashcat.cloud")
     }
 }
