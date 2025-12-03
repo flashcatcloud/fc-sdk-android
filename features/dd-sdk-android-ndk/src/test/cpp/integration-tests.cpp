@@ -71,18 +71,18 @@ void test_generate_log(
 
 
 extern "C" JNIEXPORT int JNICALL
-Java_com_datadog_android_ndk_NdkTests_runNdkSuitTests(JNIEnv *env, jobject) {
+Java_cloud_flashcat_android_ndk_NdkTests_runNdkSuitTests(JNIEnv *env, jobject) {
     return run_test_suites();
 }
 
 extern "C" JNIEXPORT int JNICALL
-Java_com_datadog_android_ndk_NdkTests_runNdkStandaloneTests(JNIEnv *env, jobject) {
+Java_cloud_flashcat_android_ndk_NdkTests_runNdkStandaloneTests(JNIEnv *env, jobject) {
     return run_jni_env_dependent_tests(env);
 }
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_datadog_android_ndk_NdkTests_initNdkErrorHandler(
+Java_cloud_flashcat_android_ndk_NdkTests_initNdkErrorHandler(
         JNIEnv *env,
         jobject thiz,
         jstring storage_dir) {
@@ -92,7 +92,7 @@ Java_com_datadog_android_ndk_NdkTests_initNdkErrorHandler(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_datadog_android_ndk_NdkTests_simulateSignalInterception(
+Java_cloud_flashcat_android_ndk_NdkTests_simulateSignalInterception(
         JNIEnv *env,
         jobject thiz,
         jint signal,
@@ -112,7 +112,7 @@ Java_com_datadog_android_ndk_NdkTests_simulateSignalInterception(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_datadog_android_ndk_NdkTests_simulateFailedSignalInterception(
+Java_cloud_flashcat_android_ndk_NdkTests_simulateFailedSignalInterception(
         JNIEnv *env,
         jobject thiz,
         jint signal,
@@ -146,7 +146,7 @@ Java_com_datadog_android_ndk_NdkTests_simulateFailedSignalInterception(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_datadog_android_ndk_NdkTests_updateTrackingConsent(
+Java_cloud_flashcat_android_ndk_NdkTests_updateTrackingConsent(
         JNIEnv *env,
         jobject /* this */,
         jint consent) {
@@ -155,7 +155,7 @@ Java_com_datadog_android_ndk_NdkTests_updateTrackingConsent(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_datadog_android_ndk_NdkTests_updateAppStartTime(
+Java_cloud_flashcat_android_ndk_NdkTests_updateAppStartTime(
         JNIEnv *env,
         jobject /* this */,
         jlong app_start_time_ms) {

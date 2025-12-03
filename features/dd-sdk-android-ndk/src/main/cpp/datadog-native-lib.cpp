@@ -134,7 +134,7 @@ void update_app_start_time_millis(jlong time_ms) {
 
 /// Jni bindings
 extern "C" JNIEXPORT void JNICALL
-Java_com_datadog_android_ndk_internal_NdkCrashReportsFeature_registerSignalHandler(
+Java_cloud_flashcat_android_ndk_internal_NdkCrashReportsFeature_registerSignalHandler(
         JNIEnv *env,
         jobject /* this */,
         jstring storage_path,
@@ -149,14 +149,14 @@ Java_com_datadog_android_ndk_internal_NdkCrashReportsFeature_registerSignalHandl
 
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_datadog_android_ndk_internal_NdkCrashReportsFeature_unregisterSignalHandler(
+Java_cloud_flashcat_android_ndk_internal_NdkCrashReportsFeature_unregisterSignalHandler(
         JNIEnv *env,
         jobject /* this */) {
     stop_monitoring();
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_datadog_android_ndk_internal_NdkCrashReportsFeature_updateTrackingConsent(
+Java_cloud_flashcat_android_ndk_internal_NdkCrashReportsFeature_updateTrackingConsent(
         JNIEnv *env,
         jobject /* this */,
         jint consent) {

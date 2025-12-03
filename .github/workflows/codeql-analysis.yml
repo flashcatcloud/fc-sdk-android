@@ -56,6 +56,9 @@ jobs:
     - name: Execute Gradle build
       run: ./gradlew assembleLibrariesRelease
 
+    - name: Stop Gradle Daemon
+      run: ./gradlew --stop  # <--- 释放内存
+
     # Perform the analysis
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@17a820bf2e43b47be2c72b39cc905417bc1ab6d0 # v3.28.6
