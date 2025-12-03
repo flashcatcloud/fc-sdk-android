@@ -12,7 +12,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.rum.Rum
 import cloud.flashcat.android.rum.tracking.ActivityViewTrackingStrategy
 import cloud.flashcat.android.sdk.integration.R
@@ -43,8 +43,8 @@ internal class TelemetryPlaygroundActivity : AppCompatActivity(R.layout.main_act
 
         val trackingConsent = intent.getTrackingConsent()
 
-        Datadog.setVerbosity(Log.VERBOSE)
-        val sdkCore = Datadog.initialize(this, config, trackingConsent)
+        Flashcat.setVerbosity(Log.VERBOSE)
+        val sdkCore = Flashcat.initialize(this, config, trackingConsent)
         checkNotNull(sdkCore)
 
         // we will use a large long task threshold to make sure we will not have LongTask events
@@ -70,7 +70,7 @@ internal class TelemetryPlaygroundActivity : AppCompatActivity(R.layout.main_act
         val errorMessage = intent.getStringExtra(TELEMETRY_ERROR_MESSAGE_KEY)
             ?: throw IllegalArgumentException("Telemetry error message should be provided")
 
-        val internalProxy = Datadog._internalProxy()
+        val internalProxy = Flashcat._internalProxy()
         internalProxy._telemetry.debug(debugMessage)
         internalProxy._telemetry.error(errorMessage)
         internalProxy._telemetry.error(errorMessage, forge.aThrowable())

@@ -18,7 +18,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.NavController
 import androidx.navigation.findNavController
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.privacy.TrackingConsent
 import cloud.flashcat.android.sample.service.LogsForegroundService
 import com.google.android.material.snackbar.Snackbar
@@ -119,7 +119,7 @@ class NavActivity : AppCompatActivity(), TrackingConsentChangeListener {
                 // No Op
             }
             .setPositiveButton(android.R.string.ok) { _, _ ->
-                Datadog.getInstance().clearAllData()
+                Flashcat.getInstance().clearAllData()
                 Toast.makeText(this, R.string.msg_all_data_cleared, Toast.LENGTH_SHORT).show()
             }
             .create()

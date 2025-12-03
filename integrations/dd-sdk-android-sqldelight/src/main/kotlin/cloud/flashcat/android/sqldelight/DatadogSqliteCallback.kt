@@ -8,7 +8,7 @@
 package cloud.flashcat.android.sqldelight
 
 import androidx.sqlite.db.SupportSQLiteDatabase
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.rum.GlobalRumMonitor
 import cloud.flashcat.android.rum.RumAttributes
@@ -30,7 +30,7 @@ class DatadogSqliteCallback
 @JvmOverloads
 constructor(
     schema: SqlDriver.Schema,
-    private val sdkCore: SdkCore = Datadog.getInstance()
+    private val sdkCore: SdkCore = Flashcat.getInstance()
 ) : AndroidSqliteDriver.Callback(schema) {
 
     /** @inheritDoc */

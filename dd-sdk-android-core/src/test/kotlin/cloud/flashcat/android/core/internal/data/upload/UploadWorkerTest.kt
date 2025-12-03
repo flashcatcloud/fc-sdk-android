@@ -12,7 +12,7 @@ import androidx.work.Data
 import androidx.work.ListenableWorker
 import androidx.work.Worker
 import androidx.work.WorkerParameters
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.context.DatadogContext
 import cloud.flashcat.android.api.storage.RawBatchEvent
 import cloud.flashcat.android.core.InternalSdkCore
@@ -95,7 +95,7 @@ internal class UploadWorkerTest {
     @BeforeEach
     fun `set up`(forge: Forge) {
         whenever(mockSdkCore.getDatadogContext()) doReturn fakeDatadogContext
-        Datadog.registry.register(fakeInstanceName, mockSdkCore)
+        Flashcat.registry.register(fakeInstanceName, mockSdkCore)
 
         val fakeData = Data.Builder()
             .putString(UploadWorker.DATADOG_INSTANCE_NAME, fakeInstanceName)
@@ -114,7 +114,7 @@ internal class UploadWorkerTest {
 
     @AfterEach
     fun `tear down`() {
-        Datadog.registry.clear()
+        Flashcat.registry.clear()
     }
 
     // region setup
@@ -207,7 +207,7 @@ internal class UploadWorkerTest {
     @Test
     fun `M do nothing W doWork() {no sdk}`() {
         // Given
-        Datadog.registry.unregister(fakeInstanceName)
+        Flashcat.registry.unregister(fakeInstanceName)
 
         // When
         val result = testedWorker.doWork()
@@ -221,8 +221,8 @@ internal class UploadWorkerTest {
     @Test
     fun `M do nothing W doWork() {no op sdk}`() {
         // Given
-        Datadog.registry.unregister(fakeInstanceName)
-        Datadog.registry.register(fakeInstanceName, NoOpInternalSdkCore)
+        Flashcat.registry.unregister(fakeInstanceName)
+        Flashcat.registry.register(fakeInstanceName, NoOpInternalSdkCore)
 
         // When
         val result = testedWorker.doWork()

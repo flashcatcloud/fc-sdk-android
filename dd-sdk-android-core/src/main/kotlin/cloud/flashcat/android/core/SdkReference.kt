@@ -7,7 +7,7 @@
 
 package cloud.flashcat.android.core
 
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.core.internal.DatadogCore
 import java.util.concurrent.atomic.AtomicReference
@@ -58,8 +58,8 @@ constructor(
             @Suppress("IfThenToElvis") // Less readable
             if (current != null) {
                 current
-            } else if (Datadog.isInitialized(sdkInstanceName)) {
-                val sdkCore = Datadog.getInstance(sdkInstanceName)
+            } else if (Flashcat.isInitialized(sdkInstanceName)) {
+                val sdkCore = Flashcat.getInstance(sdkInstanceName)
                 reference.set(sdkCore)
                 onSdkInstanceCaptured(sdkCore)
                 sdkCore

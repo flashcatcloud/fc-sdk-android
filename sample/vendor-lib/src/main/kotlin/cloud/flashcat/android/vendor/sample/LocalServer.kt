@@ -9,7 +9,7 @@ package cloud.flashcat.android.vendor.sample
 
 import android.content.Context
 import android.util.Log
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.FlashcatSite
 import cloud.flashcat.android.core.configuration.BatchSize
 import cloud.flashcat.android.core.configuration.Configuration
@@ -55,7 +55,7 @@ public class LocalServer {
      * @param context the application context
      */
     fun init(context: Context) {
-        Datadog.setVerbosity(Log.VERBOSE)
+        Flashcat.setVerbosity(Log.VERBOSE)
         val configuration = Configuration.Builder(
             clientToken = BuildConfig.DD_CLIENT_TOKEN,
             env = "prod",
@@ -66,13 +66,13 @@ public class LocalServer {
             .setUploadFrequency(UploadFrequency.FREQUENT)
             .build()
 
-        Datadog.initialize(
+        Flashcat.initialize(
             DATADOG_INSTANCE_ID,
             context,
             configuration,
             TrackingConsent.GRANTED
         )
-        val instance = Datadog.getInstance(DATADOG_INSTANCE_ID)
+        val instance = Flashcat.getInstance(DATADOG_INSTANCE_ID)
         instance.setUserInfo(id = context.packageName)
         instance.setAccountInfo(id = context.packageName)
 

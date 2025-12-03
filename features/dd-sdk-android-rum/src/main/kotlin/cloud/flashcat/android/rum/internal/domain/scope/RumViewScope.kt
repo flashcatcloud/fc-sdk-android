@@ -1710,7 +1710,7 @@ internal open class RumViewScope(
     private fun logSynthetics(key: String, value: String) {
         /**
          * We use [android.util.Log] here instead of [InternalLogger] because we want to log regardless of the
-         * verbosity level set using [cloud.flashcat.android.Datadog.setVerbosity].
+         * verbosity level set using [cloud.flashcat.android.Flashcat.setVerbosity].
          */
         Log.i("DatadogSynthetics", "$key=$value")
     }

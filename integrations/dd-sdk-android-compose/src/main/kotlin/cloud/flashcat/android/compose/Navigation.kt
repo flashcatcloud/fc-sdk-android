@@ -18,7 +18,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.compose.internal.ComposeNavigationObserver
 import cloud.flashcat.android.compose.internal.InstrumentationType
@@ -44,7 +44,7 @@ fun NavigationViewTrackingEffect(
     navController: NavController,
     trackArguments: Boolean = true,
     destinationPredicate: ComponentPredicate<NavDestination> = AcceptAllNavDestinations(),
-    sdkCore: SdkCore = Datadog.getInstance()
+    sdkCore: SdkCore = Flashcat.getInstance()
 ) {
     LaunchedEffect(Unit) {
         sendTelemetry(
@@ -78,7 +78,7 @@ internal fun InstrumentedNavigationViewTrackingEffect(
     navController: NavController,
     trackArguments: Boolean = true,
     destinationPredicate: ComponentPredicate<NavDestination> = AcceptAllNavDestinations(),
-    sdkCore: SdkCore = Datadog.getInstance()
+    sdkCore: SdkCore = Flashcat.getInstance()
 ) {
     LaunchedEffect(Unit) {
         sendTelemetry(
@@ -102,7 +102,7 @@ private fun InternalNavigationViewTrackingStrategy(
     navController: NavController,
     trackArguments: Boolean = true,
     destinationPredicate: ComponentPredicate<NavDestination> = AcceptAllNavDestinations(),
-    sdkCore: SdkCore = Datadog.getInstance()
+    sdkCore: SdkCore = Flashcat.getInstance()
 ) {
     val currentTrackArguments by rememberUpdatedState(newValue = trackArguments)
     val currentDestinationPredicate by rememberUpdatedState(newValue = destinationPredicate)

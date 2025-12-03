@@ -17,7 +17,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsModifier
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.InternalLogger
 import cloud.flashcat.android.api.feature.FeatureSdkCore
 import cloud.flashcat.android.compose.DatadogSemanticsPropertyKey
@@ -109,7 +109,7 @@ internal class LayoutNodeUtils {
         } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
             // We rely on visibility suppression to access internal field,
             // any runtime exception must be caught here.
-            (Datadog.getInstance() as? FeatureSdkCore)?.internalLogger?.log(
+            (Flashcat.getInstance() as? FeatureSdkCore)?.internalLogger?.log(
                 level = InternalLogger.Level.ERROR,
                 targets = listOf(InternalLogger.Target.MAINTAINER, InternalLogger.Target.TELEMETRY),
                 messageBuilder = { "LayoutNodeUtils execution failure." },

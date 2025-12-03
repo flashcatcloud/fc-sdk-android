@@ -10,7 +10,7 @@ package cloud.flashcat.android.sdk.integration.rum
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.privacy.TrackingConsent
 import cloud.flashcat.android.sdk.rules.RumMockServerActivityTestRule
 import cloud.flashcat.tools.unit.ConditionWatcher
@@ -35,7 +35,7 @@ internal class ConsentPendingGrantedActivityTrackingTest : ActivityTrackingTest(
         val expectedEvents = runInstrumentationScenario(mockServerRule)
 
         // update the tracking consent
-        Datadog.setTrackingConsent(TrackingConsent.GRANTED)
+        Flashcat.setTrackingConsent(TrackingConsent.GRANTED)
 
         // Wait to make sure all batches are consumed
         InstrumentationRegistry.getInstrumentation().waitForIdleSync()

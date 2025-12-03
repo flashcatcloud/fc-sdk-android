@@ -7,7 +7,7 @@
 
 package cloud.flashcat.android.rx
 
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.rum.GlobalRumMonitor
 import cloud.flashcat.android.rum.RumErrorSource
@@ -25,7 +25,7 @@ import io.reactivex.rxjava3.functions.Consumer
 class DatadogRumErrorConsumer
 @JvmOverloads
 constructor(
-    private val sdkCore: SdkCore = Datadog.getInstance()
+    private val sdkCore: SdkCore = Flashcat.getInstance()
 ) : Consumer<Throwable> {
 
     /** @inheritDoc */

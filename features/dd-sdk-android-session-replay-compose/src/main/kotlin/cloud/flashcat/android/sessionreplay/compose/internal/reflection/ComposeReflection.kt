@@ -8,7 +8,7 @@
 package cloud.flashcat.android.sessionreplay.compose.internal.reflection
 
 import androidx.compose.ui.text.MultiParagraph
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.InternalLogger
 import cloud.flashcat.android.api.feature.FeatureSdkCore
 import java.lang.reflect.Field
@@ -275,7 +275,7 @@ private fun logNoSuchException(name: String, type: String, e: ReflectiveOperatio
 }
 
 private fun logReflectionException(name: String, type: String, reason: String, e: Throwable) {
-    (Datadog.getInstance() as? FeatureSdkCore)?.internalLogger?.log(
+    (Flashcat.getInstance() as? FeatureSdkCore)?.internalLogger?.log(
         level = InternalLogger.Level.ERROR,
         targets = listOf(InternalLogger.Target.MAINTAINER, InternalLogger.Target.TELEMETRY),
         messageBuilder = { "Unable to get $type [$name] through reflection: $reason" },

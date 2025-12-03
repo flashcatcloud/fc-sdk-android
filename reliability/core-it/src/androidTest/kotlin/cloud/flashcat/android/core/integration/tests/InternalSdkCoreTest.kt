@@ -15,7 +15,7 @@ import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import cloud.flashcat.android.BuildConfig
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.FlashcatSite
 import cloud.flashcat.android._InternalProxy
 import cloud.flashcat.android.api.context.DeviceType
@@ -111,19 +111,19 @@ class InternalSdkCoreTest : MockServerTest() {
         fakeTrackingConsent = forge.aValueFrom(TrackingConsent::class.java)
         fakeUserAdditionalProperties = forge.exhaustiveAttributes(excludedKeys = setOf("id", "name", "email"))
         fakeAccountExtraInfo = forge.exhaustiveAttributes(excludedKeys = setOf("id", "name"))
-        testedInternalSdkCore = Datadog.initialize(
+        testedInternalSdkCore = Flashcat.initialize(
             ApplicationProvider.getApplicationContext(),
             fakeConfiguration,
             fakeTrackingConsent
         ) as InternalSdkCore
-        Datadog.setUserInfo(fakeUserId, fakeUserName, fakeUserEmail, fakeUserAdditionalProperties)
-        Datadog.setAccountInfo(fakeAccountId, fakeAccountName, fakeAccountExtraInfo)
+        Flashcat.setUserInfo(fakeUserId, fakeUserName, fakeUserEmail, fakeUserAdditionalProperties)
+        Flashcat.setAccountInfo(fakeAccountId, fakeAccountName, fakeAccountExtraInfo)
         testedInternalSdkCore.registerFeature(stubFeature)
     }
 
     @After
     fun tearDown() {
-        Datadog.stopInstance()
+        Flashcat.stopInstance()
     }
 
     // region get Datadog Context
@@ -357,7 +357,7 @@ class InternalSdkCoreTest : MockServerTest() {
     fun mustReturnTheCorrectTrackingConsent_when_getTrackingConsent_trackingConsentChanged() {
         // Given
         val newFakeTrackingConsent = forge.aValueFrom(TrackingConsent::class.java)
-        Datadog.setTrackingConsent(newFakeTrackingConsent)
+        Flashcat.setTrackingConsent(newFakeTrackingConsent)
 
         // When
         val trackingConsent = testedInternalSdkCore.trackingConsent
@@ -436,8 +436,8 @@ class InternalSdkCoreTest : MockServerTest() {
 
         // When
         // stop the current instance
-        Datadog.stopInstance()
-        Datadog.initialize(
+        Flashcat.stopInstance()
+        Flashcat.initialize(
             ApplicationProvider.getApplicationContext(),
             fakeConfigDeveloperModeDisabled,
             fakeTrackingConsent
@@ -536,8 +536,8 @@ class InternalSdkCoreTest : MockServerTest() {
 
         // When
         // stop the current instance
-        Datadog.stopInstance()
-        val internalSdkCore = Datadog.initialize(
+        Flashcat.stopInstance()
+        val internalSdkCore = Flashcat.initialize(
             ApplicationProvider.getApplicationContext(),
             fakeConfigCrashReportsEnabled,
             fakeTrackingConsent
@@ -558,8 +558,8 @@ class InternalSdkCoreTest : MockServerTest() {
 
         // When
         // stop the current instance
-        Datadog.stopInstance()
-        val internalSdkCore = Datadog.initialize(
+        Flashcat.stopInstance()
+        val internalSdkCore = Flashcat.initialize(
             ApplicationProvider.getApplicationContext(),
             fakeConfigCrashReportsNotEnabled,
             fakeTrackingConsent

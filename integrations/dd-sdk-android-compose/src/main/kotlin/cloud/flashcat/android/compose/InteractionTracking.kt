@@ -17,7 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.compose.internal.TapActionTracker
 import cloud.flashcat.android.compose.internal.trackScroll
@@ -38,7 +38,7 @@ import kotlin.coroutines.CoroutineContext
 fun trackClick(
     targetName: String,
     attributes: Map<String, Any?> = remember { emptyMap() },
-    sdkCore: SdkCore = Datadog.getInstance(),
+    sdkCore: SdkCore = Flashcat.getInstance(),
     onClick: () -> Unit
 ): () -> Unit {
     val onTapState = rememberUpdatedState(newValue = onClick)
@@ -68,7 +68,7 @@ fun TrackInteractionEffect(
     interactionSource: InteractionSource,
     interactionType: InteractionType,
     attributes: Map<String, Any?> = emptyMap(),
-    sdkCore: SdkCore = Datadog.getInstance()
+    sdkCore: SdkCore = Flashcat.getInstance()
 ) {
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
 

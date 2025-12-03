@@ -7,7 +7,7 @@
 
 package cloud.flashcat.android.rum
 
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.rum.internal.utils.handleClosableError
 import java.io.Closeable
@@ -25,7 +25,7 @@ import java.io.Closeable
  * @return the result of [block] function invoked on this resource.
  */
 @Suppress("TooGenericExceptionCaught")
-fun <T : Closeable, R> T.useMonitored(sdkCore: SdkCore = Datadog.getInstance(), block: (T) -> R): R {
+fun <T : Closeable, R> T.useMonitored(sdkCore: SdkCore = Flashcat.getInstance(), block: (T) -> R): R {
     try {
         return block(this)
     } catch (e: Throwable) {

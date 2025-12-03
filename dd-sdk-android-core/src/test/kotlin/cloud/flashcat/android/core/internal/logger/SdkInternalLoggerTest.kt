@@ -8,7 +8,7 @@
 package cloud.flashcat.android.core.internal.logger
 
 import android.util.Log
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.InternalLogger
 import cloud.flashcat.android.api.feature.Feature
 import cloud.flashcat.android.api.feature.FeatureScope
@@ -166,7 +166,7 @@ internal class SdkInternalLoggerTest {
         @IntForgery(min = Log.VERBOSE, max = (Log.ASSERT + 1)) sdkVerbosity: Int
     ) {
         // Given
-        Datadog.setVerbosity(sdkVerbosity)
+        Flashcat.setVerbosity(sdkVerbosity)
 
         // When
         testedInternalLogger = SdkInternalLogger(

@@ -9,7 +9,7 @@ package cloud.flashcat.android.sample.datalist
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.rx.sendErrorToDatadog
 import cloud.flashcat.android.sample.data.DataRepository
 import cloud.flashcat.android.sample.data.model.Log
@@ -28,7 +28,7 @@ internal class DataListViewModel(val repository: DataRepository) : ViewModel() {
                 when (request) {
                     is UIRequest.FetchData -> {
                         val flowable = repository.getLogs("source:android")
-                        flowable.sendErrorToDatadog(Datadog.getInstance())
+                        flowable.sendErrorToDatadog(Flashcat.getInstance())
                         flowable.toObservable()
                             .map<UIResponse> {
                                 UIResponse.Success(it)

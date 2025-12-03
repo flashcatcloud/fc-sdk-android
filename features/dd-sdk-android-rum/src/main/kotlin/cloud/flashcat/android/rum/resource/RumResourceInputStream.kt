@@ -7,7 +7,7 @@
 
 package cloud.flashcat.android.rum.resource
 
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.rum.GlobalRumMonitor
 import cloud.flashcat.android.rum.RumErrorSource
@@ -31,7 +31,7 @@ class RumResourceInputStream
 constructor(
     val delegate: InputStream,
     val url: String,
-    val sdkCore: SdkCore = Datadog.getInstance()
+    val sdkCore: SdkCore = Flashcat.getInstance()
 ) : InputStream() {
 
     internal val key: String = delegate.javaClass.simpleName +

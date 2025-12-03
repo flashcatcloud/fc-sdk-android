@@ -7,7 +7,7 @@
 
 package cloud.flashcat.android.sdk.integration.rum
 
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.feature.FeatureSdkCore
 import com.google.gson.JsonElement
 
@@ -77,7 +77,7 @@ internal enum class ErrorSource(val sourceName: String) {
     NETWORK("network")
 }
 
-private val registryField = Datadog::class.java.getDeclaredField("registry").apply {
+private val registryField = Flashcat::class.java.getDeclaredField("registry").apply {
     isAccessible = true
 }
 private val registryGetInstanceMethod = registryField.type.getMethod(

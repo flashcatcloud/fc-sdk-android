@@ -7,12 +7,11 @@
 
 package cloud.flashcat.android.rum.coroutines
 
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.rum.GlobalRumMonitor
 import cloud.flashcat.android.rum.RumErrorSource
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 
 internal const val ERROR_FLOW: String = "Coroutine Flow error"
@@ -28,7 +27,7 @@ internal const val ERROR_FLOW: String = "Coroutine Flow error"
  *  @return the new [Flow] instance.
  */
 @Suppress("TooGenericExceptionCaught")
-fun <T> Flow<T>.sendErrorToDatadog(sdkCore: SdkCore = Datadog.getInstance()): Flow<T> {
+fun <T> Flow<T>.sendErrorToDatadog(sdkCore: SdkCore = Flashcat.getInstance()): Flow<T> {
     return flow {
         try {
             collect { value -> emit(value) }

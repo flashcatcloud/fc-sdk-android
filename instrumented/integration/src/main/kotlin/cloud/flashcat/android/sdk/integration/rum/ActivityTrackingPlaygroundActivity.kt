@@ -11,7 +11,7 @@ import android.app.ActivityManager
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.rum.DdRumContentProvider
 import cloud.flashcat.android.rum.Rum
 import cloud.flashcat.android.rum.tracking.ActivityViewTrackingStrategy
@@ -30,8 +30,8 @@ internal class ActivityTrackingPlaygroundActivity : AppCompatActivity() {
         val config = RuntimeConfig.configBuilder().build()
         val trackingConsent = intent.getTrackingConsent()
 
-        Datadog.setVerbosity(Log.VERBOSE)
-        val sdkCore = Datadog.initialize(this, config, trackingConsent)
+        Flashcat.setVerbosity(Log.VERBOSE)
+        val sdkCore = Flashcat.initialize(this, config, trackingConsent)
         checkNotNull(sdkCore)
 
         DdRumContentProvider.processImportance = ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND

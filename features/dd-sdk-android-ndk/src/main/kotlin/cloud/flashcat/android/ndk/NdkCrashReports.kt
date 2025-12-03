@@ -7,7 +7,7 @@
 
 package cloud.flashcat.android.ndk
 
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.api.feature.FeatureSdkCore
 import cloud.flashcat.android.ndk.internal.NdkCrashReportsFeature
@@ -25,7 +25,7 @@ object NdkCrashReports {
      */
     @JvmOverloads
     @JvmStatic
-    fun enable(sdkCore: SdkCore = Datadog.getInstance()) {
+    fun enable(sdkCore: SdkCore = Flashcat.getInstance()) {
         val ndkCrashReportsFeature = NdkCrashReportsFeature(sdkCore as FeatureSdkCore)
 
         sdkCore.registerFeature(ndkCrashReportsFeature)

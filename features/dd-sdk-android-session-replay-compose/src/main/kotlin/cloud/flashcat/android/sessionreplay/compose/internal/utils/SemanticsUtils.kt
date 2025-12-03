@@ -27,7 +27,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.TextLayoutInput
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.InternalLogger
 import cloud.flashcat.android.api.feature.FeatureSdkCore
 import cloud.flashcat.android.core.sampling.RateBasedSampler
@@ -299,7 +299,7 @@ internal class SemanticsUtils(
 
     private fun sendBitmapInfoTelemetry(bitmap: Bitmap, isContextual: Boolean) {
         if (sampler.sample(Unit)) {
-            (Datadog.getInstance() as? FeatureSdkCore)?.internalLogger?.log(
+            (Flashcat.getInstance() as? FeatureSdkCore)?.internalLogger?.log(
                 level = InternalLogger.Level.INFO,
                 target = InternalLogger.Target.TELEMETRY,
                 messageBuilder = { "Resolved the bitmap from semantics node with id:${bitmap.generationId}" },
@@ -317,7 +317,7 @@ internal class SemanticsUtils(
 
     private fun logUnsupportedPainter(painter: Painter?) {
         val painterType = painter?.javaClass?.simpleName ?: "null"
-        (Datadog.getInstance() as? FeatureSdkCore)?.internalLogger?.log(
+        (Flashcat.getInstance() as? FeatureSdkCore)?.internalLogger?.log(
             level = InternalLogger.Level.ERROR,
             targets = listOf(
                 InternalLogger.Target.MAINTAINER,

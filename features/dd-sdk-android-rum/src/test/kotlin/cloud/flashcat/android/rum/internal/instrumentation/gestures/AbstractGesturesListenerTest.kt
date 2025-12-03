@@ -13,7 +13,7 @@ import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.Window
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.InternalLogger
 import cloud.flashcat.android.rum.utils.config.GlobalRumMonitorTestConfiguration
 import cloud.flashcat.android.rum.utils.forge.Configurator
@@ -67,13 +67,13 @@ internal abstract class AbstractGesturesListenerTest {
 
     @BeforeEach
     open fun `set up`() {
-        Datadog.setVerbosity(Log.VERBOSE)
+        Flashcat.setVerbosity(Log.VERBOSE)
         whenever(mockAppContext.resources).thenReturn(mockResources)
     }
 
     @AfterEach
     fun `tear down`() {
-        Datadog.setVerbosity(Integer.MAX_VALUE)
+        Flashcat.setVerbosity(Integer.MAX_VALUE)
     }
 
     // endregion

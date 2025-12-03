@@ -7,7 +7,7 @@
 
 package cloud.flashcat.android.rum.resource
 
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.rum.RumMonitor
 import java.io.InputStream
@@ -18,6 +18,6 @@ import java.io.InputStream
  * @param url the url to be associated with this resource
  * @param sdkCore the SDK instance to use. If not provided, default instance will be used.
  */
-fun InputStream.asRumResource(url: String, sdkCore: SdkCore = Datadog.getInstance()): InputStream {
+fun InputStream.asRumResource(url: String, sdkCore: SdkCore = Flashcat.getInstance()): InputStream {
     return RumResourceInputStream(this, url, sdkCore)
 }

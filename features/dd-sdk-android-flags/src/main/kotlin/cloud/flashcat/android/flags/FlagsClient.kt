@@ -7,7 +7,7 @@
 
 package cloud.flashcat.android.flags
 
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.InternalLogger
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.api.feature.Feature.Companion.FLAGS_FEATURE_NAME
@@ -187,7 +187,7 @@ interface FlagsClient {
          * @param name the client name. Must be non-empty.
          * @param sdkCore the SDK instance to associate with this client. Defaults to main instance.
          */
-        constructor(name: String = DEFAULT_CLIENT_NAME, sdkCore: SdkCore = Datadog.getInstance()) {
+        constructor(name: String = DEFAULT_CLIENT_NAME, sdkCore: SdkCore = Flashcat.getInstance()) {
             this.name = name.ifBlank {
                 val flagsFeature = (sdkCore as FeatureSdkCore)
                     .getFeature(FLAGS_FEATURE_NAME)
@@ -282,7 +282,7 @@ interface FlagsClient {
          */
         @JvmOverloads
         @JvmStatic
-        fun get(name: String = DEFAULT_CLIENT_NAME, sdkCore: SdkCore = Datadog.getInstance()): FlagsClient {
+        fun get(name: String = DEFAULT_CLIENT_NAME, sdkCore: SdkCore = Flashcat.getInstance()): FlagsClient {
             val featureCore = sdkCore as FeatureSdkCore
             val logger = featureCore.internalLogger
 

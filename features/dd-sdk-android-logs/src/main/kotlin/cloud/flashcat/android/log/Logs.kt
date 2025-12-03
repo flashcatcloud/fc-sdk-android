@@ -7,7 +7,7 @@
 
 package cloud.flashcat.android.log
 
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.InternalLogger
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.api.feature.Feature
@@ -28,7 +28,7 @@ object Logs {
      */
     @JvmOverloads
     @JvmStatic
-    fun enable(logsConfiguration: LogsConfiguration, sdkCore: SdkCore = Datadog.getInstance()) {
+    fun enable(logsConfiguration: LogsConfiguration, sdkCore: SdkCore = Flashcat.getInstance()) {
         val logsFeature = LogsFeature(
             sdkCore = sdkCore as FeatureSdkCore,
             customEndpointUrl = logsConfiguration.customEndpointUrl,
@@ -50,7 +50,7 @@ object Logs {
      */
     @JvmOverloads
     @JvmStatic
-    fun isEnabled(sdkCore: SdkCore = Datadog.getInstance()): Boolean {
+    fun isEnabled(sdkCore: SdkCore = Flashcat.getInstance()): Boolean {
         return (sdkCore as FeatureSdkCore).getFeature(Feature.LOGS_FEATURE_NAME) != null
     }
 
@@ -67,7 +67,7 @@ object Logs {
      */
     @JvmOverloads
     @JvmStatic
-    fun addAttribute(key: String, value: Any?, sdkCore: SdkCore = Datadog.getInstance()) {
+    fun addAttribute(key: String, value: Any?, sdkCore: SdkCore = Flashcat.getInstance()) {
         val featureCore = sdkCore as FeatureSdkCore
         val logsFeature = featureCore.getFeature(Feature.LOGS_FEATURE_NAME)?.unwrap<LogsFeature>()
         if (logsFeature == null) {
@@ -94,7 +94,7 @@ object Logs {
      */
     @JvmOverloads
     @JvmStatic
-    fun removeAttribute(key: String, sdkCore: SdkCore = Datadog.getInstance()) {
+    fun removeAttribute(key: String, sdkCore: SdkCore = Flashcat.getInstance()) {
         val featureCore = sdkCore as FeatureSdkCore
         val logsFeature = featureCore.getFeature(Feature.LOGS_FEATURE_NAME)?.unwrap<LogsFeature>()
         if (logsFeature == null) {

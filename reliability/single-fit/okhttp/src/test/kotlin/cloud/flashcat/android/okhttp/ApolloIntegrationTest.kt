@@ -10,7 +10,7 @@ package cloud.flashcat.android.okhttp
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
 import com.apollographql.apollo.network.okHttpClient
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.api.feature.Feature
 import cloud.flashcat.android.apollo.DatadogApolloInterceptor
@@ -101,7 +101,7 @@ class ApolloIntegrationTest {
     @BeforeEach
     fun `set up`(forge: Forge) {
         stubSdkCore = StubSDKCore(forge)
-        val registry: Any = Datadog::class.java.getStaticValue("registry")
+        val registry: Any = Flashcat::class.java.getStaticValue("registry")
         val instances: MutableMap<String, SdkCore> = registry.getFieldValue("instances")
         instances += stubSdkCore.name to stubSdkCore
         mockServer = MockWebServer()
@@ -150,7 +150,7 @@ class ApolloIntegrationTest {
     @AfterEach
     fun `tear down`() {
         GlobalDatadogTracer.clear()
-        Datadog.stopInstance(stubSdkCore.name)
+        Flashcat.stopInstance(stubSdkCore.name)
         mockServer.shutdown()
     }
 

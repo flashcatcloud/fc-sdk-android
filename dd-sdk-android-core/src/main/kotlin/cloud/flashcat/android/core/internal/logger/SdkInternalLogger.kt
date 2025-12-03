@@ -9,7 +9,7 @@ package cloud.flashcat.android.core.internal.logger
 
 import android.util.Log
 import cloud.flashcat.android.BuildConfig
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.InternalLogger
 import cloud.flashcat.android.api.feature.Feature
 import cloud.flashcat.android.api.feature.FeatureSdkCore
@@ -25,7 +25,7 @@ internal class SdkInternalLogger(
     private val sdkCore: FeatureSdkCore?,
     userLogHandlerFactory: () -> LogcatLogHandler = {
         LogcatLogHandler(DEV_LOG_TAG) { level ->
-            level >= Datadog.getVerbosity()
+            level >= Flashcat.getVerbosity()
         }
     },
     maintainerLogHandlerFactory: () -> LogcatLogHandler? = {
@@ -39,7 +39,7 @@ internal class SdkInternalLogger(
 
     /**
      * This logger is meant for user's debugging purposes.
-     * Logcat logs are conditioned by the [Datadog.libraryVerbosity].
+     * Logcat logs are conditioned by the [Flashcat.libraryVerbosity].
      * No Datadog logs should be sent.
      */
     internal val userLogger = userLogHandlerFactory.invoke()

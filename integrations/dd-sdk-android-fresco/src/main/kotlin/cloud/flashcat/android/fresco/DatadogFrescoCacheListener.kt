@@ -7,7 +7,7 @@
 
 package cloud.flashcat.android.fresco
 
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.rum.GlobalRumMonitor
 import cloud.flashcat.android.rum.RumErrorSource
@@ -27,7 +27,7 @@ import com.facebook.cache.common.CacheKey
 class DatadogFrescoCacheListener
 @JvmOverloads
 constructor(
-    private val sdkCore: SdkCore = Datadog.getInstance()
+    private val sdkCore: SdkCore = Flashcat.getInstance()
 ) : CacheEventListener {
 
     // region CacheEventListener

@@ -16,7 +16,7 @@ import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.os.Build
 import android.os.Process
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.InternalLogger
 import cloud.flashcat.android.api.storage.RawBatchEvent
 import cloud.flashcat.android.core.configuration.Configuration
@@ -908,7 +908,7 @@ internal class CoreFeatureTest {
         // Given
         fakeConfig = fakeConfig.copy(
             additionalConfig = fakeConfig.additionalConfig.toMutableMap().apply {
-                put(Datadog.DD_NATIVE_SOURCE_TYPE, "ndk+il2cpp")
+                put(Flashcat.DD_NATIVE_SOURCE_TYPE, "ndk+il2cpp")
             }
         )
         val mockActivityManager = mock<ActivityManager>()

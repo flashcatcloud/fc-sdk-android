@@ -9,7 +9,7 @@ package cloud.flashcat.android.trace.opentelemetry
 
 import androidx.annotation.FloatRange
 import androidx.annotation.IntRange
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.InternalLogger
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.api.feature.Feature
@@ -122,7 +122,7 @@ class OtelTracerProvider internal constructor(
          * @param sdkCore SDK instance to bind to. If not provided, default instance will be used.
          */
         @JvmOverloads
-        constructor(sdkCore: SdkCore = Datadog.getInstance()) : this(sdkCore as FeatureSdkCore)
+        constructor(sdkCore: SdkCore = Flashcat.getInstance()) : this(sdkCore as FeatureSdkCore)
 
         // region Public API
 

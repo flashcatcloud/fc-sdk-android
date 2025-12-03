@@ -17,7 +17,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.InternalLogger
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.api.feature.FeatureSdkCore
@@ -50,7 +50,7 @@ fun <T : Any> Navigation3TrackingEffect(
     keyPredicate: ComponentPredicate<T> = AcceptAllNavKeyPredicate(),
     backStackKeyResolver: BackStackKeyResolver<T> = HashcodeBackStackKeyResolver(),
     attributesResolver: AttributesResolver<T>? = null,
-    sdkCore: SdkCore = Datadog.getInstance()
+    sdkCore: SdkCore = Flashcat.getInstance()
 ) {
     LaunchedEffect(Unit) {
         sendTelemetry(
@@ -76,7 +76,7 @@ internal fun <T : Any> InstrumentedNavigation3TrackingEffect(
     keyPredicate: ComponentPredicate<T> = AcceptAllNavKeyPredicate(),
     backStackKeyResolver: BackStackKeyResolver<T> = HashcodeBackStackKeyResolver(),
     attributesResolver: AttributesResolver<T>? = null,
-    sdkCore: SdkCore = Datadog.getInstance()
+    sdkCore: SdkCore = Flashcat.getInstance()
 ) {
     LaunchedEffect(Unit) {
         sendTelemetry(
@@ -102,7 +102,7 @@ private fun <T : Any> InternalNavigation3TrackingStrategy(
     destinationPredicate: ComponentPredicate<T> = AcceptAllNavKeyPredicate(),
     backStackKeyResolver: BackStackKeyResolver<T> = HashcodeBackStackKeyResolver(),
     attributesResolver: AttributesResolver<T>? = null,
-    sdkCore: SdkCore = Datadog.getInstance()
+    sdkCore: SdkCore = Flashcat.getInstance()
 ) {
     val topKey = backStack.lastOrNull() ?: return
     val isResumed by rememberIsResumed()

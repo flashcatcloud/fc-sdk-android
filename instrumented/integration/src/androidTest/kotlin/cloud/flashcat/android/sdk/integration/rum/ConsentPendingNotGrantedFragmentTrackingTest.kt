@@ -10,7 +10,7 @@ package cloud.flashcat.android.sdk.integration.rum
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.privacy.TrackingConsent
 import cloud.flashcat.android.sdk.integration.RuntimeConfig
 import cloud.flashcat.android.sdk.rules.RumMockServerActivityTestRule
@@ -35,7 +35,7 @@ internal class ConsentPendingNotGrantedFragmentTrackingTest : FragmentTrackingTe
         runInstrumentationScenario(mockServerRule)
 
         // update the tracking consent
-        Datadog.setTrackingConsent(TrackingConsent.NOT_GRANTED)
+        Flashcat.setTrackingConsent(TrackingConsent.NOT_GRANTED)
 
         // Wait to make sure all batches are consumed
         InstrumentationRegistry.getInstrumentation().waitForIdleSync()

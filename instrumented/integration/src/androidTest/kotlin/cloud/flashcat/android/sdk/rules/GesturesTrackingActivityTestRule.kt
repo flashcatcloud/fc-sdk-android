@@ -10,7 +10,7 @@ package cloud.flashcat.android.sdk.rules
 import android.app.Activity
 import android.app.ActivityManager
 import androidx.test.platform.app.InstrumentationRegistry
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.privacy.TrackingConsent
 import cloud.flashcat.android.rum.DdRumContentProvider
 import cloud.flashcat.android.rum.Rum
@@ -28,7 +28,7 @@ internal class GesturesTrackingActivityTestRule<T : Activity>(
         val config = RuntimeConfig.configBuilder()
             .build()
 
-        val sdkCore = Datadog.initialize(
+        val sdkCore = Flashcat.initialize(
             InstrumentationRegistry.getInstrumentation().targetContext.applicationContext,
             config,
             trackingConsent

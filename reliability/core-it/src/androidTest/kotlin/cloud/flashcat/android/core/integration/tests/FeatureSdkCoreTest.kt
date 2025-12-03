@@ -9,7 +9,7 @@ package cloud.flashcat.android.core.integration.tests
 
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.feature.Feature
 import cloud.flashcat.android.api.feature.FeatureSdkCore
 import cloud.flashcat.android.api.feature.stub.StubContextUpdateReceiver
@@ -69,7 +69,7 @@ class FeatureSdkCoreTest : MockServerTest() {
             getMockServerWrapper().getServerUrl()
         )
         fakeTrackingConsent = forge.aValueFrom(TrackingConsent::class.java)
-        testedFeatureSdkCore = Datadog.initialize(
+        testedFeatureSdkCore = Flashcat.initialize(
             ApplicationProvider.getApplicationContext(),
             fakeConfiguration,
             fakeTrackingConsent
@@ -78,7 +78,7 @@ class FeatureSdkCoreTest : MockServerTest() {
 
     @After
     fun tearDown() {
-        Datadog.stopInstance()
+        Flashcat.stopInstance()
     }
 
     // region register/get Feature
@@ -108,8 +108,8 @@ class FeatureSdkCoreTest : MockServerTest() {
 
         // When
         // stop the current instance
-        Datadog.stopInstance()
-        val internalSdkCore = Datadog.initialize(
+        Flashcat.stopInstance()
+        val internalSdkCore = Flashcat.initialize(
             ApplicationProvider.getApplicationContext(),
             fakeConfigCrashReportsEnabled,
             fakeTrackingConsent
@@ -129,8 +129,8 @@ class FeatureSdkCoreTest : MockServerTest() {
 
         // When
         // stop the current instance
-        Datadog.stopInstance()
-        val internalSdkCore = Datadog.initialize(
+        Flashcat.stopInstance()
+        val internalSdkCore = Flashcat.initialize(
             ApplicationProvider.getApplicationContext(),
             fakeConfigCrashReportsNotEnabled,
             fakeTrackingConsent

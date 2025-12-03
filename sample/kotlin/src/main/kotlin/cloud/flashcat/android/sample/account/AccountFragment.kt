@@ -13,7 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import androidx.fragment.app.Fragment
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.sample.Preferences
 import cloud.flashcat.android.sample.R
 import cloud.flashcat.android.trace.withinSpan
@@ -63,8 +63,8 @@ internal class AccountFragment : Fragment(), View.OnClickListener {
             val age: Int = Integer.valueOf(accountAgeField.text.toString())
             Preferences.defaultPreferences(requireContext())
                 .setAccountInfo(id, name, role, age)
-            Datadog.setAccountInfo(id, name, emptyMap())
-            Datadog.addAccountExtraInfo(
+            Flashcat.setAccountInfo(id, name, emptyMap())
+            Flashcat.addAccountExtraInfo(
                 mapOf<String, Any>(
                     ROLE_KEY to role,
                     AGE_KEY to age

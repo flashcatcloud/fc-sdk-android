@@ -8,7 +8,7 @@
 package cloud.flashcat.android.core.integration.tests
 
 import androidx.test.core.app.ApplicationProvider
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.feature.Feature
 import cloud.flashcat.android.api.feature.stub.StubStorageBackedFeature
 import cloud.flashcat.android.api.storage.EventType
@@ -74,7 +74,7 @@ class PendingToGrantedAsyncTest(
     @After
     fun tearDown() {
         cleanStorage()
-        Datadog.stopInstance()
+        Flashcat.stopInstance()
         cleanMockWebServer()
     }
 
@@ -82,7 +82,7 @@ class PendingToGrantedAsyncTest(
     fun mustReceiveTheEvents_whenFeatureWrite_asynchronousAccess() {
         // Given
         trackingConsent = TrackingConsent.PENDING
-        testedInternalSdkCore = Datadog.initialize(
+        testedInternalSdkCore = Flashcat.initialize(
             context = ApplicationProvider.getApplicationContext(),
             configuration = fakeConfiguration,
             trackingConsent = trackingConsent
@@ -95,7 +95,7 @@ class PendingToGrantedAsyncTest(
         // When
         Thread {
             Thread.sleep(200)
-            Datadog.setTrackingConsent(TrackingConsent.GRANTED)
+            Flashcat.setTrackingConsent(TrackingConsent.GRANTED)
             countDownLatch.countDown()
         }.start()
         Thread {

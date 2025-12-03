@@ -11,7 +11,7 @@ import android.content.Context
 import androidx.annotation.WorkerThread
 import androidx.work.Worker
 import androidx.work.WorkerParameters
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.InternalLogger
 import cloud.flashcat.android.api.context.DatadogContext
 import cloud.flashcat.android.api.storage.RawBatchEvent
@@ -53,7 +53,7 @@ class UploadWorker(
         // be uploaded we put retry task to the end of queue, so that batches of other features
         // have a chance to go.
         val instanceName = inputData.getString(DATADOG_INSTANCE_NAME)
-        val sdkCore = Datadog.getInstance(instanceName) as? InternalSdkCore
+        val sdkCore = Flashcat.getInstance(instanceName) as? InternalSdkCore
         if (sdkCore == null || sdkCore is NoOpInternalSdkCore) {
             unboundInternalLogger.log(
                 InternalLogger.Level.ERROR,

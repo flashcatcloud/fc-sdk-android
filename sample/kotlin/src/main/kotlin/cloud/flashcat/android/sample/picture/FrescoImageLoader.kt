@@ -10,7 +10,7 @@ package cloud.flashcat.android.sample.picture
 import android.content.Context
 import android.net.Uri
 import android.widget.ImageView
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.fresco.DatadogFrescoCacheListener
 import cloud.flashcat.android.rum.GlobalRumMonitor
 import cloud.flashcat.android.rum.RumErrorSource
@@ -30,7 +30,7 @@ internal class FrescoImageLoader : ImageLoader {
         if (imageView is SimpleDraweeView) {
             imageView.setImageURI(Uri.parse(url))
         } else {
-            GlobalRumMonitor.get(Datadog.getInstance()).addError(
+            GlobalRumMonitor.get(Flashcat.getInstance()).addError(
                 "Unable to load Fresco image in non Drawee View",
                 RumErrorSource.SOURCE,
                 null
@@ -46,7 +46,7 @@ internal class FrescoImageLoader : ImageLoader {
 
         fun initialize(context: Context, okHttpClient: OkHttpClient) {
             val diskConfigBuilder = DiskCacheConfig.newBuilder(context)
-                .setCacheEventListener(DatadogFrescoCacheListener(Datadog.getInstance()))
+                .setCacheEventListener(DatadogFrescoCacheListener(Flashcat.getInstance()))
                 .setMaxCacheSize(MAX_DISK_CACHE_SIZE)
             val config = OkHttpImagePipelineConfigFactory
                 .newBuilder(context, okHttpClient)

@@ -11,7 +11,7 @@ import android.app.Activity
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.platform.app.InstrumentationRegistry
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.rum.GlobalRumMonitor
 import cloud.flashcat.android.sdk.integration.RuntimeConfig
 import cloud.flashcat.android.sdk.rules.HandledRequest
@@ -40,7 +40,7 @@ internal abstract class BaseSessionReplayTest<R : Activity> {
     @After
     fun tearDown() {
         GlobalRumMonitor.get().stopSession()
-        Datadog.stopInstance()
+        Flashcat.stopInstance()
     }
 
     protected fun assessSrPayload(payloadFileName: String, rule: SessionReplayTestRule<R>) {

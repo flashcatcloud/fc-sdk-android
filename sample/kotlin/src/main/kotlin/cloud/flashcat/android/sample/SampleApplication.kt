@@ -12,7 +12,7 @@ import android.content.Context
 import android.os.Build
 import android.util.Log
 import androidx.lifecycle.ViewModelProvider
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.FlashcatSite
 import cloud.flashcat.android.compose.enableComposeActionTracking
 import cloud.flashcat.android.core.configuration.BackPressureMitigation
@@ -144,8 +144,8 @@ class SampleApplication : Application() {
 
     private fun initializeDatadog() {
         val preferences = Preferences.defaultPreferences(this)
-        Datadog.setVerbosity(Log.VERBOSE)
-        Datadog.initialize(
+        Flashcat.setVerbosity(Log.VERBOSE)
+        Flashcat.initialize(
             this,
             createDatadogConfiguration(),
             preferences.getTrackingConsent()
@@ -168,7 +168,7 @@ class SampleApplication : Application() {
     }
 
     private fun initializeUserInfo(preferences: Preferences.DefaultPreferences) {
-        Datadog.setUserInfo(
+        Flashcat.setUserInfo(
             id = preferences.getUserId() ?: "unknown",
             name = preferences.getUserName(),
             email = preferences.getUserEmail(),
@@ -181,7 +181,7 @@ class SampleApplication : Application() {
 
     private fun initializeAccountInfo(preferences: Preferences.DefaultPreferences) {
         preferences.getAccountId()?.let { id ->
-            Datadog.setAccountInfo(
+            Flashcat.setAccountInfo(
                 id = id,
                 name = preferences.getAccountName(),
                 extraInfo = mapOf(

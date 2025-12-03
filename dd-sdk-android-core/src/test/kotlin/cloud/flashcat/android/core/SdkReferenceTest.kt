@@ -7,7 +7,7 @@
 
 package cloud.flashcat.android.core
 
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.core.internal.DatadogCore
 import fr.xgouchet.elmyr.annotation.IntForgery
 import fr.xgouchet.elmyr.annotation.StringForgery
@@ -34,12 +34,12 @@ internal class SdkReferenceTest {
 
     @BeforeEach
     fun `set up`() {
-        Datadog.registry.register(null, mockSdkCore)
+        Flashcat.registry.register(null, mockSdkCore)
     }
 
     @AfterEach
     fun `tear down`() {
-        Datadog.registry.clear()
+        Flashcat.registry.clear()
     }
 
     @Test

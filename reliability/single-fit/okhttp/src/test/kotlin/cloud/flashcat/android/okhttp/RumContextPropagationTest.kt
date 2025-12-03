@@ -7,7 +7,7 @@
 package cloud.flashcat.android.okhttp
 
 import android.content.Context
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.api.context.AccountInfo
 import cloud.flashcat.android.api.context.DatadogContext
@@ -75,7 +75,7 @@ class RumContextPropagationTest {
 
     @AfterEach
     fun `tear down`() {
-        Datadog.stopInstance(stubSdkCore.name)
+        Flashcat.stopInstance(stubSdkCore.name)
         mockServer.shutdown()
     }
 
@@ -246,8 +246,8 @@ class RumContextPropagationTest {
         private fun Forge.prepareStubSdkCore(datadogContext: DatadogContext): StubSDKCore {
             val sdkCoreStub = StubSDKCore(this, datadogContext = datadogContext)
 
-            Datadog::class.java
-                .getStaticValue<Datadog, Any>("registry")
+            Flashcat::class.java
+                .getStaticValue<Flashcat, Any>("registry")
                 .getFieldValue<MutableMap<String, SdkCore>, Any>("instances")
                 .also { instances -> instances += sdkCoreStub.name to sdkCoreStub }
 

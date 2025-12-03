@@ -14,7 +14,7 @@ import android.view.ViewGroup
 import android.widget.RadioGroup
 import androidx.annotation.IdRes
 import androidx.fragment.app.DialogFragment
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.privacy.TrackingConsent
 import cloud.flashcat.android.sample.Preferences
 import cloud.flashcat.android.sample.R
@@ -41,7 +41,7 @@ internal class GdprDialogFragment : DialogFragment() {
                 R.id.granted -> TrackingConsent.GRANTED
                 else -> TrackingConsent.NOT_GRANTED
             }
-            Datadog.setTrackingConsent(trackingConsent)
+            Flashcat.setTrackingConsent(trackingConsent)
             Preferences.defaultPreferences(requireContext()).setTrackingConsent(trackingConsent)
             (activity as? TrackingConsentChangeListener)?.onTrackingConsentChanged(trackingConsent)
         }

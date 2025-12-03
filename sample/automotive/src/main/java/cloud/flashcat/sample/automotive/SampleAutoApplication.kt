@@ -9,7 +9,7 @@ package cloud.flashcat.sample.automotive
 
 import android.app.Application
 import android.util.Log
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.FlashcatSite
 import cloud.flashcat.android.core.configuration.BatchSize
 import cloud.flashcat.android.core.configuration.Configuration
@@ -31,8 +31,8 @@ class SampleAutoApplication : Application() {
     }
 
     private fun initializeDatadog() {
-        Datadog.setVerbosity(Log.VERBOSE)
-        Datadog.initialize(
+        Flashcat.setVerbosity(Log.VERBOSE)
+        Flashcat.initialize(
             this,
             createDatadogConfiguration(),
             TrackingConsent.GRANTED

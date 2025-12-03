@@ -17,7 +17,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentPagerAdapter
 import androidx.viewpager.widget.ViewPager
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.rum.Rum
 import cloud.flashcat.android.rum.tracking.FragmentViewTrackingStrategy
 import cloud.flashcat.android.sdk.integration.R
@@ -36,8 +36,8 @@ internal class FragmentTrackingPlaygroundActivity : AppCompatActivity() {
             .build()
         val trackingConsent = intent.getTrackingConsent()
 
-        Datadog.setVerbosity(Log.VERBOSE)
-        val sdkCore = Datadog.initialize(this, config, trackingConsent)
+        Flashcat.setVerbosity(Log.VERBOSE)
+        val sdkCore = Flashcat.initialize(this, config, trackingConsent)
         checkNotNull(sdkCore)
 
         val rumConfig = RuntimeConfig.rumConfigBuilder()

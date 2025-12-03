@@ -8,7 +8,7 @@
 package cloud.flashcat.android.core.integration.tests
 
 import androidx.test.core.app.ApplicationProvider
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.FlashcatSite
 import cloud.flashcat.android._InternalProxy
 import cloud.flashcat.android.api.feature.Feature
@@ -84,7 +84,7 @@ class PendingToGrantedCustomPersistenceAsyncTest(
     @After
     fun tearDown() {
         cleanStorage()
-        Datadog.stopInstance()
+        Flashcat.stopInstance()
         cleanMockWebServer()
     }
 
@@ -92,7 +92,7 @@ class PendingToGrantedCustomPersistenceAsyncTest(
     fun mustReceiveTheEvents_whenFeatureWrite_customStorage_asynchronousAccess() {
         // Given
         trackingConsent = TrackingConsent.PENDING
-        testedInternalSdkCore = Datadog.initialize(
+        testedInternalSdkCore = Flashcat.initialize(
             context = ApplicationProvider.getApplicationContext(),
             configuration = fakeConfiguration,
             trackingConsent = trackingConsent
@@ -105,7 +105,7 @@ class PendingToGrantedCustomPersistenceAsyncTest(
         // When
         Thread {
             Thread.sleep(200)
-            Datadog.setTrackingConsent(TrackingConsent.GRANTED)
+            Flashcat.setTrackingConsent(TrackingConsent.GRANTED)
             countDownLatch.countDown()
         }.start()
         Thread {

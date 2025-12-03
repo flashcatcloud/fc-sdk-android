@@ -7,7 +7,7 @@
 
 package cloud.flashcat.android.timber
 
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.log.Logger
 import timber.log.Timber
@@ -32,7 +32,7 @@ class DatadogTree(
      */
     @Suppress("unused")
     @JvmOverloads
-    constructor(minLogPriority: Int, sdkCore: SdkCore = Datadog.getInstance()) :
+    constructor(minLogPriority: Int, sdkCore: SdkCore = Flashcat.getInstance()) :
         this(
             Logger.Builder(sdkCore)
                 .setRemoteLogThreshold(minLogPriority)

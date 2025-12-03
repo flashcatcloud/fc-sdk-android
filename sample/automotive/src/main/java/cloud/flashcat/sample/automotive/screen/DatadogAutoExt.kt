@@ -10,13 +10,13 @@ package cloud.flashcat.sample.automotive.screen
 import androidx.car.app.Screen
 import androidx.car.app.model.Action
 import androidx.car.app.model.OnClickListener
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.rum.GlobalRumMonitor
 import cloud.flashcat.android.rum.RumActionType
 
 internal fun Screen.monitorGetTemplate(
-    sdkCore: SdkCore = Datadog.getInstance()
+    sdkCore: SdkCore = Flashcat.getInstance()
 ) {
     GlobalRumMonitor.get(sdkCore).startView(
         key = javaClass.name,
@@ -25,7 +25,7 @@ internal fun Screen.monitorGetTemplate(
 }
 
 internal fun Action.Builder.setMonitoredClickListener(
-    sdkCore: SdkCore = Datadog.getInstance(),
+    sdkCore: SdkCore = Flashcat.getInstance(),
     listener: OnClickListener
 ): Action.Builder {
     val builtAction = build()

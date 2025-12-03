@@ -8,7 +8,7 @@
 package cloud.flashcat.android.log
 
 import androidx.annotation.FloatRange
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.InternalLogger
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.api.feature.Feature
@@ -203,7 +203,7 @@ internal constructor(internal var handler: LogHandler) {
      */
     class Builder
     @JvmOverloads
-    constructor(sdkCore: SdkCore = Datadog.getInstance()) {
+    constructor(sdkCore: SdkCore = Flashcat.getInstance()) {
 
         private val sdkCore: FeatureSdkCore = sdkCore as FeatureSdkCore
 

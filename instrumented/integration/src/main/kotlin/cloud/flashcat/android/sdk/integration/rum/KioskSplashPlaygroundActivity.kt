@@ -11,7 +11,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.log.Logs
 import cloud.flashcat.android.privacy.TrackingConsent
 import cloud.flashcat.android.rum.GlobalRumMonitor
@@ -31,7 +31,7 @@ internal class KioskSplashPlaygroundActivity : AppCompatActivity() {
 
         val config = RuntimeConfig.configBuilder().build()
 
-        val sdkCore = Datadog.initialize(
+        val sdkCore = Flashcat.initialize(
             this,
             config,
             TrackingConsent.GRANTED

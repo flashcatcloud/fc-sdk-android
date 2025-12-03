@@ -11,7 +11,7 @@ import android.content.Context
 import android.content.res.AssetManager
 import android.content.res.Resources
 import androidx.annotation.RawRes
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.internal.utils.toHexString
 import java.io.InputStream
@@ -36,7 +36,7 @@ import java.io.InputStream
 fun Context.getAssetAsRumResource(
     fileName: String,
     accessMode: Int = AssetManager.ACCESS_STREAMING,
-    sdkCore: SdkCore = Datadog.getInstance()
+    sdkCore: SdkCore = Flashcat.getInstance()
 ): InputStream {
     return RumResourceInputStream(
         assets.open(fileName, accessMode),
@@ -61,7 +61,7 @@ fun Context.getAssetAsRumResource(
 @Suppress("SwallowedException")
 fun Context.getRawResAsRumResource(
     @RawRes id: Int,
-    sdkCore: SdkCore = Datadog.getInstance()
+    sdkCore: SdkCore = Flashcat.getInstance()
 ): InputStream {
     val resName = try {
         resources.getResourceName(id)

@@ -8,7 +8,7 @@
 package cloud.flashcat.android.sessionreplay
 
 import androidx.annotation.VisibleForTesting
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.InternalLogger
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.api.feature.Feature
@@ -41,7 +41,7 @@ object SessionReplay {
     @JvmStatic
     fun enable(
         sessionReplayConfiguration: SessionReplayConfiguration,
-        sdkCore: SdkCore = Datadog.getInstance()
+        sdkCore: SdkCore = Flashcat.getInstance()
     ) {
         val featureSdkCore = sdkCore as FeatureSdkCore
         sessionReplayConfiguration.systemRequirementsConfiguration
@@ -79,7 +79,7 @@ object SessionReplay {
      * will be used.
      */
     fun startRecording(
-        sdkCore: SdkCore = Datadog.getInstance()
+        sdkCore: SdkCore = Flashcat.getInstance()
     ) {
         val sessionReplayFeature = (sdkCore as? FeatureSdkCore)
             ?.getFeature(Feature.SESSION_REPLAY_FEATURE_NAME)?.let {
@@ -95,7 +95,7 @@ object SessionReplay {
      * will be used.
      */
     fun stopRecording(
-        sdkCore: SdkCore = Datadog.getInstance()
+        sdkCore: SdkCore = Flashcat.getInstance()
     ) {
         val sessionReplayFeature = (sdkCore as? FeatureSdkCore)
             ?.getFeature(Feature.SESSION_REPLAY_FEATURE_NAME)?.let {

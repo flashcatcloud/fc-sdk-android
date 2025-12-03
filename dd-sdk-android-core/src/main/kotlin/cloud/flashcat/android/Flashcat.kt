@@ -10,7 +10,7 @@ package cloud.flashcat.android
 import android.content.Context
 import androidx.annotation.AnyThread
 import androidx.annotation.WorkerThread
-import cloud.flashcat.android.Datadog.clearAccountInfo
+import cloud.flashcat.android.Flashcat.clearAccountInfo
 import cloud.flashcat.android.api.InternalLogger
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.api.context.UserInfo
@@ -32,7 +32,7 @@ import java.util.Locale
  * This class initializes the Datadog SDK, and sets up communication with the server.
  */
 @Suppress("TooManyFunctions")
-object Datadog {
+object Flashcat {
 
     internal val registry = SdkCoreRegistry(unboundInternalLogger)
 

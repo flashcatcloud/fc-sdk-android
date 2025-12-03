@@ -10,7 +10,7 @@ package cloud.flashcat.android.sdk.integration.trace
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.context.DatadogContext
 import cloud.flashcat.android.core.InternalSdkCore
 import cloud.flashcat.android.log.Logs
@@ -44,9 +44,9 @@ internal class ActivityLifecycleTrace : AppCompatActivity() {
         val config = RuntimeConfig.configBuilder().build()
         val trackingConsent = intent.getTrackingConsent()
 
-        Datadog.setVerbosity(Log.VERBOSE)
+        Flashcat.setVerbosity(Log.VERBOSE)
         val sdkCore = checkNotNull(
-            Datadog.initialize(this, config, trackingConsent)
+            Flashcat.initialize(this, config, trackingConsent)
         )
 
         listOf(
@@ -93,7 +93,7 @@ internal class ActivityLifecycleTrace : AppCompatActivity() {
     }
 
     fun getDatadogContext(): DatadogContext? {
-        return (Datadog.getInstance() as InternalSdkCore).getDatadogContext()
+        return (Flashcat.getInstance() as InternalSdkCore).getDatadogContext()
     }
 
     // endregion

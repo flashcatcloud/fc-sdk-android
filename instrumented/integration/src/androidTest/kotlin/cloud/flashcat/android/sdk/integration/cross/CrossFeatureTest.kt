@@ -9,7 +9,7 @@ package cloud.flashcat.android.sdk.integration.cross
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android._InternalProxy
 import cloud.flashcat.android.core.configuration.BatchProcessingLevel
 import cloud.flashcat.android.core.configuration.Configuration
@@ -92,7 +92,7 @@ class CrossFeatureTest {
                 _InternalProxy.allowClearTextHttp(this)
             }
             .build()
-        Datadog.initialize(
+        Flashcat.initialize(
             InstrumentationRegistry.getInstrumentation().targetContext,
             sdkConfig,
             TrackingConsent.GRANTED
@@ -126,7 +126,7 @@ class CrossFeatureTest {
     fun tearDown() {
         mockWebServer.shutdown()
         GlobalRumMonitor.get().stopSession()
-        Datadog.stopInstance()
+        Flashcat.stopInstance()
         InstrumentationRegistry
             .getInstrumentation()
             .targetContext

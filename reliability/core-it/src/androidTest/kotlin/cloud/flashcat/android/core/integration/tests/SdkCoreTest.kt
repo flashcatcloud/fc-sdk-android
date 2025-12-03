@@ -9,7 +9,7 @@ package cloud.flashcat.android.core.integration.tests
 
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.api.context.AccountInfo
 import cloud.flashcat.android.api.context.UserInfo
@@ -86,7 +86,7 @@ class SdkCoreTest : MockServerTest() {
         fakeAccountExtraInfo = forge.exhaustiveAttributes(excludedKeys = setOf("id", "name"))
         val configuration: Configuration = forge.getForgery()
         testedSdkCore = checkNotNull(
-            Datadog.initialize(
+            Flashcat.initialize(
                 ApplicationProvider.getApplicationContext(),
                 configuration,
                 fakeTrackingConsent
@@ -98,7 +98,7 @@ class SdkCoreTest : MockServerTest() {
 
     @After
     fun tearDown() {
-        Datadog.stopInstance()
+        Flashcat.stopInstance()
     }
 
     // region set UserInfo

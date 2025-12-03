@@ -6,7 +6,7 @@
  */
 package cloud.flashcat.android.trace
 
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.InternalLogger
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.api.feature.Feature
@@ -35,7 +35,7 @@ object DatadogTracing {
      * configurations or features are unavailable.
      */
     @JvmStatic
-    fun newTracerBuilder(sdkCore: SdkCore = Datadog.getInstance()): DatadogTracerBuilder = when {
+    fun newTracerBuilder(sdkCore: SdkCore = Flashcat.getInstance()): DatadogTracerBuilder = when {
         DatadogTracingToolkit.testBuilderProvider != null -> {
             DatadogTracingToolkit.testBuilderProvider as DatadogTracerBuilder
         }

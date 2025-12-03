@@ -7,7 +7,7 @@
 
 package cloud.flashcat.android.core.configuration
 
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.FlashcatSite
 import cloud.flashcat.android.core.persistence.PersistenceStrategy
 import cloud.flashcat.android.security.Encryption
@@ -18,7 +18,7 @@ import java.net.Proxy
 /**
  * An object describing the configuration of the Datadog SDK.
  *
- * This is necessary to initialize the SDK with the [Datadog.initialize] method.
+ * This is necessary to initialize the SDK with the [Flashcat.initialize] method.
  */
 data class Configuration
 internal constructor(

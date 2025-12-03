@@ -9,7 +9,7 @@ package cloud.flashcat.android.tv.sample
 
 import android.app.Application
 import android.util.Log
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.FlashcatSite
 import cloud.flashcat.android.core.configuration.BatchSize
 import cloud.flashcat.android.core.configuration.Configuration
@@ -55,8 +55,8 @@ class TvSampleApplication : Application() {
     }
 
     private fun initializeDatadog() {
-        Datadog.setVerbosity(Log.VERBOSE)
-        Datadog.initialize(
+        Flashcat.setVerbosity(Log.VERBOSE)
+        Flashcat.initialize(
             this,
             createDatadogConfiguration(),
             TrackingConsent.GRANTED

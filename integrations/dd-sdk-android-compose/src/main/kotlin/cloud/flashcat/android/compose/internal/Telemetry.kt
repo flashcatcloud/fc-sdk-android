@@ -7,7 +7,7 @@
 
 package cloud.flashcat.android.compose.internal
 
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.InternalLogger
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.api.feature.FeatureSdkCore
@@ -16,7 +16,7 @@ internal fun sendTelemetry(
     autoInstrumented: Boolean = false,
     instrumentationType: InstrumentationType,
     supportLibrary: SupportLibrary? = null,
-    sdkCore: SdkCore = Datadog.getInstance()
+    sdkCore: SdkCore = Flashcat.getInstance()
 ) {
     val message = "$DATADOG_SEMANTICS_TELEMETRY_LOG: ${instrumentationType.value}"
     val attributes = mapOf(

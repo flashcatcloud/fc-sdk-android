@@ -10,7 +10,7 @@ package cloud.flashcat.android.core
 import android.app.Application
 import android.content.pm.ApplicationInfo
 import android.util.Log
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.feature.Feature
 import cloud.flashcat.android.core.configuration.BatchProcessingLevel
 import cloud.flashcat.android.core.configuration.BatchSize
@@ -203,7 +203,7 @@ internal class DatadogCoreInitializationTest {
         @IntForgery fakeFlags: Int
     ) {
         // Given
-        Datadog.setVerbosity(Int.MAX_VALUE)
+        Flashcat.setVerbosity(Int.MAX_VALUE)
         appContext.fakeAppInfo.flags = fakeFlags and ApplicationInfo.FLAG_DEBUGGABLE.inv()
 
         // When
@@ -223,7 +223,7 @@ internal class DatadogCoreInitializationTest {
         }
 
         // Then
-        assertThat(Datadog.libraryVerbosity)
+        assertThat(Flashcat.libraryVerbosity)
             .isEqualTo(Int.MAX_VALUE)
     }
 
@@ -251,7 +251,7 @@ internal class DatadogCoreInitializationTest {
         }
 
         // Then
-        assertThat(Datadog.libraryVerbosity)
+        assertThat(Flashcat.libraryVerbosity)
             .isEqualTo(Log.VERBOSE)
     }
 
@@ -260,7 +260,7 @@ internal class DatadogCoreInitializationTest {
         @IntForgery fakeFlags: Int
     ) {
         // Given
-        Datadog.setVerbosity(Int.MAX_VALUE)
+        Flashcat.setVerbosity(Int.MAX_VALUE)
         appContext.fakeAppInfo.flags = fakeFlags and ApplicationInfo.FLAG_DEBUGGABLE.inv()
 
         // When
@@ -405,7 +405,7 @@ internal class DatadogCoreInitializationTest {
             fakeInstanceName,
             executorServiceFactory = { _, _, _ -> mockPersistenceExecutorService }
         ).apply {
-            initialize(fakeConfiguration.copy(additionalConfig = mapOf(Datadog.DD_SOURCE_TAG to source)))
+            initialize(fakeConfiguration.copy(additionalConfig = mapOf(Flashcat.DD_SOURCE_TAG to source)))
         }
 
         // Then
@@ -424,7 +424,7 @@ internal class DatadogCoreInitializationTest {
             executorServiceFactory = { _, _, _ -> mockPersistenceExecutorService }
         ).apply {
             initialize(
-                fakeConfiguration.copy(additionalConfig = mapOf(Datadog.DD_SOURCE_TAG to source))
+                fakeConfiguration.copy(additionalConfig = mapOf(Flashcat.DD_SOURCE_TAG to source))
             )
         }
 
@@ -444,7 +444,7 @@ internal class DatadogCoreInitializationTest {
             executorServiceFactory = { _, _, _ -> mockPersistenceExecutorService }
         ).apply {
             initialize(
-                fakeConfiguration.copy(additionalConfig = mapOf(Datadog.DD_SOURCE_TAG to source))
+                fakeConfiguration.copy(additionalConfig = mapOf(Flashcat.DD_SOURCE_TAG to source))
             )
         }
 
@@ -483,7 +483,7 @@ internal class DatadogCoreInitializationTest {
         ).apply {
             initialize(
                 fakeConfiguration.copy(
-                    additionalConfig = mapOf(Datadog.DD_SDK_VERSION_TAG to sdkVersion)
+                    additionalConfig = mapOf(Flashcat.DD_SDK_VERSION_TAG to sdkVersion)
                 )
             )
         }
@@ -505,7 +505,7 @@ internal class DatadogCoreInitializationTest {
         ).apply {
             initialize(
                 fakeConfiguration.copy(
-                    additionalConfig = mapOf(Datadog.DD_SDK_VERSION_TAG to sdkVersion)
+                    additionalConfig = mapOf(Flashcat.DD_SDK_VERSION_TAG to sdkVersion)
                 )
             )
         }
@@ -527,7 +527,7 @@ internal class DatadogCoreInitializationTest {
         ).apply {
             initialize(
                 fakeConfiguration.copy(
-                    additionalConfig = mapOf(Datadog.DD_SDK_VERSION_TAG to sdkVersion)
+                    additionalConfig = mapOf(Flashcat.DD_SDK_VERSION_TAG to sdkVersion)
                 )
             )
         }
@@ -567,7 +567,7 @@ internal class DatadogCoreInitializationTest {
         ).apply {
             initialize(
                 fakeConfiguration.copy(
-                    additionalConfig = mapOf(Datadog.DD_APP_VERSION_TAG to appVersion)
+                    additionalConfig = mapOf(Flashcat.DD_APP_VERSION_TAG to appVersion)
                 )
             )
         }
@@ -589,7 +589,7 @@ internal class DatadogCoreInitializationTest {
         ).apply {
             initialize(
                 fakeConfiguration.copy(
-                    additionalConfig = mapOf(Datadog.DD_APP_VERSION_TAG to forge.aWhitespaceString())
+                    additionalConfig = mapOf(Flashcat.DD_APP_VERSION_TAG to forge.aWhitespaceString())
                 )
             )
         }
@@ -613,7 +613,7 @@ internal class DatadogCoreInitializationTest {
         ).apply {
             initialize(
                 fakeConfiguration.copy(
-                    additionalConfig = mapOf(Datadog.DD_APP_VERSION_TAG to forge.anInt())
+                    additionalConfig = mapOf(Flashcat.DD_APP_VERSION_TAG to forge.anInt())
                 )
             )
         }

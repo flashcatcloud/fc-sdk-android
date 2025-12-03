@@ -6,7 +6,7 @@
  */
 package cloud.flashcat.android.okhttp
 
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.api.feature.Feature
 import cloud.flashcat.android.core.stub.StubEvent
@@ -81,7 +81,7 @@ class SpanExtIntegrationTest {
     @BeforeEach
     fun `set up`(forge: Forge) {
         stubSdkCore = StubSDKCore(forge)
-        val registry: Any = Datadog::class.java.getStaticValue("registry")
+        val registry: Any = Flashcat::class.java.getStaticValue("registry")
         val instances: MutableMap<String, SdkCore> = registry.getFieldValue("instances")
         instances += stubSdkCore.name to stubSdkCore
         mockServer = MockWebServer()
@@ -96,7 +96,7 @@ class SpanExtIntegrationTest {
     @AfterEach
     fun `tear down`() {
         GlobalDatadogTracer.clear()
-        Datadog.stopInstance(stubSdkCore.name)
+        Flashcat.stopInstance(stubSdkCore.name)
         mockServer.shutdown()
     }
 

@@ -10,7 +10,7 @@ package cloud.flashcat.android.webview
 import android.webkit.WebView
 import androidx.annotation.FloatRange
 import androidx.annotation.MainThread
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.InternalLogger
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.api.feature.Feature
@@ -73,7 +73,7 @@ object WebViewTracking {
         webView: WebView,
         allowedHosts: List<String>,
         @FloatRange(from = 0.0, to = 100.0) logsSampleRate: Float = 100f,
-        sdkCore: SdkCore = Datadog.getInstance()
+        sdkCore: SdkCore = Flashcat.getInstance()
     ) {
         if (!webView.settings.javaScriptEnabled) {
             (sdkCore as FeatureSdkCore).internalLogger.log(

@@ -9,7 +9,7 @@ package cloud.flashcat.android.coil
 
 import android.net.Uri
 import coil.request.ImageRequest
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.rum.GlobalRumMonitor
 import cloud.flashcat.android.rum.RumErrorSource
@@ -29,7 +29,7 @@ import java.io.File
 class DatadogCoilRequestListener
 @JvmOverloads
 constructor(
-    private val sdkCore: SdkCore = Datadog.getInstance()
+    private val sdkCore: SdkCore = Flashcat.getInstance()
 ) : ImageRequest.Listener {
 
     // region Listener

@@ -20,7 +20,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.rum.ExperimentalRumApi
 import cloud.flashcat.android.rum.GlobalRumMonitor
 import cloud.flashcat.android.sample.R
@@ -65,7 +65,7 @@ internal class DataListFragment : Fragment() {
                 when (it) {
                     is DataListViewModel.UIResponse.Success -> {
                         if (!firstDataWasLoaded) {
-                            GlobalRumMonitor.get(Datadog.getInstance()).addTiming("logs_data_loaded")
+                            GlobalRumMonitor.get(Flashcat.getInstance()).addTiming("logs_data_loaded")
                             GlobalRumMonitor.get().addViewLoadingTime(overwrite = false)
                             firstDataWasLoaded = true
                         }

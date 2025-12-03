@@ -68,7 +68,7 @@ import java.util.Locale
 )
 @MockitoSettings(strictness = Strictness.LENIENT)
 @ForgeConfiguration(Configurator::class)
-@ProhibitLeavingStaticMocksIn(Datadog::class)
+@ProhibitLeavingStaticMocksIn(Flashcat::class)
 internal class DatadogTest {
 
     @Mock
@@ -90,9 +90,9 @@ internal class DatadogTest {
 
     @AfterEach
     fun `tear down`() {
-        Datadog.hashGenerator = Sha256HashGenerator()
-        Datadog.stopInstance()
-        Datadog.registry.clear()
+        Flashcat.hashGenerator = Sha256HashGenerator()
+        Flashcat.stopInstance()
+        Flashcat.registry.clear()
     }
 
     // region initialize
@@ -100,12 +100,12 @@ internal class DatadogTest {
     @Test
     fun `M return sdk instance W initialize() + getInstance()`() {
         // When
-        val initialized = Datadog.initialize(
+        val initialized = Flashcat.initialize(
             appContext.mockInstance,
             fakeConfiguration,
             fakeConsent
         )
-        val instance = Datadog.getInstance()
+        val instance = Flashcat.getInstance()
 
         // Then
         assertThat(instance).isSameAs(initialized)
@@ -116,13 +116,13 @@ internal class DatadogTest {
         @StringForgery name: String
     ) {
         // When
-        val initialized = Datadog.initialize(
+        val initialized = Flashcat.initialize(
             name,
             appContext.mockInstance,
             fakeConfiguration,
             fakeConsent
         )
-        val instance = Datadog.getInstance(name)
+        val instance = Flashcat.getInstance(name)
 
         // Then
         assertThat(instance).isSameAs(initialized)
@@ -131,12 +131,12 @@ internal class DatadogTest {
     @Test
     fun `M warn W initialize() + initialize()`() {
         // When
-        val initialized1 = Datadog.initialize(
+        val initialized1 = Flashcat.initialize(
             appContext.mockInstance,
             fakeConfiguration,
             fakeConsent
         )
-        val initialized2 = Datadog.initialize(
+        val initialized2 = Flashcat.initialize(
             appContext.mockInstance,
             fakeConfiguration,
             fakeConsent
@@ -146,7 +146,7 @@ internal class DatadogTest {
         logger.mockInternalLogger.verifyLog(
             InternalLogger.Level.WARN,
             InternalLogger.Target.USER,
-            Datadog.MESSAGE_ALREADY_INITIALIZED
+            Flashcat.MESSAGE_ALREADY_INITIALIZED
         )
         assertThat(initialized2).isSameAs(initialized1)
     }
@@ -156,14 +156,14 @@ internal class DatadogTest {
         @StringForgery name: String
     ) {
         // When
-        Datadog.initialize(name, appContext.mockInstance, fakeConfiguration, fakeConsent)
-        Datadog.initialize(name, appContext.mockInstance, fakeConfiguration, fakeConsent)
+        Flashcat.initialize(name, appContext.mockInstance, fakeConfiguration, fakeConsent)
+        Flashcat.initialize(name, appContext.mockInstance, fakeConfiguration, fakeConsent)
 
         // Then
         logger.mockInternalLogger.verifyLog(
             InternalLogger.Level.WARN,
             InternalLogger.Target.USER,
-            Datadog.MESSAGE_ALREADY_INITIALIZED
+            Flashcat.MESSAGE_ALREADY_INITIALIZED
         )
     }
 
@@ -179,10 +179,10 @@ internal class DatadogTest {
                 "null/${fakeConfiguration.coreConfig.site.siteName}"
             )
         ) doReturn fakeHash
-        Datadog.hashGenerator = mockHashGenerator
+        Flashcat.hashGenerator = mockHashGenerator
 
         // When
-        val instance = Datadog.initialize(
+        val instance = Flashcat.initialize(
             appContext.mockInstance,
             fakeConfiguration,
             fakeConsent
@@ -206,10 +206,10 @@ internal class DatadogTest {
                 "$instanceName/${fakeConfiguration.coreConfig.site.siteName}"
             )
         ) doReturn fakeHash
-        Datadog.hashGenerator = mockHashGenerator
+        Flashcat.hashGenerator = mockHashGenerator
 
         // When
-        val instance = Datadog.initialize(
+        val instance = Flashcat.initialize(
             instanceName,
             appContext.mockInstance,
             fakeConfiguration,
@@ -233,10 +233,10 @@ internal class DatadogTest {
                 "null/${fakeConfiguration.coreConfig.site.siteName}"
             )
         ) doReturn fakeHash
-        Datadog.hashGenerator = mockHashGenerator
+        Flashcat.hashGenerator = mockHashGenerator
 
         // When
-        val instance = Datadog.initialize(
+        val instance = Flashcat.initialize(
             appContext.mockInstance,
             fakeConfiguration,
             fakeConsent
@@ -260,10 +260,10 @@ internal class DatadogTest {
                 "$instanceName/${fakeConfiguration.coreConfig.site.siteName}"
             )
         ) doReturn fakeHash
-        Datadog.hashGenerator = mockHashGenerator
+        Flashcat.hashGenerator = mockHashGenerator
 
         // When
-        val instance = Datadog.initialize(
+        val instance = Flashcat.initialize(
             instanceName,
             appContext.mockInstance,
             fakeConfiguration,
@@ -278,11 +278,11 @@ internal class DatadogTest {
     @Test
     fun `M warn W initialize() {hash generator fails}`() {
         // Given
-        Datadog.hashGenerator = mock()
-        whenever(Datadog.hashGenerator.generate(any())) doReturn null
+        Flashcat.hashGenerator = mock()
+        whenever(Flashcat.hashGenerator.generate(any())) doReturn null
 
         // When
-        val instance = Datadog.initialize(
+        val instance = Flashcat.initialize(
             appContext.mockInstance,
             fakeConfiguration,
             fakeConsent
@@ -292,7 +292,7 @@ internal class DatadogTest {
         logger.mockInternalLogger.verifyLog(
             InternalLogger.Level.ERROR,
             InternalLogger.Target.USER,
-            Datadog.CANNOT_CREATE_SDK_INSTANCE_ID_ERROR
+            Flashcat.CANNOT_CREATE_SDK_INSTANCE_ID_ERROR
         )
         assertThat(instance).isNull()
     }
@@ -302,11 +302,11 @@ internal class DatadogTest {
         @StringForgery name: String
     ) {
         // Given
-        Datadog.hashGenerator = mock()
-        whenever(Datadog.hashGenerator.generate(any())) doReturn null
+        Flashcat.hashGenerator = mock()
+        whenever(Flashcat.hashGenerator.generate(any())) doReturn null
 
         // When
-        val instance = Datadog.initialize(
+        val instance = Flashcat.initialize(
             name,
             appContext.mockInstance,
             fakeConfiguration,
@@ -317,7 +317,7 @@ internal class DatadogTest {
         logger.mockInternalLogger.verifyLog(
             InternalLogger.Level.ERROR,
             InternalLogger.Target.USER,
-            Datadog.CANNOT_CREATE_SDK_INSTANCE_ID_ERROR
+            Flashcat.CANNOT_CREATE_SDK_INSTANCE_ID_ERROR
         )
         assertThat(instance).isNull()
     }
@@ -325,7 +325,7 @@ internal class DatadogTest {
     @Test
     fun `M stop specific instance W stopInstance()`() {
         // Given
-        val sdk = Datadog.initialize(
+        val sdk = Flashcat.initialize(
             appContext.mockInstance,
             fakeConfiguration,
             fakeConsent
@@ -333,8 +333,8 @@ internal class DatadogTest {
         checkNotNull(sdk)
 
         // When
-        Datadog.stopInstance()
-        val getInstance = Datadog.getInstance()
+        Flashcat.stopInstance()
+        val getInstance = Flashcat.getInstance()
 
         // Then
         assertThat(getInstance).isInstanceOf(NoOpInternalSdkCore::class.java)
@@ -346,7 +346,7 @@ internal class DatadogTest {
         @StringForgery name: String
     ) {
         // Given
-        val sdk = Datadog.initialize(
+        val sdk = Flashcat.initialize(
             name,
             appContext.mockInstance,
             fakeConfiguration,
@@ -355,8 +355,8 @@ internal class DatadogTest {
         checkNotNull(sdk)
 
         // When
-        Datadog.stopInstance(name)
-        val getInstance = Datadog.getInstance(name)
+        Flashcat.stopInstance(name)
+        val getInstance = Flashcat.getInstance(name)
 
         // Then
         assertThat(getInstance).isInstanceOf(NoOpInternalSdkCore::class.java)
@@ -369,7 +369,7 @@ internal class DatadogTest {
         @StringForgery name2: String
     ) {
         // Given
-        val sdk = Datadog.initialize(
+        val sdk = Flashcat.initialize(
             name,
             appContext.mockInstance,
             fakeConfiguration,
@@ -378,8 +378,8 @@ internal class DatadogTest {
         checkNotNull(sdk)
 
         // When
-        Datadog.stopInstance(name2)
-        val getInstance = Datadog.getInstance(name)
+        Flashcat.stopInstance(name2)
+        val getInstance = Flashcat.getInstance(name)
 
         // Then
         assertThat(getInstance).isSameAs(sdk)
@@ -394,7 +394,7 @@ internal class DatadogTest {
         val fakeInstanceName = forge.aNullable { anAlphabeticalString() }
 
         // When
-        Datadog.getInstance(fakeInstanceName)
+        Flashcat.getInstance(fakeInstanceName)
 
         // Then
         val currentMethodName = Thread.currentThread().stackTrace[1].methodName
@@ -421,7 +421,7 @@ internal class DatadogTest {
                 .joinToString(separator = "\n")
             assertThat(filteredActualMessage)
                 .isEqualTo(
-                    Datadog.MESSAGE_SDK_NOT_INITIALIZED.format(
+                    Flashcat.MESSAGE_SDK_NOT_INITIALIZED.format(
                         Locale.US,
                         fakeInstanceName ?: SdkCoreRegistry.DEFAULT_INSTANCE_NAME,
                         expectedStacktrace
@@ -438,7 +438,7 @@ internal class DatadogTest {
         val fakeInstanceName = forge.aNullable { anAlphabeticalString() }
 
         // When
-        val result = Datadog.isInitialized(fakeInstanceName)
+        val result = Flashcat.isInitialized(fakeInstanceName)
 
         // Then
         assertThat(result).isFalse
@@ -452,7 +452,7 @@ internal class DatadogTest {
         // Given
         val fakeInstanceName = forge.aNullable { anAlphabeticalString() }
 
-        Datadog.initialize(
+        Flashcat.initialize(
             fakeInstanceName,
             appContext.mockInstance,
             fakeConfiguration,
@@ -460,7 +460,7 @@ internal class DatadogTest {
         )
 
         // When
-        val result = Datadog.isInitialized(fakeInstanceName)
+        val result = Flashcat.isInitialized(fakeInstanceName)
 
         // Then
         assertThat(result).isTrue()
@@ -474,8 +474,8 @@ internal class DatadogTest {
         @IntForgery level: Int
     ) {
         // When
-        Datadog.setVerbosity(level)
-        val result = Datadog.getVerbosity()
+        Flashcat.setVerbosity(level)
+        val result = Flashcat.getVerbosity()
 
         // Then
         assertThat(result).isEqualTo(level)
@@ -484,7 +484,7 @@ internal class DatadogTest {
     @Test
     fun `M do nothing W stop() without initialize`() {
         // When
-        Datadog.stopInstance()
+        Flashcat.stopInstance()
 
         // Then
         verifyNoInteractions(appContext.mockInstance)
@@ -498,7 +498,7 @@ internal class DatadogTest {
         val mockSdkCore = mock<SdkCore>()
 
         // When
-        Datadog.setTrackingConsent(fakeTrackingConsent, mockSdkCore)
+        Flashcat.setTrackingConsent(fakeTrackingConsent, mockSdkCore)
 
         // Then
         verify(mockSdkCore).setTrackingConsent(fakeTrackingConsent)
@@ -518,7 +518,7 @@ internal class DatadogTest {
         val mockSdkCore = mock<SdkCore>()
 
         // When
-        Datadog.setUserInfo(id, name, email, fakeUserProperties, mockSdkCore)
+        Flashcat.setUserInfo(id, name, email, fakeUserProperties, mockSdkCore)
 
         // Then
         verify(mockSdkCore).setUserInfo(id, name, email, fakeUserProperties)
@@ -535,7 +535,7 @@ internal class DatadogTest {
         val mockSdkCore = mock<SdkCore>()
 
         // When
-        Datadog.addUserProperties(fakeUserProperties, mockSdkCore)
+        Flashcat.addUserProperties(fakeUserProperties, mockSdkCore)
 
         // Then
         verify(mockSdkCore).addUserProperties(fakeUserProperties)
@@ -547,7 +547,7 @@ internal class DatadogTest {
         val mockSdkCore = mock<SdkCore>()
 
         // When
-        Datadog.clearUserInfo(mockSdkCore)
+        Flashcat.clearUserInfo(mockSdkCore)
 
         // Then
         verify(mockSdkCore).clearUserInfo()
@@ -559,7 +559,7 @@ internal class DatadogTest {
         val mockSdkCore = mock<SdkCore>()
 
         // When
-        Datadog.clearAllData(mockSdkCore)
+        Flashcat.clearAllData(mockSdkCore)
 
         // Then
         verify(mockSdkCore).clearAllData()
@@ -578,7 +578,7 @@ internal class DatadogTest {
         val mockSdkCore = mock<SdkCore>()
 
         // When
-        Datadog.setAccountInfo(
+        Flashcat.setAccountInfo(
             id = id,
             name = name,
             extraInfo = fakeExtraInfo,
@@ -600,7 +600,7 @@ internal class DatadogTest {
         val mockSdkCore = mock<SdkCore>()
 
         // When
-        Datadog.addAccountExtraInfo(
+        Flashcat.addAccountExtraInfo(
             extraInfo = fakeExtraInfo,
             sdkCore = mockSdkCore
         )
@@ -615,7 +615,7 @@ internal class DatadogTest {
         val mockSdkCore = mock<SdkCore>()
 
         // When
-        Datadog.clearAccountInfo(sdkCore = mockSdkCore)
+        Flashcat.clearAccountInfo(sdkCore = mockSdkCore)
 
         // Then
         verify(mockSdkCore).clearAccountInfo()

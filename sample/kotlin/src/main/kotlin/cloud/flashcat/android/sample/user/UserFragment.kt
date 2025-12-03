@@ -13,7 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import androidx.fragment.app.Fragment
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.sample.Preferences
 import cloud.flashcat.android.sample.R
 import cloud.flashcat.android.trace.withinSpan
@@ -70,8 +70,8 @@ internal class UserFragment : Fragment(), View.OnClickListener {
                     val age: Int = Integer.valueOf(userAgeField.text.toString())
                     Preferences.defaultPreferences(requireContext())
                         .setUserCredentials(id, name, email, gender, age)
-                    Datadog.setUserInfo(id, name, email, emptyMap())
-                    Datadog.addUserProperties(
+                    Flashcat.setUserInfo(id, name, email, emptyMap())
+                    Flashcat.addUserProperties(
                         mapOf<String, Any>(
                             GENDER_KEY to gender,
                             AGE_KEY to age
@@ -86,7 +86,7 @@ internal class UserFragment : Fragment(), View.OnClickListener {
                     // Clear preferences
                     Preferences.defaultPreferences(requireContext()).clearUserCredentials()
                     // Clear Datadog user info
-                    Datadog.clearUserInfo()
+                    Flashcat.clearUserInfo()
                     // Clear UI fields
                     idField.text.clear()
                     nameField.text.clear()

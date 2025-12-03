@@ -9,7 +9,7 @@ package cloud.flashcat.android.wear.sample
 
 import android.app.Application
 import android.util.Log
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.FlashcatSite
 import cloud.flashcat.android.core.configuration.Configuration
 import cloud.flashcat.android.log.Logs
@@ -38,9 +38,9 @@ class WearApplication : Application() {
 
     @Suppress("MagicNumber")
     private fun initializeDatadog() {
-        Datadog.setVerbosity(Log.VERBOSE)
+        Flashcat.setVerbosity(Log.VERBOSE)
 
-        val sdkCore = Datadog.initialize(
+        val sdkCore = Flashcat.initialize(
             this,
             createDatadogConfiguration(),
             TrackingConsent.GRANTED
@@ -80,7 +80,7 @@ class WearApplication : Application() {
                 .build()
         )
 
-        Datadog.setUserInfo(
+        Flashcat.setUserInfo(
             id = "wear 42",
             name = null,
             email = null

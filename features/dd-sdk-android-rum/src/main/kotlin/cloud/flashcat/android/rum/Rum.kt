@@ -10,7 +10,7 @@ package cloud.flashcat.android.rum
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.InternalLogger
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.api.feature.Feature
@@ -39,7 +39,7 @@ object Rum {
     @Suppress("ReturnCount")
     @JvmOverloads
     @JvmStatic
-    fun enable(rumConfiguration: RumConfiguration, sdkCore: SdkCore = Datadog.getInstance()) {
+    fun enable(rumConfiguration: RumConfiguration, sdkCore: SdkCore = Flashcat.getInstance()) {
         if (sdkCore !is InternalSdkCore) {
             val logger = (sdkCore as? FeatureSdkCore)?.internalLogger ?: InternalLogger.UNBOUND
             logger.log(

@@ -14,7 +14,7 @@ import android.content.Intent
 import android.util.Log
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.ActivityTestRule
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.privacy.TrackingConsent
 import cloud.flashcat.android.rum.GlobalRumMonitor
 import cloud.flashcat.android.sdk.integration.RuntimeConfig
@@ -90,7 +90,7 @@ internal open class MockServerActivityTestRule<T : Activity>(
             .targetContext
             .cacheDir.deleteRecursively()
         GlobalRumMonitor.get().stopSession()
-        Datadog.stopInstance()
+        Flashcat.stopInstance()
 
         super.afterActivityFinished()
     }

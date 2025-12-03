@@ -7,7 +7,7 @@
 
 package cloud.flashcat.android.trace
 
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.api.feature.FeatureSdkCore
 import cloud.flashcat.android.trace.internal.TracingFeature
@@ -26,7 +26,7 @@ object Trace {
      */
     @JvmOverloads
     @JvmStatic
-    fun enable(traceConfiguration: TraceConfiguration, sdkCore: SdkCore = Datadog.getInstance()) {
+    fun enable(traceConfiguration: TraceConfiguration, sdkCore: SdkCore = Flashcat.getInstance()) {
         val tracingFeature = TracingFeature(
             sdkCore = sdkCore as FeatureSdkCore,
             customEndpointUrl = traceConfiguration.customEndpointUrl,

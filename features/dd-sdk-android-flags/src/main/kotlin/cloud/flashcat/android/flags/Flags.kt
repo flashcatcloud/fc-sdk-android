@@ -7,7 +7,7 @@
 
 package cloud.flashcat.android.flags
 
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.api.feature.FeatureSdkCore
 import cloud.flashcat.android.flags.internal.FlagsFeature
@@ -29,7 +29,7 @@ object Flags {
     @JvmStatic
     fun enable(
         configuration: FlagsConfiguration = FlagsConfiguration.default,
-        sdkCore: SdkCore = Datadog.getInstance()
+        sdkCore: SdkCore = Flashcat.getInstance()
     ) {
         val flagsFeature = FlagsFeature(
             sdkCore = sdkCore as FeatureSdkCore,

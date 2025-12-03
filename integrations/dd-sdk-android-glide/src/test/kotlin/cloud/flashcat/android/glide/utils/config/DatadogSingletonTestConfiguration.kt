@@ -7,7 +7,7 @@
 
 package cloud.flashcat.android.glide.utils.config
 
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.core.InternalSdkCore
 import cloud.flashcat.tools.unit.extensions.config.MockTestConfiguration
@@ -31,7 +31,7 @@ internal class DatadogSingletonTestConfiguration :
     }
 
     companion object {
-        private val registryField = Datadog::class.java.getDeclaredField("registry").apply {
+        private val registryField = Flashcat::class.java.getDeclaredField("registry").apply {
             isAccessible = true
         }
         private val registryRegisterMethod = registryField.type.getMethod(

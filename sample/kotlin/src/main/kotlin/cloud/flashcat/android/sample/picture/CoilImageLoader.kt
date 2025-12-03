@@ -11,13 +11,13 @@ import android.content.Context
 import android.widget.ImageView
 import coil.Coil
 import coil.load
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.coil.DatadogCoilRequestListener
 import okhttp3.OkHttpClient
 
 internal class CoilImageLoader : ImageLoader {
 
-    private val listener = DatadogCoilRequestListener(Datadog.getInstance())
+    private val listener = DatadogCoilRequestListener(Flashcat.getInstance())
 
     override val type: ImageLoaderType = ImageLoaderType.COIL
 

@@ -16,7 +16,7 @@ import android.os.Process
 import androidx.annotation.RequiresApi
 import androidx.annotation.WorkerThread
 import cloud.flashcat.android.BuildConfig
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.FlashcatSite
 import cloud.flashcat.android.api.InternalLogger
 import cloud.flashcat.android.api.storage.RawBatchEvent
@@ -278,7 +278,7 @@ internal class CoreFeature(
         // Because all our persisting components are working asynchronously this will avoid
         // having corrupted data (data from previous process over - written in this process into the
         // ndk crash folder before the crash was actually handled)
-        val nativeSourceOverride = configuration.additionalConfig[Datadog.DD_NATIVE_SOURCE_TYPE] as? String
+        val nativeSourceOverride = configuration.additionalConfig[Flashcat.DD_NATIVE_SOURCE_TYPE] as? String
         prepareNdkCrashData(nativeSourceOverride)
         setupInfoProviders(appContext, consent)
         initialized.set(true)

@@ -9,7 +9,7 @@ package cloud.flashcat.android.core.integration.tests
 
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.core.InternalSdkCore
 import cloud.flashcat.android.core.configuration.Configuration
 import cloud.flashcat.android.core.integration.tests.forge.factories.ConfigurationCoreForgeryFactory
@@ -44,7 +44,7 @@ class InternalProxyTest {
 
     @Before
     fun setUp() {
-        testedInternalSdkCore = Datadog.initialize(
+        testedInternalSdkCore = Flashcat.initialize(
             ApplicationProvider.getApplicationContext(),
             fakeConfiguration,
             forge.aValueFrom(TrackingConsent::class.java)
@@ -53,7 +53,7 @@ class InternalProxyTest {
 
     @After
     fun tearDown() {
-        Datadog.stopInstance()
+        Flashcat.stopInstance()
     }
 
     // region set version
@@ -62,7 +62,7 @@ class InternalProxyTest {
     fun mustSetAppVersion_when_setCustomAppVersion() {
         // Given
         val fakeAppVersion = forge.anAlphabeticalString()
-        val internalProxy = Datadog._internalProxy()
+        val internalProxy = Flashcat._internalProxy()
 
         // When
         internalProxy.setCustomAppVersion(fakeAppVersion)

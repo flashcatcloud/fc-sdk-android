@@ -11,7 +11,7 @@ import android.content.Context
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequest
 import androidx.work.impl.WorkManagerImpl
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.InternalLogger
 import cloud.flashcat.android.api.feature.Feature
 import cloud.flashcat.android.api.feature.FeatureScope
@@ -119,7 +119,7 @@ internal class DatadogExceptionHandlerTest {
     fun `tear down`() {
         Thread.setDefaultUncaughtExceptionHandler(originalHandler)
         WorkManagerImpl::class.java.setStaticValue("sDefaultInstance", null)
-        Datadog.stopInstance()
+        Flashcat.stopInstance()
     }
 
     @Test

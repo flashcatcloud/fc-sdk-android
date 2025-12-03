@@ -10,7 +10,7 @@ package cloud.flashcat.benchmark.sample.di.app
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.core.configuration.BackPressureMitigation
 import cloud.flashcat.android.core.configuration.BackPressureStrategy
@@ -43,10 +43,10 @@ internal interface DatadogModule {
             config: BenchmarkConfig
         ): SdkCore {
             if (config.run == SyntheticsRun.Baseline) {
-                return Datadog.getInstance() // returns NoOpInternalSdkCore under the hood
+                return Flashcat.getInstance() // returns NoOpInternalSdkCore under the hood
             }
 
-            return Datadog.initialize(
+            return Flashcat.initialize(
                 context,
                 createDatadogConfiguration(),
                 TrackingConsent.GRANTED

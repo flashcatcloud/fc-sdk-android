@@ -14,7 +14,7 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.AnyThread
 import androidx.annotation.WorkerThread
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.InternalLogger
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.api.context.DatadogContext
@@ -451,7 +451,7 @@ internal class DatadogCore(
         if (isDebug and configuration.coreConfig.enableDeveloperModeWhenDebuggable) {
             mutableConfig = modifyConfigurationForDeveloperDebug(configuration)
             isDeveloperModeEnabled = true
-            Datadog.setVerbosity(Log.VERBOSE)
+            Flashcat.setVerbosity(Log.VERBOSE)
         }
 
         // always initialize Core Features first
@@ -509,19 +509,19 @@ internal class DatadogCore(
         // NOTE: be careful with the logic in this method - it is a part of initialization sequence,
         // so some things may yet not be initialized -> not accessible, some things may already be
         // initialized and be not mutable anymore
-        additionalConfiguration[Datadog.DD_SOURCE_TAG]?.let {
+        additionalConfiguration[Flashcat.DD_SOURCE_TAG]?.let {
             if (it is String && it.isNotBlank()) {
                 coreFeature.sourceName = it
             }
         }
 
-        additionalConfiguration[Datadog.DD_SDK_VERSION_TAG]?.let {
+        additionalConfiguration[Flashcat.DD_SDK_VERSION_TAG]?.let {
             if (it is String && it.isNotBlank()) {
                 coreFeature.sdkVersion = it
             }
         }
 
-        additionalConfiguration[Datadog.DD_APP_VERSION_TAG]?.let {
+        additionalConfiguration[Flashcat.DD_APP_VERSION_TAG]?.let {
             if (it is String && it.isNotBlank()) {
                 coreFeature.packageVersionProvider.version = it
             }

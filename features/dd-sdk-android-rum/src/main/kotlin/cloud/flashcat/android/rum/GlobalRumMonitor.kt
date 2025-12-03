@@ -7,7 +7,7 @@
 
 package cloud.flashcat.android.rum
 
-import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.Flashcat
 import cloud.flashcat.android.api.InternalLogger
 import cloud.flashcat.android.api.SdkCore
 import cloud.flashcat.android.api.feature.FeatureSdkCore
@@ -39,7 +39,7 @@ object GlobalRumMonitor {
      */
     @JvmOverloads
     @JvmStatic
-    fun isRegistered(sdkCore: SdkCore = Datadog.getInstance()): Boolean {
+    fun isRegistered(sdkCore: SdkCore = Flashcat.getInstance()): Boolean {
         return synchronized(registeredMonitors) {
             registeredMonitors.containsKey(sdkCore)
         }
@@ -55,7 +55,7 @@ object GlobalRumMonitor {
      */
     @JvmOverloads
     @JvmStatic
-    fun get(sdkCore: SdkCore = Datadog.getInstance()): RumMonitor {
+    fun get(sdkCore: SdkCore = Flashcat.getInstance()): RumMonitor {
         return synchronized(registeredMonitors) {
             val monitor = registeredMonitors[sdkCore]
             if (monitor == null) {
@@ -89,7 +89,7 @@ object GlobalRumMonitor {
      * instance will be used.
      * @return `true` if the provided monitor was registered as a result of this call, `false` otherwise.
      */
-    internal fun registerIfAbsent(monitor: RumMonitor, sdkCore: SdkCore = Datadog.getInstance()): Boolean {
+    internal fun registerIfAbsent(monitor: RumMonitor, sdkCore: SdkCore = Flashcat.getInstance()): Boolean {
         return synchronized(registeredMonitors) {
             if (registeredMonitors.containsKey(sdkCore)) {
                 (sdkCore as FeatureSdkCore).internalLogger.log(
@@ -106,7 +106,7 @@ object GlobalRumMonitor {
         }
     }
 
-    internal fun unregister(sdkCore: SdkCore = Datadog.getInstance()) {
+    internal fun unregister(sdkCore: SdkCore = Flashcat.getInstance()) {
         synchronized(registeredMonitors) {
             registeredMonitors.remove(sdkCore)
         }
