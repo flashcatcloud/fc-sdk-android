@@ -5,20 +5,20 @@
  * Modified 2025 by FlashCat, Inc.
  */
 
-import com.datadog.gradle.plugin.apisurface.ApiSurfacePlugin
+import cloud.flashcat.gradle.plugin.apisurface.ApiSurfacePlugin
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val generateLogModelsTaskName = "generateLogModelsFromJson"
 
 tasks.register(
     generateLogModelsTaskName,
-    com.datadog.gradle.plugin.jsonschema.GenerateJsonSchemaTask::class.java
+    cloud.flashcat.gradle.plugin.jsonschema.GenerateJsonSchemaTask::class.java
 ) {
     inputDirPath = "src/main/json/log"
     ignoredFiles = arrayOf(
         "_common-schema.json"
     )
-    targetPackageName = "com.datadog.android.log.model"
+    targetPackageName = "cloud.flashcat.android.log.model"
 }
 
 afterEvaluate {

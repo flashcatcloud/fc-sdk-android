@@ -7,12 +7,12 @@
 
 package internal
 
-import com.datadog.benchmark.DatadogExporterConfiguration
-import com.datadog.benchmark.internal.DatadogHttpClient
-import com.datadog.benchmark.internal.MetricRequestBodyBuilder
-import com.datadog.benchmark.internal.SpanRequestBodyBuilder
-import com.datadog.benchmark.internal.model.BenchmarkContext
-import com.datadog.benchmark.internal.model.SpanEvent
+import cloud.flashcat.benchmark.DatadogExporterConfiguration
+import cloud.flashcat.benchmark.internal.DatadogHttpClient
+import cloud.flashcat.benchmark.internal.MetricRequestBodyBuilder
+import cloud.flashcat.benchmark.internal.SpanRequestBodyBuilder
+import cloud.flashcat.benchmark.internal.model.BenchmarkContext
+import cloud.flashcat.benchmark.internal.model.SpanEvent
 import forge.ForgeConfigurator
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.annotation.StringForgery

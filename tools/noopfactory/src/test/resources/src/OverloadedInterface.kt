@@ -1,6 +1,6 @@
 package com.example
 
-import com.datadog.tools.annotation.NoOpImplementation
+import cloud.flashcat.tools.annotation.NoOpImplementation
 
 @NoOpImplementation
 interface OverloadedInterface {

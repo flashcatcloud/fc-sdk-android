@@ -1,0 +1,63 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
+ */
+
+package cloud.flashcat.android.rum.internal.monitor
+
+import android.app.Activity
+import cloud.flashcat.android.core.feature.event.ThreadDump
+import cloud.flashcat.android.internal.telemetry.InternalTelemetryEvent
+import cloud.flashcat.android.rum.RumErrorSource
+import cloud.flashcat.android.rum.RumMonitor
+import cloud.flashcat.android.rum.RumPerformanceMetric
+import cloud.flashcat.android.rum.internal.debug.RumDebugListener
+import cloud.flashcat.android.rum.internal.startup.RumTTIDInfo
+import cloud.flashcat.tools.annotation.NoOpImplementation
+
+/**
+ * FOR INTERNAL USAGE ONLY.
+ */
+@SuppressWarnings("ComplexInterface", "TooManyFunctions")
+@NoOpImplementation
+internal interface AdvancedRumMonitor : RumMonitor, AdvancedNetworkRumMonitor {
+
+    fun resetSession()
+
+    fun start()
+
+    fun sendWebViewEvent()
+
+    fun addLongTask(durationNs: Long, target: String)
+
+    fun addSessionReplaySkippedFrame()
+
+    fun addCrash(
+        message: String,
+        source: RumErrorSource,
+        throwable: Throwable,
+        threads: List<ThreadDump>
+    )
+
+    fun eventSent(viewId: String, event: StorageEvent)
+
+    fun eventDropped(viewId: String, event: StorageEvent)
+
+    fun setDebugListener(listener: RumDebugListener?)
+
+    fun sendTelemetryEvent(telemetryEvent: InternalTelemetryEvent)
+
+    fun updatePerformanceMetric(metric: RumPerformanceMetric, value: Double)
+
+    fun updateExternalRefreshRate(frameTimeSeconds: Double)
+
+    fun setInternalViewAttribute(key: String, value: Any?)
+
+    fun setSyntheticsAttribute(testId: String, resultId: String)
+
+    fun enableJankStatsTracking(activity: Activity)
+
+    fun sendTTIDEvent(info: RumTTIDInfo)
+}

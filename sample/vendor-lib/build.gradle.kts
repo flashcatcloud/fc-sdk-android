@@ -5,13 +5,13 @@
  * Modified 2025 by FlashCat, Inc.
  */
 
-import com.datadog.gradle.config.AndroidConfig
-import com.datadog.gradle.config.dependencyUpdateConfig
-import com.datadog.gradle.config.java17
-import com.datadog.gradle.config.junitConfig
-import com.datadog.gradle.config.kotlinConfig
-import com.datadog.gradle.config.sampleAppConfig
-import com.datadog.gradle.config.taskConfig
+import cloud.flashcat.gradle.config.AndroidConfig
+import cloud.flashcat.gradle.config.dependencyUpdateConfig
+import cloud.flashcat.gradle.config.java17
+import cloud.flashcat.gradle.config.junitConfig
+import cloud.flashcat.gradle.config.kotlinConfig
+import cloud.flashcat.gradle.config.sampleAppConfig
+import cloud.flashcat.gradle.config.taskConfig
 import java.io.File
 
 plugins {
@@ -42,7 +42,7 @@ android {
         )
     }
 
-    namespace = "com.datadog.android.vendor.sample"
+    namespace = "cloud.flashcat.android.vendor.sample"
 
     compileOptions {
         java17()

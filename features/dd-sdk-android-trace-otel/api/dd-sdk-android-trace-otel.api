@@ -1,4 +1,4 @@
-public final class com/datadog/android/trace/opentelemetry/BuildConfig {
+public final class cloud/flashcat/android/trace/opentelemetry/BuildConfig {
 	public static final field BUILD_TYPE Ljava/lang/String;
 	public static final field DEBUG Z
 	public static final field LIBRARY_PACKAGE_NAME Ljava/lang/String;
@@ -6,68 +6,68 @@ public final class com/datadog/android/trace/opentelemetry/BuildConfig {
 	public fun <init> ()V
 }
 
-public final class com/datadog/android/trace/opentelemetry/DatadogOpenTelemetry : io/opentelemetry/api/OpenTelemetry {
+public final class cloud/flashcat/android/trace/opentelemetry/DatadogOpenTelemetry : io/opentelemetry/api/OpenTelemetry {
 	public fun <init> (Ljava/lang/String;)V
 	public fun getPropagators ()Lio/opentelemetry/context/propagation/ContextPropagators;
 	public fun getTracerProvider ()Lio/opentelemetry/api/trace/TracerProvider;
 }
 
-public final class com/datadog/android/trace/opentelemetry/OtelTracerProvider : io/opentelemetry/api/trace/TracerProvider {
+public final class cloud/flashcat/android/trace/opentelemetry/OtelTracerProvider : io/opentelemetry/api/trace/TracerProvider {
 	public fun get (Ljava/lang/String;)Lio/opentelemetry/api/trace/Tracer;
 	public fun get (Ljava/lang/String;Ljava/lang/String;)Lio/opentelemetry/api/trace/Tracer;
 	public fun toString ()Ljava/lang/String;
 	public fun tracerBuilder (Ljava/lang/String;)Lio/opentelemetry/api/trace/TracerBuilder;
 }
 
-public final class com/datadog/android/trace/opentelemetry/OtelTracerProvider$Builder {
+public final class cloud/flashcat/android/trace/opentelemetry/OtelTracerProvider$Builder {
 	public fun <init> ()V
-	public fun <init> (Lcom/datadog/android/api/SdkCore;)V
-	public synthetic fun <init> (Lcom/datadog/android/api/SdkCore;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun addTag (Ljava/lang/String;Ljava/lang/String;)Lcom/datadog/android/trace/opentelemetry/OtelTracerProvider$Builder;
+	public fun <init> (Lcloud/flashcat/android/api/SdkCore;)V
+	public synthetic fun <init> (Lcloud/flashcat/android/api/SdkCore;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun addTag (Ljava/lang/String;Ljava/lang/String;)Lcloud/flashcat/android/trace/opentelemetry/OtelTracerProvider$Builder;
 	public final fun build ()Lio/opentelemetry/api/trace/TracerProvider;
-	public final fun setBundleWithRumEnabled (Z)Lcom/datadog/android/trace/opentelemetry/OtelTracerProvider$Builder;
-	public final fun setPartialFlushThreshold (I)Lcom/datadog/android/trace/opentelemetry/OtelTracerProvider$Builder;
-	public final fun setSampleRate (D)Lcom/datadog/android/trace/opentelemetry/OtelTracerProvider$Builder;
-	public final fun setService (Ljava/lang/String;)Lcom/datadog/android/trace/opentelemetry/OtelTracerProvider$Builder;
-	public final fun setTraceRateLimit (I)Lcom/datadog/android/trace/opentelemetry/OtelTracerProvider$Builder;
-	public final fun setTracingHeaderTypes (Ljava/util/Set;)Lcom/datadog/android/trace/opentelemetry/OtelTracerProvider$Builder;
+	public final fun setBundleWithRumEnabled (Z)Lcloud/flashcat/android/trace/opentelemetry/OtelTracerProvider$Builder;
+	public final fun setPartialFlushThreshold (I)Lcloud/flashcat/android/trace/opentelemetry/OtelTracerProvider$Builder;
+	public final fun setSampleRate (D)Lcloud/flashcat/android/trace/opentelemetry/OtelTracerProvider$Builder;
+	public final fun setService (Ljava/lang/String;)Lcloud/flashcat/android/trace/opentelemetry/OtelTracerProvider$Builder;
+	public final fun setTraceRateLimit (I)Lcloud/flashcat/android/trace/opentelemetry/OtelTracerProvider$Builder;
+	public final fun setTracingHeaderTypes (Ljava/util/Set;)Lcloud/flashcat/android/trace/opentelemetry/OtelTracerProvider$Builder;
 }
 
-public abstract interface class com/datadog/opentelemetry/compat/function/Function {
+public abstract interface class cloud/flashcat/opentelemetry/compat/function/Function {
 	public abstract fun apply (Ljava/lang/Object;)Ljava/lang/Object;
 }
 
-public final class com/datadog/opentelemetry/context/propagation/TraceStateHelper {
+public final class cloud/flashcat/opentelemetry/context/propagation/TraceStateHelper {
 	public static fun decodeHeader (Ljava/lang/String;)Lio/opentelemetry/api/trace/TraceState;
 	public static fun encodeHeader (Lio/opentelemetry/api/trace/TraceState;)Ljava/lang/String;
 }
 
-public final class com/datadog/opentelemetry/trace/OtelConventions {
-	public static fun applyNamingConvention (Lcom/datadog/android/trace/api/span/DatadogSpan;)V
-	public static fun applyReservedAttribute (Lcom/datadog/android/trace/api/span/DatadogSpan;Lio/opentelemetry/api/common/AttributeKey;Ljava/lang/Object;)Z
+public final class cloud/flashcat/opentelemetry/trace/OtelConventions {
+	public static fun applyNamingConvention (Lcloud/flashcat/android/trace/api/span/DatadogSpan;)V
+	public static fun applyReservedAttribute (Lcloud/flashcat/android/trace/api/span/DatadogSpan;Lio/opentelemetry/api/common/AttributeKey;Ljava/lang/Object;)Z
 	public static fun toOtelSpanKind (Ljava/lang/String;)Lio/opentelemetry/api/trace/SpanKind;
 	public static fun toSpanKindTagValue (Lio/opentelemetry/api/trace/SpanKind;)Ljava/lang/String;
 }
 
-public class com/datadog/opentelemetry/trace/OtelExtractedContext : com/datadog/android/trace/api/span/DatadogSpanContext {
-	public static fun extract (Lio/opentelemetry/context/Context;Lcom/datadog/android/api/InternalLogger;)Lcom/datadog/android/trace/api/span/DatadogSpanContext;
+public class cloud/flashcat/opentelemetry/trace/OtelExtractedContext : cloud/flashcat/android/trace/api/span/DatadogSpanContext {
+	public static fun extract (Lio/opentelemetry/context/Context;Lcloud/flashcat/android/api/InternalLogger;)Lcloud/flashcat/android/trace/api/span/DatadogSpanContext;
 	public fun getSamplingPriority ()I
 	public fun getSpanId ()J
 	public fun getTags ()Ljava/util/Map;
-	public fun getTraceId ()Lcom/datadog/android/trace/api/trace/DatadogTraceId;
+	public fun getTraceId ()Lcloud/flashcat/android/trace/api/trace/DatadogTraceId;
 	public fun setMetric (Ljava/lang/CharSequence;D)V
 	public fun setSamplingPriority (I)Z
 }
 
-public class com/datadog/opentelemetry/trace/OtelSpan : io/opentelemetry/api/trace/Span {
-	public fun <init> (Lcom/datadog/android/trace/api/span/DatadogSpan;Lcom/datadog/android/trace/api/tracer/DatadogTracer;)V
-	public fun activate ()Lcom/datadog/android/trace/api/scope/DatadogScope;
+public class cloud/flashcat/opentelemetry/trace/OtelSpan : io/opentelemetry/api/trace/Span {
+	public fun <init> (Lcloud/flashcat/android/trace/api/span/DatadogSpan;Lcloud/flashcat/android/trace/api/tracer/DatadogTracer;)V
+	public fun activate ()Lcloud/flashcat/android/trace/api/scope/DatadogScope;
 	public fun addEvent (Ljava/lang/String;Lio/opentelemetry/api/common/Attributes;)Lio/opentelemetry/api/trace/Span;
 	public fun addEvent (Ljava/lang/String;Lio/opentelemetry/api/common/Attributes;JLjava/util/concurrent/TimeUnit;)Lio/opentelemetry/api/trace/Span;
 	public fun end ()V
 	public fun end (JLjava/util/concurrent/TimeUnit;)V
-	public fun getDatadogSpan ()Lcom/datadog/android/trace/api/span/DatadogSpan;
-	public fun getDatadogSpanContext ()Lcom/datadog/android/trace/api/span/DatadogSpanContext;
+	public fun getDatadogSpan ()Lcloud/flashcat/android/trace/api/span/DatadogSpan;
+	public fun getDatadogSpanContext ()Lcloud/flashcat/android/trace/api/span/DatadogSpanContext;
 	public fun getSpanContext ()Lio/opentelemetry/api/trace/SpanContext;
 	public fun getStatusCode ()Lio/opentelemetry/api/trace/StatusCode;
 	public static fun invalid ()Lio/opentelemetry/api/trace/Span;
@@ -78,8 +78,8 @@ public class com/datadog/opentelemetry/trace/OtelSpan : io/opentelemetry/api/tra
 	public fun updateName (Ljava/lang/String;)Lio/opentelemetry/api/trace/Span;
 }
 
-public class com/datadog/opentelemetry/trace/OtelSpanBuilder : io/opentelemetry/api/trace/SpanBuilder {
-	public fun <init> (Lcom/datadog/android/trace/api/span/DatadogSpanBuilder;Lcom/datadog/android/trace/api/tracer/DatadogTracer;Lcom/datadog/android/api/InternalLogger;)V
+public class cloud/flashcat/opentelemetry/trace/OtelSpanBuilder : io/opentelemetry/api/trace/SpanBuilder {
+	public fun <init> (Lcloud/flashcat/android/trace/api/span/DatadogSpanBuilder;Lcloud/flashcat/android/trace/api/tracer/DatadogTracer;Lcloud/flashcat/android/api/InternalLogger;)V
 	public fun addLink (Lio/opentelemetry/api/trace/SpanContext;)Lio/opentelemetry/api/trace/SpanBuilder;
 	public fun addLink (Lio/opentelemetry/api/trace/SpanContext;Lio/opentelemetry/api/common/Attributes;)Lio/opentelemetry/api/trace/SpanBuilder;
 	public fun setAttribute (Lio/opentelemetry/api/common/AttributeKey;Ljava/lang/Object;)Lio/opentelemetry/api/trace/SpanBuilder;
@@ -94,11 +94,11 @@ public class com/datadog/opentelemetry/trace/OtelSpanBuilder : io/opentelemetry/
 	public fun startSpan ()Lio/opentelemetry/api/trace/Span;
 }
 
-public class com/datadog/opentelemetry/trace/OtelSpanContext : io/opentelemetry/api/trace/SpanContext {
-	public fun <init> (Lcom/datadog/android/trace/api/span/DatadogSpanContext;ZZLio/opentelemetry/api/trace/TraceState;)V
-	public static fun fromLocalSpan (Lcom/datadog/android/trace/api/span/DatadogSpan;)Lio/opentelemetry/api/trace/SpanContext;
-	public static fun fromRemote (Lcom/datadog/android/trace/api/span/DatadogSpanContext;Lio/opentelemetry/api/trace/TraceState;)Lio/opentelemetry/api/trace/SpanContext;
-	public fun getDelegate ()Lcom/datadog/android/trace/api/span/DatadogSpanContext;
+public class cloud/flashcat/opentelemetry/trace/OtelSpanContext : io/opentelemetry/api/trace/SpanContext {
+	public fun <init> (Lcloud/flashcat/android/trace/api/span/DatadogSpanContext;ZZLio/opentelemetry/api/trace/TraceState;)V
+	public static fun fromLocalSpan (Lcloud/flashcat/android/trace/api/span/DatadogSpan;)Lio/opentelemetry/api/trace/SpanContext;
+	public static fun fromRemote (Lcloud/flashcat/android/trace/api/span/DatadogSpanContext;Lio/opentelemetry/api/trace/TraceState;)Lio/opentelemetry/api/trace/SpanContext;
+	public fun getDelegate ()Lcloud/flashcat/android/trace/api/span/DatadogSpanContext;
 	public fun getSpanId ()Ljava/lang/String;
 	public fun getTraceFlags ()Lio/opentelemetry/api/trace/TraceFlags;
 	public fun getTraceId ()Ljava/lang/String;
@@ -107,24 +107,24 @@ public class com/datadog/opentelemetry/trace/OtelSpanContext : io/opentelemetry/
 	public fun toString ()Ljava/lang/String;
 }
 
-public class com/datadog/opentelemetry/trace/OtelSpanLink : com/datadog/android/trace/api/span/DatadogSpanLink {
+public class cloud/flashcat/opentelemetry/trace/OtelSpanLink : cloud/flashcat/android/trace/api/span/DatadogSpanLink {
 	public fun <init> (Lio/opentelemetry/api/trace/SpanContext;)V
 	public fun <init> (Lio/opentelemetry/api/trace/SpanContext;Lio/opentelemetry/api/common/Attributes;)V
 	public fun getAttributes ()Ljava/util/Map;
 	public fun getSampled ()Z
 	public fun getSpanId ()J
-	public fun getTraceId ()Lcom/datadog/android/trace/api/trace/DatadogTraceId;
+	public fun getTraceId ()Lcloud/flashcat/android/trace/api/trace/DatadogTraceId;
 	public fun getTraceStrace ()Ljava/lang/String;
 }
 
-public class com/datadog/opentelemetry/trace/OtelTracer : io/opentelemetry/api/trace/Tracer {
-	public fun <init> (Ljava/lang/String;Lcom/datadog/android/trace/api/tracer/DatadogTracer;Lcom/datadog/android/api/InternalLogger;)V
-	public fun <init> (Ljava/lang/String;Lcom/datadog/android/trace/api/tracer/DatadogTracer;Lcom/datadog/android/api/InternalLogger;Lcom/datadog/opentelemetry/compat/function/Function;)V
+public class cloud/flashcat/opentelemetry/trace/OtelTracer : io/opentelemetry/api/trace/Tracer {
+	public fun <init> (Ljava/lang/String;Lcloud/flashcat/android/trace/api/tracer/DatadogTracer;Lcloud/flashcat/android/api/InternalLogger;)V
+	public fun <init> (Ljava/lang/String;Lcloud/flashcat/android/trace/api/tracer/DatadogTracer;Lcloud/flashcat/android/api/InternalLogger;Lcloud/flashcat/opentelemetry/compat/function/Function;)V
 	public fun spanBuilder (Ljava/lang/String;)Lio/opentelemetry/api/trace/SpanBuilder;
 }
 
-public class com/datadog/opentelemetry/trace/OtelTracerBuilder : io/opentelemetry/api/trace/TracerBuilder {
-	public fun <init> (Ljava/lang/String;Lcom/datadog/android/trace/api/tracer/DatadogTracer;Lcom/datadog/android/api/InternalLogger;)V
+public class cloud/flashcat/opentelemetry/trace/OtelTracerBuilder : io/opentelemetry/api/trace/TracerBuilder {
+	public fun <init> (Ljava/lang/String;Lcloud/flashcat/android/trace/api/tracer/DatadogTracer;Lcloud/flashcat/android/api/InternalLogger;)V
 	public fun build ()Lio/opentelemetry/api/trace/Tracer;
 	public fun setInstrumentationVersion (Ljava/lang/String;)Lio/opentelemetry/api/trace/TracerBuilder;
 	public fun setSchemaUrl (Ljava/lang/String;)Lio/opentelemetry/api/trace/TracerBuilder;

@@ -1,4 +1,4 @@
-public final class com/datadog/android/sessionreplay/compose/ComposeExtensionSupport : com/datadog/android/sessionreplay/ExtensionSupport {
+public final class cloud/flashcat/android/sessionreplay/compose/ComposeExtensionSupport : cloud/flashcat/android/sessionreplay/ExtensionSupport {
 	public static final field $stable I
 	public fun <init> ()V
 	public fun getCustomDrawableMapper ()Ljava/util/List;
@@ -7,13 +7,13 @@ public final class com/datadog/android/sessionreplay/compose/ComposeExtensionSup
 	public fun name ()Ljava/lang/String;
 }
 
-public abstract interface annotation class com/datadog/android/sessionreplay/compose/ExperimentalSessionReplayApi : java/lang/annotation/Annotation {
+public abstract interface annotation class cloud/flashcat/android/sessionreplay/compose/ExperimentalSessionReplayApi : java/lang/annotation/Annotation {
 }
 
-public final class com/datadog/android/sessionreplay/compose/ModifierExtKt {
+public final class cloud/flashcat/android/sessionreplay/compose/ModifierExtKt {
 	public static final fun sessionReplayHide (Landroidx/compose/ui/Modifier;Z)Landroidx/compose/ui/Modifier;
-	public static final fun sessionReplayImagePrivacy (Landroidx/compose/ui/Modifier;Lcom/datadog/android/sessionreplay/ImagePrivacy;)Landroidx/compose/ui/Modifier;
-	public static final fun sessionReplayTextAndInputPrivacy (Landroidx/compose/ui/Modifier;Lcom/datadog/android/sessionreplay/TextAndInputPrivacy;)Landroidx/compose/ui/Modifier;
-	public static final fun sessionReplayTouchPrivacy (Landroidx/compose/ui/Modifier;Lcom/datadog/android/sessionreplay/TouchPrivacy;)Landroidx/compose/ui/Modifier;
+	public static final fun sessionReplayImagePrivacy (Landroidx/compose/ui/Modifier;Lcloud/flashcat/android/sessionreplay/ImagePrivacy;)Landroidx/compose/ui/Modifier;
+	public static final fun sessionReplayTextAndInputPrivacy (Landroidx/compose/ui/Modifier;Lcloud/flashcat/android/sessionreplay/TextAndInputPrivacy;)Landroidx/compose/ui/Modifier;
+	public static final fun sessionReplayTouchPrivacy (Landroidx/compose/ui/Modifier;Lcloud/flashcat/android/sessionreplay/TouchPrivacy;)Landroidx/compose/ui/Modifier;
 }
 

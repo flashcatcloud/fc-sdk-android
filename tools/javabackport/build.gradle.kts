@@ -5,7 +5,7 @@
  * Modified 2025 by FlashCat, Inc.
  */
 
-import com.datadog.gradle.config.kotlinConfig
+import cloud.flashcat.gradle.config.kotlinConfig
 
 plugins {
     id("org.jetbrains.kotlin.jvm")

@@ -7,8 +7,8 @@
 
 package forge
 
-import com.datadog.benchmark.DatadogExporterConfiguration
-import com.datadog.benchmark.EndPoint
+import cloud.flashcat.benchmark.DatadogExporterConfiguration
+import cloud.flashcat.benchmark.EndPoint
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory
 

@@ -1,0 +1,21 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
+ */
+
+package cloud.flashcat.android.okhttp.internal.trace
+
+import cloud.flashcat.android.trace.TracingHeaderType
+
+private typealias InternalTracingHeaderType = cloud.flashcat.android.internal.telemetry.TracingHeaderType
+
+internal fun TracingHeaderType.toInternalTracingHeaderType(): InternalTracingHeaderType {
+    return when (this) {
+        TracingHeaderType.DATADOG -> InternalTracingHeaderType.DATADOG
+        TracingHeaderType.B3 -> InternalTracingHeaderType.B3
+        TracingHeaderType.B3MULTI -> InternalTracingHeaderType.B3MULTI
+        TracingHeaderType.TRACECONTEXT -> InternalTracingHeaderType.TRACECONTEXT
+    }
+}

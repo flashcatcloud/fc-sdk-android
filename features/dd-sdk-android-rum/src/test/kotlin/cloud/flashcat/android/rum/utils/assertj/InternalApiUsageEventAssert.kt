@@ -1,0 +1,45 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
+ */
+
+package cloud.flashcat.android.rum.utils.assertj
+
+import cloud.flashcat.android.internal.telemetry.InternalTelemetryEvent
+import org.assertj.core.api.AbstractAssert
+
+class InternalApiUsageEventAssert(actual: InternalTelemetryEvent.ApiUsage) :
+    AbstractAssert<InternalApiUsageEventAssert, InternalTelemetryEvent.ApiUsage>(
+        actual,
+        InternalApiUsageEventAssert::class.java
+    ) {
+
+    fun isEqualTo(expected: InternalTelemetryEvent.ApiUsage): InternalApiUsageEventAssert {
+        when (actual) {
+            is InternalTelemetryEvent.ApiUsage.AddViewLoadingTime -> {
+                InternalAddViewLoadingTimeEventAssert
+                    .assertThat(actual as InternalTelemetryEvent.ApiUsage.AddViewLoadingTime)
+                    .isEqualTo(expected as InternalTelemetryEvent.ApiUsage.AddViewLoadingTime)
+            }
+
+            is InternalTelemetryEvent.ApiUsage.AddOperationStepVital -> {
+                InternalAddOperationStepVitalAssert
+                    .assertThat(actual as InternalTelemetryEvent.ApiUsage.AddOperationStepVital)
+                    .isEqualTo(expected as InternalTelemetryEvent.ApiUsage.AddOperationStepVital)
+            }
+
+            else -> {
+                failWithMessage("Unknown event type: ${actual::class.java.simpleName}")
+            }
+        }
+        return this
+    }
+
+    companion object {
+        fun assertThat(actual: InternalTelemetryEvent.ApiUsage): InternalApiUsageEventAssert {
+            return InternalApiUsageEventAssert(actual)
+        }
+    }
+}

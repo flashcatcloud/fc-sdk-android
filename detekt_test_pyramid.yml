@@ -83,7 +83,7 @@ datadog-test-pyramid:
   ApiUsage:
     active: true
     includes: [ '**/reliability/**' ]
-    internalPackagePrefix: 'com.datadog'
+    internalPackagePrefix: 'cloud.flashcat'
   ApiSurface:
     active: true
     includes: [ '**/dd-sdk-android-*/**' ]
@@ -100,9 +100,9 @@ datadog-test-pyramid:
       - '**/sample/**'
       - '**/tools/**'
       - '**/dd-sdk-android-internal/**'
-    internalPackagePrefix: 'com.datadog'
+    internalPackagePrefix: 'cloud.flashcat'
     ignoredAnnotations:
-      - "com.datadog.android.lint.InternalApi"
+      - "cloud.flashcat.android.lint.InternalApi"
     ignoredClasses:
-      - "com.datadog.android._InternalProxy"
-      - "com.datadog.android.rum._RumInternalProxy"
+      - "cloud.flashcat.android._InternalProxy"
+      - "cloud.flashcat.android.rum._RumInternalProxy"

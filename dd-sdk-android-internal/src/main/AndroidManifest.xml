@@ -10,7 +10,7 @@
     <application>
 
         <provider
-            android:name="com.datadog.android.rum.DdRumContentProvider"
+            android:name="cloud.flashcat.android.rum.DdRumContentProvider"
             android:authorities="${applicationId}.provider.datadog.rum"
             android:exported="false" />
 

@@ -76,7 +76,7 @@
             android:windowSoftInputMode="adjustResize"/>
         <activity
             android:exported="true"
-            android:name="com.datadog.android.sdk.ActivityProfiling"
+            android:name="cloud.flashcat.android.sdk.ActivityProfiling"
             android:label="@string/activity_logs_profiling"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

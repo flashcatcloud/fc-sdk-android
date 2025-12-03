@@ -7,8 +7,8 @@
 
 package internal
 
-import com.datadog.benchmark.internal.reader.MemoryVitalReader
-import com.datadog.benchmark.internal.reader.VitalReader
+import cloud.flashcat.benchmark.internal.reader.MemoryVitalReader
+import cloud.flashcat.benchmark.internal.reader.VitalReader
 import forge.ForgeConfigurator
 import fr.xgouchet.elmyr.annotation.IntForgery
 import fr.xgouchet.elmyr.annotation.StringForgery

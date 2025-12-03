@@ -5,15 +5,15 @@
  * Modified 2025 by FlashCat, Inc.
  */
 
-import com.datadog.gradle.Dependencies
-import com.datadog.gradle.config.AndroidConfig
-import com.datadog.gradle.config.androidLibraryConfig
-import com.datadog.gradle.config.dependencyUpdateConfig
-import com.datadog.gradle.config.detektCustomConfig
-import com.datadog.gradle.config.javadocConfig
-import com.datadog.gradle.config.junitConfig
-import com.datadog.gradle.config.kotlinConfig
-import com.datadog.gradle.config.publishingConfig
+import cloud.flashcat.gradle.Dependencies
+import cloud.flashcat.gradle.config.AndroidConfig
+import cloud.flashcat.gradle.config.androidLibraryConfig
+import cloud.flashcat.gradle.config.dependencyUpdateConfig
+import cloud.flashcat.gradle.config.detektCustomConfig
+import cloud.flashcat.gradle.config.javadocConfig
+import cloud.flashcat.gradle.config.junitConfig
+import cloud.flashcat.gradle.config.kotlinConfig
+import cloud.flashcat.gradle.config.publishingConfig
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -56,7 +56,7 @@ android {
         targetSdk = AndroidConfig.TARGET_SDK
     }
 
-    namespace = "com.datadog.android.ndk"
+    namespace = "cloud.flashcat.android.ndk"
 
     externalNativeBuild {
         cmake {
@@ -98,7 +98,7 @@ dependencies {
     androidTestImplementation(libs.gson)
     androidTestImplementation(libs.assertJ)
 
-    if (project.hasProperty(com.datadog.gradle.Properties.USE_API21_JAVA_BACKPORT)) {
+    if (project.hasProperty(cloud.flashcat.gradle.Properties.USE_API21_JAVA_BACKPORT)) {
         // this is needed to make AssertJ working on APIs <24
         androidTestImplementation(project(":tools:javabackport"))
     }

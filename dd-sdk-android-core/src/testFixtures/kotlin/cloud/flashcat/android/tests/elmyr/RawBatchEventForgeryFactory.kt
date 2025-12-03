@@ -1,0 +1,26 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
+ */
+
+package cloud.flashcat.android.tests.elmyr
+
+import cloud.flashcat.android.api.storage.RawBatchEvent
+import fr.xgouchet.elmyr.Forge
+import fr.xgouchet.elmyr.ForgeryFactory
+
+class RawBatchEventForgeryFactory : ForgeryFactory<RawBatchEvent> {
+    override fun getForgery(forge: Forge): RawBatchEvent {
+        return RawBatchEvent(
+            data = forge.aString(forge.anInt(1, EVENT_MAX_SIZE + 1)).toByteArray(),
+            metadata = forge.aString(forge.anInt(0, METADATA_MAX_SIZE + 1)).toByteArray()
+        )
+    }
+
+    companion object {
+        const val EVENT_MAX_SIZE = 512
+        const val METADATA_MAX_SIZE = 32
+    }
+}

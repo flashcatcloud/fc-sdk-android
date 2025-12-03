@@ -5,16 +5,15 @@
  * Modified 2025 by FlashCat, Inc.
  */
 
-import com.datadog.gradle.Dependencies
-import com.datadog.gradle.config.AndroidConfig
-import com.datadog.gradle.config.configureFlavorForSampleApp
-import com.datadog.gradle.config.dependencyUpdateConfig
-import com.datadog.gradle.config.java17
-import com.datadog.gradle.config.javadocConfig
-import com.datadog.gradle.config.junitConfig
-import com.datadog.gradle.config.kotlinConfig
-import com.datadog.gradle.config.taskConfig
-import com.datadog.gradle.plugin.InstrumentationMode
+import cloud.flashcat.gradle.Dependencies
+import cloud.flashcat.gradle.config.AndroidConfig
+import cloud.flashcat.gradle.config.configureFlavorForSampleApp
+import cloud.flashcat.gradle.config.dependencyUpdateConfig
+import cloud.flashcat.gradle.config.java17
+import cloud.flashcat.gradle.config.javadocConfig
+import cloud.flashcat.gradle.config.junitConfig
+import cloud.flashcat.gradle.config.kotlinConfig
+import cloud.flashcat.gradle.config.taskConfig
 
 plugins {
     id("com.android.application")
@@ -30,7 +29,7 @@ plugins {
 
 sqldelight {
     database("LogsDatabase") {
-        packageName = "com.datadog.android.sample"
+        packageName = "cloud.flashcat.android.sample"
         dialect = "sqlite:3.24"
         sourceFolders = listOf("sqldelight")
     }
@@ -60,7 +59,7 @@ android {
         }
     }
 
-    namespace = "com.datadog.android.sample"
+    namespace = "cloud.flashcat.android.sample"
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
@@ -145,7 +144,8 @@ android {
 }
 
 datadog {
-    composeInstrumentation = InstrumentationMode.AUTO
+    // composeInstrumentation = InstrumentationMode.AUTO
+    // Note: InstrumentationMode may need to be imported from the datadog gradle plugin
 }
 
 dependencies {

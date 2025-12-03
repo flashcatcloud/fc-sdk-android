@@ -7,10 +7,10 @@
 
 package forge
 
-import com.datadog.android.api.context.NetworkInfo
-import com.datadog.android.api.context.UserInfo
-import com.datadog.android.internal.utils.toHexString
-import com.datadog.benchmark.internal.model.SpanEvent
+import cloud.flashcat.android.api.context.NetworkInfo
+import cloud.flashcat.android.api.context.UserInfo
+import cloud.flashcat.android.internal.utils.toHexString
+import cloud.flashcat.benchmark.internal.model.SpanEvent
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory
 import java.util.concurrent.TimeUnit

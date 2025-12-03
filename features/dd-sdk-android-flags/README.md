@@ -8,10 +8,10 @@ Add the Datadog Feature Flags SDK to your application's `build.gradle` file:
 
 ```groovy
 dependencies {
-    implementation "com.datadoghq:dd-sdk-android-flags:<latest-version>"
+    implementation "cloud.flashcat:dd-sdk-android-flags:<latest-version>"
     
     // Recommended: RUM integration drives analysis and enriches RUM session data
-    implementation "com.datadoghq:dd-sdk-android-rum:<latest-version>"
+    implementation "cloud.flashcat:dd-sdk-android-rum:<latest-version>"
 }
 ```
 

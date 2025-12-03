@@ -1,18 +1,18 @@
-fun <T: java.io.Closeable, R> T.useMonitored(com.datadog.android.api.SdkCore = Datadog.getInstance(), (T) -> R): R
-annotation com.datadog.android.rum.ExperimentalRumApi
-object com.datadog.android.rum.GlobalRumMonitor
-  fun isRegistered(com.datadog.android.api.SdkCore = Datadog.getInstance()): Boolean
-  fun get(com.datadog.android.api.SdkCore = Datadog.getInstance()): RumMonitor
-object com.datadog.android.rum.Rum
-  fun enable(RumConfiguration, com.datadog.android.api.SdkCore = Datadog.getInstance())
-enum com.datadog.android.rum.RumActionType
+fun <T: java.io.Closeable, R> T.useMonitored(cloud.flashcat.android.api.SdkCore = Datadog.getInstance(), (T) -> R): R
+annotation cloud.flashcat.android.rum.ExperimentalRumApi
+object cloud.flashcat.android.rum.GlobalRumMonitor
+  fun isRegistered(cloud.flashcat.android.api.SdkCore = Datadog.getInstance()): Boolean
+  fun get(cloud.flashcat.android.api.SdkCore = Datadog.getInstance()): RumMonitor
+object cloud.flashcat.android.rum.Rum
+  fun enable(RumConfiguration, cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
+enum cloud.flashcat.android.rum.RumActionType
   - TAP
   - SCROLL
   - SWIPE
   - CLICK
   - BACK
   - CUSTOM
-object com.datadog.android.rum.RumAttributes
+object cloud.flashcat.android.rum.RumAttributes
   const val APPLICATION_VERSION: String
   const val ENV: String
   const val SERVICE_NAME: String
@@ -58,35 +58,35 @@ object com.datadog.android.rum.RumAttributes
   const val NETWORK_BYTES_READ: String
   const val FLUTTER_FIRST_BUILD_COMPLETE: String
   const val CUSTOM_INV_VALUE: String
-data class com.datadog.android.rum.RumConfiguration
+data class cloud.flashcat.android.rum.RumConfiguration
   class Builder
     constructor(String)
     fun setSessionSampleRate(Float): Builder
     fun collectAccessibility(Boolean): Builder
     fun setTelemetrySampleRate(Float): Builder
-    fun trackUserInteractions(Array<com.datadog.android.rum.tracking.ViewAttributesProvider> = emptyArray(), com.datadog.android.rum.tracking.InteractionPredicate = NoOpInteractionPredicate()): Builder
+    fun trackUserInteractions(Array<cloud.flashcat.android.rum.tracking.ViewAttributesProvider> = emptyArray(), cloud.flashcat.android.rum.tracking.InteractionPredicate = NoOpInteractionPredicate()): Builder
     fun disableUserInteractionTracking(): Builder
-    fun useViewTrackingStrategy(com.datadog.android.rum.tracking.ViewTrackingStrategy?): Builder
+    fun useViewTrackingStrategy(cloud.flashcat.android.rum.tracking.ViewTrackingStrategy?): Builder
     fun trackLongTasks(Long = RumFeature.DEFAULT_LONG_TASK_THRESHOLD_MS): Builder
     fun trackNonFatalAnrs(Boolean): Builder
-    fun setViewEventMapper(com.datadog.android.rum.event.ViewEventMapper): Builder
-    fun setResourceEventMapper(com.datadog.android.event.EventMapper<com.datadog.android.rum.model.ResourceEvent>): Builder
-    fun setActionEventMapper(com.datadog.android.event.EventMapper<com.datadog.android.rum.model.ActionEvent>): Builder
-    fun setErrorEventMapper(com.datadog.android.event.EventMapper<com.datadog.android.rum.model.ErrorEvent>): Builder
-    fun setLongTaskEventMapper(com.datadog.android.event.EventMapper<com.datadog.android.rum.model.LongTaskEvent>): Builder
-    DEPRECATED fun setVitalEventMapper(com.datadog.android.event.EventMapper<com.datadog.android.rum.model.RumVitalOperationStepEvent>): Builder
-    fun setVitalOperationStepEventMapper(com.datadog.android.event.EventMapper<com.datadog.android.rum.model.RumVitalOperationStepEvent>): Builder
+    fun setViewEventMapper(cloud.flashcat.android.rum.event.ViewEventMapper): Builder
+    fun setResourceEventMapper(cloud.flashcat.android.event.EventMapper<cloud.flashcat.android.rum.model.ResourceEvent>): Builder
+    fun setActionEventMapper(cloud.flashcat.android.event.EventMapper<cloud.flashcat.android.rum.model.ActionEvent>): Builder
+    fun setErrorEventMapper(cloud.flashcat.android.event.EventMapper<cloud.flashcat.android.rum.model.ErrorEvent>): Builder
+    fun setLongTaskEventMapper(cloud.flashcat.android.event.EventMapper<cloud.flashcat.android.rum.model.LongTaskEvent>): Builder
+    DEPRECATED fun setVitalEventMapper(cloud.flashcat.android.event.EventMapper<cloud.flashcat.android.rum.model.RumVitalOperationStepEvent>): Builder
+    fun setVitalOperationStepEventMapper(cloud.flashcat.android.event.EventMapper<cloud.flashcat.android.rum.model.RumVitalOperationStepEvent>): Builder
     fun trackBackgroundEvents(Boolean): Builder
     fun trackFrustrations(Boolean): Builder
-    fun setVitalsUpdateFrequency(com.datadog.android.rum.configuration.VitalsUpdateFrequency): Builder
+    fun setVitalsUpdateFrequency(cloud.flashcat.android.rum.configuration.VitalsUpdateFrequency): Builder
     fun useCustomEndpoint(String): Builder
     fun setSessionListener(RumSessionListener): Builder
-    fun setInitialResourceIdentifier(com.datadog.android.rum.metric.networksettled.InitialResourceIdentifier): Builder
-    fun setLastInteractionIdentifier(com.datadog.android.rum.metric.interactiontonextview.LastInteractionIdentifier?): Builder
-    fun setSlowFramesConfiguration(com.datadog.android.rum.configuration.SlowFramesConfiguration?): Builder
+    fun setInitialResourceIdentifier(cloud.flashcat.android.rum.metric.networksettled.InitialResourceIdentifier): Builder
+    fun setLastInteractionIdentifier(cloud.flashcat.android.rum.metric.interactiontonextview.LastInteractionIdentifier?): Builder
+    fun setSlowFramesConfiguration(cloud.flashcat.android.rum.configuration.SlowFramesConfiguration?): Builder
     fun trackAnonymousUser(Boolean): Builder
     fun build(): RumConfiguration
-enum com.datadog.android.rum.RumErrorSource
+enum cloud.flashcat.android.rum.RumErrorSource
   - NETWORK
   - SOURCE
   - CONSOLE
@@ -95,7 +95,7 @@ enum com.datadog.android.rum.RumErrorSource
   - WEBVIEW
   - CUSTOM
   - REPORT
-interface com.datadog.android.rum.RumMonitor
+interface cloud.flashcat.android.rum.RumMonitor
   fun getCurrentSessionId((String?) -> Unit)
   fun startView(Any, String, Map<String, Any?> = emptyMap())
   fun stopView(Any, Map<String, Any?> = emptyMap())
@@ -121,16 +121,16 @@ interface com.datadog.android.rum.RumMonitor
   fun removeViewAttributes(Collection<String>)
   fun startFeatureOperation(String, String? = null, Map<String, Any?> = emptyMap())
   fun succeedFeatureOperation(String, String? = null, Map<String, Any?> = emptyMap())
-  fun failFeatureOperation(String, String? = null, com.datadog.android.rum.featureoperations.FailureReason, Map<String, Any?> = emptyMap())
+  fun failFeatureOperation(String, String? = null, cloud.flashcat.android.rum.featureoperations.FailureReason, Map<String, Any?> = emptyMap())
   var debug: Boolean
   fun _getInternal(): _RumInternalProxy?
-enum com.datadog.android.rum.RumPerformanceMetric
+enum cloud.flashcat.android.rum.RumPerformanceMetric
   - FLUTTER_BUILD_TIME
   - FLUTTER_RASTER_TIME
   - JS_FRAME_TIME
-interface com.datadog.android.rum.RumResourceAttributesProvider
+interface cloud.flashcat.android.rum.RumResourceAttributesProvider
   fun onProvideAttributes(okhttp3.Request, okhttp3.Response?, Throwable?): Map<String, Any?>
-enum com.datadog.android.rum.RumResourceKind
+enum cloud.flashcat.android.rum.RumResourceKind
   constructor(String)
   - BEACON
   - FETCH
@@ -146,7 +146,7 @@ enum com.datadog.android.rum.RumResourceKind
   - OTHER
   companion object 
     fun fromMimeType(String): RumResourceKind
-enum com.datadog.android.rum.RumResourceMethod
+enum cloud.flashcat.android.rum.RumResourceMethod
   - POST
   - GET
   - HEAD
@@ -156,12 +156,12 @@ enum com.datadog.android.rum.RumResourceMethod
   - TRACE
   - OPTIONS
   - CONNECT
-interface com.datadog.android.rum.RumSessionListener
+interface cloud.flashcat.android.rum.RumSessionListener
   fun onSessionStarted(String, Boolean)
-enum com.datadog.android.rum.RumSessionType
+enum cloud.flashcat.android.rum.RumSessionType
   - SYNTHETICS
   - USER
-class com.datadog.android.rum._RumInternalProxy
+class cloud.flashcat.android.rum._RumInternalProxy
   fun addLongTask(Long, String)
   fun updatePerformanceMetric(RumPerformanceMetric, Double)
   fun updateExternalRefreshRate(Double)
@@ -170,66 +170,66 @@ class com.datadog.android.rum._RumInternalProxy
   fun enableJankStatsTracking(android.app.Activity)
   fun setSyntheticsAttributeFromIntent(android.content.Intent)
   companion object 
-    fun setTelemetryConfigurationEventMapper(com.datadog.android.rum.RumConfiguration.Builder, com.datadog.android.event.EventMapper<com.datadog.android.telemetry.model.TelemetryConfigurationEvent>): com.datadog.android.rum.RumConfiguration.Builder
-    fun setAdditionalConfiguration(com.datadog.android.rum.RumConfiguration.Builder, Map<String, Any>): com.datadog.android.rum.RumConfiguration.Builder
-    fun setComposeActionTrackingStrategy(com.datadog.android.rum.RumConfiguration.Builder, com.datadog.android.rum.tracking.ActionTrackingStrategy): com.datadog.android.rum.RumConfiguration.Builder
-    fun setRumSessionTypeOverride(com.datadog.android.rum.RumConfiguration.Builder, RumSessionType): com.datadog.android.rum.RumConfiguration.Builder
-    fun setDisableJankStats(com.datadog.android.rum.RumConfiguration.Builder, Boolean): com.datadog.android.rum.RumConfiguration.Builder
-data class com.datadog.android.rum.configuration.SlowFramesConfiguration
+    fun setTelemetryConfigurationEventMapper(cloud.flashcat.android.rum.RumConfiguration.Builder, cloud.flashcat.android.event.EventMapper<cloud.flashcat.android.telemetry.model.TelemetryConfigurationEvent>): cloud.flashcat.android.rum.RumConfiguration.Builder
+    fun setAdditionalConfiguration(cloud.flashcat.android.rum.RumConfiguration.Builder, Map<String, Any>): cloud.flashcat.android.rum.RumConfiguration.Builder
+    fun setComposeActionTrackingStrategy(cloud.flashcat.android.rum.RumConfiguration.Builder, cloud.flashcat.android.rum.tracking.ActionTrackingStrategy): cloud.flashcat.android.rum.RumConfiguration.Builder
+    fun setRumSessionTypeOverride(cloud.flashcat.android.rum.RumConfiguration.Builder, RumSessionType): cloud.flashcat.android.rum.RumConfiguration.Builder
+    fun setDisableJankStats(cloud.flashcat.android.rum.RumConfiguration.Builder, Boolean): cloud.flashcat.android.rum.RumConfiguration.Builder
+data class cloud.flashcat.android.rum.configuration.SlowFramesConfiguration
   constructor(Int = DEFAULT_SLOW_FRAME_RECORDS_MAX_AMOUNT, Long = DEFAULT_FROZEN_FRAME_THRESHOLD_NS, Long = DEFAULT_CONTINUOUS_SLOW_FRAME_THRESHOLD_NS, Long = DEFAULT_FREEZE_DURATION_NS, Long = DEFAULT_VIEW_LIFETIME_THRESHOLD_NS)
   companion object 
     val DEFAULT: SlowFramesConfiguration
-enum com.datadog.android.rum.configuration.VitalsUpdateFrequency
+enum cloud.flashcat.android.rum.configuration.VitalsUpdateFrequency
   constructor(Long)
   - FREQUENT
   - AVERAGE
   - RARE
   - NEVER
-interface com.datadog.android.rum.event.ViewEventMapper : com.datadog.android.event.EventMapper<com.datadog.android.rum.model.ViewEvent>
-  override fun map(com.datadog.android.rum.model.ViewEvent): com.datadog.android.rum.model.ViewEvent
-enum com.datadog.android.rum.featureoperations.FailureReason
+interface cloud.flashcat.android.rum.event.ViewEventMapper : cloud.flashcat.android.event.EventMapper<cloud.flashcat.android.rum.model.ViewEvent>
+  override fun map(cloud.flashcat.android.rum.model.ViewEvent): cloud.flashcat.android.rum.model.ViewEvent
+enum cloud.flashcat.android.rum.featureoperations.FailureReason
   - ERROR
   - ABANDONED
   - OTHER
-data class com.datadog.android.rum.internal.domain.event.ResourceTiming
+data class cloud.flashcat.android.rum.internal.domain.event.ResourceTiming
   constructor(Long = 0L, Long = 0L, Long = 0L, Long = 0L, Long = 0L, Long = 0L, Long = 0L, Long = 0L, Long = 0L, Long = 0L)
-interface com.datadog.android.rum.internal.monitor.AdvancedNetworkRumMonitor : com.datadog.android.rum.RumMonitor
+interface cloud.flashcat.android.rum.internal.monitor.AdvancedNetworkRumMonitor : cloud.flashcat.android.rum.RumMonitor
   fun waitForResourceTiming(Any)
-  fun addResourceTiming(Any, com.datadog.android.rum.internal.domain.event.ResourceTiming)
+  fun addResourceTiming(Any, cloud.flashcat.android.rum.internal.domain.event.ResourceTiming)
   fun notifyInterceptorInstantiated()
-  fun startResource(com.datadog.android.rum.resource.ResourceId, com.datadog.android.rum.RumResourceMethod, String, Map<String, Any?> = emptyMap())
-  fun stopResource(com.datadog.android.rum.resource.ResourceId, Int?, Long?, com.datadog.android.rum.RumResourceKind, Map<String, Any?> = emptyMap())
-  fun stopResourceWithError(com.datadog.android.rum.resource.ResourceId, Int?, String, com.datadog.android.rum.RumErrorSource, Throwable, Map<String, Any?> = emptyMap())
-  fun stopResourceWithError(com.datadog.android.rum.resource.ResourceId, Int?, String, com.datadog.android.rum.RumErrorSource, String, String?, Map<String, Any?> = emptyMap())
-interface com.datadog.android.rum.metric.interactiontonextview.LastInteractionIdentifier
+  fun startResource(cloud.flashcat.android.rum.resource.ResourceId, cloud.flashcat.android.rum.RumResourceMethod, String, Map<String, Any?> = emptyMap())
+  fun stopResource(cloud.flashcat.android.rum.resource.ResourceId, Int?, Long?, cloud.flashcat.android.rum.RumResourceKind, Map<String, Any?> = emptyMap())
+  fun stopResourceWithError(cloud.flashcat.android.rum.resource.ResourceId, Int?, String, cloud.flashcat.android.rum.RumErrorSource, Throwable, Map<String, Any?> = emptyMap())
+  fun stopResourceWithError(cloud.flashcat.android.rum.resource.ResourceId, Int?, String, cloud.flashcat.android.rum.RumErrorSource, String, String?, Map<String, Any?> = emptyMap())
+interface cloud.flashcat.android.rum.metric.interactiontonextview.LastInteractionIdentifier
   fun validate(PreviousViewLastInteractionContext): Boolean
-data class com.datadog.android.rum.metric.interactiontonextview.PreviousViewLastInteractionContext
-  constructor(com.datadog.android.rum.model.ActionEvent.ActionEventActionType, Long, Long?)
-class com.datadog.android.rum.metric.interactiontonextview.TimeBasedInteractionIdentifier : LastInteractionIdentifier
+data class cloud.flashcat.android.rum.metric.interactiontonextview.PreviousViewLastInteractionContext
+  constructor(cloud.flashcat.android.rum.model.ActionEvent.ActionEventActionType, Long, Long?)
+class cloud.flashcat.android.rum.metric.interactiontonextview.TimeBasedInteractionIdentifier : LastInteractionIdentifier
   constructor(Long = DEFAULT_TIME_THRESHOLD_MS)
   override fun validate(PreviousViewLastInteractionContext): Boolean
   override fun equals(Any?): Boolean
   override fun hashCode(): Int
   companion object 
-interface com.datadog.android.rum.metric.networksettled.InitialResourceIdentifier
+interface cloud.flashcat.android.rum.metric.networksettled.InitialResourceIdentifier
   fun validate(NetworkSettledResourceContext): Boolean
-data class com.datadog.android.rum.metric.networksettled.NetworkSettledResourceContext
+data class cloud.flashcat.android.rum.metric.networksettled.NetworkSettledResourceContext
   constructor(String, Long, Long?)
-class com.datadog.android.rum.metric.networksettled.TimeBasedInitialResourceIdentifier : InitialResourceIdentifier
+class cloud.flashcat.android.rum.metric.networksettled.TimeBasedInitialResourceIdentifier : InitialResourceIdentifier
   constructor(Long = DEFAULT_TIME_THRESHOLD_MS)
   override fun validate(NetworkSettledResourceContext): Boolean
   override fun equals(Any?): Boolean
   override fun hashCode(): Int
   companion object 
-fun android.content.Context.getAssetAsRumResource(String, Int = AssetManager.ACCESS_STREAMING, com.datadog.android.api.SdkCore = Datadog.getInstance()): java.io.InputStream
-fun android.content.Context.getRawResAsRumResource(Int, com.datadog.android.api.SdkCore = Datadog.getInstance()): java.io.InputStream
-fun java.io.InputStream.asRumResource(String, com.datadog.android.api.SdkCore = Datadog.getInstance()): java.io.InputStream
-class com.datadog.android.rum.resource.ResourceId
+fun android.content.Context.getAssetAsRumResource(String, Int = AssetManager.ACCESS_STREAMING, cloud.flashcat.android.api.SdkCore = Datadog.getInstance()): java.io.InputStream
+fun android.content.Context.getRawResAsRumResource(Int, cloud.flashcat.android.api.SdkCore = Datadog.getInstance()): java.io.InputStream
+fun java.io.InputStream.asRumResource(String, cloud.flashcat.android.api.SdkCore = Datadog.getInstance()): java.io.InputStream
+class cloud.flashcat.android.rum.resource.ResourceId
   constructor(String, String?)
   override fun equals(Any?): Boolean
   override fun hashCode(): Int
-class com.datadog.android.rum.resource.RumResourceInputStream : java.io.InputStream
-  constructor(java.io.InputStream, String, com.datadog.android.api.SdkCore = Datadog.getInstance())
+class cloud.flashcat.android.rum.resource.RumResourceInputStream : java.io.InputStream
+  constructor(java.io.InputStream, String, cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
   override fun read(): Int
   override fun read(ByteArray): Int
   override fun read(ByteArray, Int, Int): Int
@@ -239,32 +239,32 @@ class com.datadog.android.rum.resource.RumResourceInputStream : java.io.InputStr
   override fun mark(Int)
   override fun reset()
   override fun close()
-open class com.datadog.android.rum.tracking.AcceptAllActivities : ComponentPredicate<android.app.Activity>
+open class cloud.flashcat.android.rum.tracking.AcceptAllActivities : ComponentPredicate<android.app.Activity>
   override fun accept(android.app.Activity): Boolean
   override fun getViewName(android.app.Activity): String?
   override fun equals(Any?): Boolean
   override fun hashCode(): Int
-open class com.datadog.android.rum.tracking.AcceptAllDefaultFragment : ComponentPredicate<android.app.Fragment>
+open class cloud.flashcat.android.rum.tracking.AcceptAllDefaultFragment : ComponentPredicate<android.app.Fragment>
   override fun accept(android.app.Fragment): Boolean
   override fun getViewName(android.app.Fragment): String?
   override fun equals(Any?): Boolean
   override fun hashCode(): Int
-open class com.datadog.android.rum.tracking.AcceptAllNavDestinations : ComponentPredicate<androidx.navigation.NavDestination>
+open class cloud.flashcat.android.rum.tracking.AcceptAllNavDestinations : ComponentPredicate<androidx.navigation.NavDestination>
   override fun accept(androidx.navigation.NavDestination): Boolean
   override fun getViewName(androidx.navigation.NavDestination): String?
   override fun equals(Any?): Boolean
   override fun hashCode(): Int
-open class com.datadog.android.rum.tracking.AcceptAllSupportFragments : ComponentPredicate<androidx.fragment.app.Fragment>
+open class cloud.flashcat.android.rum.tracking.AcceptAllSupportFragments : ComponentPredicate<androidx.fragment.app.Fragment>
   override fun accept(androidx.fragment.app.Fragment): Boolean
   override fun getViewName(androidx.fragment.app.Fragment): String?
   override fun equals(Any?): Boolean
   override fun hashCode(): Int
-interface com.datadog.android.rum.tracking.ActionTrackingStrategy : TrackingStrategy
+interface cloud.flashcat.android.rum.tracking.ActionTrackingStrategy : TrackingStrategy
   fun findTargetForTap(android.view.View, Float, Float): ViewTarget?
   fun findTargetForScroll(android.view.View, Float, Float): ViewTarget?
-abstract class com.datadog.android.rum.tracking.ActivityLifecycleTrackingStrategy : android.app.Application.ActivityLifecycleCallbacks, TrackingStrategy
-  protected var sdkCore: com.datadog.android.api.feature.FeatureSdkCore
-  override fun register(com.datadog.android.api.SdkCore, android.content.Context)
+abstract class cloud.flashcat.android.rum.tracking.ActivityLifecycleTrackingStrategy : android.app.Application.ActivityLifecycleCallbacks, TrackingStrategy
+  protected var sdkCore: cloud.flashcat.android.api.feature.FeatureSdkCore
+  override fun register(cloud.flashcat.android.api.SdkCore, android.content.Context)
   override fun unregister(android.content.Context?)
   override fun onActivityPaused(android.app.Activity)
   override fun onActivityStarted(android.app.Activity)
@@ -273,32 +273,32 @@ abstract class com.datadog.android.rum.tracking.ActivityLifecycleTrackingStrateg
   override fun onActivityStopped(android.app.Activity)
   override fun onActivityCreated(android.app.Activity, android.os.Bundle?)
   override fun onActivityResumed(android.app.Activity)
-  protected fun <T> withSdkCore((com.datadog.android.api.feature.FeatureSdkCore) -> T): T?
-class com.datadog.android.rum.tracking.ActivityViewTrackingStrategy : ActivityLifecycleTrackingStrategy, ViewTrackingStrategy
+  protected fun <T> withSdkCore((cloud.flashcat.android.api.feature.FeatureSdkCore) -> T): T?
+class cloud.flashcat.android.rum.tracking.ActivityViewTrackingStrategy : ActivityLifecycleTrackingStrategy, ViewTrackingStrategy
   constructor(Boolean, ComponentPredicate<android.app.Activity> = AcceptAllActivities())
   override fun onActivityResumed(android.app.Activity)
   override fun onActivityStopped(android.app.Activity)
   override fun equals(Any?): Boolean
   override fun hashCode(): Int
 fun android.os.Bundle?.convertToRumViewAttributes(): Map<String, Any?>
-interface com.datadog.android.rum.tracking.ComponentPredicate<T>
+interface cloud.flashcat.android.rum.tracking.ComponentPredicate<T>
   fun accept(T): Boolean
   fun getViewName(T): String?
-class com.datadog.android.rum.tracking.FragmentViewTrackingStrategy : ActivityLifecycleTrackingStrategy, ViewTrackingStrategy
+class cloud.flashcat.android.rum.tracking.FragmentViewTrackingStrategy : ActivityLifecycleTrackingStrategy, ViewTrackingStrategy
   constructor(Boolean, ComponentPredicate<androidx.fragment.app.Fragment> = AcceptAllSupportFragments(), ComponentPredicate<android.app.Fragment> = AcceptAllDefaultFragment())
   override fun onActivityStarted(android.app.Activity)
   override fun onActivityStopped(android.app.Activity)
   override fun equals(Any?): Boolean
   override fun hashCode(): Int
-interface com.datadog.android.rum.tracking.InteractionPredicate
+interface cloud.flashcat.android.rum.tracking.InteractionPredicate
   fun getTargetName(Any): String?
-class com.datadog.android.rum.tracking.MixedViewTrackingStrategy : ActivityLifecycleTrackingStrategy, ViewTrackingStrategy
+class cloud.flashcat.android.rum.tracking.MixedViewTrackingStrategy : ActivityLifecycleTrackingStrategy, ViewTrackingStrategy
   constructor(Boolean, ComponentPredicate<android.app.Activity> = AcceptAllActivities(), ComponentPredicate<androidx.fragment.app.Fragment> = AcceptAllSupportFragments(), ComponentPredicate<android.app.Fragment> = AcceptAllDefaultFragment())
-  override fun register(com.datadog.android.api.SdkCore, android.content.Context)
+  override fun register(cloud.flashcat.android.api.SdkCore, android.content.Context)
   override fun unregister(android.content.Context?)
   override fun equals(Any?): Boolean
   override fun hashCode(): Int
-class com.datadog.android.rum.tracking.NavigationViewTrackingStrategy : ActivityLifecycleTrackingStrategy, ViewTrackingStrategy, androidx.navigation.NavController.OnDestinationChangedListener
+class cloud.flashcat.android.rum.tracking.NavigationViewTrackingStrategy : ActivityLifecycleTrackingStrategy, ViewTrackingStrategy, androidx.navigation.NavController.OnDestinationChangedListener
   constructor(Int, Boolean, ComponentPredicate<androidx.navigation.NavDestination> = AcceptAllNavDestinations())
   override fun onActivityStarted(android.app.Activity)
   override fun onActivityStopped(android.app.Activity)
@@ -306,22 +306,22 @@ class com.datadog.android.rum.tracking.NavigationViewTrackingStrategy : Activity
   override fun onDestinationChanged(androidx.navigation.NavController, androidx.navigation.NavDestination, android.os.Bundle?)
   fun startTracking()
   fun stopTracking()
-interface com.datadog.android.rum.tracking.TrackingStrategy
-  fun register(com.datadog.android.api.SdkCore, android.content.Context)
+interface cloud.flashcat.android.rum.tracking.TrackingStrategy
+  fun register(cloud.flashcat.android.api.SdkCore, android.content.Context)
   fun unregister(android.content.Context?)
-interface com.datadog.android.rum.tracking.ViewAttributesProvider
+interface cloud.flashcat.android.rum.tracking.ViewAttributesProvider
   fun extractAttributes(android.view.View, MutableMap<String, Any?>)
-class com.datadog.android.rum.tracking.ViewTarget
+class cloud.flashcat.android.rum.tracking.ViewTarget
   constructor(java.lang.ref.WeakReference<android.view.View?> = WeakReference(null), Node? = null)
   override fun equals(Any?): Boolean
   override fun hashCode(): Int
-data class com.datadog.android.rum.tracking.Node
+data class cloud.flashcat.android.rum.tracking.Node
   constructor(String, Map<String, Any?> = mapOf())
-interface com.datadog.android.rum.tracking.ViewTrackingStrategy : TrackingStrategy
-class com.datadog.android.sqlite.DatadogDatabaseErrorHandler : android.database.DatabaseErrorHandler
+interface cloud.flashcat.android.rum.tracking.ViewTrackingStrategy : TrackingStrategy
+class cloud.flashcat.android.sqlite.DatadogDatabaseErrorHandler : android.database.DatabaseErrorHandler
   constructor(String? = null, android.database.DatabaseErrorHandler = DefaultDatabaseErrorHandler())
   override fun onCorruption(android.database.sqlite.SQLiteDatabase)
-data class com.datadog.android.rum.model.ActionEvent
+data class cloud.flashcat.android.rum.model.ActionEvent
   constructor(kotlin.Long, Application, kotlin.String? = null, kotlin.String? = null, kotlin.String? = null, kotlin.String? = null, kotlin.String? = null, ActionEventSession, ActionEventSource? = null, ActionEventView, Usr? = null, Account? = null, Connectivity? = null, Display? = null, Synthetics? = null, CiTest? = null, Os? = null, Device? = null, Dd, Context? = null, Container? = null, ActionEventAction)
   val type: kotlin.String
   fun toJson(): com.google.gson.JsonElement
@@ -619,7 +619,7 @@ data class com.datadog.android.rum.model.ActionEvent
     fun toJson(): com.google.gson.JsonElement
     companion object 
       fun fromJson(kotlin.String): Type
-data class com.datadog.android.rum.model.ErrorEvent
+data class cloud.flashcat.android.rum.model.ErrorEvent
   constructor(kotlin.Long, Application, kotlin.String? = null, kotlin.String? = null, kotlin.String? = null, kotlin.String? = null, kotlin.String? = null, ErrorEventSession, ErrorEventSource? = null, ErrorEventView, Usr? = null, Account? = null, Connectivity? = null, Display? = null, Synthetics? = null, CiTest? = null, Os? = null, Device? = null, Dd, Context? = null, Action? = null, Container? = null, Error, Freeze? = null, Context? = null)
   val type: kotlin.String
   fun toJson(): com.google.gson.JsonElement
@@ -969,7 +969,7 @@ data class com.datadog.android.rum.model.ErrorEvent
     fun toJson(): com.google.gson.JsonElement
     companion object 
       fun fromJson(kotlin.String): ProviderType
-data class com.datadog.android.rum.model.LongTaskEvent
+data class cloud.flashcat.android.rum.model.LongTaskEvent
   constructor(kotlin.Long, Application, kotlin.String? = null, kotlin.String? = null, kotlin.String? = null, kotlin.String? = null, kotlin.String? = null, LongTaskEventSession, LongTaskEventSource? = null, LongTaskEventView, Usr? = null, Account? = null, Connectivity? = null, Display? = null, Synthetics? = null, CiTest? = null, Os? = null, Device? = null, Dd, Context? = null, Action? = null, Container? = null, LongTask)
   val type: kotlin.String
   fun toJson(): com.google.gson.JsonElement
@@ -1234,7 +1234,7 @@ data class com.datadog.android.rum.model.LongTaskEvent
     fun toJson(): com.google.gson.JsonElement
     companion object 
       fun fromJson(kotlin.String): InvokerType
-data class com.datadog.android.rum.model.ResourceEvent
+data class cloud.flashcat.android.rum.model.ResourceEvent
   constructor(kotlin.Long, Application, kotlin.String? = null, kotlin.String? = null, kotlin.String? = null, kotlin.String? = null, kotlin.String? = null, ResourceEventSession, ResourceEventSource? = null, ResourceEventView, Usr? = null, Account? = null, Connectivity? = null, Display? = null, Synthetics? = null, CiTest? = null, Os? = null, Device? = null, Dd, Context? = null, Action? = null, Container? = null, Resource)
   val type: kotlin.String
   fun toJson(): com.google.gson.JsonElement
@@ -1606,7 +1606,7 @@ data class com.datadog.android.rum.model.ResourceEvent
     fun toJson(): com.google.gson.JsonElement
     companion object 
       fun fromJson(kotlin.String): OperationType
-data class com.datadog.android.rum.model.RumVitalAppLaunchEvent
+data class cloud.flashcat.android.rum.model.RumVitalAppLaunchEvent
   constructor(kotlin.Long, Application, kotlin.String? = null, kotlin.String? = null, kotlin.String? = null, kotlin.String? = null, kotlin.String? = null, RumVitalAppLaunchEventSession, RumVitalAppLaunchEventSource? = null, RumVitalAppLaunchEventView? = null, Usr? = null, Account? = null, Connectivity? = null, Display? = null, Synthetics? = null, CiTest? = null, Os? = null, Device? = null, Dd, Context? = null, Container? = null, Vital)
   val type: kotlin.String
   fun toJson(): com.google.gson.JsonElement
@@ -1856,7 +1856,7 @@ data class com.datadog.android.rum.model.RumVitalAppLaunchEvent
     fun toJson(): com.google.gson.JsonElement
     companion object 
       fun fromJson(kotlin.String): ErrorReason
-data class com.datadog.android.rum.model.RumVitalOperationStepEvent
+data class cloud.flashcat.android.rum.model.RumVitalOperationStepEvent
   constructor(kotlin.Long, Application, kotlin.String? = null, kotlin.String? = null, kotlin.String? = null, kotlin.String? = null, kotlin.String? = null, RumVitalOperationStepEventSession, RumVitalOperationStepEventSource? = null, RumVitalOperationStepEventView, Usr? = null, Account? = null, Connectivity? = null, Display? = null, Synthetics? = null, CiTest? = null, Os? = null, Device? = null, Dd, Context? = null, Container? = null, Vital)
   val type: kotlin.String
   fun toJson(): com.google.gson.JsonElement
@@ -2085,7 +2085,7 @@ data class com.datadog.android.rum.model.RumVitalOperationStepEvent
     fun toJson(): com.google.gson.JsonElement
     companion object 
       fun fromJson(kotlin.String): SessionPrecondition
-data class com.datadog.android.rum.model.ViewEvent
+data class cloud.flashcat.android.rum.model.ViewEvent
   constructor(kotlin.Long, Application, kotlin.String? = null, kotlin.String? = null, kotlin.String? = null, kotlin.String? = null, kotlin.String? = null, ViewEventSession, ViewEventSource? = null, ViewEventView, Usr? = null, Account? = null, Connectivity? = null, Display? = null, Synthetics? = null, CiTest? = null, Os? = null, Device? = null, Dd, Context? = null, Container? = null, Context? = null, Privacy? = null)
   val type: kotlin.String
   fun toJson(): com.google.gson.JsonElement
@@ -2495,7 +2495,7 @@ data class com.datadog.android.rum.model.ViewEvent
     fun toJson(): com.google.gson.JsonElement
     companion object 
       fun fromJson(kotlin.String): ErrorReason
-data class com.datadog.android.telemetry.model.TelemetryConfigurationEvent
+data class cloud.flashcat.android.telemetry.model.TelemetryConfigurationEvent
   constructor(Dd, kotlin.Long, kotlin.String, Source, kotlin.String, Application? = null, Session? = null, View? = null, Action? = null, kotlin.Number? = null, kotlin.collections.List<kotlin.String>? = null, Telemetry)
   val type: kotlin.String
   fun toJson(): com.google.gson.JsonElement
@@ -2624,7 +2624,7 @@ data class com.datadog.android.telemetry.model.TelemetryConfigurationEvent
     fun toJson(): com.google.gson.JsonElement
     companion object 
       fun fromJson(kotlin.String): TrackFeatureFlagsForEvent
-data class com.datadog.android.telemetry.model.TelemetryDebugEvent
+data class cloud.flashcat.android.telemetry.model.TelemetryDebugEvent
   constructor(Dd, kotlin.Long, kotlin.String, Source, kotlin.String, Application? = null, Session? = null, View? = null, Action? = null, kotlin.Number? = null, kotlin.collections.List<kotlin.String>? = null, Telemetry)
   val type: kotlin.String
   fun toJson(): com.google.gson.JsonElement
@@ -2693,7 +2693,7 @@ data class com.datadog.android.telemetry.model.TelemetryDebugEvent
     fun toJson(): com.google.gson.JsonElement
     companion object 
       fun fromJson(kotlin.String): Source
-data class com.datadog.android.telemetry.model.TelemetryErrorEvent
+data class cloud.flashcat.android.telemetry.model.TelemetryErrorEvent
   constructor(Dd, kotlin.Long, kotlin.String, Source, kotlin.String, Application? = null, Session? = null, View? = null, Action? = null, kotlin.Number? = null, kotlin.collections.List<kotlin.String>? = null, Telemetry)
   val type: kotlin.String
   fun toJson(): com.google.gson.JsonElement
@@ -2768,7 +2768,7 @@ data class com.datadog.android.telemetry.model.TelemetryErrorEvent
     fun toJson(): com.google.gson.JsonElement
     companion object 
       fun fromJson(kotlin.String): Source
-data class com.datadog.android.telemetry.model.TelemetryUsageEvent
+data class cloud.flashcat.android.telemetry.model.TelemetryUsageEvent
   constructor(Dd, kotlin.Long, kotlin.String, Source, kotlin.String, Application? = null, Session? = null, View? = null, Action? = null, kotlin.Number? = null, kotlin.collections.List<kotlin.String>? = null, Telemetry)
   val type: kotlin.String
   fun toJson(): com.google.gson.JsonElement

@@ -5,10 +5,10 @@
  * Modified 2025 by FlashCat, Inc.
  */
 
-import com.datadog.gradle.config.dependencyUpdateConfig
-import com.datadog.gradle.config.junitConfig
-import com.datadog.gradle.config.kotlinConfig
-import com.datadog.gradle.config.taskConfig
+import cloud.flashcat.gradle.config.dependencyUpdateConfig
+import cloud.flashcat.gradle.config.junitConfig
+import cloud.flashcat.gradle.config.kotlinConfig
+import cloud.flashcat.gradle.config.taskConfig
 
 plugins {
     id("org.jetbrains.kotlin.jvm")
@@ -33,6 +33,6 @@ dependencyUpdateConfig()
 
 taskConfig<Jar> {
     manifest {
-        attributes("Lint-Registry-v2" to "com.datadog.android.lint.DatadogIssueRegistry")
+        attributes("Lint-Registry-v2" to "cloud.flashcat.android.lint.DatadogIssueRegistry")
     }
 }

@@ -1,10 +1,9 @@
-import com.datadog.gradle.config.AndroidConfig
-import com.datadog.gradle.config.configureFlavorForBenchmark
-import com.datadog.gradle.config.dependencyUpdateConfig
-import com.datadog.gradle.config.java17
-import com.datadog.gradle.config.junitConfig
-import com.datadog.gradle.config.kotlinConfig
-import com.datadog.gradle.plugin.InstrumentationMode
+import cloud.flashcat.gradle.config.AndroidConfig
+import cloud.flashcat.gradle.config.configureFlavorForBenchmark
+import cloud.flashcat.gradle.config.dependencyUpdateConfig
+import cloud.flashcat.gradle.config.java17
+import cloud.flashcat.gradle.config.junitConfig
+import cloud.flashcat.gradle.config.kotlinConfig
 
 plugins {
     id("com.android.application")
@@ -19,7 +18,7 @@ plugins {
 
 @Suppress("StringLiteralDuplication")
 android {
-    namespace = "com.datadog.sample.benchmark"
+    namespace = "cloud.flashcat.sample.benchmark"
     compileSdk = AndroidConfig.TARGET_SDK
     buildToolsVersion = AndroidConfig.BUILD_TOOLS_VERSION
 
@@ -77,7 +76,9 @@ android {
 }
 
 datadog {
-    composeInstrumentation = InstrumentationMode.AUTO
+    // composeInstrumentation = "AUTO"
+    // Note: If InstrumentationMode enum is not available, try using string value "AUTO", "MANUAL", or "OFF"
+    // Alternatively, this configuration may not be supported in the current plugin version (1.18.0)
 }
 
 dependencies {

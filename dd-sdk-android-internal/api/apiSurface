@@ -1,4 +1,4 @@
-interface com.datadog.android.internal.attributes.LocalAttribute
+interface cloud.flashcat.android.internal.attributes.LocalAttribute
   enum Key
     constructor(String)
     - CREATION_SAMPLING_RATE
@@ -10,51 +10,51 @@ interface com.datadog.android.internal.attributes.LocalAttribute
 fun MutableMap<String, Any?>.enrichWithConstantAttribute(LocalAttribute.Constant)
 fun MutableMap<String, Any?>.enrichWithNonNullAttribute(LocalAttribute.Key, Any?)
 fun MutableMap<String, Any?>.enrichWithLocalAttribute(LocalAttribute.Key, Any?)
-enum com.datadog.android.internal.attributes.ViewScopeInstrumentationType : LocalAttribute.Constant
+enum cloud.flashcat.android.internal.attributes.ViewScopeInstrumentationType : LocalAttribute.Constant
   - MANUAL
   - COMPOSE
   - ACTIVITY
   - FRAGMENT
   override val key: LocalAttribute.Key
-class com.datadog.android.internal.collections.EvictingQueue<T> : java.util.Queue<T>
+class cloud.flashcat.android.internal.collections.EvictingQueue<T> : java.util.Queue<T>
   constructor(Int = Int.MAX_VALUE)
   override val size: Int
   override fun add(T): Boolean
   override fun offer(T): Boolean
   override fun addAll(Collection<T>): Boolean
-data class com.datadog.android.internal.flags.RumFlagEvaluationMessage
+data class cloud.flashcat.android.internal.flags.RumFlagEvaluationMessage
   constructor(String, Any)
-enum com.datadog.android.internal.network.GraphQLHeaders
+enum cloud.flashcat.android.internal.network.GraphQLHeaders
   constructor(String)
   - DD_GRAPHQL_NAME_HEADER
   - DD_GRAPHQL_VARIABLES_HEADER
   - DD_GRAPHQL_TYPE_HEADER
   - DD_GRAPHQL_PAYLOAD_HEADER
-interface com.datadog.android.internal.profiler.BenchmarkCounter
+interface cloud.flashcat.android.internal.profiler.BenchmarkCounter
   fun add(Long, Map<String, String>)
-interface com.datadog.android.internal.profiler.BenchmarkMeter
+interface cloud.flashcat.android.internal.profiler.BenchmarkMeter
   fun getCounter(String): BenchmarkCounter
   fun createObservableGauge(String, Map<String, String>, () -> Double)
-interface com.datadog.android.internal.profiler.BenchmarkProfiler
+interface cloud.flashcat.android.internal.profiler.BenchmarkProfiler
   fun getTracer(String): BenchmarkTracer
-interface com.datadog.android.internal.profiler.BenchmarkSdkUploads
+interface cloud.flashcat.android.internal.profiler.BenchmarkSdkUploads
   fun getMeter(String): BenchmarkMeter
-interface com.datadog.android.internal.profiler.BenchmarkSpan
+interface cloud.flashcat.android.internal.profiler.BenchmarkSpan
   fun stop()
-interface com.datadog.android.internal.profiler.BenchmarkSpanBuilder
+interface cloud.flashcat.android.internal.profiler.BenchmarkSpanBuilder
   fun startSpan(): BenchmarkSpan
 fun <T: Any?> withinBenchmarkSpan(String, Map<String, String> = emptyMap(), BenchmarkSpan.() -> T): T
-interface com.datadog.android.internal.profiler.BenchmarkTracer
+interface cloud.flashcat.android.internal.profiler.BenchmarkTracer
   fun spanBuilder(String, Map<String, String> = emptyMap()): BenchmarkSpanBuilder
-interface com.datadog.android.internal.profiler.ExecutionTimer
+interface cloud.flashcat.android.internal.profiler.ExecutionTimer
   fun <T> measure(() -> T): T
-object com.datadog.android.internal.profiler.GlobalBenchmark
+object cloud.flashcat.android.internal.profiler.GlobalBenchmark
   fun register(BenchmarkProfiler)
   fun register(BenchmarkSdkUploads)
   fun getProfiler(): BenchmarkProfiler
   fun getBenchmarkSdkUploads(): BenchmarkSdkUploads
   fun createExecutionTimer(String): ExecutionTimer
-sealed class com.datadog.android.internal.telemetry.InternalTelemetryEvent
+sealed class cloud.flashcat.android.internal.telemetry.InternalTelemetryEvent
   sealed class Log : InternalTelemetryEvent
     constructor(String, Map<String, Any?>?)
     class Debug : Log
@@ -78,38 +78,38 @@ sealed class com.datadog.android.internal.telemetry.InternalTelemetryEvent
         - SUCCEED
         - FAIL
   object InterceptorInstantiated : InternalTelemetryEvent
-enum com.datadog.android.internal.telemetry.TracingHeaderType
+enum cloud.flashcat.android.internal.telemetry.TracingHeaderType
   - DATADOG
   - B3
   - B3MULTI
   - TRACECONTEXT
-data class com.datadog.android.internal.telemetry.TracingHeaderTypesSet
+data class cloud.flashcat.android.internal.telemetry.TracingHeaderTypesSet
   constructor(Set<TracingHeaderType>)
-interface com.datadog.android.internal.thread.NamedExecutionUnit
+interface cloud.flashcat.android.internal.thread.NamedExecutionUnit
   val name: String
-class com.datadog.android.internal.thread.NamedRunnable : NamedExecutionUnit, Runnable
+class cloud.flashcat.android.internal.thread.NamedRunnable : NamedExecutionUnit, Runnable
   constructor(String, Runnable)
-class com.datadog.android.internal.thread.NamedCallable<V> : NamedExecutionUnit, java.util.concurrent.Callable<V>
+class cloud.flashcat.android.internal.thread.NamedCallable<V> : NamedExecutionUnit, java.util.concurrent.Callable<V>
   constructor(String, java.util.concurrent.Callable<V>)
-class com.datadog.android.internal.time.DefaultTimeProvider : TimeProvider
+class cloud.flashcat.android.internal.time.DefaultTimeProvider : TimeProvider
   override fun getDeviceTimestamp(): Long
   override fun getServerTimestamp(): Long
   override fun getServerOffsetNanos(): Long
   override fun getServerOffsetMillis(): Long
-interface com.datadog.android.internal.time.TimeProvider
+interface cloud.flashcat.android.internal.time.TimeProvider
   fun getDeviceTimestamp(): Long
   fun getServerTimestamp(): Long
   fun getServerOffsetNanos(): Long
   fun getServerOffsetMillis(): Long
 fun ByteArray.toHexString(): String
-interface com.datadog.android.internal.utils.DDCoreSubscription<T: Any>
+interface cloud.flashcat.android.internal.utils.DDCoreSubscription<T: Any>
   fun addListener(T)
   fun removeListener(T)
   fun notifyListeners(T.() -> Unit)
   val listenersCount: Int
   companion object 
     fun <T: Any> create(): DDCoreSubscription<T>
-object com.datadog.android.internal.utils.ImageViewUtils
+object cloud.flashcat.android.internal.utils.ImageViewUtils
   fun resolveParentRectAbsPosition(android.view.View, Boolean = true): android.graphics.Rect
   fun calculateClipping(android.graphics.Rect, android.graphics.Rect, Float): android.graphics.Rect
   fun resolveContentRectWithScaling(android.widget.ImageView, android.graphics.drawable.Drawable, android.widget.ImageView.ScaleType? = null): android.graphics.Rect
@@ -127,7 +127,7 @@ fun Thread.safeGetThreadId(): Long
 fun Thread.State.asString(): String
 fun Array<StackTraceElement>.loggableStackTrace(): String
 fun Throwable.loggableStackTrace(): String
-class com.datadog.android.rum.DdRumContentProvider : android.content.ContentProvider
+class cloud.flashcat.android.rum.DdRumContentProvider : android.content.ContentProvider
   override fun onCreate(): Boolean
   override fun query(android.net.Uri, Array<String>?, String?, Array<String>?, String?): android.database.Cursor?
   override fun getType(android.net.Uri): String?
@@ -137,5 +137,5 @@ class com.datadog.android.rum.DdRumContentProvider : android.content.ContentProv
   companion object 
     var processImportance: Int
     val createTimeNs: Long
-annotation com.datadog.tools.annotation.NoOpImplementation
+annotation cloud.flashcat.tools.annotation.NoOpImplementation
   constructor(Boolean = false)

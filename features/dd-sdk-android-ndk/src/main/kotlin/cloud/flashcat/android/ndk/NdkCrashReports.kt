@@ -1,0 +1,33 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
+ */
+
+package cloud.flashcat.android.ndk
+
+import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.api.SdkCore
+import cloud.flashcat.android.api.feature.FeatureSdkCore
+import cloud.flashcat.android.ndk.internal.NdkCrashReportsFeature
+
+/**
+ * An entry point to Datadog NDK Crash Reports feature.
+ */
+object NdkCrashReports {
+
+    /**
+     * Enables a NDK Crash Reports feature.
+     *
+     * @param sdkCore SDK instance to register feature in. If not provided, default SDK instance
+     * will be used.
+     */
+    @JvmOverloads
+    @JvmStatic
+    fun enable(sdkCore: SdkCore = Datadog.getInstance()) {
+        val ndkCrashReportsFeature = NdkCrashReportsFeature(sdkCore as FeatureSdkCore)
+
+        sdkCore.registerFeature(ndkCrashReportsFeature)
+    }
+}

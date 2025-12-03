@@ -5,17 +5,17 @@
  * Modified 2025 by FlashCat, Inc.
  */
 
-import com.datadog.gradle.plugin.apisurface.ApiSurfacePlugin
+import cloud.flashcat.gradle.plugin.apisurface.ApiSurfacePlugin
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val generateTelemetryModelsTaskName = "generateTelemetryModelsFromJson"
 
 tasks.register(
     generateTelemetryModelsTaskName,
-    com.datadog.gradle.plugin.jsonschema.GenerateJsonSchemaTask::class.java
+    cloud.flashcat.gradle.plugin.jsonschema.GenerateJsonSchemaTask::class.java
 ) {
     inputDirPath = "src/main/json/telemetry"
-    targetPackageName = "com.datadog.android.telemetry.model"
+    targetPackageName = "cloud.flashcat.android.telemetry.model"
     ignoredFiles = arrayOf(
         "_common-schema.json"
     )

@@ -4,7 +4,7 @@
  * Copyright 2016-Present Datadog, Inc.
  * Modified 2025 by FlashCat, Inc.
  */
-import com.datadog.gradle.plugin.gitclone.GitCloneDependenciesTask
+import cloud.flashcat.gradle.plugin.gitclone.GitCloneDependenciesTask
 
 tasks.register<GitCloneDependenciesTask>("cloneRumSchema") {
     extension.apply {

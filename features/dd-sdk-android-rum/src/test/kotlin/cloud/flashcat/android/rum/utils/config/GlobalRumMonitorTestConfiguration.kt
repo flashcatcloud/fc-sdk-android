@@ -1,0 +1,47 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
+ */
+
+package cloud.flashcat.android.rum.utils.config
+
+import cloud.flashcat.android.core.InternalSdkCore
+import cloud.flashcat.android.rum.GlobalRumMonitor
+import cloud.flashcat.android.rum.RumMonitor
+import cloud.flashcat.android.rum._RumInternalProxy
+import cloud.flashcat.android.rum.internal.monitor.AdvancedRumMonitor
+import cloud.flashcat.tools.unit.extensions.config.MockTestConfiguration
+import fr.xgouchet.elmyr.Forge
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
+
+@Suppress("TestFunctionName")
+internal abstract class InternalAdvancedRumMonitor : AdvancedRumMonitor {
+    override fun _getInternal(): _RumInternalProxy? {
+        return null
+    }
+}
+
+internal class GlobalRumMonitorTestConfiguration :
+    MockTestConfiguration<RumMonitor>(InternalAdvancedRumMonitor::class.java) {
+
+    lateinit var mockSdkCore: InternalSdkCore
+
+    override fun setUp(forge: Forge) {
+        super.setUp(forge)
+        mockSdkCore = mock()
+
+        (mockInstance as? InternalAdvancedRumMonitor)?.let {
+            whenever(it._getInternal()).thenReturn(_RumInternalProxy(mockInstance as AdvancedRumMonitor))
+        }
+
+        GlobalRumMonitor.registerIfAbsent(mockInstance, mockSdkCore)
+    }
+
+    override fun tearDown(forge: Forge) {
+        GlobalRumMonitor.clear()
+        super.tearDown(forge)
+    }
+}

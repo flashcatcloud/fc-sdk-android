@@ -1,19 +1,19 @@
-object com.datadog.android.flags.Flags
-  fun enable(FlagsConfiguration = FlagsConfiguration.default, com.datadog.android.api.SdkCore = Datadog.getInstance())
-interface com.datadog.android.flags.FlagsClient
-  fun setEvaluationContext(com.datadog.android.flags.model.EvaluationContext)
+object cloud.flashcat.android.flags.Flags
+  fun enable(FlagsConfiguration = FlagsConfiguration.default, cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
+interface cloud.flashcat.android.flags.FlagsClient
+  fun setEvaluationContext(cloud.flashcat.android.flags.model.EvaluationContext)
   fun resolveBooleanValue(String, Boolean): Boolean
   fun resolveStringValue(String, String): String
   fun resolveDoubleValue(String, Double): Double
   fun resolveIntValue(String, Int): Int
   fun resolveStructureValue(String, org.json.JSONObject): org.json.JSONObject
-  fun <T: Any> resolve(String, T): com.datadog.android.flags.model.ResolutionDetails<T>
+  fun <T: Any> resolve(String, T): cloud.flashcat.android.flags.model.ResolutionDetails<T>
   class Builder
-    constructor(String = DEFAULT_CLIENT_NAME, com.datadog.android.api.SdkCore = Datadog.getInstance())
+    constructor(String = DEFAULT_CLIENT_NAME, cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
     fun build(): FlagsClient
   companion object 
-    fun get(String = DEFAULT_CLIENT_NAME, com.datadog.android.api.SdkCore = Datadog.getInstance()): FlagsClient
-data class com.datadog.android.flags.FlagsConfiguration
+    fun get(String = DEFAULT_CLIENT_NAME, cloud.flashcat.android.api.SdkCore = Datadog.getInstance()): FlagsClient
+data class cloud.flashcat.android.flags.FlagsConfiguration
   class Builder
     fun trackExposures(Boolean): Builder
     fun useCustomExposureEndpoint(String): Builder
@@ -22,22 +22,22 @@ data class com.datadog.android.flags.FlagsConfiguration
     fun gracefulModeEnabled(Boolean): Builder
     fun build(): FlagsConfiguration
   companion object 
-enum com.datadog.android.flags.model.ErrorCode
+enum cloud.flashcat.android.flags.model.ErrorCode
   - PROVIDER_NOT_READY
   - FLAG_NOT_FOUND
   - PARSE_ERROR
   - TYPE_MISMATCH
-data class com.datadog.android.flags.model.EvaluationContext
+data class cloud.flashcat.android.flags.model.EvaluationContext
   constructor(String, Map<String, String> = emptyMap())
-data class com.datadog.android.flags.model.ResolutionDetails<T: Any>
+data class cloud.flashcat.android.flags.model.ResolutionDetails<T: Any>
   constructor(T, String? = null, ResolutionReason? = null, ErrorCode? = null, String? = null, Map<String, Any> = emptyMap())
-enum com.datadog.android.flags.model.ResolutionReason
+enum cloud.flashcat.android.flags.model.ResolutionReason
   - DEFAULT
   - TARGETING_MATCH
   - RULE_MATCH
   - PREREQUISITE_FAILED
   - ERROR
-data class com.datadog.android.flags.model.ExposureEvent
+data class cloud.flashcat.android.flags.model.ExposureEvent
   constructor(kotlin.Long, Identifier, Identifier, Identifier, Subject)
   fun toJson(): com.google.gson.JsonElement
   companion object 

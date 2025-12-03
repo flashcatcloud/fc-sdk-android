@@ -4,10 +4,10 @@
 -keepnames class * extends android.graphics.ColorFilter
 
 # Kept for our internal telemetry
--keepnames class com.datadog.android.sessionreplay.internal.recorder.listener.WindowsOnDrawListener
--keepnames class com.datadog.android.sessionreplay.internal.recorder.TreeViewTraversal
--keepnames class * extends com.datadog.android.sessionreplay.recorder.mapper.WireframeMapper
--keepnames class * extends com.datadog.android.sessionreplay.internal.async.RecordedDataQueueItem
+-keepnames class cloud.flashcat.android.sessionreplay.internal.recorder.listener.WindowsOnDrawListener
+-keepnames class cloud.flashcat.android.sessionreplay.internal.recorder.TreeViewTraversal
+-keepnames class * extends cloud.flashcat.android.sessionreplay.recorder.mapper.WireframeMapper
+-keepnames class * extends cloud.flashcat.android.sessionreplay.internal.async.RecordedDataQueueItem
 
 # Keep the fine grained masking level enums
--keepnames enum * extends com.datadog.android.sessionreplay.PrivacyLevel { *; }
+-keepnames enum * extends cloud.flashcat.android.sessionreplay.PrivacyLevel { *; }

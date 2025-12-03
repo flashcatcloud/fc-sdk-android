@@ -1,10 +1,10 @@
-class com.datadog.android.sessionreplay.compose.ComposeExtensionSupport : com.datadog.android.sessionreplay.ExtensionSupport
-  override fun getCustomViewMappers(): List<com.datadog.android.sessionreplay.MapperTypeWrapper<*>>
-  override fun getOptionSelectorDetectors(): List<com.datadog.android.sessionreplay.recorder.OptionSelectorDetector>
-  override fun getCustomDrawableMapper(): List<com.datadog.android.sessionreplay.utils.DrawableToColorMapper>
+class cloud.flashcat.android.sessionreplay.compose.ComposeExtensionSupport : cloud.flashcat.android.sessionreplay.ExtensionSupport
+  override fun getCustomViewMappers(): List<cloud.flashcat.android.sessionreplay.MapperTypeWrapper<*>>
+  override fun getOptionSelectorDetectors(): List<cloud.flashcat.android.sessionreplay.recorder.OptionSelectorDetector>
+  override fun getCustomDrawableMapper(): List<cloud.flashcat.android.sessionreplay.utils.DrawableToColorMapper>
   override fun name(): String
-annotation com.datadog.android.sessionreplay.compose.ExperimentalSessionReplayApi
+annotation cloud.flashcat.android.sessionreplay.compose.ExperimentalSessionReplayApi
 fun androidx.compose.ui.Modifier.sessionReplayHide(Boolean): androidx.compose.ui.Modifier
-fun androidx.compose.ui.Modifier.sessionReplayImagePrivacy(com.datadog.android.sessionreplay.ImagePrivacy): androidx.compose.ui.Modifier
-fun androidx.compose.ui.Modifier.sessionReplayTextAndInputPrivacy(com.datadog.android.sessionreplay.TextAndInputPrivacy): androidx.compose.ui.Modifier
-fun androidx.compose.ui.Modifier.sessionReplayTouchPrivacy(com.datadog.android.sessionreplay.TouchPrivacy): androidx.compose.ui.Modifier
+fun androidx.compose.ui.Modifier.sessionReplayImagePrivacy(cloud.flashcat.android.sessionreplay.ImagePrivacy): androidx.compose.ui.Modifier
+fun androidx.compose.ui.Modifier.sessionReplayTextAndInputPrivacy(cloud.flashcat.android.sessionreplay.TextAndInputPrivacy): androidx.compose.ui.Modifier
+fun androidx.compose.ui.Modifier.sessionReplayTouchPrivacy(cloud.flashcat.android.sessionreplay.TouchPrivacy): androidx.compose.ui.Modifier

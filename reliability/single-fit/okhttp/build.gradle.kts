@@ -5,10 +5,10 @@
  * Modified 2025 by FlashCat, Inc.
  */
 
-import com.datadog.gradle.config.androidLibraryConfig
-import com.datadog.gradle.config.dependencyUpdateConfig
-import com.datadog.gradle.config.junitConfig
-import com.datadog.gradle.config.kotlinConfig
+import cloud.flashcat.gradle.config.androidLibraryConfig
+import cloud.flashcat.gradle.config.dependencyUpdateConfig
+import cloud.flashcat.gradle.config.junitConfig
+import cloud.flashcat.gradle.config.kotlinConfig
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -26,7 +26,7 @@ plugins {
 }
 
 android {
-    namespace = "com.datadog.android.okhttp.integration"
+    namespace = "cloud.flashcat.android.okhttp.integration"
 }
 
 dependencies {
@@ -63,7 +63,7 @@ dependencies {
 apollo {
     service("testService") {
         srcDir("src/test/resources/graphql")
-        packageName.set("com.datadog.android.testgraphql")
+        packageName.set("cloud.flashcat.android.testgraphql")
         schemaFiles.from("src/test/resources/graphql/schema.graphqls")
 
         outputDirConnection {

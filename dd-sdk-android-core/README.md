@@ -8,7 +8,7 @@ For example, in case of RUM:
 
 ```groovy
 dependencies {
-    implementation "com.datadoghq:dd-sdk-android-rum:<latest-version>"
+    implementation "cloud.flashcat:dd-sdk-android-rum:<latest-version>"
 }
 ```
 

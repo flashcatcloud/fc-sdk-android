@@ -12,10 +12,10 @@ val generateTraceModelsTaskName = "generateTraceModelsFromJson"
 
 tasks.register(
     generateTraceModelsTaskName,
-    com.datadog.gradle.plugin.jsonschema.GenerateJsonSchemaTask::class.java
+    cloud.flashcat.gradle.plugin.jsonschema.GenerateJsonSchemaTask::class.java
 ) {
     inputDirPath = "src/main/json"
-    targetPackageName = "com.datadog.benchmark.internal.model"
+    targetPackageName = "cloud.flashcat.benchmark.internal.model"
 }
 
 afterEvaluate {

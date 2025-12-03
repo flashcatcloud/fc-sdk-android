@@ -1,0 +1,47 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
+ */
+
+package cloud.flashcat.android.sdk.integration.rum
+
+import android.app.ActivityManager
+import android.os.Bundle
+import android.util.Log
+import androidx.appcompat.app.AppCompatActivity
+import cloud.flashcat.android.Datadog
+import cloud.flashcat.android.rum.DdRumContentProvider
+import cloud.flashcat.android.rum.Rum
+import cloud.flashcat.android.rum.tracking.ActivityViewTrackingStrategy
+import cloud.flashcat.android.sdk.integration.R
+import cloud.flashcat.android.sdk.integration.RuntimeConfig
+import cloud.flashcat.android.sdk.utils.getTrackingConsent
+
+internal class ActivityTrackingPlaygroundActivity : AppCompatActivity() {
+
+    @Suppress("CheckInternal")
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // we will use a large long task threshold to make sure we will not have LongTask events
+        // noise in our integration tests.
+        val config = RuntimeConfig.configBuilder().build()
+        val trackingConsent = intent.getTrackingConsent()
+
+        Datadog.setVerbosity(Log.VERBOSE)
+        val sdkCore = Datadog.initialize(this, config, trackingConsent)
+        checkNotNull(sdkCore)
+
+        DdRumContentProvider.processImportance = ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+
+        val rumConfig = RuntimeConfig.rumConfigBuilder()
+            .trackUserInteractions()
+            .trackLongTasks(RuntimeConfig.LONG_TASK_LARGE_THRESHOLD)
+            .useViewTrackingStrategy(ActivityViewTrackingStrategy(true))
+            .build()
+        Rum.enable(rumConfig, sdkCore)
+        setContentView(R.layout.fragment_tracking_layout)
+    }
+}

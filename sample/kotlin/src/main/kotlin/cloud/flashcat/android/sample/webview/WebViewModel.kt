@@ -1,0 +1,31 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
+ */
+package cloud.flashcat.android.sample.webview
+
+import androidx.lifecycle.ViewModel
+import cloud.flashcat.android.sample.BuildConfig
+import cloud.flashcat.android.vendor.sample.LocalServer
+
+internal class WebViewModel(
+    val localServer: LocalServer
+) : ViewModel() {
+
+    val url: String = localServer.getUrl()
+
+    fun onResume() {
+        localServer.start(
+            "https://datadoghq.dev/browser-sdk-test-playground/" +
+                "?client_token=${BuildConfig.DD_CLIENT_TOKEN}" +
+                "&application_id=${BuildConfig.DD_RUM_APPLICATION_ID}" +
+                "&site=${BROWSER_SITE}"
+        )
+    }
+
+    fun onPause() {
+        localServer.stop()
+    }
+}

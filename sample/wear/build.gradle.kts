@@ -5,9 +5,9 @@
  * Modified 2025 by FlashCat, Inc.
  */
 
-import com.datadog.gradle.config.AndroidConfig
-import com.datadog.gradle.config.configureFlavorForSampleApp
-import com.datadog.gradle.config.java17
+import cloud.flashcat.gradle.config.AndroidConfig
+import cloud.flashcat.gradle.config.configureFlavorForSampleApp
+import cloud.flashcat.gradle.config.java17
 
 plugins {
     id("com.android.application")
@@ -19,7 +19,7 @@ android {
     buildToolsVersion = AndroidConfig.BUILD_TOOLS_VERSION
 
     defaultConfig {
-        applicationId = "com.datadog.android.wear.sample"
+        applicationId = "cloud.flashcat.android.wear.sample"
         minSdk = AndroidConfig.MIN_SDK
         targetSdk = AndroidConfig.TARGET_SDK
         versionCode = AndroidConfig.VERSION.code
@@ -30,7 +30,7 @@ android {
         }
     }
 
-    namespace = "com.datadog.android.wear.sample"
+    namespace = "cloud.flashcat.android.wear.sample"
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true

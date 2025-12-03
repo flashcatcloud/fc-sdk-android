@@ -5,20 +5,20 @@
  * Modified 2025 by FlashCat, Inc.
  */
 
-import com.datadog.gradle.plugin.apisurface.ApiSurfacePlugin
+import cloud.flashcat.gradle.plugin.apisurface.ApiSurfacePlugin
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val generateTraceModelsTaskName = "generateTraceModelsFromJson"
 
 tasks.register(
     generateTraceModelsTaskName,
-    com.datadog.gradle.plugin.jsonschema.GenerateJsonSchemaTask::class.java
+    cloud.flashcat.gradle.plugin.jsonschema.GenerateJsonSchemaTask::class.java
 ) {
     inputDirPath = "src/main/json/trace"
     ignoredFiles = arrayOf(
         "_common-schema.json"
     )
-    targetPackageName = "com.datadog.android.trace.model"
+    targetPackageName = "cloud.flashcat.android.trace.model"
 }
 
 afterEvaluate {

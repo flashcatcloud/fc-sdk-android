@@ -5,13 +5,13 @@
  * Modified 2025 by FlashCat, Inc.
  */
 
-import com.datadog.gradle.config.androidLibraryConfig
-import com.datadog.gradle.config.dependencyUpdateConfig
-import com.datadog.gradle.config.detektCustomConfig
-import com.datadog.gradle.config.javadocConfig
-import com.datadog.gradle.config.junitConfig
-import com.datadog.gradle.config.kotlinConfig
-import com.datadog.gradle.config.publishingConfig
+import cloud.flashcat.gradle.config.androidLibraryConfig
+import cloud.flashcat.gradle.config.dependencyUpdateConfig
+import cloud.flashcat.gradle.config.detektCustomConfig
+import cloud.flashcat.gradle.config.javadocConfig
+import cloud.flashcat.gradle.config.junitConfig
+import cloud.flashcat.gradle.config.kotlinConfig
+import cloud.flashcat.gradle.config.publishingConfig
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -43,7 +43,7 @@ plugins {
 apply(from = "generate_flags_models.gradle.kts")
 
 android {
-    namespace = "com.datadog.android.flags"
+    namespace = "cloud.flashcat.android.flags"
 }
 
 dependencies {

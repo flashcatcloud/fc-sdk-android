@@ -1,5 +1,5 @@
--keepnames class com.datadog.android.trace.GlobalDatadogTracer {
-    public com.datadog.android.trace.api.tracer.DatadogTracer getOrNull();
-    public static com.datadog.android.trace.GlobalDatadogTracer INSTANCE;
+-keepnames class cloud.flashcat.android.trace.GlobalDatadogTracer {
+    public cloud.flashcat.android.trace.api.tracer.DatadogTracer getOrNull();
+    public static cloud.flashcat.android.trace.GlobalDatadogTracer INSTANCE;
 }
 -keepclassmembernames class org.jctools.** { *; }

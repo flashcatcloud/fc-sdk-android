@@ -1,10 +1,10 @@
-import com.datadog.gradle.config.AndroidConfig
-import com.datadog.gradle.config.configureFlavorForAutoApp
-import com.datadog.gradle.config.dependencyUpdateConfig
-import com.datadog.gradle.config.java17
-import com.datadog.gradle.config.junitConfig
-import com.datadog.gradle.config.kotlinConfig
-import com.datadog.gradle.config.taskConfig
+import cloud.flashcat.gradle.config.AndroidConfig
+import cloud.flashcat.gradle.config.configureFlavorForAutoApp
+import cloud.flashcat.gradle.config.dependencyUpdateConfig
+import cloud.flashcat.gradle.config.java17
+import cloud.flashcat.gradle.config.junitConfig
+import cloud.flashcat.gradle.config.kotlinConfig
+import cloud.flashcat.gradle.config.taskConfig
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -32,7 +32,7 @@ android {
         configureFlavorForAutoApp(project.rootDir)
     }
 
-    namespace = "com.datadog.sample.automotive"
+    namespace = "cloud.flashcat.sample.automotive"
 
     compileOptions {
         java17()

@@ -64,19 +64,19 @@ gradlePlugin {
     plugins {
         register("apiSurface") {
             id = "apiSurface" // the alias
-            implementationClass = "com.datadog.gradle.plugin.apisurface.ApiSurfacePlugin"
+            implementationClass = "cloud.flashcat.gradle.plugin.apisurface.ApiSurfacePlugin"
         }
         register("cloneDependencies") {
             id = "cloneDependencies" // the alias
-            implementationClass = "com.datadog.gradle.plugin.gitclone.GitCloneDependenciesPlugin"
+            implementationClass = "cloud.flashcat.gradle.plugin.gitclone.GitCloneDependenciesPlugin"
         }
         register("transitiveDependencies") {
             id = "transitiveDependencies" // the alias
-            implementationClass = "com.datadog.gradle.plugin.transdeps.TransitiveDependenciesPlugin"
+            implementationClass = "cloud.flashcat.gradle.plugin.transdeps.TransitiveDependenciesPlugin"
         }
         register("verificationXml") {
             id = "verificationXml" // the alias
-            implementationClass = "com.datadog.gradle.plugin.verification.VerificationXmlPlugin"
+            implementationClass = "cloud.flashcat.gradle.plugin.verification.VerificationXmlPlugin"
         }
     }
 }

@@ -7,8 +7,8 @@
 @file:Suppress("StringLiteralDuplication")
 
 import com.android.build.gradle.LibraryExtension
-import com.datadog.gradle.config.AndroidConfig
-import com.datadog.gradle.config.registerSubModuleAggregationTask
+import cloud.flashcat.gradle.config.AndroidConfig
+import cloud.flashcat.gradle.config.registerSubModuleAggregationTask
 import org.gradle.api.internal.file.UnionFileTree
 import org.gradle.api.internal.tasks.DefaultTaskDependencyFactory
 import java.util.Properties
@@ -24,7 +24,7 @@ buildscript {
     repositories {
         google()
         mavenCentral()
-        maven { setUrl(com.datadog.gradle.Dependencies.Repositories.Gradle) }
+        maven { setUrl(cloud.flashcat.gradle.Dependencies.Repositories.Gradle) }
     }
 
     dependencies {
@@ -43,7 +43,7 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        maven { setUrl(com.datadog.gradle.Dependencies.Repositories.Jitpack) }
+        maven { setUrl(cloud.flashcat.gradle.Dependencies.Repositories.Jitpack) }
     }
 }
 

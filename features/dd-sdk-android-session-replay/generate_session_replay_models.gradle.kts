@@ -6,17 +6,17 @@
  */
 
 import com.android.build.gradle.tasks.SourceJarTask
-import com.datadog.gradle.plugin.apisurface.ApiSurfacePlugin
+import cloud.flashcat.gradle.plugin.apisurface.ApiSurfacePlugin
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val generateSessionReplayModelsTaskName = "generateSessionReplayModels"
 
 tasks.register(
     generateSessionReplayModelsTaskName,
-    com.datadog.gradle.plugin.jsonschema.GenerateJsonSchemaTask::class.java
+    cloud.flashcat.gradle.plugin.jsonschema.GenerateJsonSchemaTask::class.java
 ) {
     inputDirPath = "src/main/json/schemas"
-    targetPackageName = "com.datadog.android.sessionreplay.model"
+    targetPackageName = "cloud.flashcat.android.sessionreplay.model"
 }
 
 afterEvaluate {

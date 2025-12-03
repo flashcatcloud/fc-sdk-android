@@ -5,10 +5,10 @@
  * Modified 2025 by FlashCat, Inc.
  */
 
-import com.datadog.gradle.androidTestImplementation
-import com.datadog.gradle.config.AndroidConfig
-import com.datadog.gradle.config.java17
-import com.datadog.gradle.config.kotlinConfig
+import cloud.flashcat.gradle.androidTestImplementation
+import cloud.flashcat.gradle.config.AndroidConfig
+import cloud.flashcat.gradle.config.java17
+import cloud.flashcat.gradle.config.kotlinConfig
 
 plugins {
     id("com.android.application")
@@ -37,7 +37,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    namespace = "com.datadog.android.sdk.integration"
+    namespace = "cloud.flashcat.android.sdk.integration"
 
     testOptions {
         unitTests.isReturnDefaultValues = true
@@ -55,7 +55,7 @@ android {
 
     compileOptions {
         java17()
-        if (project.hasProperty(com.datadog.gradle.Properties.USE_DESUGARING)) {
+        if (project.hasProperty(cloud.flashcat.gradle.Properties.USE_DESUGARING)) {
             isCoreLibraryDesugaringEnabled = true
         }
     }
@@ -89,7 +89,7 @@ repositories {
 }
 
 dependencies {
-    if (project.hasProperty(com.datadog.gradle.Properties.USE_DESUGARING)) {
+    if (project.hasProperty(cloud.flashcat.gradle.Properties.USE_DESUGARING)) {
         coreLibraryDesugaring(libs.androidDesugaringSdk)
     }
     implementation(project(":features:dd-sdk-android-session-replay"))
@@ -119,7 +119,7 @@ dependencies {
     androidTestImplementation(libs.okHttpMock)
     androidTestImplementation(project(":features:dd-sdk-android-trace-internal"))
     androidTestImplementation(testFixtures(project(":features:dd-sdk-android-trace")))
-    if (project.hasProperty(com.datadog.gradle.Properties.USE_API21_JAVA_BACKPORT)) {
+    if (project.hasProperty(cloud.flashcat.gradle.Properties.USE_API21_JAVA_BACKPORT)) {
         // this is needed to make AssertJ working on APIs <24
         androidTestImplementation(project(":tools:javabackport"))
     }

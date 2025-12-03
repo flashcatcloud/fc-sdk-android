@@ -1,0 +1,23 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
+ */
+package cloud.flashcat.android.trace.api.scope
+
+import cloud.flashcat.android.trace.api.span.DatadogSpan
+import cloud.flashcat.tools.annotation.NoOpImplementation
+import java.io.Closeable
+
+/**
+ * A DatadogScope formalizes the activation and deactivation of a [DatadogSpan].
+ */
+@NoOpImplementation
+interface DatadogScope : Closeable {
+
+    /**
+     * Mark the end of the active period for the current context.
+     */
+    override fun close()
+}

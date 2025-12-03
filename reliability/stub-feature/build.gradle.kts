@@ -5,9 +5,9 @@
  * Modified 2025 by FlashCat, Inc.
  */
 
-import com.datadog.gradle.config.androidLibraryConfig
-import com.datadog.gradle.config.dependencyUpdateConfig
-import com.datadog.gradle.config.kotlinConfig
+import cloud.flashcat.gradle.config.androidLibraryConfig
+import cloud.flashcat.gradle.config.dependencyUpdateConfig
+import cloud.flashcat.gradle.config.kotlinConfig
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -20,7 +20,7 @@ plugins {
 }
 
 android {
-    namespace = "com.datadog.android.api.feature.stub"
+    namespace = "cloud.flashcat.android.api.feature.stub"
 }
 
 dependencies {

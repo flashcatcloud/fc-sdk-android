@@ -1,0 +1,35 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
+ */
+
+package cloud.flashcat.android.sample.sessionreplay
+
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.CheckedTextView
+import androidx.appcompat.widget.AppCompatCheckedTextView
+import androidx.fragment.app.Fragment
+import cloud.flashcat.android.sample.R
+
+internal class TextViewComponentsFragment : Fragment() {
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        return inflater.inflate(R.layout.fragment_text_view_components, container, false).apply {
+            findViewById<CheckedTextView>(R.id.checked_text_view).apply {
+                setOnClickListener { this.toggle() }
+            }
+            findViewById<AppCompatCheckedTextView>(R.id.app_compat_checked_text_view).apply {
+                setOnClickListener { this.toggle() }
+            }
+        }
+    }
+}

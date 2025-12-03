@@ -279,10 +279,10 @@ Some classes need to be created in the `test` sourceSets to integrate with our t
 the new class purpose. 
 
 E.g.:
- - A custom assertion class for class `Foo` in module `com.datadog.module` will be 
-    `com.datadog.module.tests.assertj.FooAssert`
-- A custom forgery factory class for class `Foo` in module `com.datadog.module` will be
-    `com.datadog.module.tests.elmyr.FooForgeryFactory`
+ - A custom assertion class for class `Foo` in module `cloud.flashcat.module` will be 
+    `cloud.flashcat.module.tests.assertj.FooAssert`
+- A custom forgery factory class for class `Foo` in module `cloud.flashcat.module` will be
+    `cloud.flashcat.module.tests.elmyr.FooForgeryFactory`
 
 #### Fields & Test Method parameters
 

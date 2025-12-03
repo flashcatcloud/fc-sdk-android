@@ -1,0 +1,28 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
+ */
+
+package cloud.flashcat.benchmark.sample
+
+import android.app.Application
+import android.content.Context
+import cloud.flashcat.benchmark.sample.di.app.BenchmarkAppComponent
+import cloud.flashcat.benchmark.sample.di.app.DaggerBenchmarkAppComponent
+
+internal class BenchmarkApplication : Application() {
+
+    internal lateinit var benchmarkAppComponent: BenchmarkAppComponent
+
+    override fun onCreate() {
+        super.onCreate()
+
+        benchmarkAppComponent = DaggerBenchmarkAppComponent.factory().create(this)
+        benchmarkAppComponent.inject(this)
+    }
+}
+
+internal val Context.benchmarkAppComponent: BenchmarkAppComponent
+    get() = (applicationContext as BenchmarkApplication).benchmarkAppComponent

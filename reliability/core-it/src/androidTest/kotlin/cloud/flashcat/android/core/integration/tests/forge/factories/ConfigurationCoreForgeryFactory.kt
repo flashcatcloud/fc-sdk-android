@@ -1,0 +1,53 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
+ */
+
+package cloud.flashcat.android.core.integration.tests.forge.factories
+
+import cloud.flashcat.android.FlashcatSite
+import cloud.flashcat.android._InternalProxy
+import cloud.flashcat.android.core.configuration.BatchProcessingLevel
+import cloud.flashcat.android.core.configuration.BatchSize
+import cloud.flashcat.android.core.configuration.Configuration
+import cloud.flashcat.android.core.configuration.UploadFrequency
+import cloud.flashcat.android.trace.TracingHeaderType
+import fr.xgouchet.elmyr.Forge
+import fr.xgouchet.elmyr.ForgeryFactory
+import java.util.UUID
+
+internal class ConfigurationCoreForgeryFactory :
+    ForgeryFactory<Configuration> {
+    override fun getForgery(forge: Forge): Configuration {
+        return Configuration.Builder(
+            UUID.randomUUID().toString(),
+            forge.anHexadecimalString(),
+            forge.anHexadecimalString(),
+            forge.aNullable {
+                anAlphaNumericalString()
+            }
+        )
+            .setUseDeveloperModeWhenDebuggable(forge.aBool())
+            // this needs to be before allowing the clear text traffic as it invalidates this option
+            .useSite(forge.aValueFrom(FlashcatSite::class.java))
+            .setFirstPartyHostsWithHeaderType(
+                forge.aMap {
+                    val fakeUrl = forge.aStringMatching("https://[a-z0-9]+\\.com")
+                    fakeUrl to aList {
+                        aValueFrom(
+                            TracingHeaderType::class.java
+                        )
+                    }.toSet()
+                }
+            )
+            .apply {
+                _InternalProxy.allowClearTextHttp(this)
+            }
+            .setBatchSize(BatchSize.SMALL)
+            .setUploadFrequency(UploadFrequency.FREQUENT)
+            .setBatchProcessingLevel(BatchProcessingLevel.HIGH)
+            .build()
+    }
+}

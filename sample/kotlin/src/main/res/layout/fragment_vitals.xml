@@ -53,7 +53,7 @@
         app:layout_constraintStart_toEndOf="@id/title"
         app:layout_constraintTop_toTopOf="@id/title" />
 
-    <com.datadog.android.sample.widget.DividerView
+    <cloud.flashcat.android.sample.widget.DividerView
         android:id="@+id/divider_performance_degradation"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -128,7 +128,7 @@
         app:layout_constraintTop_toTopOf="@id/vital_stress_test" />
 
 
-    <com.datadog.android.sample.vitals.BadView
+    <cloud.flashcat.android.sample.vitals.BadView
         android:id="@+id/vital_slow_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -138,7 +138,7 @@
         app:layout_constraintTop_toBottomOf="@id/vital_slow_frame_rate" />
 
 
-    <com.datadog.android.sample.widget.DividerView
+    <cloud.flashcat.android.sample.widget.DividerView
         android:id="@+id/divider"
         style="@style/DividerView"
         android:layout_width="0dp"

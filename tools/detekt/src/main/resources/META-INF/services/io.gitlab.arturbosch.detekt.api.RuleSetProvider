@@ -4,5 +4,5 @@
 # Copyright 2016-Present Datadog, Inc.
 #
 
-com.datadog.tools.detekt.DatadogProvider
-com.datadog.tools.detekt.DatadogTestPyramidProvider
+cloud.flashcat.tools.detekt.DatadogProvider
+cloud.flashcat.tools.detekt.DatadogTestPyramidProvider

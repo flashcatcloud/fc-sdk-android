@@ -7,8 +7,8 @@ following to your application's `build.gradle` file:
 
 ```groovy
 dependencies {
-    implementation "com.datadoghq:dd-sdk-android-trace:<latest-version>"
-    implementation "com.datadoghq:dd-sdk-android-trace-coroutines:<latest-version>"
+    implementation "cloud.flashcat:dd-sdk-android-trace:<latest-version>"
+    implementation "cloud.flashcat:dd-sdk-android-trace-coroutines:<latest-version>"
 }
 ```
 

@@ -1,4 +1,4 @@
-class com.datadog.android.log.Logger
+class cloud.flashcat.android.log.Logger
   fun v(String, Throwable? = null, Map<String, Any?> = emptyMap())
   fun d(String, Throwable? = null, Map<String, Any?> = emptyMap())
   fun i(String, Throwable? = null, Map<String, Any?> = emptyMap())
@@ -8,7 +8,7 @@ class com.datadog.android.log.Logger
   fun log(Int, String, Throwable? = null, Map<String, Any?> = emptyMap())
   fun log(Int, String, String?, String?, String?, Map<String, Any?> = emptyMap())
   class Builder
-    constructor(com.datadog.android.api.SdkCore = Datadog.getInstance())
+    constructor(cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
     fun build(): Logger
     fun setService(String): Builder
     fun setRemoteLogThreshold(Int): Builder
@@ -24,17 +24,17 @@ class com.datadog.android.log.Logger
   fun addTag(String)
   fun removeTag(String)
   fun removeTagsWithKey(String)
-object com.datadog.android.log.Logs
-  fun enable(LogsConfiguration, com.datadog.android.api.SdkCore = Datadog.getInstance())
-  fun isEnabled(com.datadog.android.api.SdkCore = Datadog.getInstance()): Boolean
-  fun addAttribute(String, Any?, com.datadog.android.api.SdkCore = Datadog.getInstance())
-  fun removeAttribute(String, com.datadog.android.api.SdkCore = Datadog.getInstance())
-data class com.datadog.android.log.LogsConfiguration
+object cloud.flashcat.android.log.Logs
+  fun enable(LogsConfiguration, cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
+  fun isEnabled(cloud.flashcat.android.api.SdkCore = Datadog.getInstance()): Boolean
+  fun addAttribute(String, Any?, cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
+  fun removeAttribute(String, cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
+data class cloud.flashcat.android.log.LogsConfiguration
   class Builder
     fun useCustomEndpoint(String): Builder
-    fun setEventMapper(com.datadog.android.event.EventMapper<com.datadog.android.log.model.LogEvent>): Builder
+    fun setEventMapper(cloud.flashcat.android.event.EventMapper<cloud.flashcat.android.log.model.LogEvent>): Builder
     fun build(): LogsConfiguration
-data class com.datadog.android.log.model.LogEvent
+data class cloud.flashcat.android.log.model.LogEvent
   constructor(LogEventDevice, Os, Status, kotlin.String, kotlin.String, kotlin.String, Logger, Dd, Usr? = null, Account? = null, Network? = null, Error? = null, kotlin.String? = null, kotlin.String, kotlin.collections.MutableMap<kotlin.String, kotlin.Any?> = mutableMapOf())
   fun toJson(): com.google.gson.JsonElement
   companion object 

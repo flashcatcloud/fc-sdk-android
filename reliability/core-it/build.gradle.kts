@@ -5,11 +5,11 @@
  * Modified 2025 by FlashCat, Inc.
  */
 
-import com.datadog.gradle.config.AndroidConfig
-import com.datadog.gradle.config.dependencyUpdateConfig
-import com.datadog.gradle.config.java17
-import com.datadog.gradle.config.junitConfig
-import com.datadog.gradle.config.kotlinConfig
+import cloud.flashcat.gradle.config.AndroidConfig
+import cloud.flashcat.gradle.config.dependencyUpdateConfig
+import cloud.flashcat.gradle.config.java17
+import cloud.flashcat.gradle.config.junitConfig
+import cloud.flashcat.gradle.config.kotlinConfig
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -25,7 +25,7 @@ android {
 
     compileSdk = AndroidConfig.TARGET_SDK
     buildToolsVersion = AndroidConfig.BUILD_TOOLS_VERSION
-    namespace = "com.datadog.android.core.integration"
+    namespace = "cloud.flashcat.android.core.integration"
 
     defaultConfig {
         minSdk = AndroidConfig.MIN_SDK
@@ -35,7 +35,7 @@ android {
     }
 
     compileOptions {
-        if (project.hasProperty(com.datadog.gradle.Properties.USE_DESUGARING)) {
+        if (project.hasProperty(cloud.flashcat.gradle.Properties.USE_DESUGARING)) {
             isCoreLibraryDesugaringEnabled = true
         }
         java17()
@@ -64,7 +64,7 @@ android {
 }
 
 dependencies {
-    if (project.hasProperty(com.datadog.gradle.Properties.USE_DESUGARING)) {
+    if (project.hasProperty(cloud.flashcat.gradle.Properties.USE_DESUGARING)) {
         coreLibraryDesugaring(libs.androidDesugaringSdk)
     }
     implementation(project(":dd-sdk-android-core"))
@@ -87,7 +87,7 @@ dependencies {
     androidTestImplementation(libs.okHttp)
     androidTestImplementation(libs.okHttpMock)
     androidTestImplementation(libs.gson)
-    if (project.hasProperty(com.datadog.gradle.Properties.USE_API21_JAVA_BACKPORT)) {
+    if (project.hasProperty(cloud.flashcat.gradle.Properties.USE_API21_JAVA_BACKPORT)) {
         // this is needed to make AssertJ working on APIs <24
         androidTestImplementation(project(":tools:javabackport"))
     }

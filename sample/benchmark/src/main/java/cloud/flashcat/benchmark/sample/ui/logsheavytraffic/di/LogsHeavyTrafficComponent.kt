@@ -1,0 +1,46 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
+ */
+
+package cloud.flashcat.benchmark.sample.ui.logsheavytraffic.di
+
+import cloud.flashcat.android.log.Logger
+import cloud.flashcat.benchmark.sample.di.common.DispatchersModule
+import cloud.flashcat.benchmark.sample.ui.logsheavytraffic.LogsHeavyTrafficFragment
+import cloud.flashcat.benchmark.sample.ui.logsheavytraffic.LogsHeavyTrafficHostFragment
+import cloud.flashcat.benchmark.sample.ui.logsheavytraffic.LogsHeavyTrafficSettingsFragment
+import dagger.BindsInstance
+import dagger.Component
+import kotlinx.coroutines.CoroutineScope
+import javax.inject.Scope
+
+internal interface LogsHeavyTrafficComponentDependencies {
+    val logger: Logger
+}
+
+@Scope
+internal annotation class LogsHeavyTrafficScope
+
+@LogsHeavyTrafficScope
+@Component(
+    dependencies = [LogsHeavyTrafficComponentDependencies::class],
+    modules = [
+        DispatchersModule::class
+    ]
+)
+internal interface LogsHeavyTrafficComponent {
+    @Component.Factory
+    interface Factory {
+        fun create(
+            deps: LogsHeavyTrafficComponentDependencies,
+            @BindsInstance viewModelScope: CoroutineScope
+        ): LogsHeavyTrafficComponent
+    }
+
+    fun inject(logsHeavyTrafficHostFragment: LogsHeavyTrafficHostFragment)
+    fun inject(logsHeavyTrafficFragment: LogsHeavyTrafficFragment)
+    fun inject(logsHeavyTrafficSettingsFragment: LogsHeavyTrafficSettingsFragment)
+}

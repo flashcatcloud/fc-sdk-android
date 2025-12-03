@@ -1,0 +1,22 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
+ */
+
+package cloud.flashcat.android.internal.forge
+
+import cloud.flashcat.android.internal.tests.elmyr.InternalTelemetryErrorLogForgeryFactory
+import cloud.flashcat.tools.unit.forge.BaseConfigurator
+import fr.xgouchet.elmyr.Forge
+import fr.xgouchet.elmyr.jvm.useJvmFactories
+
+internal class Configurator :
+    BaseConfigurator() {
+    override fun configure(forge: Forge) {
+        super.configure(forge)
+        forge.useJvmFactories()
+        forge.addFactory(InternalTelemetryErrorLogForgeryFactory())
+    }
+}

@@ -4,4 +4,4 @@
 # Copyright 2016-Present Datadog, Inc.
 #
 
-com.datadog.tools.noopfactory.NoOpFactoryProvider
+cloud.flashcat.tools.noopfactory.NoOpFactoryProvider

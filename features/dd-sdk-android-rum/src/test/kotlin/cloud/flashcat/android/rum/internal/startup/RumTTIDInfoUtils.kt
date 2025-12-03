@@ -1,0 +1,37 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
+ */
+
+package cloud.flashcat.android.rum.internal.startup
+
+import android.app.Activity
+import fr.xgouchet.elmyr.Forge
+import java.lang.ref.WeakReference
+
+internal fun Forge.testRumStartupScenarios(weakActivity: WeakReference<Activity>): List<RumStartupScenario> {
+    val initialTimeNanos = aLong(min = 0, max = 1000000)
+    val hasSavedInstanceStateBundle = aBool()
+
+    return listOf(
+        RumStartupScenario.Cold(
+            initialTimeNs = initialTimeNanos,
+            hasSavedInstanceStateBundle = hasSavedInstanceStateBundle,
+            activity = weakActivity,
+            appStartActivityOnCreateGapNs = aLong(min = 0, max = 10000)
+        ),
+        RumStartupScenario.WarmFirstActivity(
+            initialTimeNs = initialTimeNanos,
+            hasSavedInstanceStateBundle = hasSavedInstanceStateBundle,
+            activity = weakActivity,
+            appStartActivityOnCreateGapNs = aLong(min = 0, max = 10000)
+        ),
+        RumStartupScenario.WarmAfterActivityDestroyed(
+            initialTimeNs = initialTimeNanos,
+            hasSavedInstanceStateBundle = hasSavedInstanceStateBundle,
+            activity = weakActivity
+        )
+    )
+}

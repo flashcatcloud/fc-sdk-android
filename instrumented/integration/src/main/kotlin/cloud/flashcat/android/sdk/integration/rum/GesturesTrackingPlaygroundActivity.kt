@@ -1,0 +1,116 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2016-Present Datadog, Inc.
+ * Modified 2025 by FlashCat, Inc.
+ */
+
+package cloud.flashcat.android.sdk.integration.rum
+
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Button
+import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import cloud.flashcat.android.sdk.integration.R
+
+internal class GesturesTrackingPlaygroundActivity : AppCompatActivity() {
+
+    lateinit var showHide: View
+    lateinit var button: Button
+    lateinit var recyclerView: RecyclerView
+    private var adapter = Adapter()
+    internal var adapterData: MutableList<String> = MutableList(DATA_COUNT) {
+        "Item $it"
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.gestures_tracking_layout)
+
+        showHide = findViewById(R.id.show_hide)
+        button = findViewById(R.id.button)
+        button.setOnClickListener { toggleVisibility() }
+        recyclerView = findViewById(R.id.recyclerView)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.adapter = adapter
+        recyclerView.addOnScrollListener(
+            object : RecyclerView.OnScrollListener() {
+                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                    super.onScrollStateChanged(recyclerView, newState)
+                    toggleVisibility()
+                }
+            }
+        )
+        adapter.updateData(adapterData)
+    }
+
+    private fun toggleVisibility() {
+        if (showHide.visibility == View.VISIBLE) {
+            showHide.visibility = View.GONE
+        } else {
+            showHide.visibility = View.VISIBLE
+        }
+    }
+
+    // region Adapter
+
+    internal inner class Adapter :
+        RecyclerView.Adapter<Adapter.ViewHolder>() {
+
+        private val data: MutableList<String> = mutableListOf()
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            val itemView = LayoutInflater.from(parent.context).inflate(
+                R.layout.item_layout,
+                parent,
+                false
+            )
+            return ViewHolder(
+                itemView
+            )
+        }
+
+        override fun getItemCount(): Int {
+            return data.size
+        }
+
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            holder.render(data[position])
+        }
+
+        internal fun updateData(newData: List<String>) {
+            data.clear()
+            data.addAll(newData)
+            notifyDataSetChanged()
+        }
+
+        internal inner class ViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
+            lateinit var model: String
+
+            init {
+                view.setOnClickListener {
+                    toggleVisibility()
+                    Toast.makeText(view.context, "$model was clicked", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+
+            fun render(model: String) {
+                this.model = model
+                view.findViewById<TextView>(R.id.textView).setText(model)
+            }
+        }
+    }
+
+    // endregion
+
+    companion object {
+        const val DATA_COUNT = 100
+    }
+}

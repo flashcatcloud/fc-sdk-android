@@ -27,7 +27,7 @@
         app:title="@string/appcompat_toolbar_title"
         app:layout_constraintTop_toBottomOf="@+id/legacy_toolbar" />
 
-    <com.datadog.android.sample.sessionreplay.AppcompatToolbarCustomSubclass
+    <cloud.flashcat.android.sample.sessionreplay.AppcompatToolbarCustomSubclass
         android:id="@+id/appcompat_subclass"
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -35,7 +35,7 @@
         app:title="@string/appcompat_toolbar_title"
         app:layout_constraintTop_toBottomOf="@+id/appcompat_toolbar" />
 
-    <com.datadog.android.sample.sessionreplay.ToolbarCustomSubclass
+    <cloud.flashcat.android.sample.sessionreplay.ToolbarCustomSubclass
         android:id="@+id/toolbar_subclass"
         android:layout_width="match_parent"
         android:layout_height="0dp"

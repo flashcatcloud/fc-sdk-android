@@ -5,17 +5,17 @@
  * Modified 2025 by FlashCat, Inc.
  */
 
-import com.datadog.gradle.plugin.apisurface.ApiSurfacePlugin
+import cloud.flashcat.gradle.plugin.apisurface.ApiSurfacePlugin
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val generateFlagsModelsTaskName = "generateFlagsModelsFromJson"
 
 tasks.register(
     generateFlagsModelsTaskName,
-    com.datadog.gradle.plugin.jsonschema.GenerateJsonSchemaTask::class.java
+    cloud.flashcat.gradle.plugin.jsonschema.GenerateJsonSchemaTask::class.java
 ) {
     inputDirPath = "src/main/json/flags"
-    targetPackageName = "com.datadog.android.flags.model"
+    targetPackageName = "cloud.flashcat.android.flags.model"
 }
 
 afterEvaluate {

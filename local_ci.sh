@@ -213,10 +213,10 @@ fi
 
 
 if [[ $UPDATE_SESSION_REPLAY_PAYLOAD == 1 ]]; then
-  PAYLOAD_INPUT_DIRECTORY_PATH="storage/emulated/0/Android/data/com.datadog.android.sdk.integration/cache/session_replay_payloads/."
+  PAYLOAD_INPUT_DIRECTORY_PATH="storage/emulated/0/Android/data/cloud.flashcat.android.sdk.integration/cache/session_replay_payloads/."
   PAYLOAD_OUTPUT_DIRECTORY_PATH="instrumented/integration/src/androidTest/assets/session_replay_payloads/"
-  SESSION_REPLAY_TESTS_PACKAGE="com.datadog.android.sdk.integration.sessionreplay"
-  SESSION_REPLAY_TESTS_RUNNER="com.datadog.android.sdk.integration.test/androidx.test.runner.AndroidJUnitRunner"
+  SESSION_REPLAY_TESTS_PACKAGE="cloud.flashcat.android.sdk.integration.sessionreplay"
+  SESSION_REPLAY_TESTS_RUNNER="cloud.flashcat.android.sdk.integration.test/androidx.test.runner.AndroidJUnitRunner"
 
   echo "---- Updating session replay payload"
   echo "---- Build and install the integration test app on the device"

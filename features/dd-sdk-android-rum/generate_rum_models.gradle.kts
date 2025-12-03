@@ -5,17 +5,17 @@
  * Modified 2025 by FlashCat, Inc.
  */
 
-import com.datadog.gradle.plugin.apisurface.ApiSurfacePlugin
+import cloud.flashcat.gradle.plugin.apisurface.ApiSurfacePlugin
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val generateRumModelsTaskName = "generateRumModelsFromJson"
 
 tasks.register(
     generateRumModelsTaskName,
-    com.datadog.gradle.plugin.jsonschema.GenerateJsonSchemaTask::class.java
+    cloud.flashcat.gradle.plugin.jsonschema.GenerateJsonSchemaTask::class.java
 ) {
     inputDirPath = "src/main/json/rum"
-    targetPackageName = "com.datadog.android.rum.model"
+    targetPackageName = "cloud.flashcat.android.rum.model"
     ignoredFiles = arrayOf(
         "_common-schema.json",
         "_action-child-schema.json",

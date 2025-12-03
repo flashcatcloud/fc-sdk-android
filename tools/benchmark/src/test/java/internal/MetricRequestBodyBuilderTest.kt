@@ -7,8 +7,8 @@
 
 package internal
 
-import com.datadog.tools.unit.extensions.ProhibitLeavingStaticMocksExtension
-import com.datadog.tools.unit.extensions.TestConfigurationExtension
+import cloud.flashcat.tools.unit.extensions.ProhibitLeavingStaticMocksExtension
+import cloud.flashcat.tools.unit.extensions.TestConfigurationExtension
 import com.google.gson.JsonParser
 import forge.ForgeConfigurator
 import fr.xgouchet.elmyr.Forge
@@ -45,14 +45,14 @@ import java.util.concurrent.TimeUnit
 @ForgeConfiguration(ForgeConfigurator::class)
 class MetricRequestBodyBuilderTest {
 
-    private lateinit var metricRequestBodyBuilder: com.datadog.benchmark.internal.MetricRequestBodyBuilder
+    private lateinit var metricRequestBodyBuilder: cloud.flashcat.benchmark.internal.MetricRequestBodyBuilder
 
     @Forgery
-    private lateinit var benchmarkContext: com.datadog.benchmark.internal.model.BenchmarkContext
+    private lateinit var benchmarkContext: cloud.flashcat.benchmark.internal.model.BenchmarkContext
 
     @BeforeEach
     fun `set up`() {
-        metricRequestBodyBuilder = com.datadog.benchmark.internal.MetricRequestBodyBuilder(benchmarkContext)
+        metricRequestBodyBuilder = cloud.flashcat.benchmark.internal.MetricRequestBodyBuilder(benchmarkContext)
     }
 
     @Test
@@ -167,14 +167,14 @@ class MetricRequestBodyBuilderTest {
 
     // endregion
 
-    private fun resolveMetricType(type: MetricDataType): com.datadog.benchmark.internal.model.MetricType {
+    private fun resolveMetricType(type: MetricDataType): cloud.flashcat.benchmark.internal.model.MetricType {
         return when (type) {
             MetricDataType.LONG_GAUGE, MetricDataType.DOUBLE_GAUGE ->
-                com.datadog.benchmark.internal.model.MetricType.GAUGE
+                cloud.flashcat.benchmark.internal.model.MetricType.GAUGE
 
             MetricDataType.LONG_SUM, MetricDataType.DOUBLE_SUM ->
-                com.datadog.benchmark.internal.model.MetricType.COUNT
-            else -> com.datadog.benchmark.internal.model.MetricType.UNSPECIFIED
+                cloud.flashcat.benchmark.internal.model.MetricType.COUNT
+            else -> cloud.flashcat.benchmark.internal.model.MetricType.UNSPECIFIED
         }
     }
 

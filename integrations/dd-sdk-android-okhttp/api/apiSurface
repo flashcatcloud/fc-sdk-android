@@ -1,4 +1,4 @@
-class com.datadog.android.okhttp.DatadogEventListener : okhttp3.EventListener
+class cloud.flashcat.android.okhttp.DatadogEventListener : okhttp3.EventListener
   override fun callStart(okhttp3.Call)
   override fun dnsStart(okhttp3.Call, String)
   override fun dnsEnd(okhttp3.Call, String, List<java.net.InetAddress>)
@@ -15,42 +15,42 @@ class com.datadog.android.okhttp.DatadogEventListener : okhttp3.EventListener
   class Factory : okhttp3.EventListener.Factory
     constructor(String? = null)
     override fun create(okhttp3.Call): okhttp3.EventListener
-open class com.datadog.android.okhttp.DatadogInterceptor : com.datadog.android.okhttp.trace.TracingInterceptor
+open class cloud.flashcat.android.okhttp.DatadogInterceptor : cloud.flashcat.android.okhttp.trace.TracingInterceptor
   override fun intercept(okhttp3.Interceptor.Chain): okhttp3.Response
-  override fun onRequestIntercepted(com.datadog.android.api.feature.FeatureSdkCore, okhttp3.Request, com.datadog.android.trace.api.span.DatadogSpan?, okhttp3.Response?, Throwable?)
+  override fun onRequestIntercepted(cloud.flashcat.android.api.feature.FeatureSdkCore, okhttp3.Request, cloud.flashcat.android.trace.api.span.DatadogSpan?, okhttp3.Response?, Throwable?)
   override fun canSendSpan(): Boolean
-  override fun onSdkInstanceReady(com.datadog.android.core.InternalSdkCore)
+  override fun onSdkInstanceReady(cloud.flashcat.android.core.InternalSdkCore)
   class Builder : BaseBuilder<DatadogInterceptor, Builder>
-    constructor(Map<String, Set<com.datadog.android.trace.TracingHeaderType>>)
+    constructor(Map<String, Set<cloud.flashcat.android.trace.TracingHeaderType>>)
     constructor(List<String>)
     override fun build(): DatadogInterceptor
-    fun setRumResourceAttributesProvider(com.datadog.android.rum.RumResourceAttributesProvider): Builder
-data class com.datadog.android.okhttp.TraceContext
+    fun setRumResourceAttributesProvider(cloud.flashcat.android.rum.RumResourceAttributesProvider): Builder
+data class cloud.flashcat.android.okhttp.TraceContext
   constructor(String, String, Int)
-enum com.datadog.android.okhttp.TraceContextInjection
+enum cloud.flashcat.android.okhttp.TraceContextInjection
   - ALL
   - SAMPLED
-open class com.datadog.android.okhttp.trace.DeterministicTraceSampler : com.datadog.android.core.sampling.DeterministicSampler<com.datadog.android.trace.api.span.DatadogSpan>
+open class cloud.flashcat.android.okhttp.trace.DeterministicTraceSampler : cloud.flashcat.android.core.sampling.DeterministicSampler<cloud.flashcat.android.trace.api.span.DatadogSpan>
   constructor(() -> Float)
   constructor(Float)
   constructor(Double)
-fun okhttp3.Request.Builder.parentSpan(com.datadog.android.trace.api.span.DatadogSpan): okhttp3.Request.Builder
-interface com.datadog.android.okhttp.trace.TracedRequestListener
-  fun onRequestIntercepted(okhttp3.Request, com.datadog.android.trace.api.span.DatadogSpan, okhttp3.Response?, Throwable?)
-open class com.datadog.android.okhttp.trace.TracingInterceptor : okhttp3.Interceptor
+fun okhttp3.Request.Builder.parentSpan(cloud.flashcat.android.trace.api.span.DatadogSpan): okhttp3.Request.Builder
+interface cloud.flashcat.android.okhttp.trace.TracedRequestListener
+  fun onRequestIntercepted(okhttp3.Request, cloud.flashcat.android.trace.api.span.DatadogSpan, okhttp3.Response?, Throwable?)
+open class cloud.flashcat.android.okhttp.trace.TracingInterceptor : okhttp3.Interceptor
   override fun intercept(okhttp3.Interceptor.Chain): okhttp3.Response
-  protected open fun onRequestIntercepted(com.datadog.android.api.feature.FeatureSdkCore, okhttp3.Request, com.datadog.android.trace.api.span.DatadogSpan?, okhttp3.Response?, Throwable?)
+  protected open fun onRequestIntercepted(cloud.flashcat.android.api.feature.FeatureSdkCore, okhttp3.Request, cloud.flashcat.android.trace.api.span.DatadogSpan?, okhttp3.Response?, Throwable?)
   class Builder : BaseBuilder<TracingInterceptor, Builder>
-    constructor(Map<String, Set<com.datadog.android.trace.TracingHeaderType>>)
+    constructor(Map<String, Set<cloud.flashcat.android.trace.TracingHeaderType>>)
     constructor(List<String>)
     fun setTraceOrigin(String): Builder
     override fun build(): TracingInterceptor
   abstract class BaseBuilder<T: TracingInterceptor, R: BaseBuilder<T, R>>
-    constructor(Map<String, Set<com.datadog.android.trace.TracingHeaderType>>)
+    constructor(Map<String, Set<cloud.flashcat.android.trace.TracingHeaderType>>)
     fun setSdkInstanceName(String): R
     fun setTracedRequestListener(TracedRequestListener): R
     fun setTraceSampleRate(Float): R
-    fun setTraceSampler(com.datadog.android.core.sampling.Sampler<com.datadog.android.trace.api.span.DatadogSpan>): R
-    fun setTraceContextInjection(com.datadog.android.okhttp.TraceContextInjection): R
+    fun setTraceSampler(cloud.flashcat.android.core.sampling.Sampler<cloud.flashcat.android.trace.api.span.DatadogSpan>): R
+    fun setTraceContextInjection(cloud.flashcat.android.okhttp.TraceContextInjection): R
     fun set404ResourcesRedacted(Boolean): R
     abstract fun build(): T

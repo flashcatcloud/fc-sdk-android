@@ -5,11 +5,11 @@
  * Modified 2025 by FlashCat, Inc.
  */
 
-import com.datadog.gradle.config.AndroidConfig
-import com.datadog.gradle.config.dependencyUpdateConfig
-import com.datadog.gradle.config.java11
-import com.datadog.gradle.config.junitConfig
-import com.datadog.gradle.config.kotlinConfig
+import cloud.flashcat.gradle.config.AndroidConfig
+import cloud.flashcat.gradle.config.dependencyUpdateConfig
+import cloud.flashcat.gradle.config.java11
+import cloud.flashcat.gradle.config.junitConfig
+import cloud.flashcat.gradle.config.kotlinConfig
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -28,7 +28,7 @@ android {
         minSdk = AndroidConfig.MIN_SDK
     }
 
-    namespace = "com.datadog.tools.unit"
+    namespace = "cloud.flashcat.tools.unit"
 
     compileOptions {
         java11()

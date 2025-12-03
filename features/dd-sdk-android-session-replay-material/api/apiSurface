@@ -1,5 +1,5 @@
-class com.datadog.android.sessionreplay.material.MaterialExtensionSupport : com.datadog.android.sessionreplay.ExtensionSupport
-  override fun getCustomViewMappers(): List<com.datadog.android.sessionreplay.MapperTypeWrapper<*>>
-  override fun getOptionSelectorDetectors(): List<com.datadog.android.sessionreplay.recorder.OptionSelectorDetector>
-  override fun getCustomDrawableMapper(): List<com.datadog.android.sessionreplay.utils.DrawableToColorMapper>
+class cloud.flashcat.android.sessionreplay.material.MaterialExtensionSupport : cloud.flashcat.android.sessionreplay.ExtensionSupport
+  override fun getCustomViewMappers(): List<cloud.flashcat.android.sessionreplay.MapperTypeWrapper<*>>
+  override fun getOptionSelectorDetectors(): List<cloud.flashcat.android.sessionreplay.recorder.OptionSelectorDetector>
+  override fun getCustomDrawableMapper(): List<cloud.flashcat.android.sessionreplay.utils.DrawableToColorMapper>
   override fun name(): String

@@ -5,13 +5,13 @@
  * Modified 2025 by FlashCat, Inc.
  */
 
-import com.datadog.gradle.config.AndroidConfig
-import com.datadog.gradle.config.configureFlavorForTvApp
-import com.datadog.gradle.config.dependencyUpdateConfig
-import com.datadog.gradle.config.java17
-import com.datadog.gradle.config.junitConfig
-import com.datadog.gradle.config.kotlinConfig
-import com.datadog.gradle.config.taskConfig
+import cloud.flashcat.gradle.config.AndroidConfig
+import cloud.flashcat.gradle.config.configureFlavorForTvApp
+import cloud.flashcat.gradle.config.dependencyUpdateConfig
+import cloud.flashcat.gradle.config.java17
+import cloud.flashcat.gradle.config.junitConfig
+import cloud.flashcat.gradle.config.kotlinConfig
+import cloud.flashcat.gradle.config.taskConfig
 
 plugins {
     id("com.android.application")
@@ -21,7 +21,7 @@ plugins {
 }
 
 android {
-    namespace = "com.datadog.android.tv.sample"
+    namespace = "cloud.flashcat.android.tv.sample"
     compileSdk = AndroidConfig.TARGET_SDK
     buildToolsVersion = AndroidConfig.BUILD_TOOLS_VERSION
 

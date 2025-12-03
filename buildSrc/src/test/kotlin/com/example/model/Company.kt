@@ -1,6 +1,6 @@
 package com.example.model
 
-import com.datadog.android.core.`internal`.utils.JsonSerializer
+import cloud.flashcat.android.core.`internal`.utils.JsonSerializer
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParseException

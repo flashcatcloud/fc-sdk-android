@@ -7,7 +7,7 @@
 
 package forge
 
-import com.datadog.benchmark.internal.model.BenchmarkContext
+import cloud.flashcat.benchmark.internal.model.BenchmarkContext
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory
 

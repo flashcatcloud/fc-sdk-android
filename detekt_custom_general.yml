@@ -93,11 +93,11 @@ datadog:
   ThreadSafety:
     active: true
     workerThreadSwitchingCalls:
-      - "com.datadog.android.core.internal.utils.submitSafe"
-      - "com.datadog.android.core.internal.utils.executeSafe"
-      - "com.datadog.android.core.internal.utils.scheduleSafe"
-      - "com.datadog.android.api.feature.FeatureScope.withWriteContext"
-      - "com.datadog.android.api.feature.EventWriteScope.invoke"
+      - "cloud.flashcat.android.core.internal.utils.submitSafe"
+      - "cloud.flashcat.android.core.internal.utils.executeSafe"
+      - "cloud.flashcat.android.core.internal.utils.scheduleSafe"
+      - "cloud.flashcat.android.api.feature.FeatureScope.withWriteContext"
+      - "cloud.flashcat.android.api.feature.EventWriteScope.invoke"
     mainThreadSwitchingCalls:
       - "android.widget.LinearLayout.post"
   TodoWithoutTask:
@@ -109,10 +109,10 @@ datadog:
     active: true
     withBreakingChanges: true
     ignoredAnnotations:
-      - "com.datadog.android.lint.InternalApi"
+      - "cloud.flashcat.android.lint.InternalApi"
   UnsafeThirdPartyFunctionCall:
     active: true
-    internalPackagePrefix: 'com.datadog'
+    internalPackagePrefix: 'cloud.flashcat'
     treatUnknownFunctionAsThrowing: true
     treatUnknownConstructorAsThrowing: true
 

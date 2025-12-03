@@ -7,28 +7,28 @@
 -keepnames class kotlin.jvm.** { *; }
 
 # Required because we need access to Datadog.stop() by reflection
--keepnames class com.datadog.android.Datadog {
+-keepnames class cloud.flashcat.android.Datadog {
     *;
 }
 
 # Required because we need access to GlobalDatadogTracer getOrNull method to reset it through reflection
--keepnames class com.datadog.android.trace.GlobalDatadogTracer {
-    public com.datadog.android.trace.api.tracer.DatadogTracer getOrNull();
-    public static com.datadog.android.trace.GlobalDatadogTracer INSTANCE;
+-keepnames class cloud.flashcat.android.trace.GlobalDatadogTracer {
+    public cloud.flashcat.android.trace.api.tracer.DatadogTracer getOrNull();
+    public static cloud.flashcat.android.trace.GlobalDatadogTracer INSTANCE;
 }
 
 # Required because we need access to GlobalRumMonitor reset method to reset it through reflection
--keepnames class com.datadog.android.rum.GlobalRumMonitor {
+-keepnames class cloud.flashcat.android.rum.GlobalRumMonitor {
     private void reset();
 }
 
 # Required because we need access to RumContext fields by reflection
--keepnames class com.datadog.android.rum.internal.domain.RumContext {
+-keepnames class cloud.flashcat.android.rum.internal.domain.RumContext {
     *;
 }
 
 # Required because we need access to telemetry methods by reflection
--keepnames class com.datadog.android.rum.internal.monitor.DatadogRumMonitor {
+-keepnames class cloud.flashcat.android.rum.internal.monitor.DatadogRumMonitor {
     *;
 }
 

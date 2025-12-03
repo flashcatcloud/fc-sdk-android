@@ -6,13 +6,13 @@
  */
 @file:Suppress("StringLiteralDuplication")
 
-import com.datadog.gradle.config.androidLibraryConfig
-import com.datadog.gradle.config.dependencyUpdateConfig
-import com.datadog.gradle.config.detektCustomConfig
-import com.datadog.gradle.config.javadocConfig
-import com.datadog.gradle.config.junitConfig
-import com.datadog.gradle.config.kotlinConfig
-import com.datadog.gradle.config.publishingConfig
+import cloud.flashcat.gradle.config.androidLibraryConfig
+import cloud.flashcat.gradle.config.dependencyUpdateConfig
+import cloud.flashcat.gradle.config.detektCustomConfig
+import cloud.flashcat.gradle.config.javadocConfig
+import cloud.flashcat.gradle.config.junitConfig
+import cloud.flashcat.gradle.config.kotlinConfig
+import cloud.flashcat.gradle.config.publishingConfig
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -52,7 +52,7 @@ android {
             "\"${libs.versions.openTelemetry.get()}\""
         )
     }
-    namespace = "com.datadog.android.trace.opentelemetry"
+    namespace = "cloud.flashcat.android.trace.opentelemetry"
 }
 
 dependencies {
