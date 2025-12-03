@@ -95,7 +95,7 @@ class SampleApplication : Application() {
         .build()
 
     private val retrofitClient = Retrofit.Builder()
-        .baseUrl("https://api.datadoghq.com/api/v2/")
+        .baseUrl("https://jira.flashcat.cloud/api/v2/")
         .addConverterFactory(GsonConverterFactory.create(GsonBuilder().setLenient().create()))
         .addCallAdapterFactory(RxJava3CallAdapterFactory.createSynchronous())
         .client(okHttpClient)
@@ -349,7 +349,7 @@ class SampleApplication : Application() {
             .setUploadFrequency(UploadFrequency.FREQUENT)
 
         try {
-            configBuilder.useSite(FlashcatSite.valueOf(BuildConfig.DD_SITE_NAME))
+            configBuilder.useSite(FlashcatSite.STAGING)
         } catch (e: IllegalArgumentException) {
             Timber.e("Error setting site to ${BuildConfig.DD_SITE_NAME}")
         }
