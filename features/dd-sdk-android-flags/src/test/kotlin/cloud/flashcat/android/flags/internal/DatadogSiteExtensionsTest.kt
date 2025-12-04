@@ -58,7 +58,7 @@ internal class FlashcatSiteExtensionsTest {
     // region getFlagsEndpoint - Error Cases
 
     @Test
-    fun `M return null W getFlagsEndpoint() { unsupported site }`(@StringForgery customerDomain: String) {
+    fun `M return null W getFlagsEndpoint() { unsupported site }`() {
         // Note: All current sites are supported, so we skip this test
         // If we add unsupported sites in the future, this test should be updated
     }

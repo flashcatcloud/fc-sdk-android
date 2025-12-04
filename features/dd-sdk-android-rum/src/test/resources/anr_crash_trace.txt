@@ -1,4 +1,4 @@
-Subject: Input dispatching timed out (f130cca com.datadog.android.sample/com.datadog.android.sample.NavActivity (server) is not responding. Waited 5000ms for MotionEvent)
+Subject: Input dispatching timed out (f130cca com.flashcat.android.sample/com.flashcat.android.sample.NavActivity (server) is not responding. Waited 5000ms for MotionEvent)
 RssHwmKb: 249844
 RssKb: 211120
 RssAnonKb: 119340
@@ -14,7 +14,7 @@ window_ms: 300000
 ----- dumping pid: 10348 at 24653821
 
 ----- pid 10348 at 2024-02-13 11:43:44.465960343+0100 -----
-Cmd line: com.datadog.android.sample
+Cmd line: com.flashcat.android.sample
 Build fingerprint: 'google/sdk_gphone64_arm64/emu64a:14/UE1A.230829.036.A1/11228894:user/release-keys'
 ABI: 'arm64'
 Build type: optimized
@@ -28,7 +28,7 @@ DALVIK THREADS (46):
   | held mutexes= "mutator lock"(shared held)
   at android.graphics.Paint.getNativeInstance(Paint.java:743)
   at android.graphics.BaseRecordingCanvas.drawRect(BaseRecordingCanvas.java:364)
-  at com.datadog.android.sample.vitals.BadView.onDraw(BadView.kt:72)
+  at com.flashcat.android.sample.vitals.BadView.onDraw(BadView.kt:72)
   at android.view.View.draw(View.java:23889)
   at android.view.View.updateDisplayListIfDirty(View.java:22756)
   at android.view.ViewGroup.recreateChildDisplayList(ViewGroup.java:4540)
@@ -145,7 +145,7 @@ DALVIK THREADS (46):
   at okhttp3.internal.connection.Exchange.readResponseHeaders(Exchange.kt:110)
   at okhttp3.internal.http.CallServerInterceptor.intercept(CallServerInterceptor.kt:93)
   at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)
-  at com.datadog.android.core.internal.data.upload.CurlInterceptor.intercept(CurlInterceptor.kt:44)
+  at com.flashcat.android.core.internal.data.upload.CurlInterceptor.intercept(CurlInterceptor.kt:44)
   at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)
   at okhttp3.internal.connection.ConnectInterceptor.intercept(ConnectInterceptor.kt:34)
   at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)
@@ -157,11 +157,11 @@ DALVIK THREADS (46):
   at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109)
   at okhttp3.internal.connection.RealCall.getResponseWithInterceptorChain$okhttp(RealCall.kt:201)
   at okhttp3.internal.connection.RealCall.execute(RealCall.kt:154)
-  at com.datadog.android.core.internal.data.upload.DataOkHttpUploader.executeUploadRequest(DataOkHttpUploader.kt:105)
-  at com.datadog.android.core.internal.data.upload.DataOkHttpUploader.upload(DataOkHttpUploader.kt:54)
-  at com.datadog.android.core.internal.data.upload.DataUploadRunnable.consumeBatch(DataUploadRunnable.kt:129)
-  at com.datadog.android.core.internal.data.upload.DataUploadRunnable.handleNextBatch(DataUploadRunnable.kt:88)
-  at com.datadog.android.core.internal.data.upload.DataUploadRunnable.run(DataUploadRunnable.kt:54)
+  at com.flashcat.android.core.internal.data.upload.DataOkHttpUploader.executeUploadRequest(DataOkHttpUploader.kt:105)
+  at com.flashcat.android.core.internal.data.upload.DataOkHttpUploader.upload(DataOkHttpUploader.kt:54)
+  at com.flashcat.android.core.internal.data.upload.DataUploadRunnable.consumeBatch(DataUploadRunnable.kt:129)
+  at com.flashcat.android.core.internal.data.upload.DataUploadRunnable.handleNextBatch(DataUploadRunnable.kt:88)
+  at com.flashcat.android.core.internal.data.upload.DataUploadRunnable.run(DataUploadRunnable.kt:54)
   at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:487)
   at java.util.concurrent.FutureTask.run(FutureTask.java:264)
   at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:307)
@@ -176,11 +176,11 @@ DALVIK THREADS (46):
   | stack=0x720ccb9000-0x720ccbb000 stackSize=1039KB
   | held mutexes=
   at java.lang.Object.wait(Native method)
-  - waiting on <0x07909b4d> (a com.datadog.android.rum.internal.anr.ANRDetectorRunnable$CallbackRunnable)
+  - waiting on <0x07909b4d> (a com.flashcat.android.rum.internal.anr.ANRDetectorRunnable$CallbackRunnable)
   at java.lang.Object.wait(Object.java:386)
   at java.lang.Object.wait(Object.java:524)
-  at com.datadog.android.rum.internal.anr.ANRDetectorRunnable.run(ANRDetectorRunnable.kt:52)
-  - locked <0x07909b4d> (a com.datadog.android.rum.internal.anr.ANRDetectorRunnable$CallbackRunnable)
+  at com.flashcat.android.rum.internal.anr.ANRDetectorRunnable.run(ANRDetectorRunnable.kt:52)
+  - locked <0x07909b4d> (a com.flashcat.android.rum.internal.anr.ANRDetectorRunnable$CallbackRunnable)
   at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
   at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
   at java.lang.Thread.run(Thread.java:1012)
@@ -210,7 +210,7 @@ DALVIK THREADS (46):
   at okio.AsyncTimeout$Watchdog.run(AsyncTimeout.kt:183)
   - locked <0x0c521b13> (a java.lang.Class<okio.AsyncTimeout>)
 
-"OkHttp browser-intake-datadoghq.com" daemon prio=5 tid=46 Native
+"OkHttp browser-intake-flashcathq.com" daemon prio=5 tid=46 Native
   | group="main" sCount=1 ucsCount=0 flags=1 obj=0x14442f10 self=0xb40000735e734670
   | sysTid=10430 nice=0 cgrp=top-app sched=0/0 handle=0x71ee1c7cb0
   | state=S schedstat=( 29256791 578875 14 ) utm=2 stm=0 core=2 HZ=100
@@ -1265,12 +1265,12 @@ Zygote loaded classes=24859 post zygote classes=5561
 Dumping registered class loaders
 #0 dalvik.system.PathClassLoader: [], parent #1
 #1 java.lang.BootClassLoader: [], no parent
-#2 dalvik.system.PathClassLoader: [/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.datadog.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes27.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.datadog.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes16.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.datadog.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes7.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.datadog.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes19.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.datadog.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes5.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.datadog.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes10.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.datadog.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes28.dex:/data/data/com.datadog.android.sample/code_cache/.overlay/base.apk/classes12.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.datadog.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes26.dex:/data/data/com.datadog.android.sample/code_cache/.overlay/base.apk/classes14.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.datadog.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes30.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.datadog.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes29.dex:/data/data/com.datadog.android.sample/code_cache/.overlay/base.apk/classes23.dex:/data/data/com.datadog.android.sample/code_cache/.overlay/base.apk/classes13.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.datadog.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes3.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.datadog.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.datadog.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes6.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.datadog.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes2.dex:/data/data/com.datadog.android.sample/code_cache/.overlay/base.apk/classes9.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.datadog.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes24.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.datadog.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes17.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.datadog.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes4.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.datadog.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes22.dex:/data/data/com.datadog.android.sample/code_cache/.overlay/base.apk/classes8.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.datadog.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes20.dex:/data/data/com.datadog.android.sample/code_cache/.overlay/base.apk/classes15.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.datadog.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes11.dex], parent #1
+#2 dalvik.system.PathClassLoader: [/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.flashcat.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes27.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.flashcat.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes16.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.flashcat.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes7.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.flashcat.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes19.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.flashcat.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes5.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.flashcat.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes10.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.flashcat.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes28.dex:/data/data/com.flashcat.android.sample/code_cache/.overlay/base.apk/classes12.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.flashcat.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes26.dex:/data/data/com.flashcat.android.sample/code_cache/.overlay/base.apk/classes14.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.flashcat.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes30.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.flashcat.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes29.dex:/data/data/com.flashcat.android.sample/code_cache/.overlay/base.apk/classes23.dex:/data/data/com.flashcat.android.sample/code_cache/.overlay/base.apk/classes13.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.flashcat.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes3.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.flashcat.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.flashcat.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes6.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.flashcat.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes2.dex:/data/data/com.flashcat.android.sample/code_cache/.overlay/base.apk/classes9.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.flashcat.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes24.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.flashcat.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes17.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.flashcat.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes4.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.flashcat.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes22.dex:/data/data/com.flashcat.android.sample/code_cache/.overlay/base.apk/classes8.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.flashcat.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes20.dex:/data/data/com.flashcat.android.sample/code_cache/.overlay/base.apk/classes15.dex:/data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.flashcat.android.sample-ivPL6XVQGCUDQXXkvycxDw==/base.apk!classes11.dex], parent #1
 Done dumping class loaders
 Classes initialized: 0 in 0
 Intern table: 45803 strong; 1045 weak
 JNI: CheckJNI is on; globals=408 (plus 147 weak)
-Libraries: /data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.datadog.android.sample-ivPL6XVQGCUDQXXkvycxDw==/lib/arm64/libdatadog-native-lib.so /data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.datadog.android.sample-ivPL6XVQGCUDQXXkvycxDw==/lib/arm64/libdatadog-native-sample-lib.so /data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.datadog.android.sample-ivPL6XVQGCUDQXXkvycxDw==/lib/arm64/librealmc.so libandroid.so libaudioeffect_jni.so libcompiler_rt.so libframework-connectivity-jni.so libframework-connectivity-tiramisu-jni.so libicu_jni.so libjavacore.so libjavacrypto.so libjnigraphics.so libmedia_jni.so libopenjdk.so librs_jni.so librtp_jni.so libsoundpool.so libstats_jni.so libwebviewchromium_loader.so (19)
+Libraries: /data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.flashcat.android.sample-ivPL6XVQGCUDQXXkvycxDw==/lib/arm64/libflashcat-native-lib.so /data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.flashcat.android.sample-ivPL6XVQGCUDQXXkvycxDw==/lib/arm64/libflashcat-native-sample-lib.so /data/app/~~4Hdpw4yH6PultdkbudOeDw==/com.flashcat.android.sample-ivPL6XVQGCUDQXXkvycxDw==/lib/arm64/librealmc.so libandroid.so libaudioeffect_jni.so libcompiler_rt.so libframework-connectivity-jni.so libframework-connectivity-tiramisu-jni.so libicu_jni.so libjavacore.so libjavacrypto.so libjnigraphics.so libmedia_jni.so libopenjdk.so librs_jni.so librtp_jni.so libsoundpool.so libstats_jni.so libwebviewchromium_loader.so (19)
 Heap: 32% free, 8401KB/12MB; 214361 objects
 Image spaces:
 /system/framework/arm64/boot.art
@@ -1496,7 +1496,7 @@ ProfileSaver total_number_of_wake_ups=2
 ----- end 10348 -----
 
 ----- Waiting Channels: pid 10348 at 2024-02-13 11:43:44.465482634+0100 -----
-Cmd line: com.datadog.android.sample
+Cmd line: com.flashcat.android.sample
 
 sysTid=10348     0
 sysTid=10354     do_sigtimedwait

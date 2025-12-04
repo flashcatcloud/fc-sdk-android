@@ -66,10 +66,10 @@ internal class AndroidTraceParserTest {
         assertThat(mainThread.state).isEqualTo("runnable")
         assertThat(mainThread.crashed).isTrue()
 
-        assertThat(threadsDump.filter { it.name == "OkHttp browser-intake-datadoghq.com" })
+        assertThat(threadsDump.filter { it.name == "OkHttp browser-intake-flashcathq.com" })
             .hasSize(1)
         val mixedJavaNativeThread =
-            threadsDump.first { it.name == "OkHttp browser-intake-datadoghq.com" }
+            threadsDump.first { it.name == "OkHttp browser-intake-flashcathq.com" }
         assertThat(mixedJavaNativeThread.stack).isEqualTo(JAVA_AND_NDK_THREAD_STACK)
         assertThat(mixedJavaNativeThread.state).isEqualTo("native")
         assertThat(mixedJavaNativeThread.crashed).isFalse()
@@ -115,7 +115,7 @@ internal class AndroidTraceParserTest {
         const val MAIN_THREAD_STACK =
             """  at android.graphics.Paint.getNativeInstance(Paint.java:743)
   at android.graphics.BaseRecordingCanvas.drawRect(BaseRecordingCanvas.java:364)
-  at com.datadog.android.sample.vitals.BadView.onDraw(BadView.kt:72)
+  at cloud.flashcat.android.sample.vitals.BadView.onDraw(BadView.kt:72)
   at android.view.View.draw(View.java:23889)
   at android.view.View.updateDisplayListIfDirty(View.java:22756)
   at android.view.ViewGroup.recreateChildDisplayList(ViewGroup.java:4540)
