@@ -62,6 +62,9 @@ allprojects {
 val mavenCentralUsername = System.getenv("MAVEN_CENTRAL_USERNAME")
 val mavenCentralPassword = System.getenv("MAVEN_CENTRAL_PASSWORD")
 
+val signingKeyEnv = System.getenv("GPG_PRIVATE_KEY")
+val signingPassword = System.getenv("GPG_PASSWORD")
+
 // Configure snapshot repository for all subprojects
 subprojects {
     plugins.withId("maven-publish") {
@@ -75,6 +78,21 @@ subprojects {
                         password = mavenCentralPassword
                     }
                 }
+            }
+        }
+
+        if (!signingKeyEnv.isNullOrEmpty()) {
+            apply(plugin = "signing")
+            configure<SigningExtension> {
+                try {
+                    val decodedKey = String(java.util.Base64.getDecoder().decode(signingKeyEnv))
+                    useInMemoryPgpKeys(decodedKey, signingPassword)
+                } catch (e: Exception) {
+                    // 如果不是 Base64，尝试直接使用（防止你存的是纯文本）
+                    useInMemoryPgpKeys(signingKeyEnv, signingPassword)
+                }
+
+                sign(extensions.getByType<PublishingExtension>().publications)
             }
         }
     }
