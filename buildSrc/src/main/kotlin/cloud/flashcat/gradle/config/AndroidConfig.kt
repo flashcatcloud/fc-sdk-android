@@ -20,7 +20,46 @@ object AndroidConfig {
     const val MIN_SDK_FOR_AUTO = 29
     const val BUILD_TOOLS_VERSION = "36.0.0"
 
-    val VERSION = Version(0, 1, 0, Version.Type.Snapshot)
+    /**
+     * Determine version based on GitLab CI environment variables
+     * - Tag (CI_COMMIT_TAG exists) → Release version (e.g., 0.1.0)
+     * - public branch (CI_COMMIT_REF_NAME == "public") → Snapshot version (e.g., 0.1.0-SNAPSHOT)
+     * - Other → Default snapshot version for local development
+     */
+    val VERSION = determineVersion()
+
+    private fun determineVersion(): Version {
+        val commitTag = System.getenv("CI_COMMIT_TAG")
+        val refName = System.getenv("CI_COMMIT_REF_NAME")
+        
+        return when {
+            // Tag release: v0.1.0 or 0.1.0 → 0.1.0 (Release)
+            commitTag != null && commitTag.isNotEmpty() -> {
+                parseVersionFromTag(commitTag)
+            }
+            // public branch → Snapshot
+            refName == "public" -> {
+                Version(0, 1, 0, Version.Type.Snapshot)
+            }
+            // Local development or other branches → Snapshot
+            else -> {
+                Version(0, 1, 0, Version.Type.Snapshot)
+            }
+        }
+    }
+
+    private fun parseVersionFromTag(tag: String): Version {
+        // Remove 'v' prefix if present (e.g., v0.1.0 -> 0.1.0)
+        val versionString = tag.removePrefix("v")
+        val parts = versionString.split(".")
+        
+        return Version(
+            major = parts.getOrNull(0)?.toIntOrNull() ?: 0,
+            minor = parts.getOrNull(1)?.toIntOrNull() ?: 1,
+            hotfix = parts.getOrNull(2)?.toIntOrNull() ?: 0,
+            type = Version.Type.Release
+        )
+    }
 }
 
 // TODO RUM-628 Switch to Java 17 bytecode
