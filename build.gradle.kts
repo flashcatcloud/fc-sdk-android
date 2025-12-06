@@ -9,6 +9,7 @@
 import com.android.build.gradle.LibraryExtension
 import cloud.flashcat.gradle.config.AndroidConfig
 import cloud.flashcat.gradle.config.registerSubModuleAggregationTask
+import cloud.flashcat.gradle.utils.Version
 import org.gradle.api.internal.file.UnionFileTree
 import org.gradle.api.internal.tasks.DefaultTaskDependencyFactory
 import java.util.Properties
@@ -47,16 +48,16 @@ allprojects {
     }
 }
 
-// Maven Central Portal (2024+) configuration for SNAPSHOT publishing
-// Using Gradle's maven-publish plugin with snapshot repository
+// Maven Central Portal (2024+) configuration for publishing
+// Using Gradle's maven-publish plugin with snapshot and release repositories
 //
 // Credentials must be set via environment variables:
 // - MAVEN_CENTRAL_USERNAME: Your Maven Central Portal username (from generated token)
 // - MAVEN_CENTRAL_PASSWORD: Your Maven Central Portal password (from generated token)
 //
 // Publishing workflow:
-// 1. For SNAPSHOT: ./gradlew publishAllPublicationsToSnapshotRepository
-// 2. For RELEASE: Upload to Maven Central Portal UI manually
+// 1. For SNAPSHOT: ./gradlew publish (publishes to snapshot repository)
+// 2. For RELEASE: ./gradlew publish (publishes to release repository, then manually publish in Portal UI)
 
 // Load credentials from environment variables only
 val mavenCentralUsername = System.getenv("MAVEN_CENTRAL_USERNAME")
@@ -65,17 +66,33 @@ val mavenCentralPassword = System.getenv("MAVEN_CENTRAL_PASSWORD")
 val signingKeyEnv = System.getenv("GPG_PRIVATE_KEY")
 val signingPassword = System.getenv("GPG_PASSWORD")
 
-// Configure snapshot repository for all subprojects
+// Determine if this is a snapshot or release version
+val isSnapshotVersion = AndroidConfig.VERSION.type is Version.Type.Snapshot
+
+// Configure repositories for all subprojects
 subprojects {
     plugins.withId("maven-publish") {
         configure<PublishingExtension> {
             repositories {
-                maven {
-                    name = "Snapshot"
-                    url = uri("https://central.sonatype.com/repository/maven-snapshots/")
-                    credentials {
-                        username = mavenCentralUsername
-                        password = mavenCentralPassword
+                if (isSnapshotVersion) {
+                    // Snapshot repository
+                    maven {
+                        name = "Snapshot"
+                        url = uri("https://central.sonatype.com/repository/maven-snapshots/")
+                        credentials {
+                            username = mavenCentralUsername
+                            password = mavenCentralPassword
+                        }
+                    }
+                } else {
+                    // Release repository
+                    maven {
+                        name = "Release"
+                        url = uri("https://central.sonatype.com/repository/maven-releases/")
+                        credentials {
+                            username = mavenCentralUsername
+                            password = mavenCentralPassword
+                        }
                     }
                 }
             }

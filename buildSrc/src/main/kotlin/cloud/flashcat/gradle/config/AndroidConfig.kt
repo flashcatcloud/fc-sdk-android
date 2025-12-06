@@ -21,24 +21,33 @@ object AndroidConfig {
     const val BUILD_TOOLS_VERSION = "36.0.0"
 
     /**
-     * Determine version based on GitLab CI environment variables
-     * - Tag (CI_COMMIT_TAG exists) → Release version (e.g., 0.1.0)
-     * - public branch (CI_COMMIT_REF_NAME == "public") → Snapshot version (e.g., 0.1.0-SNAPSHOT)
+     * Determine version based on CI environment variables (GitLab CI or GitHub Actions)
+     * - Tag (CI_COMMIT_TAG or GITHUB_REF_TYPE == "tag") → Release version (e.g., 1.0.0)
+     * - public branch (CI_COMMIT_REF_NAME == "public" or GITHUB_REF_NAME == "publish") → Snapshot version (e.g., 1.0.0-SNAPSHOT)
      * - Other → Default snapshot version for local development
      */
     val VERSION = determineVersion()
 
     private fun determineVersion(): Version {
-        val commitTag = System.getenv("CI_COMMIT_TAG")
-        val refName = System.getenv("CI_COMMIT_REF_NAME")
+        // Check GitLab CI variables
+        val gitlabTag = System.getenv("CI_COMMIT_TAG")
+        val gitlabRefName = System.getenv("CI_COMMIT_REF_NAME")
+        
+        // Check GitHub Actions variables
+        val githubRefType = System.getenv("GITHUB_REF_TYPE")
+        val githubRefName = System.getenv("GITHUB_REF_NAME")
         
         return when {
-            // Tag release: v0.1.0 or 0.1.0 → 0.1.0 (Release)
-            commitTag != null && commitTag.isNotEmpty() -> {
-                parseVersionFromTag(commitTag)
+            // GitLab CI: tag exists
+            !gitlabTag.isNullOrEmpty() -> {
+                parseVersionFromTag(gitlabTag)
             }
-            // public branch → Snapshot
-            refName == "public" -> {
+            // GitHub Actions: ref type is tag and ref name starts with 'v'
+            githubRefType == "tag" && githubRefName?.startsWith("v") == true -> {
+                parseVersionFromTag(githubRefName)
+            }
+            // public branch (GitLab) or publish branch (GitHub) → Snapshot
+            gitlabRefName == "public" || githubRefName == "publish" -> {
                 Version(0, 1, 0, Version.Type.Snapshot)
             }
             // Local development or other branches → Snapshot
@@ -49,13 +58,13 @@ object AndroidConfig {
     }
 
     private fun parseVersionFromTag(tag: String): Version {
-        // Remove 'v' prefix if present (e.g., v0.1.0 -> 0.1.0)
-        val versionString = tag.removePrefix("v")
+        // Remove 'v' prefix if present (e.g., v1.0.0 -> 1.0.0)
+        val versionString = tag.removePrefix("v").trim()
         val parts = versionString.split(".")
         
         return Version(
             major = parts.getOrNull(0)?.toIntOrNull() ?: 0,
-            minor = parts.getOrNull(1)?.toIntOrNull() ?: 1,
+            minor = parts.getOrNull(1)?.toIntOrNull() ?: 0,
             hotfix = parts.getOrNull(2)?.toIntOrNull() ?: 0,
             type = Version.Type.Release
         )
