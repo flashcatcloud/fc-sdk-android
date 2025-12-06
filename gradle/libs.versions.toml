@@ -67,6 +67,7 @@ androidLint = "31.0.2"
 versionsGradlePlugin = "0.46.0"
 nexusPublishGradlePlugin = "2.0.0"
 datadogPlugin = "1.18.0"
+vanniktech = "0.33.0"
 
 kotlinPoet = "1.14.2"
 kotlinGrammarParser = "0.1.0"
@@ -121,6 +122,7 @@ binaryCompatibilityGradlePlugin = { module = "org.jetbrains.kotlinx:binary-compa
 dependencyLicenseGradlePlugin = { module = "com.datadoghq:dependency-license", version.ref = "dependencyLicense" }
 versionsGradlePlugin = { module = "com.github.ben-manes:gradle-versions-plugin", version.ref = "versionsGradlePlugin" }
 kotlinxSerializationPlugin = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
+vanniktechPublishPlugin = { module = "com.vanniktech:gradle-maven-publish-plugin", version.ref = "vanniktech" }
 
 # Annotation processors
 glideCompiler = { module = "com.github.bumptech.glide:compiler", version.ref = "glide" }
@@ -377,3 +379,4 @@ nexusPublishGradlePlugin = { id = "io.github.gradle-nexus.publish-plugin", versi
 datadogGradlePlugin = { id = "com.datadoghq.dd-sdk-android-gradle-plugin", version.ref = "datadogPlugin" }
 composeCompilerPlugin = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 apolloPlugin = { id = "com.apollographql.apollo", version.ref = "apollo" }
+vanniktechPublish = { id = "com.vanniktech.maven.publish.base", version.ref = "vanniktech" }

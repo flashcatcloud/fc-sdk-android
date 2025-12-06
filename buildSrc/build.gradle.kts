@@ -35,6 +35,7 @@ dependencies {
     implementation(libs.versionsGradlePlugin)
     implementation(libs.dokkaGradlePlugin)
     implementation(libs.dependencyLicenseGradlePlugin)
+    implementation(libs.vanniktechPublishPlugin)
     implementation(libs.kover)
 
     // check api surface

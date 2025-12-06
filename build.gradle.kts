@@ -16,7 +16,7 @@ import java.util.Properties
 
 plugins {
     `maven-publish`
-    signing
+    base
 }
 
 version = AndroidConfig.VERSION.name
@@ -49,79 +49,28 @@ allprojects {
 }
 
 // Maven Central Portal (2024+) configuration for publishing
-// Using Gradle's maven-publish plugin with snapshot and release repositories
+// Using Vanniktech Maven Publish Plugin with Central Portal support
 //
 // Credentials must be set via environment variables:
 // - MAVEN_CENTRAL_USERNAME: Your Maven Central Portal username (from generated token)
 // - MAVEN_CENTRAL_PASSWORD: Your Maven Central Portal password (from generated token)
+// - GPG_PRIVATE_KEY: Your GPG private key (base64 encoded)
+// - GPG_PASSWORD: Your GPG key passphrase
 //
 // Publishing workflow:
-// 1. For SNAPSHOT: ./gradlew publish (publishes to snapshot repository)
-// 2. For RELEASE: ./gradlew publish (publishes to release repository, then manually publish in Portal UI)
+// 1. For SNAPSHOT: ./gradlew publishAllPublicationsToMavenCentralRepository
+// 2. For RELEASE: Same command, then manually publish in Portal UI (or set automaticRelease=true)
 
-// Load credentials from environment variables only
-val mavenCentralUsername = System.getenv("MAVEN_CENTRAL_USERNAME")
-val mavenCentralPassword = System.getenv("MAVEN_CENTRAL_PASSWORD")
+// Note: All publishing configuration is now handled by the Vanniktech plugin
+// configured in each subproject's publishingConfig() call in MavenConfig.kt
 
-val signingKeyEnv = System.getenv("GPG_PRIVATE_KEY")
-val signingPassword = System.getenv("GPG_PASSWORD")
-
-// Determine if this is a snapshot or release version
-val isSnapshotVersion = AndroidConfig.VERSION.type is Version.Type.Snapshot
-
-// Configure repositories for all subprojects
-subprojects {
-    plugins.withId("maven-publish") {
-        configure<PublishingExtension> {
-            repositories {
-                if (isSnapshotVersion) {
-                    // Snapshot repository
-                    maven {
-                        name = "Snapshot"
-                        url = uri("https://central.sonatype.com/repository/maven-snapshots/")
-                        credentials {
-                            username = mavenCentralUsername
-                            password = mavenCentralPassword
-                        }
-                    }
-                } else {
-                    // Release repository
-                    maven {
-                        name = "Release"
-                        url = uri("https://central.sonatype.com/repository/maven-releases/")
-                        credentials {
-                            username = mavenCentralUsername
-                            password = mavenCentralPassword
-                        }
-                    }
-                }
-            }
-        }
-
-        if (!signingKeyEnv.isNullOrEmpty()) {
-            apply(plugin = "signing")
-            configure<SigningExtension> {
-                try {
-                    val decodedKey = String(java.util.Base64.getDecoder().decode(signingKeyEnv))
-                    useInMemoryPgpKeys(decodedKey, signingPassword)
-                } catch (e: Exception) {
-                    // 如果不是 Base64，尝试直接使用（防止你存的是纯文本）
-                    useInMemoryPgpKeys(signingKeyEnv, signingPassword)
-                }
-
-                sign(extensions.getByType<PublishingExtension>().publications)
-            }
-        }
-    }
-}
-
-// Convenience task to publish all snapshot versions
-tasks.register("publishAllSnapshots") {
-    description = "Publish all SNAPSHOT versions to Maven Central Portal"
+// Convenience task to publish all modules
+tasks.register("publishAll") {
+    description = "Publish all modules to Maven Central Portal"
     group = "publishing"
     
     dependsOn(subprojects.mapNotNull {
-        it.tasks.findByName("publishAllPublicationsToSnapshotRepository")
+        it.tasks.findByName("publishAllPublicationsToMavenCentralRepository")
     })
 }
 
