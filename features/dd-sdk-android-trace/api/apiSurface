@@ -1,5 +1,5 @@
 object cloud.flashcat.android.trace.DatadogTracing
-  fun newTracerBuilder(cloud.flashcat.android.api.SdkCore = Datadog.getInstance()): cloud.flashcat.android.trace.api.tracer.DatadogTracerBuilder
+  fun newTracerBuilder(cloud.flashcat.android.api.SdkCore = Flashcat.getInstance()): cloud.flashcat.android.trace.api.tracer.DatadogTracerBuilder
 object cloud.flashcat.android.trace.GlobalDatadogTracer
   fun registerIfAbsent(cloud.flashcat.android.trace.api.tracer.DatadogTracer): Boolean
   fun get(): cloud.flashcat.android.trace.api.tracer.DatadogTracer
@@ -9,7 +9,7 @@ interface cloud.flashcat.android.trace.InternalCoreWriterProvider
   fun getCoreTracerWriter(): cloud.flashcat.android.trace.api.span.DatadogSpanWriter
 fun <T: Any?> withinSpan(String, cloud.flashcat.android.trace.api.span.DatadogSpan? = null, Boolean = true, cloud.flashcat.android.trace.api.span.DatadogSpan.() -> T): T
 object cloud.flashcat.android.trace.Trace
-  fun enable(TraceConfiguration, cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
+  fun enable(TraceConfiguration, cloud.flashcat.android.api.SdkCore = Flashcat.getInstance())
 data class cloud.flashcat.android.trace.TraceConfiguration
   class Builder
     fun useCustomEndpoint(String): Builder

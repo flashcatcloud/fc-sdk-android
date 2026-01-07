@@ -1,4 +1,4 @@
 class cloud.flashcat.android.timber.DatadogTree : timber.log.Timber.Tree
   constructor(cloud.flashcat.android.log.Logger)
-  constructor(Int, cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
+  constructor(Int, cloud.flashcat.android.api.SdkCore = Flashcat.getInstance())
   override fun log(Int, String?, String, Throwable?)

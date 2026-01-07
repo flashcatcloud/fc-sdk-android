@@ -1,2 +1,2 @@
 object cloud.flashcat.android.ndk.NdkCrashReports
-  fun enable(cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
+  fun enable(cloud.flashcat.android.api.SdkCore = Flashcat.getInstance())

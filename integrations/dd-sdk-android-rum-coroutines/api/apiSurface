@@ -1,1 +1,1 @@
-fun <T> kotlinx.coroutines.flow.Flow<T>.sendErrorToDatadog(cloud.flashcat.android.api.SdkCore = Datadog.getInstance()): kotlinx.coroutines.flow.Flow<T>
+fun <T> kotlinx.coroutines.flow.Flow<T>.sendErrorToDatadog(cloud.flashcat.android.api.SdkCore = Flashcat.getInstance()): kotlinx.coroutines.flow.Flow<T>

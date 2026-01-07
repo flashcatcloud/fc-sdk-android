@@ -19,9 +19,9 @@ fun android.view.View.setSessionReplayImagePrivacy(ImagePrivacy?)
 fun android.view.View.setSessionReplayTextAndInputPrivacy(TextAndInputPrivacy?)
 fun android.view.View.setSessionReplayTouchPrivacy(TouchPrivacy?)
 object cloud.flashcat.android.sessionreplay.SessionReplay
-  fun enable(SessionReplayConfiguration, cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
-  fun startRecording(cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
-  fun stopRecording(cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
+  fun enable(SessionReplayConfiguration, cloud.flashcat.android.api.SdkCore = Flashcat.getInstance())
+  fun startRecording(cloud.flashcat.android.api.SdkCore = Flashcat.getInstance())
+  fun stopRecording(cloud.flashcat.android.api.SdkCore = Flashcat.getInstance())
 data class cloud.flashcat.android.sessionreplay.SessionReplayConfiguration
   class Builder
     constructor()

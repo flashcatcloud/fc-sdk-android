@@ -8,7 +8,7 @@ class cloud.flashcat.android.log.Logger
   fun log(Int, String, Throwable? = null, Map<String, Any?> = emptyMap())
   fun log(Int, String, String?, String?, String?, Map<String, Any?> = emptyMap())
   class Builder
-    constructor(cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
+    constructor(cloud.flashcat.android.api.SdkCore = Flashcat.getInstance())
     fun build(): Logger
     fun setService(String): Builder
     fun setRemoteLogThreshold(Int): Builder
@@ -25,10 +25,10 @@ class cloud.flashcat.android.log.Logger
   fun removeTag(String)
   fun removeTagsWithKey(String)
 object cloud.flashcat.android.log.Logs
-  fun enable(LogsConfiguration, cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
-  fun isEnabled(cloud.flashcat.android.api.SdkCore = Datadog.getInstance()): Boolean
-  fun addAttribute(String, Any?, cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
-  fun removeAttribute(String, cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
+  fun enable(LogsConfiguration, cloud.flashcat.android.api.SdkCore = Flashcat.getInstance())
+  fun isEnabled(cloud.flashcat.android.api.SdkCore = Flashcat.getInstance()): Boolean
+  fun addAttribute(String, Any?, cloud.flashcat.android.api.SdkCore = Flashcat.getInstance())
+  fun removeAttribute(String, cloud.flashcat.android.api.SdkCore = Flashcat.getInstance())
 data class cloud.flashcat.android.log.LogsConfiguration
   class Builder
     fun useCustomEndpoint(String): Builder

@@ -12,13 +12,13 @@ fun androidx.compose.ui.Modifier.datadog(String, Boolean = false): androidx.comp
 annotation cloud.flashcat.android.compose.ExperimentalTrackingApi
 class cloud.flashcat.android.compose.HashcodeBackStackKeyResolver<T: Any> : BackStackKeyResolver<T>
   override fun getStableKey(T): String
-fun trackClick(String, Map<String, Any?> = remember { emptyMap() }, cloud.flashcat.android.api.SdkCore = Datadog.getInstance(), () -> Unit): () -> Unit
-fun TrackInteractionEffect(String, androidx.compose.foundation.interaction.InteractionSource, InteractionType, Map<String, Any?> = emptyMap(), cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
+fun trackClick(String, Map<String, Any?> = remember { emptyMap() }, cloud.flashcat.android.api.SdkCore = Flashcat.getInstance(), () -> Unit): () -> Unit
+fun TrackInteractionEffect(String, androidx.compose.foundation.interaction.InteractionSource, InteractionType, Map<String, Any?> = emptyMap(), cloud.flashcat.android.api.SdkCore = Flashcat.getInstance())
 sealed class cloud.flashcat.android.compose.InteractionType
   class Swipe<T: Any> : InteractionType
     constructor(androidx.compose.material.SwipeableState<T>, androidx.compose.foundation.gestures.Orientation, Boolean = false)
   class Scroll : InteractionType
     constructor(androidx.compose.foundation.gestures.ScrollableState, androidx.compose.foundation.gestures.Orientation, Boolean = false)
-fun NavigationViewTrackingEffect(androidx.navigation.NavController, Boolean = true, cloud.flashcat.android.rum.tracking.ComponentPredicate<androidx.navigation.NavDestination> = AcceptAllNavDestinations(), cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
-fun <T: Any> Navigation3TrackingEffect(List<T>, cloud.flashcat.android.rum.tracking.ComponentPredicate<T> = AcceptAllNavKeyPredicate(), BackStackKeyResolver<T> = HashcodeBackStackKeyResolver(), AttributesResolver<T>? = null, cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
+fun NavigationViewTrackingEffect(androidx.navigation.NavController, Boolean = true, cloud.flashcat.android.rum.tracking.ComponentPredicate<androidx.navigation.NavDestination> = AcceptAllNavDestinations(), cloud.flashcat.android.api.SdkCore = Flashcat.getInstance())
+fun <T: Any> Navigation3TrackingEffect(List<T>, cloud.flashcat.android.rum.tracking.ComponentPredicate<T> = AcceptAllNavKeyPredicate(), BackStackKeyResolver<T> = HashcodeBackStackKeyResolver(), AttributesResolver<T>? = null, cloud.flashcat.android.api.SdkCore = Flashcat.getInstance())
 fun cloud.flashcat.android.rum.RumConfiguration.Builder.enableComposeActionTracking(): cloud.flashcat.android.rum.RumConfiguration.Builder

@@ -1,4 +1,4 @@
-object cloud.flashcat.android.Datadog
+object cloud.flashcat.android.Flashcat
   fun initialize(String?, android.content.Context, cloud.flashcat.android.core.configuration.Configuration, cloud.flashcat.android.privacy.TrackingConsent): cloud.flashcat.android.api.SdkCore?
   fun initialize(android.content.Context, cloud.flashcat.android.core.configuration.Configuration, cloud.flashcat.android.privacy.TrackingConsent): cloud.flashcat.android.api.SdkCore?
   fun getInstance(String? = null): cloud.flashcat.android.api.SdkCore

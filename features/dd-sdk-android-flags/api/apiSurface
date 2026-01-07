@@ -1,5 +1,5 @@
 object cloud.flashcat.android.flags.Flags
-  fun enable(FlagsConfiguration = FlagsConfiguration.default, cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
+  fun enable(FlagsConfiguration = FlagsConfiguration.default, cloud.flashcat.android.api.SdkCore = Flashcat.getInstance())
 interface cloud.flashcat.android.flags.FlagsClient
   fun setEvaluationContext(cloud.flashcat.android.flags.model.EvaluationContext)
   fun resolveBooleanValue(String, Boolean): Boolean
@@ -9,10 +9,10 @@ interface cloud.flashcat.android.flags.FlagsClient
   fun resolveStructureValue(String, org.json.JSONObject): org.json.JSONObject
   fun <T: Any> resolve(String, T): cloud.flashcat.android.flags.model.ResolutionDetails<T>
   class Builder
-    constructor(String = DEFAULT_CLIENT_NAME, cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
+    constructor(String = DEFAULT_CLIENT_NAME, cloud.flashcat.android.api.SdkCore = Flashcat.getInstance())
     fun build(): FlagsClient
   companion object 
-    fun get(String = DEFAULT_CLIENT_NAME, cloud.flashcat.android.api.SdkCore = Datadog.getInstance()): FlagsClient
+    fun get(String = DEFAULT_CLIENT_NAME, cloud.flashcat.android.api.SdkCore = Flashcat.getInstance()): FlagsClient
 data class cloud.flashcat.android.flags.FlagsConfiguration
   class Builder
     fun trackExposures(Boolean): Builder

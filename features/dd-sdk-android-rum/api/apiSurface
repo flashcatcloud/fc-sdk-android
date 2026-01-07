@@ -1,10 +1,10 @@
-fun <T: java.io.Closeable, R> T.useMonitored(cloud.flashcat.android.api.SdkCore = Datadog.getInstance(), (T) -> R): R
+fun <T: java.io.Closeable, R> T.useMonitored(cloud.flashcat.android.api.SdkCore = Flashcat.getInstance(), (T) -> R): R
 annotation cloud.flashcat.android.rum.ExperimentalRumApi
 object cloud.flashcat.android.rum.GlobalRumMonitor
-  fun isRegistered(cloud.flashcat.android.api.SdkCore = Datadog.getInstance()): Boolean
-  fun get(cloud.flashcat.android.api.SdkCore = Datadog.getInstance()): RumMonitor
+  fun isRegistered(cloud.flashcat.android.api.SdkCore = Flashcat.getInstance()): Boolean
+  fun get(cloud.flashcat.android.api.SdkCore = Flashcat.getInstance()): RumMonitor
 object cloud.flashcat.android.rum.Rum
-  fun enable(RumConfiguration, cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
+  fun enable(RumConfiguration, cloud.flashcat.android.api.SdkCore = Flashcat.getInstance())
 enum cloud.flashcat.android.rum.RumActionType
   - TAP
   - SCROLL
@@ -221,15 +221,15 @@ class cloud.flashcat.android.rum.metric.networksettled.TimeBasedInitialResourceI
   override fun equals(Any?): Boolean
   override fun hashCode(): Int
   companion object 
-fun android.content.Context.getAssetAsRumResource(String, Int = AssetManager.ACCESS_STREAMING, cloud.flashcat.android.api.SdkCore = Datadog.getInstance()): java.io.InputStream
-fun android.content.Context.getRawResAsRumResource(Int, cloud.flashcat.android.api.SdkCore = Datadog.getInstance()): java.io.InputStream
-fun java.io.InputStream.asRumResource(String, cloud.flashcat.android.api.SdkCore = Datadog.getInstance()): java.io.InputStream
+fun android.content.Context.getAssetAsRumResource(String, Int = AssetManager.ACCESS_STREAMING, cloud.flashcat.android.api.SdkCore = Flashcat.getInstance()): java.io.InputStream
+fun android.content.Context.getRawResAsRumResource(Int, cloud.flashcat.android.api.SdkCore = Flashcat.getInstance()): java.io.InputStream
+fun java.io.InputStream.asRumResource(String, cloud.flashcat.android.api.SdkCore = Flashcat.getInstance()): java.io.InputStream
 class cloud.flashcat.android.rum.resource.ResourceId
   constructor(String, String?)
   override fun equals(Any?): Boolean
   override fun hashCode(): Int
 class cloud.flashcat.android.rum.resource.RumResourceInputStream : java.io.InputStream
-  constructor(java.io.InputStream, String, cloud.flashcat.android.api.SdkCore = Datadog.getInstance())
+  constructor(java.io.InputStream, String, cloud.flashcat.android.api.SdkCore = Flashcat.getInstance())
   override fun read(): Int
   override fun read(ByteArray): Int
   override fun read(ByteArray, Int, Int): Int
