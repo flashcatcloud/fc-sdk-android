@@ -14,7 +14,8 @@ fun Project.junitConfig() {
     tasks.withType<Test>().configureEach {
         jvmArgs(
             "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
-            "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED"
+            "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED",
+            "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED"
         )
         useJUnitPlatform {
             includeEngines("spek", "junit-jupiter", "junit-vintage")

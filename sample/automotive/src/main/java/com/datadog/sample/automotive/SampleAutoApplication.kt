@@ -13,8 +13,8 @@ import com.datadog.android.FlashcatSite
 import com.datadog.android.core.configuration.BatchSize
 import com.datadog.android.core.configuration.Configuration
 import com.datadog.android.core.configuration.UploadFrequency
-import com.datadog.android.log.Logs
-import com.datadog.android.log.LogsConfiguration
+// import com.datadog.android.log.Logs
+// import com.datadog.android.log.LogsConfiguration
 import com.datadog.android.privacy.TrackingConsent
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.Rum
@@ -40,8 +40,8 @@ class SampleAutoApplication : Application() {
         val rumConfig = createRumConfiguration()
         Rum.enable(rumConfig)
 
-        val logsConfig = LogsConfiguration.Builder().build()
-        Logs.enable(logsConfig)
+        // val logsConfig = LogsConfiguration.Builder().build()
+        // Logs.enable(logsConfig)
 
         GlobalRumMonitor.get().debug = true
     }

@@ -11,8 +11,8 @@ import android.util.Log
 import com.datadog.android.Datadog
 import com.datadog.android.FlashcatSite
 import com.datadog.android.core.configuration.Configuration
-import com.datadog.android.log.Logs
-import com.datadog.android.log.LogsConfiguration
+// import com.datadog.android.log.Logs
+// import com.datadog.android.log.LogsConfiguration
 import com.datadog.android.privacy.TrackingConsent
 import com.datadog.android.rum.Rum
 import com.datadog.android.rum.RumConfiguration
@@ -59,6 +59,7 @@ class WearApplication : Application() {
                 .build()
         )
 
+        /*
         Logs.enable(
             LogsConfiguration.Builder()
                 .apply {
@@ -68,6 +69,7 @@ class WearApplication : Application() {
                 }
                 .build()
         )
+        */
 
         Trace.enable(
             TraceConfiguration.Builder()

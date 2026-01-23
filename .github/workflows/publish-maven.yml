@@ -43,7 +43,7 @@ jobs:
         run: ./gradlew clean assembleRelease --stacktrace
 
       - name: Run tests
-        run: ./gradlew clean testReleaseUnitTest --stacktrace
+        run: ./gradlew testReleaseUnitTest --stacktrace
 
       - name: Stop Gradle Daemon
         run: ./gradlew --stop

@@ -78,8 +78,10 @@ androidLibraryConfig()
 junitConfig()
 javadocConfig()
 dependencyUpdateConfig()
-publishingConfig(
-    "OpenFeature Provider integration for the Datadog Feature Flags " +
-        "library for Android applications."
-)
+/*
+// publishingConfig(
+//     "OpenFeature Provider integration for the Datadog Feature Flags " +
+//         "library for Android applications."
+// )
+*/
 detektCustomConfig()
