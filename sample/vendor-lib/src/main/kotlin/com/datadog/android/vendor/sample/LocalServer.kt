@@ -9,7 +9,7 @@ package com.datadog.android.vendor.sample
 import android.content.Context
 import android.util.Log
 import com.datadog.android.Datadog
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android.core.configuration.BatchSize
 import com.datadog.android.core.configuration.Configuration
 import com.datadog.android.core.configuration.UploadFrequency
@@ -60,7 +60,7 @@ public class LocalServer {
             env = "prod",
             service = SERVICE_NAME
         )
-            .useSite(DatadogSite.US1)
+            .useSite(FlashcatSite.CN)
             .setBatchSize(BatchSize.SMALL)
             .setUploadFrequency(UploadFrequency.FREQUENT)
             .build()

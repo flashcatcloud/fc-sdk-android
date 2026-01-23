@@ -9,7 +9,7 @@ package com.datadog.sample.automotive
 import android.app.Application
 import android.util.Log
 import com.datadog.android.Datadog
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android.core.configuration.BatchSize
 import com.datadog.android.core.configuration.Configuration
 import com.datadog.android.core.configuration.UploadFrequency
@@ -61,7 +61,7 @@ class SampleAutoApplication : Application() {
             env = "test",
             variant = ""
         )
-            .useSite(DatadogSite.US1)
+            .useSite(FlashcatSite.CN)
             .setBatchSize(BatchSize.SMALL)
             .setUploadFrequency(UploadFrequency.FREQUENT)
             .build()

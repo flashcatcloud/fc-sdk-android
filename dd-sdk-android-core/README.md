@@ -1,8 +1,8 @@
-# Datadog SDK for Android - core library
+# Flashcat SDK for Android - core library
 
 ## Getting started
 
-To include the Datadog SDK for Android in your project, simply add any product you want to use to your application's `build.gradle.kts` file.
+To include the Flashcat SDK for Android in your project, simply add any product you want to use to your application's `build.gradle.kts` file.
 
 For example, in case of RUM:
 
@@ -27,7 +27,7 @@ class SampleApplication : Application() {
             env = ENV_NAME,
             variant = APP_VARIANT_NAME
         )
-            .useSite(DatadogSite.US1) // replace with the site you're targeting (e.g.: US3, EU1, …)
+            .useSite(FlashcatSite.CN) // replace with the site you're targeting (e.g.: STAGING)
             .build()
         Datadog.initialize(this, configuration, trackingConsent)
     }

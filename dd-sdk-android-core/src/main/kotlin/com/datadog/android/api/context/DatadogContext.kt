@@ -6,14 +6,14 @@
 
 package com.datadog.android.api.context
 
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android.privacy.TrackingConsent
 
 /**
  * Contains system information, as well as user-specific and feature specific context info.
- * @property site [Datadog Site](https://docs.datadoghq.com/getting_started/site/) for data uploads.
+ * @property site [Flashcat Site](https://docs.datadoghq.com/getting_started/site/) for data uploads.
  * @property clientToken the client token allowing for data uploads to
- * [Datadog Site](https://docs.datadoghq.com/getting_started/site/).
+ * [Flashcat Site](https://docs.datadoghq.com/getting_started/site/).
  * @property service the name of the service that data is generated from. Used for
  * [Unified Service Tagging](https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging).
  * @property env the name of the environment that data is generated from. Used for
@@ -37,7 +37,7 @@ import com.datadog.android.privacy.TrackingConsent
  * the parent SDK instance
  */
 data class DatadogContext(
-    val site: DatadogSite,
+    val site: FlashcatSite,
     val clientToken: String,
     val service: String,
     val env: String,

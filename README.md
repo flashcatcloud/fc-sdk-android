@@ -1,16 +1,16 @@
-# Datadog SDK for Android and Android TV
+# Flashcat SDK for Android and Android TV
 
-> A client-side Android and Android TV library to interact with Datadog.
+> A client-side Android and Android TV library to interact with Flashcat.
 
 ## Getting Started
 
 ### Log Collection
 
-See the dedicated [Datadog Android Log Collection documentation][1] to learn how to forward logs from your Android or Android TV application to Datadog.
+See the dedicated [Flashcat Android Log Collection documentation][1] to learn how to forward logs from your Android or Android TV application to Flashcat.
 
 ### Real User Monitoring
 
-See the dedicated [Datadog Android RUM Collection documentation][2] to learn how to send RUM data from your Android or Android TV application to Datadog.
+See the dedicated [Flashcat Android RUM Collection documentation][2] to learn how to send RUM data from your Android or Android TV application to Flashcat.
 
 ## Log Integrations
 
