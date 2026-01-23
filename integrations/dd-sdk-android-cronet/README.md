@@ -9,7 +9,7 @@ At the current stage, only RUM Resource reporting is supported.
 
 ```kotlin
 dependencies {
-    implementation("com.datadoghq:dd-sdk-android-cronet:<version>")
+    implementation("cloud.flashcat:dd-sdk-android-cronet:<version>")
     implementation("com.google.android.gms:play-services-cronet:<version>")
 }
 ```

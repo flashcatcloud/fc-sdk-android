@@ -15,7 +15,7 @@ import org.gradle.kotlin.dsl.findByType
 import org.gradle.plugins.signing.SigningExtension
 
 object MavenConfig {
-    const val GROUP_ID = "com.datadoghq"
+    const val GROUP_ID = "cloud.flashcat"
     const val PUBLICATION = "release"
 }
 
@@ -58,7 +58,7 @@ fun Project.publishingConfig(
                 pom {
                     name.set(projectName)
                     description.set(projectDescription)
-                    url.set("https://github.com/DataDog/dd-sdk-android/")
+                    url.set("https://github.com/flashcatcloud/fc-sdk-android/")
 
                     licenses {
                         license {
@@ -68,23 +68,23 @@ fun Project.publishingConfig(
                     }
 
                     organization {
-                        name.set("Datadog")
-                        url.set("https://www.datadoghq.com/")
+                        name.set("FlashCat")
+                        url.set("https://flashcat.cloud/")
                     }
 
                     developers {
                         developer {
-                            name.set("Datadog")
-                            email.set("info@datadoghq.com")
-                            organization.set("Datadog")
-                            organizationUrl.set("https://www.datadoghq.com/")
+                            name.set("FlashCat")
+                            email.set("support@flashcat.cloud")
+                            organization.set("FlashCat")
+                            organizationUrl.set("https://flashcat.cloud/")
                         }
                     }
 
                     scm {
-                        url.set("https://github.com/DataDog/dd-sdk-android/")
-                        connection.set("scm:git:git@github.com:Datadog/dd-sdk-android.git")
-                        developerConnection.set("scm:git:git@github.com:Datadog/dd-sdk-android.git")
+                        url.set("https://github.com/flashcatcloud/fc-sdk-android/")
+                        connection.set("scm:git:git@github.com:flashcatcloud/fc-sdk-android.git")
+                        developerConnection.set("scm:git:git@github.com:flashcatcloud/fc-sdk-android.git")
                     }
                 }
             }

@@ -7,9 +7,9 @@ following to your application's `build.gradle.kts` file.
 
 ```kotlin
 dependencies {
-    implementation("com.datadoghq:dd-sdk-android-rum:<latest-version>")
-    implementation("com.datadoghq:dd-sdk-android-trace:<latest-version>")
-    implementation("com.datadoghq:dd-sdk-android-sqldelight:<latest-version>")
+    implementation("cloud.flashcat:dd-sdk-android-rum:<latest-version>")
+    implementation("cloud.flashcat:dd-sdk-android-trace:<latest-version>")
+    implementation("cloud.flashcat:dd-sdk-android-sqldelight:<latest-version>")
 }
 ```
 

@@ -35,3 +35,6 @@ sdk_classpath
 detekt_classpath
 **/verification-metadata.xml
 !gradle/verification-metadata.xml
+
+local-docs/
+openspec/
