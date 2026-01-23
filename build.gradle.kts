@@ -14,7 +14,6 @@ import java.util.Properties
 
 plugins {
     `maven-publish`
-    alias(libs.plugins.nexusPublishGradlePlugin)
 }
 
 version = AndroidConfig.VERSION.name
@@ -46,22 +45,30 @@ allprojects {
     }
 }
 
-nexusPublishing {
-    this.repositories {
-        sonatype {
-            stagingProfileId = "378eecbbe2cf9"
-            val sonatypeUsername = System.getenv("CENTRAL_PUBLISHER_USERNAME")
-            val sonatypePassword = System.getenv("CENTRAL_PUBLISHER_PASSWORD")
-            if (sonatypeUsername != null) username.set(sonatypeUsername)
-            if (sonatypePassword != null) password.set(sonatypePassword)
-            // see https://github.com/gradle-nexus/publish-plugin#publishing-to-maven-central-via-sonatype-central
-            // For official documentation:
-            // staging repo publishing https://central.sonatype.org/publish/publish-portal-ossrh-staging-api/#configuration
-            // snapshot publishing https://central.sonatype.org/publish/publish-portal-snapshots/#publishing-via-other-methods
-            nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
-            snapshotRepositoryUrl.set(uri("https://central.sonatype.com/repository/maven-snapshots/"))
-        }
-    }
+// Maven Central Portal (2024+) configuration for publishing
+// Using Vanniktech Maven Publish Plugin with Central Portal support
+//
+// Credentials must be set via environment variables:
+// - MAVEN_CENTRAL_USERNAME: Your Maven Central Portal username (from generated token)
+// - MAVEN_CENTRAL_PASSWORD: Your Maven Central Portal password (from generated token)
+// - GPG_PRIVATE_KEY: Your GPG private key (base64 encoded)
+// - GPG_PASSWORD: Your GPG key passphrase
+//
+// Publishing workflow:
+// 1. For SNAPSHOT: ./gradlew publishAllPublicationsToMavenCentralRepository
+// 2. For RELEASE: Same command, then manually publish in Portal UI (or set automaticRelease=true)
+
+// Note: All publishing configuration is now handled by the Vanniktech plugin
+// configured in each subproject's publishingConfig() call in MavenConfig.kt
+
+// Convenience task to publish all modules
+tasks.register("publishAll") {
+    description = "Publish all modules to Maven Central Portal"
+    group = "publishing"
+
+    dependsOn(subprojects.mapNotNull {
+        it.tasks.findByName("publishAllPublicationsToMavenCentralRepository")
+    })
 }
 
 tasks.register<Delete>("clean") {
