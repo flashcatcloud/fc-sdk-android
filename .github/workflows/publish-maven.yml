@@ -3,7 +3,7 @@ name: Publish to Maven Central
 on:
   push:
     branches:
-      - publish-new # 推送到 publish-new 分支时触发 snapshot 发布
+      - publish # 推送到 publish 分支时触发 snapshot 发布
     tags:
       - "v*" # 推送 tag（如 v0.1.0）时触发正式发布
 
