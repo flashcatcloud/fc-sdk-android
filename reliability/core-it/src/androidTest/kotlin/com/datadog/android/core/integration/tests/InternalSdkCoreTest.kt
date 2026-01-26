@@ -15,7 +15,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.datadog.android.BuildConfig
 import com.datadog.android.Datadog
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android._InternalProxy
 import com.datadog.android.api.context.DeviceType
 import com.datadog.android.api.feature.Feature
@@ -431,7 +431,7 @@ class InternalSdkCoreTest : MockServerTest() {
             .setBatchSize(BatchSize.SMALL)
             .setUploadFrequency(UploadFrequency.FREQUENT)
             .setBatchProcessingLevel(BatchProcessingLevel.HIGH)
-            .useSite(forge.aValueFrom(DatadogSite::class.java))
+            .useSite(forge.aValueFrom(FlashcatSite::class.java))
             .build()
 
         // When

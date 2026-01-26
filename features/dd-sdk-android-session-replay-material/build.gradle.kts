@@ -68,7 +68,9 @@ androidLibraryConfig()
 junitConfig()
 javadocConfig()
 dependencyUpdateConfig()
-publishingConfig(
-    "Session Replay Extension Support for Material UI components."
-)
+/*
+// publishingConfig(
+//     "Session Replay Extension Support for Material UI components."
+// )
+*/
 detektCustomConfig()

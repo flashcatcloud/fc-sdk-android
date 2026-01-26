@@ -1,0 +1,139 @@
+name: Publish to Maven Central
+
+on:
+  push:
+    branches:
+      - publish # 推送到 publish 分支时触发 snapshot 发布
+    tags:
+      - "v*" # 推送 tag（如 v0.1.0）时触发正式发布
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build project
+        run: ./gradlew clean assembleRelease --stacktrace
+
+      - name: Run tests
+        run: ./gradlew testReleaseUnitTest --stacktrace
+
+      - name: Stop Gradle Daemon
+        run: ./gradlew --stop
+
+      - name: Publish to Maven Central
+        env:
+          # Maven Central Portal credentials
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          # GPG signing credentials (supports both base64 and ASCII armored)
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSWORD: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          # Determine if this is a snapshot or release build
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "📦 Publishing release version (from tag: ${{ github.ref_name }})"
+            VERSION_TYPE="release"
+          else
+            echo "📦 Publishing snapshot version (from branch: ${{ github.ref_name }})"
+            VERSION_TYPE="snapshot"
+          fi
+
+          # Publish all modules using Vanniktech plugin
+          # This will upload to Maven Central Portal
+          ./gradlew publishAllPublicationsToMavenCentralRepository --no-daemon --stacktrace
+
+          echo "✅ Publishing completed"
+
+  notify-success:
+    needs: publish
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine version type
+        id: version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "type=正式版" >> $GITHUB_OUTPUT
+            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "type=快照版" >> $GITHUB_OUTPUT
+            echo "version=${{ github.ref_name }}-SNAPSHOT" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Notify deployment success
+        uses: zcong1993/actions-ding@master
+        with:
+          dingToken: ${{ secrets.DING_TALK_TOKEN }}
+          secret: ${{ secrets.DING_TALK_SECRET }}
+          body: |
+            {
+              "msgtype": "markdown",
+              "markdown": {
+                "title": "fc-sdk-android 发布通知",
+                "text": "### ✅ fc-sdk-android 发布成功\n\n---\n\n 🔖 版本: ${{ steps.version.outputs.version }}\n\n 📦 类型: ${{ steps.version.outputs.type }}\n\n 👨‍💻 发布者: ${{ github.actor }}\n\n 🚀 [查看详情](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+              }
+            }
+
+  notify-failure:
+    needs: publish
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine version type
+        id: version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "type=正式版" >> $GITHUB_OUTPUT
+            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "type=快照版" >> $GITHUB_OUTPUT
+            echo "version=${{ github.ref_name }}-SNAPSHOT" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Notify deployment failure
+        uses: zcong1993/actions-ding@master
+        with:
+          dingToken: ${{ secrets.DING_TALK_TOKEN }}
+          secret: ${{ secrets.DING_TALK_SECRET }}
+          body: |
+            {
+              "msgtype": "markdown",
+              "markdown": {
+                "title": "fc-sdk-android 发布通知",
+                "text": "### ❌ fc-sdk-android 发布失败\n\n---\n\n 🔖 版本: ${{ steps.version.outputs.version }}\n\n 📦 类型: ${{ steps.version.outputs.type }}\n\n 👨‍💻 发布者: ${{ github.actor }}\n\n 🚀 [查看详情](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+              }
+            }

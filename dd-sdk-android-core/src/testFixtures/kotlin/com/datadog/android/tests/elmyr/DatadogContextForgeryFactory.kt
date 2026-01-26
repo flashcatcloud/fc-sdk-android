@@ -6,7 +6,7 @@
 
 package com.datadog.android.tests.elmyr
 
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android.api.context.DatadogContext
 import com.datadog.android.privacy.TrackingConsent
 import fr.xgouchet.elmyr.Forge
@@ -18,7 +18,7 @@ class DatadogContextForgeryFactory : ForgeryFactory<DatadogContext> {
 
     override fun getForgery(forge: Forge): DatadogContext {
         return DatadogContext(
-            site = forge.aValueFrom(DatadogSite::class.java),
+            site = forge.aValueFrom(FlashcatSite::class.java),
             clientToken = forge.anHexadecimalString().lowercase(Locale.US),
             service = forge.anAlphabeticalString(),
             version = forge.aStringMatching("[0-9](\\.[0-9]{1,3}){2,3}"),

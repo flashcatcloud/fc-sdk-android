@@ -6,8 +6,8 @@ To include the Datadog integration for Android TV in your project, add the follo
 
 ```kotlin
 dependencies {
-    implementation("com.datadoghq:dd-sdk-android-rum:<latest-version>")
-    implementation("com.datadoghq:dd-sdk-android-tv:<latest-version>")
+    implementation("cloud.flashcat:dd-sdk-android-rum:<latest-version>")
+    implementation("cloud.flashcat:dd-sdk-android-tv:<latest-version>")
 }
 ```
 

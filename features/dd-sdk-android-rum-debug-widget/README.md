@@ -12,7 +12,7 @@ Add the dependency to your application's `build.gradle.kts` file:
 
 ```kotlin
 dependencies {
-    implementation("com.datadoghq:dd-sdk-android-rum-debug-widget:<latest-version>")
+    implementation("cloud.flashcat:dd-sdk-android-rum-debug-widget:<latest-version>")
 }
 ```
 
@@ -45,7 +45,7 @@ Remember to remove or comment out the dependency and the `enableRumDebugWidget` 
 ```kotlin
 dependencies {
     // Remove before release
-    // implementation("com.datadoghq:dd-sdk-android-rum-debug-widget:<latest-version>")
+    // implementation("cloud.flashcat:dd-sdk-android-rum-debug-widget:<latest-version>")
 }
 ```
 

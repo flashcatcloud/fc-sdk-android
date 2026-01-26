@@ -16,7 +16,7 @@ import androidx.annotation.RequiresApi
 import androidx.annotation.WorkerThread
 import com.datadog.android.BuildConfig
 import com.datadog.android.Datadog
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android.api.InternalLogger
 import com.datadog.android.api.storage.RawBatchEvent
 import com.datadog.android.core.configuration.BackPressureStrategy
@@ -194,7 +194,7 @@ internal class CoreFeature(
     internal var ndkCrashHandler: NdkCrashHandler = NoOpNdkCrashHandler()
 
     @Volatile
-    internal var site: DatadogSite = DatadogSite.US1
+    internal var site: FlashcatSite = FlashcatSite.CN
 
     @Volatile
     internal var appBuildId: String? = null

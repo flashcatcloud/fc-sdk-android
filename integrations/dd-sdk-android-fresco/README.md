@@ -7,9 +7,9 @@ following to your application's `build.gradle.kts` file.
 
 ```kotlin
 dependencies {
-    implementation("com.datadoghq:dd-sdk-android-rum:<latest-version>")
-    implementation("com.datadoghq:dd-sdk-android-okhttp:<latest-version>")
-    implementation("com.datadoghq:dd-sdk-android-fresco:<latest-version>")
+    implementation("cloud.flashcat:dd-sdk-android-rum:<latest-version>")
+    implementation("cloud.flashcat:dd-sdk-android-okhttp:<latest-version>")
+    implementation("cloud.flashcat:dd-sdk-android-fresco:<latest-version>")
 }
 ```
 

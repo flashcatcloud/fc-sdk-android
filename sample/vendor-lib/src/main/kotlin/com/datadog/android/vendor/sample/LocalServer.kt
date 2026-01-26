@@ -9,13 +9,13 @@ package com.datadog.android.vendor.sample
 import android.content.Context
 import android.util.Log
 import com.datadog.android.Datadog
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android.core.configuration.BatchSize
 import com.datadog.android.core.configuration.Configuration
 import com.datadog.android.core.configuration.UploadFrequency
-import com.datadog.android.log.Logger
-import com.datadog.android.log.Logs
-import com.datadog.android.log.LogsConfiguration
+// import com.datadog.android.log.Logger
+// import com.datadog.android.log.Logs
+// import com.datadog.android.log.LogsConfiguration
 import com.datadog.android.privacy.TrackingConsent
 import com.datadog.android.trace.Trace
 import com.datadog.android.trace.TraceConfiguration
@@ -60,7 +60,7 @@ public class LocalServer {
             env = "prod",
             service = SERVICE_NAME
         )
-            .useSite(DatadogSite.US1)
+            .useSite(FlashcatSite.CN)
             .setBatchSize(BatchSize.SMALL)
             .setUploadFrequency(UploadFrequency.FREQUENT)
             .build()
@@ -75,15 +75,15 @@ public class LocalServer {
         instance.setUserInfo(id = context.packageName)
         instance.setAccountInfo(id = context.packageName)
 
-        val logsConfig = LogsConfiguration.Builder()
-            .build()
-        Logs.enable(logsConfig, instance)
+        // val logsConfig = LogsConfiguration.Builder()
+        //     .build()
+        // Logs.enable(logsConfig, instance)
 
         val tracesConfig = TraceConfiguration.Builder().build()
         Trace.enable(tracesConfig)
-        logger = Logger.Builder(instance)
-            .setLogcatLogsEnabled(true)
-            .build()
+        // logger = Logger.Builder(instance)
+        //     .setLogcatLogsEnabled(true)
+        //     .build()
     }
 
     /**
@@ -92,7 +92,7 @@ public class LocalServer {
      */
     @Suppress("MagicNumber")
     fun start(redirectedUrl: String) {
-        logger.i("Starting the server")
+        // logger.i("Starting the server")
         engine = embeddedServer(Netty, PORT) {
             val tracerProvider = OtelTracerProvider.Builder().setService(SERVICE_NAME).build()
             val tracer = tracerProvider.get("ktor")
@@ -101,6 +101,7 @@ public class LocalServer {
             install(SSE)
             routing {
                 get(GET_PATH) {
+                    /*
                     logger.i(
                         "Redirecting request",
                         attributes = mapOf(
@@ -108,6 +109,7 @@ public class LocalServer {
                             "redirection.to" to redirectedUrl
                         )
                     )
+                    */
                     val redirectSpan = tracer.spanBuilder("redirect").startSpan()
                     redirectSpan.setAttribute("redirection.from", LOCAL_URL)
                     redirectSpan.setAttribute("redirection.to", redirectedUrl)
@@ -134,10 +136,10 @@ public class LocalServer {
      * Stop the redirection.
      */
     fun stop() {
-        logger.i("Stopping the server")
+        // logger.i("Stopping the server")
         Thread {
             engine?.stop(SHUTDOWN_MS, STOP_TIMEOUT_MS)
-            logger.i("Server stopped")
+            // logger.i("Server stopped")
         }.start()
     }
 

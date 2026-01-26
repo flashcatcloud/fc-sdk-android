@@ -20,7 +20,43 @@ object AndroidConfig {
     const val MIN_SDK_FOR_AUTO = 29
     const val BUILD_TOOLS_VERSION = "36.0.0"
 
-    val VERSION = Version(3, 6, 0, Version.Type.Snapshot)
+    /**
+     * Determine version based on CI environment variables (GitHub Actions)
+     * - Tag (GITHUB_REF_TYPE == "tag") → Release version parsed from tag (e.g., v0.3.0 -> 0.3.0)
+     * - publish-new branch → Snapshot version (e.g., 0.3.0-SNAPSHOT)
+     * - Other → Default snapshot version for local development
+     */
+    val VERSION = determineVersion()
+
+    private fun determineVersion(): Version {
+        // Check GitHub Actions variables
+        val githubRefType = System.getenv("GITHUB_REF_TYPE")
+        val githubRefName = System.getenv("GITHUB_REF_NAME")
+
+        return when {
+            // GitHub Actions: ref type is tag and ref name starts with 'v'
+            githubRefType == "tag" && githubRefName?.startsWith("v") == true -> {
+                parseVersionFromTag(githubRefName)
+            }
+            // Local development or other branches → Snapshot
+            else -> {
+                Version(0, 3, 0, Version.Type.Snapshot)
+            }
+        }
+    }
+
+    private fun parseVersionFromTag(tag: String): Version {
+        // Remove 'v' prefix if present (e.g., v0.3.0 -> 0.3.0)
+        val versionString = tag.removePrefix("v").trim()
+        val parts = versionString.split(".")
+
+        return Version(
+            major = parts.getOrNull(0)?.toIntOrNull() ?: 0,
+            minor = parts.getOrNull(1)?.toIntOrNull() ?: 0,
+            hotfix = parts.getOrNull(2)?.toIntOrNull() ?: 0,
+            type = Version.Type.Release
+        )
+    }
 }
 
 // TODO RUM-628 Switch to Java 17 bytecode

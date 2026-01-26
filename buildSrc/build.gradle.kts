@@ -35,6 +35,7 @@ dependencies {
     implementation(libs.dokkaGradlePlugin)
     implementation(libs.dependencyLicenseGradlePlugin)
     implementation(libs.kover)
+    implementation(libs.vanniktechPublishPlugin)
 
     // check api surface
     implementation(libs.kotlinGrammarParser)

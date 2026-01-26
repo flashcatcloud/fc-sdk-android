@@ -40,7 +40,7 @@ Trace.enable(
 1. Add the `OpenTelemetry` dependency to your `build.gradle.kts`:
 
 ```kotlin
-implementation(project("com.datadoghq:dd-sdk-android-trace-otel:x.x.x"))
+implementation(project("cloud.flashcat:dd-sdk-android-trace-otel:x.x.x"))
 ```
 
 2. Replace the `OpenTracing` configuration:
@@ -153,7 +153,7 @@ Replacement hints:
 
 ### OkHttp instrumentation changes
 
-The OkHttp instrumentation (`com.datadoghq:dd-sdk-android-okhttp:x.x.x`) doesn't require desugaring support. However few migration actions may be necessary.
+The OkHttp instrumentation (`cloud.flashcat:dd-sdk-android-okhttp:x.x.x`) doesn't require desugaring support. However few migration actions may be necessary.
 
 The default sample rate for the `traceSampler` got increased to 100% with the Android SDK version `3.0.0`.
 
@@ -250,17 +250,17 @@ The main changes introduced in SDK 2.0 compared to 1.x are:
 
 1. All relevant products (RUM, Trace, Logs, etc.) are now extracted into different modules. That allows you to integrate only what is needed into your application.
 
-Whereas all products in version 1.x were contained in the single artifact `com.datadoghq:dd-sdk-android:x.x.x`, you now need to adopt the following artifacts:
+Whereas all products in version 1.x were contained in the single artifact `cloud.flashcat:dd-sdk-android:x.x.x`, you now need to adopt the following artifacts:
 
-* RUM: `com.datadoghq:dd-sdk-android-rum:x.x.x`
-* Logs: `com.datadoghq:dd-sdk-android-logs:x.x.x`
-* Trace: `com.datadoghq:dd-sdk-android-trace:x.x.x`
-* WebView Tracking: `com.datadoghq:dd-sdk-android-webview:x.x.x`
-* OkHttp instrumentation: `com.datadoghq:dd-sdk-android-okhttp:x.x.x`
+* RUM: `cloud.flashcat:dd-sdk-android-rum:x.x.x`
+* Logs: `cloud.flashcat:dd-sdk-android-logs:x.x.x`
+* Trace: `cloud.flashcat:dd-sdk-android-trace:x.x.x`
+* WebView Tracking: `cloud.flashcat:dd-sdk-android-webview:x.x.x`
+* OkHttp instrumentation: `cloud.flashcat:dd-sdk-android-okhttp:x.x.x`
 
 **Note**: If you utilize NDK Crash Reporting and WebView Tracking, you also need to add RUM and/or Logs artifacts to be able to report events to RUM and/or Logs respectively.
 
-Reference to the `com.datadoghq:dd-sdk-android` artifact should be removed from your Gradle buildscript, this artifact doesn't exist anymore.
+Reference to the `cloud.flashcat:dd-sdk-android` artifact should be removed from your Gradle buildscript, this artifact doesn't exist anymore.
 
 **Note**: The Maven coordinates of all the other artifacts stay the same.
 
@@ -316,7 +316,7 @@ All the classes related to the Logs product are now strictly contained in the `c
 To use Logs product, import the following artifact:
 
 ```kotlin
-implementation("com.datadoghq:dd-sdk-android-logs:x.x.x")
+implementation("cloud.flashcat:dd-sdk-android-logs:x.x.x")
 ```
 
 You can enable the Logs product with the following snippet:
@@ -352,7 +352,7 @@ All the classes related to the Trace product are now strictly contained in the `
 To use the Trace product, import the following artifact:
 
 ```kotlin
-implementation("com.datadoghq:dd-sdk-android-trace:x.x.x")
+implementation("cloud.flashcat:dd-sdk-android-trace:x.x.x")
 ```
 
 Enable the Trace product with the following snippet:
@@ -387,7 +387,7 @@ All classes related to the RUM product are now strictly contained in the `com.da
 To use the RUM product, import the following artifact:
 
 ```kotlin
-implementation("com.datadoghq:dd-sdk-android-rum:x.x.x")
+implementation("cloud.flashcat:dd-sdk-android-rum:x.x.x")
 ```
 
 The RUM product can be enabled with the following snippet:
@@ -429,7 +429,7 @@ API changes:
 
 ### NDK Crash Reporting changes
 
-The artifact name stays the same as before: `com.datadoghq:dd-sdk-android-ndk:x.x.x`
+The artifact name stays the same as before: `cloud.flashcat:dd-sdk-android-ndk:x.x.x`
 
 NDK Crash Reporting can be enabled using the following snippet:
 
@@ -443,7 +443,7 @@ This configuration replaces the `com.datadog.android.core.configuration.Configur
 
 ### WebView Tracking changes
 
-The artifact name stays the same as before: `com.datadoghq:dd-sdk-android-webview:x.x.x`
+The artifact name stays the same as before: `cloud.flashcat:dd-sdk-android-webview:x.x.x`
 
 You can enable WebView Tracking with the following snippet:
 
@@ -466,7 +466,7 @@ API changes:
 In order to be able to use OkHttp Tracking you need to import the following artifact:
 
 ```kotlin
-implementation("com.datadoghq:dd-sdk-android-okhttp:x.x.x")
+implementation("cloud.flashcat:dd-sdk-android-okhttp:x.x.x")
 ```
 
 OkHttp instrumentation now supports the case when Datadog SDK is initialized after the OkHttp client, allowing you to create `com.datadog.android.okhttp.DatadogEventListener`, `com.datadog.android.okhttp.DatadogInterceptor`, and `com.datadog.android.okhttp.trace.TracingInterceptor` before Datadog SDK. OkHttp instrumentation starts reporting events to Datadog once Datadog SDK is initialized.

@@ -70,7 +70,7 @@ android {
 
 dependencies {
 
-    implementation(project(":features:dd-sdk-android-logs"))
+    // implementation(project(":features:dd-sdk-android-logs"))
     implementation(project(":features:dd-sdk-android-trace"))
     implementation(project(":features:dd-sdk-android-trace-otel"))
     implementation(project(":integrations:dd-sdk-android-okhttp"))
