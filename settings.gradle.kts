@@ -7,6 +7,7 @@
 // CORE LIBRARY
 include(":dd-sdk-android-core")
 include(":dd-sdk-android-internal")
+include(":dd-sdk-android-dependencies")
 
 // MAIN FEATURE LIBRARIES
 include(":features:dd-sdk-android-trace-api")
@@ -28,7 +29,7 @@ include(":features:dd-sdk-android-session-replay-material-noop")
 include(":features:dd-sdk-android-trace-otel")
 // include(":features:dd-sdk-android-flags")
 // include(":features:dd-sdk-android-flags-openfeature")
-include(":features:dd-sdk-android-profiling")
+ include(":features:dd-sdk-android-profiling")
 
 // INTEGRATION LIBRARIES
 include(":integrations:dd-sdk-android-apollo")

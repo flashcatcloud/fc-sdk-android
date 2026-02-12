@@ -3,12 +3,12 @@
 apollo = "4.3.3"
 cronetApi = "141.7340.3"
 cronetPlayServices = "18.1.1"
-gson = "2.10.1"
+gson = "2.8.9"
 kotlin = "2.0.21"
 kotlinSP = "2.0.21-1.0.28"
 kronosNTP = "0.0.1-alpha11"
 kotlinxSerialization = "1.6.3"
-okHttp = "4.12.0"
+okHttp = "4.9.0"
 
 # Android
 adapterDelegates = "4.3.2"
@@ -17,21 +17,21 @@ androidToolsPlugin = "8.13.2"
 androidXAnnotations = "1.9.1"
 androidXAppCompat = "1.4.2" # Next version will bring coroutines
 androidXCar = "1.4.0"
-androidXCollection = "1.4.5"
+androidXCollection = "1.2.0"
 androidXComposeBom = "2023.10.01" # Next version will bring coroutines
 androidXComposeNavigation = "2.6.0"
 androidXComposeRuntime = "1.5.14"
 androidXConstraintLayout = "2.0.4"
-androidXCore = "1.17.0"
+androidXCore = "1.12.0"
 androidXFragment = "1.2.4"
 androidXLeanback = "1.0.0"
 androidXLifecycle = "2.8.7"
 androidXLegacy = "1.0.0"
 androidXMetrics = "1.0.0-beta03"
 androidXMultidex = "2.0.1"
-androidXNavigation = "2.7.7"
-androidXRecyclerView = "1.3.2"
-androidXWorkManager = "2.8.1" # Next version will bring coroutines
+androidXNavigation = "2.5.3"
+androidXRecyclerView = "1.2.1"
+androidXWorkManager = "2.7.1" # Next version will bring coroutines
 googleAccompanist = "0.20.2"
 googleMaterial = "1.3.0"
 dagger = "2.56.2"
@@ -70,6 +70,7 @@ versionsGradlePlugin = "0.46.0"
 nexusPublishGradlePlugin = "2.0.0"
 datadogPlugin = "1.21.0"
 vanniktech = "0.33.0"
+shadow = "8.3.5"
 
 kotlinPoet = "1.14.2"
 kotlinGrammarParser = "41b00c0"
@@ -123,6 +124,7 @@ dependencyLicenseGradlePlugin = { module = "com.datadoghq:dependency-license", v
 versionsGradlePlugin = { module = "com.github.ben-manes:gradle-versions-plugin", version.ref = "versionsGradlePlugin" }
 kotlinxSerializationPlugin = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
 vanniktechPublishPlugin = { module = "com.vanniktech:gradle-maven-publish-plugin", version.ref = "vanniktech" }
+shadowPlugin = { module = "com.gradleup.shadow:shadow-gradle-plugin", version.ref = "shadow" }
 
 # Annotation processors
 glideCompiler = { module = "com.github.bumptech.glide:compiler", version.ref = "glide" }
@@ -387,3 +389,4 @@ datadogGradlePlugin = { id = "com.datadoghq.dd-sdk-android-gradle-plugin", versi
 composeCompilerPlugin = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 apolloPlugin = { id = "com.apollographql.apollo", version.ref = "apollo" }
 vanniktechPublish = { id = "com.vanniktech.maven.publish.base", version.ref = "vanniktech" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }

@@ -66,7 +66,7 @@ dependencies {
     implementation(libs.kotlinReflect)
     implementation(libs.bundles.jUnit5)
     implementation(libs.bundles.testTools)
-    implementation(libs.gson)
+    compileOnly(libs.gson)
     implementation(libs.mockitoKotlin)
 
     testImplementation(libs.bundles.jUnit5)

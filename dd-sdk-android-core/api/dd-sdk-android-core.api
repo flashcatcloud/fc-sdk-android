@@ -890,6 +890,11 @@ public final class com/datadog/android/core/internal/utils/JsonSerializer {
 	public final fun toJsonElement (Ljava/lang/Object;)Lcom/google/gson/JsonElement;
 }
 
+public final class com/datadog/android/core/internal/utils/WorkManagerUtilsKt {
+	public static final fun getWorkManagerOrNull (Landroid/content/Context;)Landroidx/work/WorkManager;
+	public static final fun isInitialized (Landroid/content/Context;)Z
+}
+
 public final class com/datadog/android/core/metrics/MethodCallSamplingRate : java/lang/Enum {
 	public static final field ALL Lcom/datadog/android/core/metrics/MethodCallSamplingRate;
 	public static final field HIGH Lcom/datadog/android/core/metrics/MethodCallSamplingRate;

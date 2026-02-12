@@ -95,8 +95,11 @@ fun Project.publishingConfig(
     }
 
     signingExtension.apply {
-        // Signing is required unless explicitly skipped
-        isRequired = !hasProperty("dd-skip-signing")
+        // Signing is required unless explicitly skipped or publishing to maven local
+        val isLocalPublish = gradle.startParameter.taskNames.any {
+            it.contains("publishToMavenLocal", ignoreCase = true)
+        }
+        isRequired = !hasProperty("dd-skip-signing") && !isLocalPublish
 
         val privateKey = System.getenv("GPG_PRIVATE_KEY")
         val password = System.getenv("GPG_PASSWORD")

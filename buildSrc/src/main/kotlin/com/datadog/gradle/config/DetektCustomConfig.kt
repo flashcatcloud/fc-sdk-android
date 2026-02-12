@@ -122,7 +122,13 @@ fun Project.detektCustomConfig() {
                 }
             }
 
-        val externalDependencies = File("${projectDir.absolutePath}/detekt_classpath").readText()
+        val externalDependenciesFile = File("${projectDir.absolutePath}/detekt_classpath")
+        val externalDependencies = if (externalDependenciesFile.exists()) {
+            externalDependenciesFile.readText()
+        } else {
+            logger.warn("Detekt classpath file missing: ${externalDependenciesFile.path}")
+            ""
+        }
         val moduleDependenciesClasses = moduleDependencies.map {
             "${rootDir.absolutePath}${it.replace(':', '/')}/build/extracted/classes.jar"
         }.joinToString(":")
@@ -130,8 +136,13 @@ fun Project.detektCustomConfig() {
         val dependencies = if (moduleDependenciesClasses.isBlank()) {
             externalDependencies
         } else {
-            "$externalDependencies:$moduleDependenciesClasses"
+            if (externalDependencies.isBlank()) {
+                moduleDependenciesClasses
+            } else {
+                "$externalDependencies:$moduleDependenciesClasses"
+            }
         }
+
 
         args("-cp", dependencies)
     }
