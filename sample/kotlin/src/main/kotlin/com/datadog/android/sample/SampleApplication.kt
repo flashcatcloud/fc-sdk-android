@@ -24,9 +24,9 @@ import com.datadog.android.core.configuration.UploadFrequency
 // import com.datadog.android.flags.FlagsConfiguration
 // import com.datadog.android.flags.openfeature.asOpenFeatureProvider
 import com.datadog.android.insights.enableRumDebugWidget
-// import com.datadog.android.log.Logger
-// import com.datadog.android.log.Logs
-// import com.datadog.android.log.LogsConfiguration
+import com.datadog.android.log.Logger
+import com.datadog.android.log.Logs
+import com.datadog.android.log.LogsConfiguration
 import com.datadog.android.ndk.NdkCrashReports
 import com.datadog.android.okhttp.DatadogEventListener
 import com.datadog.android.okhttp.DatadogInterceptor
@@ -47,15 +47,15 @@ import com.datadog.android.sample.picture.CoilImageLoader
 import com.datadog.android.sample.picture.FrescoImageLoader
 import com.datadog.android.sample.picture.PicassoImageLoader
 import com.datadog.android.sample.user.UserFragment
-// import com.datadog.android.sessionreplay.ImagePrivacy
-// import com.datadog.android.sessionreplay.SessionReplay
-// import com.datadog.android.sessionreplay.SessionReplayConfiguration
-// import com.datadog.android.sessionreplay.SessionReplayPrivacy
-// import com.datadog.android.sessionreplay.SystemRequirementsConfiguration
-// import com.datadog.android.sessionreplay.TextAndInputPrivacy
-// import com.datadog.android.sessionreplay.TouchPrivacy
-// import com.datadog.android.sessionreplay.compose.ComposeExtensionSupport
-// import com.datadog.android.sessionreplay.material.MaterialExtensionSupport
+import com.datadog.android.sessionreplay.ImagePrivacy
+import com.datadog.android.sessionreplay.SessionReplay
+import com.datadog.android.sessionreplay.SessionReplayConfiguration
+import com.datadog.android.sessionreplay.SessionReplayPrivacy
+import com.datadog.android.sessionreplay.SystemRequirementsConfiguration
+import com.datadog.android.sessionreplay.TextAndInputPrivacy
+import com.datadog.android.sessionreplay.TouchPrivacy
+import com.datadog.android.sessionreplay.compose.ComposeExtensionSupport
+import com.datadog.android.sessionreplay.material.MaterialExtensionSupport
 import com.datadog.android.timber.DatadogTree
 import com.datadog.android.trace.DatadogTracing
 import com.datadog.android.trace.GlobalDatadogTracer

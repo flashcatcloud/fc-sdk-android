@@ -1,0 +1,5 @@
+class com.datadog.android.sessionreplay.material.MaterialExtensionSupport : com.datadog.android.sessionreplay.ExtensionSupport
+  override fun getCustomViewMappers(): List<com.datadog.android.sessionreplay.MapperTypeWrapper<*>>
+  override fun getCustomDrawableMapper(): List<Any>
+  override fun getOptionSelectorDetectors(): List<Any>
+  override fun name(): String

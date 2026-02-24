@@ -74,7 +74,7 @@ android {
         unitTests.isReturnDefaultValues = true
     }
 
-    flavorDimensions += listOf("site")
+    flavorDimensions += listOf("site", "sdk")
     productFlavors {
         val regions = arrayOf("cn", "staging")
 
@@ -84,6 +84,15 @@ android {
                 dimension = "site"
                 configureFlavorForSampleApp(project, this, project.rootDir)
             }
+        }
+
+        register("full") {
+            dimension = "sdk"
+            isDefault = true
+        }
+
+        register("noop") {
+            dimension = "sdk"
         }
     }
 
@@ -149,7 +158,9 @@ datadog {
 
 dependencies {
     // Datadog Libraries
-    // implementation(project(":features:dd-sdk-android-logs"))
+    "fullImplementation"(project(":features:dd-sdk-android-logs"))
+    "noopImplementation"(project(":features:dd-sdk-android-logs-noop"))
+
     // implementation(project(":features:dd-sdk-android-flags"))
     // implementation(project(":features:dd-sdk-android-flags-openfeature"))
     implementation(project(":features:dd-sdk-android-rum"))
@@ -158,10 +169,17 @@ dependencies {
     implementation(project(":features:dd-sdk-android-trace-otel"))
     implementation(project(":features:dd-sdk-android-ndk"))
     implementation(project(":features:dd-sdk-android-webview"))
-    // implementation(project(":features:dd-sdk-android-session-replay"))
-    // implementation(project(":features:dd-sdk-android-session-replay-material"))
-    // implementation(project(":features:dd-sdk-android-session-replay-compose"))
-    implementation(project(":features:dd-sdk-android-profiling"))
+
+    "fullImplementation"(project(":features:dd-sdk-android-session-replay"))
+    "fullImplementation"(project(":features:dd-sdk-android-session-replay-material"))
+    "fullImplementation"(project(":features:dd-sdk-android-session-replay-compose"))
+
+    "noopImplementation"(project(":features:dd-sdk-android-session-replay-noop"))
+    "noopImplementation"(project(":features:dd-sdk-android-session-replay-material-noop"))
+    "noopImplementation"(project(":features:dd-sdk-android-session-replay-compose-noop"))
+
+    "fullImplementation"(project(":features:dd-sdk-android-profiling"))
+    "noopImplementation"(project(":features:dd-sdk-android-profiling-noop"))
     implementation(project(":integrations:dd-sdk-android-trace-coroutines"))
     implementation(project(":integrations:dd-sdk-android-rum-coroutines"))
     implementation(project(":integrations:dd-sdk-android-rx"))
