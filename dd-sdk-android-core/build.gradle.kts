@@ -131,6 +131,9 @@ dependencies {
         }
     }
     testImplementation(testFixtures(project(":dd-sdk-android-internal")))
+    testImplementation(libs.gson)
+    testImplementation(libs.okHttp)
+    testImplementation(libs.androidXWorkManager)
     testImplementation(libs.bundles.jUnit5)
     testImplementation(libs.bundles.testTools)
     unmock(libs.robolectric)

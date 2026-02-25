@@ -83,6 +83,7 @@ dependencies {
     }
 
     testImplementation(libs.bundles.jUnit5)
+    testImplementation(libs.gson)
     testImplementation(libs.bundles.testTools)
     testImplementation(libs.okHttp)
     testImplementation(libs.okHttpMock)
