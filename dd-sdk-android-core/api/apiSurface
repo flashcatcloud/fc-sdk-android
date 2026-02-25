@@ -344,6 +344,8 @@ fun <T> java.util.concurrent.Future<T>?.getSafe(String, com.datadog.android.api.
 object com.datadog.android.core.internal.utils.JsonSerializer
   fun toJsonElement(Any?): com.google.gson.JsonElement
   fun Map<String, Any?>.safeMapValuesToJson(com.datadog.android.api.InternalLogger): Map<String, com.google.gson.JsonElement>
+fun isInitialized(android.content.Context): Boolean
+fun getWorkManagerOrNull(android.content.Context): androidx.work.WorkManager?
 enum com.datadog.android.core.metrics.MethodCallSamplingRate
   constructor(Float)
   - ALL

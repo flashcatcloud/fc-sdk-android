@@ -19,14 +19,14 @@ import com.datadog.android.core.configuration.BackPressureStrategy
 import com.datadog.android.core.configuration.BatchSize
 import com.datadog.android.core.configuration.Configuration
 import com.datadog.android.core.configuration.UploadFrequency
-// import com.datadog.android.flags.Flags
-// import com.datadog.android.flags.FlagsClient
-// import com.datadog.android.flags.FlagsConfiguration
-// import com.datadog.android.flags.openfeature.asOpenFeatureProvider
+import com.datadog.android.flags.Flags
+import com.datadog.android.flags.FlagsClient
+import com.datadog.android.flags.FlagsConfiguration
+import com.datadog.android.flags.openfeature.asOpenFeatureProvider
 import com.datadog.android.insights.enableRumDebugWidget
-// import com.datadog.android.log.Logger
-// import com.datadog.android.log.Logs
-// import com.datadog.android.log.LogsConfiguration
+import com.datadog.android.log.Logger
+import com.datadog.android.log.Logs
+import com.datadog.android.log.LogsConfiguration
 import com.datadog.android.ndk.NdkCrashReports
 import com.datadog.android.okhttp.DatadogEventListener
 import com.datadog.android.okhttp.DatadogInterceptor
@@ -47,15 +47,15 @@ import com.datadog.android.sample.picture.CoilImageLoader
 import com.datadog.android.sample.picture.FrescoImageLoader
 import com.datadog.android.sample.picture.PicassoImageLoader
 import com.datadog.android.sample.user.UserFragment
-// import com.datadog.android.sessionreplay.ImagePrivacy
-// import com.datadog.android.sessionreplay.SessionReplay
-// import com.datadog.android.sessionreplay.SessionReplayConfiguration
-// import com.datadog.android.sessionreplay.SessionReplayPrivacy
-// import com.datadog.android.sessionreplay.SystemRequirementsConfiguration
-// import com.datadog.android.sessionreplay.TextAndInputPrivacy
-// import com.datadog.android.sessionreplay.TouchPrivacy
-// import com.datadog.android.sessionreplay.compose.ComposeExtensionSupport
-// import com.datadog.android.sessionreplay.material.MaterialExtensionSupport
+import com.datadog.android.sessionreplay.ImagePrivacy
+import com.datadog.android.sessionreplay.SessionReplay
+import com.datadog.android.sessionreplay.SessionReplayConfiguration
+import com.datadog.android.sessionreplay.SessionReplayPrivacy
+import com.datadog.android.sessionreplay.SystemRequirementsConfiguration
+import com.datadog.android.sessionreplay.TextAndInputPrivacy
+import com.datadog.android.sessionreplay.TouchPrivacy
+import com.datadog.android.sessionreplay.compose.ComposeExtensionSupport
+import com.datadog.android.sessionreplay.material.MaterialExtensionSupport
 import com.datadog.android.timber.DatadogTree
 import com.datadog.android.trace.DatadogTracing
 import com.datadog.android.trace.GlobalDatadogTracer
@@ -170,7 +170,7 @@ class SampleApplication : Application() {
         )
 
         // initializeSessionReplay()
-        // initializeLogs()
+        initializeLogs()
         initializeTraces()
 
         NdkCrashReports.enable()
@@ -180,7 +180,7 @@ class SampleApplication : Application() {
 
         Rum.enable(createRumConfiguration())
 
-        // initializeFlags()
+        initializeFlags()
 
         GlobalRumMonitor.get().debug = true
 
@@ -237,13 +237,17 @@ class SampleApplication : Application() {
         )
     }
 
-    /*
     private fun initializeFlags() {
-        // ... (all flags init code)
-    }
-    */
+        val flagsConfig = FlagsConfiguration.Builder().build()
+        Flags.enable(flagsConfig)
 
-    /*
+        val client = FlagsClient.Builder().build()
+        val provider = client.asOpenFeatureProvider()
+        applicationScope.launch {
+            OpenFeatureAPI.setProviderAndWait(provider)
+        }
+    }
+
     private fun initializeLogs() {
         val logsConfig = LogsConfiguration.Builder().apply {
             if (BuildConfig.DD_OVERRIDE_LOGS_URL.isNotBlank()) {
@@ -252,7 +256,6 @@ class SampleApplication : Application() {
         }.build()
         Logs.enable(logsConfig)
     }
-    */
 
     /*
     private fun initializeSessionReplay() {
@@ -382,11 +385,15 @@ class SampleApplication : Application() {
     }
 
     @Suppress("TooGenericExceptionCaught", "CheckInternal")
-    /*
     private fun initializeTimber() {
-        // ... (timber init code)
+        val logger = Logger.Builder()
+            .setName("timber")
+            .setNetworkInfoEnabled(true)
+            .setLogcatLogsEnabled(true)
+            .build()
+
+        Timber.plant(DatadogTree(logger))
     }
-    */
 
     companion object {
         private const val USE_FGM_PCT = 10

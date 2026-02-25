@@ -44,8 +44,8 @@ android {
 dependencies {
     implementation(project(":features:dd-sdk-android-rum"))
     implementation(libs.kotlin)
-    implementation(libs.okHttp)
-    implementation(libs.bundles.fresco)
+    compileOnly(libs.okHttp)
+    compileOnly(libs.bundles.fresco)
 
     testImplementation(project(":tools:unit")) {
         attributes {

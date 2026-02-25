@@ -74,7 +74,7 @@ android {
         unitTests.isReturnDefaultValues = true
     }
 
-    flavorDimensions += listOf("site")
+    flavorDimensions += listOf("site", "sdk")
     productFlavors {
         val regions = arrayOf("cn", "staging")
 
@@ -84,6 +84,15 @@ android {
                 dimension = "site"
                 configureFlavorForSampleApp(project, this, project.rootDir)
             }
+        }
+
+        register("full") {
+            dimension = "sdk"
+            isDefault = true
+        }
+
+        register("noop") {
+            dimension = "sdk"
         }
     }
 
@@ -149,23 +158,34 @@ datadog {
 
 dependencies {
     // Datadog Libraries
-    // implementation(project(":features:dd-sdk-android-logs"))
-    // implementation(project(":features:dd-sdk-android-flags"))
-    // implementation(project(":features:dd-sdk-android-flags-openfeature"))
+    "fullImplementation"(project(":features:dd-sdk-android-logs"))
+    "noopImplementation"(project(":features:dd-sdk-android-logs-noop"))
+
+    "fullImplementation"(project(":features:dd-sdk-android-flags"))
+    "fullImplementation"(project(":features:dd-sdk-android-flags-openfeature"))
+    "noopImplementation"(project(":features:dd-sdk-android-flags-noop"))
+    "noopImplementation"(project(":features:dd-sdk-android-flags-openfeature-noop"))
     implementation(project(":features:dd-sdk-android-rum"))
     implementation(project(":features:dd-sdk-android-rum-debug-widget"))
     implementation(project(":features:dd-sdk-android-trace"))
     implementation(project(":features:dd-sdk-android-trace-otel"))
     implementation(project(":features:dd-sdk-android-ndk"))
     implementation(project(":features:dd-sdk-android-webview"))
-    // implementation(project(":features:dd-sdk-android-session-replay"))
-    // implementation(project(":features:dd-sdk-android-session-replay-material"))
-    // implementation(project(":features:dd-sdk-android-session-replay-compose"))
-    implementation(project(":features:dd-sdk-android-profiling"))
+
+    "fullImplementation"(project(":features:dd-sdk-android-session-replay"))
+    "fullImplementation"(project(":features:dd-sdk-android-session-replay-material"))
+    "fullImplementation"(project(":features:dd-sdk-android-session-replay-compose"))
+
+    "noopImplementation"(project(":features:dd-sdk-android-session-replay-noop"))
+    "noopImplementation"(project(":features:dd-sdk-android-session-replay-material-noop"))
+    "noopImplementation"(project(":features:dd-sdk-android-session-replay-compose-noop"))
+
+    "fullImplementation"(project(":features:dd-sdk-android-profiling"))
+    "noopImplementation"(project(":features:dd-sdk-android-profiling-noop"))
     implementation(project(":integrations:dd-sdk-android-trace-coroutines"))
     implementation(project(":integrations:dd-sdk-android-rum-coroutines"))
     implementation(project(":integrations:dd-sdk-android-rx"))
-    // implementation(project(":integrations:dd-sdk-android-timber"))
+    implementation(project(":integrations:dd-sdk-android-timber"))
     implementation(project(":integrations:dd-sdk-android-coil"))
     implementation(project(":integrations:dd-sdk-android-coil3"))
     implementation(project(":integrations:dd-sdk-android-glide"))
@@ -177,11 +197,24 @@ dependencies {
     implementation(project(":integrations:dd-sdk-android-okhttp-otel"))
     implementation(project(":tools:benchmark"))
 
+    configurations.all {
+        if (name.contains("Noop", ignoreCase = true)) {
+            resolutionStrategy.dependencySubstitution {
+                substitute(project(":features:dd-sdk-android-logs"))
+                    .using(project(":features:dd-sdk-android-logs-noop"))
+                substitute(project(":features:dd-sdk-android-flags"))
+                    .using(project(":features:dd-sdk-android-flags-noop"))
+                substitute(project(":features:dd-sdk-android-flags-openfeature"))
+                    .using(project(":features:dd-sdk-android-flags-openfeature-noop"))
+            }
+        }
+    }
+
     // Desugaring SDK
     coreLibraryDesugaring(libs.androidDesugaringSdk)
 
     // Sample Vendor Library
-    // implementation(project(":sample:vendor-lib"))
+    implementation(project(":sample:vendor-lib"))
 
     implementation(libs.kotlin)
 

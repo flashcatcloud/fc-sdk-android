@@ -44,7 +44,7 @@ android {
 dependencies {
     implementation(project(":features:dd-sdk-android-rum"))
     implementation(libs.kotlin)
-    implementation(libs.okHttp)
+    compileOnly(libs.okHttp)
     implementation(libs.rxJava3)
 
     testImplementation(project(":tools:unit")) {

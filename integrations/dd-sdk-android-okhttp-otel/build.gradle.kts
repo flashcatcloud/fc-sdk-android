@@ -42,7 +42,7 @@ android {
 }
 
 dependencies {
-    implementation(libs.okHttp)
+    compileOnly(libs.okHttp)
     implementation(libs.kotlin)
 
     implementation(project(":features:dd-sdk-android-trace"))

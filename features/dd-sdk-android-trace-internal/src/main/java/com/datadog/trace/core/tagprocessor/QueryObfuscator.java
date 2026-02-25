@@ -5,9 +5,9 @@ import com.datadog.trace.bootstrap.instrumentation.api.Tags;
 import com.datadog.trace.logger.Logger;
 import com.datadog.trace.logger.LoggerFactory;
 import com.datadog.trace.util.Strings;
-import com.google.re2j.Matcher;
-import com.google.re2j.Pattern;
-import com.google.re2j.PatternSyntaxException;
+import cloud.flashcat.shaded.re2j.Matcher;
+import cloud.flashcat.shaded.re2j.Pattern;
+import cloud.flashcat.shaded.re2j.PatternSyntaxException;
 
 import java.util.Map;
 

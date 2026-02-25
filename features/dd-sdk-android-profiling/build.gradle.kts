@@ -47,10 +47,12 @@ dependencies {
     api(project(":dd-sdk-android-core"))
     implementation(project(":dd-sdk-android-internal"))
     implementation(libs.kotlin)
-    implementation(libs.androidXCore)
-    implementation(libs.androidXCoreKtx)
-    implementation(libs.gson)
-    implementation(libs.okHttp)
+    implementation("androidx.core:core:1.15.0")
+    implementation("androidx.core:core-ktx:1.15.0")
+//    implementation(libs.androidXCore)
+//    implementation(libs.androidXCoreKtx)
+    compileOnly(libs.gson)
+    compileOnly(libs.okHttp)
 
     // Generate NoOp implementations
     ksp(project(":tools:noopfactory"))
