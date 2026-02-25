@@ -19,10 +19,10 @@ import com.datadog.android.core.configuration.BackPressureStrategy
 import com.datadog.android.core.configuration.BatchSize
 import com.datadog.android.core.configuration.Configuration
 import com.datadog.android.core.configuration.UploadFrequency
-// import com.datadog.android.flags.Flags
-// import com.datadog.android.flags.FlagsClient
-// import com.datadog.android.flags.FlagsConfiguration
-// import com.datadog.android.flags.openfeature.asOpenFeatureProvider
+import com.datadog.android.flags.Flags
+import com.datadog.android.flags.FlagsClient
+import com.datadog.android.flags.FlagsConfiguration
+import com.datadog.android.flags.openfeature.asOpenFeatureProvider
 import com.datadog.android.insights.enableRumDebugWidget
 import com.datadog.android.log.Logger
 import com.datadog.android.log.Logs
@@ -180,7 +180,7 @@ class SampleApplication : Application() {
 
         Rum.enable(createRumConfiguration())
 
-        // initializeFlags()
+        initializeFlags()
 
         GlobalRumMonitor.get().debug = true
 
@@ -237,11 +237,16 @@ class SampleApplication : Application() {
         )
     }
 
-    /*
     private fun initializeFlags() {
-        // ... (all flags init code)
+        val flagsConfig = FlagsConfiguration.Builder().build()
+        Flags.enable(flagsConfig)
+
+        val client = FlagsClient.Builder().build()
+        val provider = client.asOpenFeatureProvider()
+        applicationScope.launch {
+            OpenFeatureAPI.setProviderAndWait(provider)
+        }
     }
-    */
 
     private fun initializeLogs() {
         val logsConfig = LogsConfiguration.Builder().apply {

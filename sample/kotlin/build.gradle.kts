@@ -161,8 +161,10 @@ dependencies {
     "fullImplementation"(project(":features:dd-sdk-android-logs"))
     "noopImplementation"(project(":features:dd-sdk-android-logs-noop"))
 
-    implementation(project(":features:dd-sdk-android-flags"))
-    implementation(project(":features:dd-sdk-android-flags-openfeature"))
+    "fullImplementation"(project(":features:dd-sdk-android-flags"))
+    "fullImplementation"(project(":features:dd-sdk-android-flags-openfeature"))
+    "noopImplementation"(project(":features:dd-sdk-android-flags-noop"))
+    "noopImplementation"(project(":features:dd-sdk-android-flags-openfeature-noop"))
     implementation(project(":features:dd-sdk-android-rum"))
     implementation(project(":features:dd-sdk-android-rum-debug-widget"))
     implementation(project(":features:dd-sdk-android-trace"))
@@ -200,6 +202,10 @@ dependencies {
             resolutionStrategy.dependencySubstitution {
                 substitute(project(":features:dd-sdk-android-logs"))
                     .using(project(":features:dd-sdk-android-logs-noop"))
+                substitute(project(":features:dd-sdk-android-flags"))
+                    .using(project(":features:dd-sdk-android-flags-noop"))
+                substitute(project(":features:dd-sdk-android-flags-openfeature"))
+                    .using(project(":features:dd-sdk-android-flags-openfeature-noop"))
             }
         }
     }
