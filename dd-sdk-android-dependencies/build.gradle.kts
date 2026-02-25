@@ -15,14 +15,18 @@ dependencies {
 }
 
 tasks.shadowJar {
-    archiveClassifier.set("") 
+    archiveClassifier.set("all")
     
     relocate("org.jctools", "cloud.flashcat.shaded.jctools")
     relocate("com.google.re2j", "cloud.flashcat.shaded.re2j")
 }
 
 tasks.named<Jar>("jar") {
-    enabled = false
+    dependsOn(tasks.shadowJar)
+    from(zipTree(tasks.shadowJar.flatMap { it.archiveFile })) {
+        // Exclude manifest from shadowJar to avoid conflicts with main jar's manifest
+        exclude("META-INF/MANIFEST.MF")
+    }
 }
 
 val shadowJar = tasks.shadowJar
