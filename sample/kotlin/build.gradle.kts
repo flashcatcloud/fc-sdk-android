@@ -161,8 +161,8 @@ dependencies {
     "fullImplementation"(project(":features:dd-sdk-android-logs"))
     "noopImplementation"(project(":features:dd-sdk-android-logs-noop"))
 
-    // implementation(project(":features:dd-sdk-android-flags"))
-    // implementation(project(":features:dd-sdk-android-flags-openfeature"))
+    implementation(project(":features:dd-sdk-android-flags"))
+    implementation(project(":features:dd-sdk-android-flags-openfeature"))
     implementation(project(":features:dd-sdk-android-rum"))
     implementation(project(":features:dd-sdk-android-rum-debug-widget"))
     implementation(project(":features:dd-sdk-android-trace"))
@@ -183,7 +183,7 @@ dependencies {
     implementation(project(":integrations:dd-sdk-android-trace-coroutines"))
     implementation(project(":integrations:dd-sdk-android-rum-coroutines"))
     implementation(project(":integrations:dd-sdk-android-rx"))
-    // implementation(project(":integrations:dd-sdk-android-timber"))
+    implementation(project(":integrations:dd-sdk-android-timber"))
     implementation(project(":integrations:dd-sdk-android-coil"))
     implementation(project(":integrations:dd-sdk-android-coil3"))
     implementation(project(":integrations:dd-sdk-android-glide"))
@@ -195,11 +195,20 @@ dependencies {
     implementation(project(":integrations:dd-sdk-android-okhttp-otel"))
     implementation(project(":tools:benchmark"))
 
+    configurations.all {
+        if (name.contains("Noop", ignoreCase = true)) {
+            resolutionStrategy.dependencySubstitution {
+                substitute(project(":features:dd-sdk-android-logs"))
+                    .using(project(":features:dd-sdk-android-logs-noop"))
+            }
+        }
+    }
+
     // Desugaring SDK
     coreLibraryDesugaring(libs.androidDesugaringSdk)
 
     // Sample Vendor Library
-    // implementation(project(":sample:vendor-lib"))
+    implementation(project(":sample:vendor-lib"))
 
     implementation(libs.kotlin)
 

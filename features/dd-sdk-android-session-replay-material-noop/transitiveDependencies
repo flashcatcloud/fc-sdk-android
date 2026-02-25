@@ -8,7 +8,7 @@ androidx.appcompat:appcompat:1.4.2                              : 1092 Kb
 androidx.arch.core:core-common:2.1.0                            :   10 Kb
 androidx.arch.core:core-runtime:2.1.0                           :    5 Kb
 androidx.cardview:cardview:1.0.0                                :   21 Kb
-androidx.collection:collection-jvm:1.4.5                        :  770 Kb
+androidx.collection:collection:1.2.0                            :   39 Kb
 androidx.constraintlayout:constraintlayout-solver:2.0.1         :  197 Kb
 androidx.constraintlayout:constraintlayout:2.0.1                :  373 Kb
 androidx.coordinatorlayout:coordinatorlayout:1.1.0              :   43 Kb
@@ -23,7 +23,7 @@ androidx.interpolator:interpolator:1.0.0                        :    7 Kb
 androidx.legacy:legacy-support-core-utils:1.0.0                 :    4 Kb
 androidx.lifecycle:lifecycle-common:2.4.0                       :   23 Kb
 androidx.lifecycle:lifecycle-livedata-core:2.3.1                :    8 Kb
-androidx.lifecycle:lifecycle-livedata:2.1.0                     :   10 Kb
+androidx.lifecycle:lifecycle-livedata:2.0.0                     :    9 Kb
 androidx.lifecycle:lifecycle-runtime:2.4.0                      :   11 Kb
 androidx.lifecycle:lifecycle-viewmodel-savedstate:2.3.1         :   15 Kb
 androidx.lifecycle:lifecycle-viewmodel:2.3.1                    :   10 Kb
@@ -39,9 +39,9 @@ androidx.versionedparcelable:versionedparcelable:1.1.1          :   30 Kb
 androidx.viewpager:viewpager:1.0.0                              :   52 Kb
 androidx.viewpager2:viewpager2:1.0.0                            :   60 Kb
 com.google.android.material:material:1.3.0                      : 1535 Kb
-com.google.code.gson:gson:2.10.1                                :  276 Kb
+com.google.code.gson:gson:2.8.9                                 :  252 Kb
 org.jetbrains.kotlin:kotlin-stdlib:2.0.21                       : 1706 Kb
 org.jetbrains:annotations:13.0                                  :   17 Kb
 
-Total transitive dependencies size                              :    8 Mb
+Total transitive dependencies size                              :    7 Mb
 

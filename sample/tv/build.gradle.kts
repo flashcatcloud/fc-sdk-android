@@ -74,11 +74,11 @@ dependencies {
 
     implementation(project(":dd-sdk-android-core"))
     implementation(project(":features:dd-sdk-android-rum"))
-    // implementation(project(":features:dd-sdk-android-logs"))
-    // implementation(project(":features:dd-sdk-android-session-replay"))
-    // implementation(project(":features:dd-sdk-android-session-replay-material"))
+    implementation(project(":features:dd-sdk-android-logs"))
+    implementation(project(":features:dd-sdk-android-session-replay"))
+    implementation(project(":features:dd-sdk-android-session-replay-material"))
     implementation(project(":integrations:dd-sdk-android-okhttp"))
-    // implementation(project(":integrations:dd-sdk-android-timber"))
+    implementation(project(":integrations:dd-sdk-android-timber"))
     implementation(project(":integrations:dd-sdk-android-tv"))
 
     implementation(libs.kotlin)

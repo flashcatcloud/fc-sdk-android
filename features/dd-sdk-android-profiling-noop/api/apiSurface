@@ -13,6 +13,8 @@ object com.datadog.android.profiling.Profiling
   fun isEnabled(com.datadog.android.api.SdkCore = Datadog.getInstance()): Boolean
 class com.datadog.android.profiling.ProfilingConfiguration
   class Builder
+    fun setApplicationLaunchSampleRate(Float): Builder
+    fun useCustomEndpoint(String): Builder
     fun build(): ProfilingConfiguration
 data class com.datadog.android.profiling.model.ProfileEvent
   constructor(kotlin.collections.List<kotlin.String>, kotlin.String, kotlin.String, kotlin.String, kotlin.String, kotlin.String, kotlin.String, Application, Session, View? = null, Vital)

@@ -19,6 +19,25 @@ class ProfilingConfiguration internal constructor() {
     class Builder {
 
         /**
+         * Sets the sampling rate for Application Launch profiling.
+         *
+         * @param sampleRate The sample rate, expressed as a percentage between 0 and 100 (inclusive).
+         */
+        @Suppress("UNUSED_PARAMETER")
+        fun setApplicationLaunchSampleRate(sampleRate: Float): Builder {
+            return this
+        }
+
+        /**
+         * Let the Profiling feature target a custom server.
+         * @param endpoint the full endpoint url.
+         */
+        @Suppress("UNUSED_PARAMETER")
+        fun useCustomEndpoint(endpoint: String): Builder {
+            return this
+        }
+
+        /**
          * Builds a [ProfilingConfiguration] based on the current state of this Builder.
          */
         fun build(): ProfilingConfiguration = ProfilingConfiguration()

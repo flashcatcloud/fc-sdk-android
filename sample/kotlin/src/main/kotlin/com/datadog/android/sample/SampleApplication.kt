@@ -170,7 +170,7 @@ class SampleApplication : Application() {
         )
 
         // initializeSessionReplay()
-        // initializeLogs()
+        initializeLogs()
         initializeTraces()
 
         NdkCrashReports.enable()
@@ -243,7 +243,6 @@ class SampleApplication : Application() {
     }
     */
 
-    /*
     private fun initializeLogs() {
         val logsConfig = LogsConfiguration.Builder().apply {
             if (BuildConfig.DD_OVERRIDE_LOGS_URL.isNotBlank()) {
@@ -252,7 +251,6 @@ class SampleApplication : Application() {
         }.build()
         Logs.enable(logsConfig)
     }
-    */
 
     /*
     private fun initializeSessionReplay() {
@@ -382,11 +380,15 @@ class SampleApplication : Application() {
     }
 
     @Suppress("TooGenericExceptionCaught", "CheckInternal")
-    /*
     private fun initializeTimber() {
-        // ... (timber init code)
+        val logger = Logger.Builder()
+            .setName("timber")
+            .setNetworkInfoEnabled(true)
+            .setLogcatLogsEnabled(true)
+            .build()
+
+        Timber.plant(DatadogTree(logger))
     }
-    */
 
     companion object {
         private const val USE_FGM_PCT = 10
