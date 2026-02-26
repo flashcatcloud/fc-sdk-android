@@ -5,3 +5,8 @@
 
 -dontwarn kotlin.Experimental$Level
 -dontwarn kotlin.Experimental
+
+-dontwarn com.google.gson.**
+-dontwarn okhttp3.**
+-dontwarn okio.**
+

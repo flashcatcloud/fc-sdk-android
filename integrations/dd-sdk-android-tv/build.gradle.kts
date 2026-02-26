@@ -56,6 +56,8 @@ dependencies {
     }
     testImplementation(libs.bundles.jUnit5)
     testImplementation(libs.bundles.testTools)
+    testImplementation(libs.okHttp)
+    testImplementation(libs.gson)
 }
 
 kotlinConfig(jvmBytecodeTarget = JvmTarget.JVM_11)

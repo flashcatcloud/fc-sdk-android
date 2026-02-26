@@ -15,6 +15,7 @@ import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.core.feature.event.JvmCrash
 import com.datadog.android.core.feature.event.ThreadDump
 import com.datadog.android.core.internal.thread.waitToIdle
+import com.datadog.android.core.internal.utils.isInitialized
 import com.datadog.android.core.internal.utils.triggerUploadWorker
 import com.datadog.android.internal.utils.asString
 import com.datadog.android.internal.utils.loggableStackTrace
@@ -69,7 +70,7 @@ internal class DatadogExceptionHandler(
 
         // trigger a task to send the logs ASAP
         contextRef.get()?.let {
-            if (WorkManager.isInitialized()) {
+            if (isInitialized(it)) {
                 triggerUploadWorker(it, sdkCore.name, sdkCore.internalLogger)
             }
         }

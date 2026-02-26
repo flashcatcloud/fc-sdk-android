@@ -8,13 +8,15 @@ package com.datadog.android.utils.forge
 
 import android.content.Context
 import androidx.work.Data
+import androidx.work.ForegroundUpdater
 import androidx.work.ListenableWorker
+import androidx.work.ProgressUpdater
 import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
-import androidx.work.impl.utils.taskexecutor.SerialExecutor
 import androidx.work.impl.utils.taskexecutor.TaskExecutor
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.ForgeryFactory
+import org.mockito.kotlin.mock
 import java.util.concurrent.Executor
 
 class WorkerParametersForgeryFactory : ForgeryFactory<WorkerParameters> {
@@ -25,34 +27,27 @@ class WorkerParametersForgeryFactory : ForgeryFactory<WorkerParameters> {
         val sameThreadExecutor = object : Executor {
             override fun execute(command: Runnable) = command.run()
         }
+        
+        // Use Mockito to avoid direct implementation of internal interfaces
+        val mockTaskExecutor = mock<TaskExecutor>()
+        
         return WorkerParameters(
             forge.getForgery(),
             Data.EMPTY,
             forge.aList { anAlphabeticalString() },
             WorkerParameters.RuntimeExtras(),
             forge.aSmallInt(),
-            forge.aSmallInt(),
             sameThreadExecutor,
-            object : TaskExecutor {
-                override fun getMainThreadExecutor(): Executor {
-                    TODO()
-                }
-
-                override fun getSerialTaskExecutor(): SerialExecutor {
-                    TODO("Not yet implemented")
-                }
-            },
+            mockTaskExecutor,
             object : WorkerFactory() {
                 override fun createWorker(
                     appContext: Context,
                     workerClassName: String,
                     workerParameters: WorkerParameters
-                ): ListenableWorker? {
-                    return null
-                }
+                ): ListenableWorker? = null
             },
-            { _, _, _ -> forge.getForgery() },
-            { _, _, _ -> forge.getForgery() }
+            mock<ProgressUpdater>(),
+            mock<ForegroundUpdater>()
         )
     }
 

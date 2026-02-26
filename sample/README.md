@@ -14,6 +14,23 @@ Example of a minimal sample app configuration file:
 }
 ```
 
+## SDK Flavors
+
+The Kotlin sample app now supports an `sdk` flavor dimension to allow testing with different SDK implementations:
+
+- `full`: Uses the real, functional Datadog SDK modules. (Default)
+- `noop`: Uses the pure "No-Op" modules which have empty implementations and minimal footprint.
+
+You can switch between them using Build Variants in Android Studio or via CLI:
+
+```bash
+# Build with full SDK
+./gradlew :sample:kotlin:assembleCnFullDebug
+
+# Build with No-Op SDK
+./gradlew :sample:kotlin:assembleCnNoopDebug
+```
+
 ## Advanced configuration
 
 ### Remote API
