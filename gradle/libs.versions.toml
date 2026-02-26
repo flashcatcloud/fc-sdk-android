@@ -1,6 +1,8 @@
 [versions]
 # Commons
 apollo = "4.3.3"
+core = "1.15.0"
+coreKtx = "1.15.0"
 cronetApi = "141.7340.3"
 cronetPlayServices = "18.1.1"
 gson = "2.8.9"
@@ -113,6 +115,8 @@ material3Android = "1.1.2"
 # Classpaths
 # Gradle version catalog doesn't allow names to end with plugin, that is why strange names
 androidToolsGradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "androidToolsPlugin" }
+androidx-core-ktx-v1150 = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+androidx-core-v1150 = { module = "androidx.core:core", version.ref = "core" }
 apolloRuntime = { module = "com.apollographql.apollo:apollo-runtime", version.ref = "apollo" }
 kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlinSPGradlePlugin = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version.ref = "kotlinSP" }

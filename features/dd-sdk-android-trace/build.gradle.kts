@@ -65,6 +65,7 @@ dependencies {
     ksp(project(":tools:noopfactory"))
 
     testImplementation(testFixtures(project(":dd-sdk-android-core")))
+    testImplementation(libs.gson)
     testImplementation(libs.okHttp)
     testImplementation(libs.bundles.jUnit5)
     testImplementation(libs.bundles.testTools)

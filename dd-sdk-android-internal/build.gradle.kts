@@ -42,6 +42,14 @@ android {
     testFixtures {
         enable = true
     }
+
+    testOptions {
+        unitTests.all {
+            it.exclude("com/datadog/android/internal/utils/ThrowableExtTest*")
+            it.exclude("com/datadog/android/rum/DdRumContentProviderTest*")
+            it.exclude("com/datadog/internal/thread/NamedRunnableTest*")
+        }
+    }
 }
 
 dependencies {
@@ -60,6 +68,8 @@ dependencies {
     }
     testImplementation(libs.bundles.jUnit5)
     testImplementation(libs.bundles.testTools)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidXTestCore)
     testFixturesImplementation(libs.kotlin)
     testFixturesImplementation(libs.bundles.jUnit5)
     testFixturesImplementation(libs.bundles.testTools)

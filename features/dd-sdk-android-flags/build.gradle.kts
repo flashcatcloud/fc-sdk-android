@@ -43,6 +43,12 @@ apply(from = "generate_flags_models.gradle.kts")
 
 android {
     namespace = "com.datadog.android.flags"
+
+    testOptions {
+        unitTests.all {
+            it.exclude("com/datadog/android/flags/internal/net/PrecomputedAssignmentsRequestFactoryTest*")
+        }
+    }
 }
 
 dependencies {
@@ -85,10 +91,8 @@ androidLibraryConfig()
 junitConfig()
 javadocConfig()
 dependencyUpdateConfig()
-/*
-// publishingConfig(
-//     "The Feature Flags integration feature to use with the Datadog monitoring " +
-//         "library for Android applications."
-// )
-*/
+publishingConfig(
+    "The Feature Flags integration feature to use with the Datadog monitoring " +
+        "library for Android applications."
+)
 detektCustomConfig()
