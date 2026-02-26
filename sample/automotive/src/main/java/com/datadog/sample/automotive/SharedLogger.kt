@@ -6,7 +6,7 @@
 
 package com.datadog.sample.automotive
 
-import com.datadog.android.log.Logger
+// import com.datadog.android.log.Logger
 
 @Suppress("UndocumentedPublicClass")
 object SharedLogger {

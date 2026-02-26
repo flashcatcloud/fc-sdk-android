@@ -185,7 +185,7 @@ dependencies {
     implementation(project(":integrations:dd-sdk-android-trace-coroutines"))
     implementation(project(":integrations:dd-sdk-android-rum-coroutines"))
     implementation(project(":integrations:dd-sdk-android-rx"))
-    implementation(project(":integrations:dd-sdk-android-timber"))
+    // implementation(project(":integrations:dd-sdk-android-timber"))
     implementation(project(":integrations:dd-sdk-android-coil"))
     implementation(project(":integrations:dd-sdk-android-coil3"))
     implementation(project(":integrations:dd-sdk-android-glide"))
@@ -214,7 +214,7 @@ dependencies {
     coreLibraryDesugaring(libs.androidDesugaringSdk)
 
     // Sample Vendor Library
-    implementation(project(":sample:vendor-lib"))
+    // implementation(project(":sample:vendor-lib"))
 
     implementation(libs.kotlin)
 
