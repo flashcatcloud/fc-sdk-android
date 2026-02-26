@@ -29,12 +29,6 @@ tasks.named<Jar>("jar") {
     }
 }
 
-val shadowJar = tasks.shadowJar
-artifacts {
-    add("apiElements", shadowJar)
-    add("runtimeElements", shadowJar)
-}
-
 tasks.register("assembleDebug") {
     dependsOn("assemble")
 }
