@@ -29,47 +29,69 @@ tasks.named<Jar>("jar") {
     }
 }
 
-tasks.register("assembleDebug") {
-    dependsOn("assemble")
+if (tasks.findByName("assembleDebug") == null) {
+    tasks.register("assembleDebug") {
+        dependsOn("assemble")
+    }
 }
 
-tasks.register("assembleRelease") {
-    dependsOn("assemble")
+if (tasks.findByName("assembleRelease") == null) {
+    tasks.register("assembleRelease") {
+        dependsOn("assemble")
+    }
 }
 
 // Shadow tasks to satisfy Android aggregation tasks
-tasks.register("testDebugUnitTest") {
-    dependsOn("test")
+if (tasks.findByName("testDebugUnitTest") == null) {
+    tasks.register("testDebugUnitTest") {
+        dependsOn("test")
+    }
 }
 
-tasks.register("testReleaseUnitTest") {
-    dependsOn("test")
+if (tasks.findByName("testReleaseUnitTest") == null) {
+    tasks.register("testReleaseUnitTest") {
+        dependsOn("test")
+    }
 }
 
-tasks.register("lintRelease") {
-    // No-op for this Java library
+if (tasks.findByName("lintRelease") == null) {
+    tasks.register("lintRelease") {
+        // No-op for this Java library
+    }
 }
 
-tasks.register("checkDependencyLicenses") {
-    // No-op for this Java library
+if (tasks.findByName("checkDependencyLicenses") == null) {
+    tasks.register("checkDependencyLicenses") {
+        // No-op for this Java library
+    }
 }
 
-tasks.register("checkApiSurfaceChanges") {
-    // No-op for this Java library
+if (tasks.findByName("checkApiSurfaceChanges") == null) {
+    tasks.register("checkApiSurfaceChanges") {
+        // No-op for this Java library
+    }
 }
 
-tasks.register("checkCompilerMetadataChanges") {
-    // No-op for this Java library
+if (tasks.findByName("checkCompilerMetadataChanges") == null) {
+    tasks.register("checkCompilerMetadataChanges") {
+        // No-op for this Java library
+    }
 }
 
-tasks.register("checkTransitiveDependenciesList") {
-    // No-op for this Java library
+if (tasks.findByName("checkTransitiveDependenciesList") == null) {
+    tasks.register("checkTransitiveDependenciesList") {
+        // No-op for this Java library
+    }
 }
 
-tasks.register("koverXmlReportRelease") {
-    // No-op or depends on koverXmlReport if applied
+if (tasks.findByName("koverXmlReportRelease") == null) {
+    tasks.register("koverXmlReportRelease") {
+        // No-op or depends on koverXmlReport if applied
+    }
 }
 
-tasks.register("printDetektClasspath") {
-    // No-op
+if (tasks.findByName("printDetektClasspath") == null) {
+    tasks.register("printDetektClasspath") {
+        // No-op
+    }
 }
