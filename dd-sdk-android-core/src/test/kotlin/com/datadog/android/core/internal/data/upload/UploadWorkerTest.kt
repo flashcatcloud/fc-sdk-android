@@ -54,6 +54,8 @@ import org.mockito.kotlin.whenever
 import org.mockito.quality.Strictness
 import org.mockito.stubbing.Answer
 
+import com.datadog.android.utils.forge.WorkerParametersForgeryFactory
+
 @Extensions(
     ExtendWith(MockitoExtension::class),
     ExtendWith(ForgeExtension::class),
@@ -74,7 +76,6 @@ internal class UploadWorkerTest {
     @StringForgery
     lateinit var fakeInstanceName: String
 
-    @Forgery
     lateinit var fakeWorkerParameters: WorkerParameters
 
     var fakeFeaturesCount: Int = 0
@@ -93,6 +94,8 @@ internal class UploadWorkerTest {
 
     @BeforeEach
     fun `set up`(forge: Forge) {
+        fakeWorkerParameters = WorkerParametersForgeryFactory().getForgery(forge)
+
         whenever(mockSdkCore.getDatadogContext()) doReturn fakeDatadogContext
         Datadog.registry.register(fakeInstanceName, mockSdkCore)
 
@@ -918,7 +921,6 @@ internal class UploadWorkerTest {
             tags,
             runtimeExtras,
             runAttemptCount,
-            generation,
             backgroundExecutor,
             taskExecutor,
             workerFactory,

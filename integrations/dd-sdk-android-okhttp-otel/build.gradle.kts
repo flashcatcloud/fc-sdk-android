@@ -50,6 +50,8 @@ dependencies {
     implementation(project(":features:dd-sdk-android-trace-otel"))
 
     testImplementation(libs.okHttpMock)
+    testImplementation(libs.okHttp)
+    testImplementation(libs.gson)
     testImplementation(libs.bundles.jUnit5)
     testImplementation(libs.bundles.testTools)
     testImplementation(project(":tools:unit")) {

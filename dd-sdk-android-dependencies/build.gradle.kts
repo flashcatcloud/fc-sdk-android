@@ -14,19 +14,35 @@ dependencies {
     implementation(libs.re2j)
 }
 
+tasks.named<Jar>("jar") {
+    // Move the default (empty) jar out of the way to avoid name collision
+    archiveClassifier.set("raw")
+}
+
 tasks.shadowJar {
-    archiveClassifier.set("all")
+    // Make shadowJar the primary artifact by removing the 'all' classifier
+    archiveClassifier.set("")
     
     relocate("org.jctools", "cloud.flashcat.shaded.jctools")
     relocate("com.google.re2j", "cloud.flashcat.shaded.re2j")
+    
+    // Use runtimeClasspath which is resolvable
+    configurations = listOf(project.configurations.runtimeClasspath.get())
 }
 
-tasks.named<Jar>("jar") {
+// Force the shadowJar to be the ONLY exported artifact for this module
+// This prevents R8 duplicate class errors while ensuring the file exists for KSP
+configurations.apiElements {
+    outgoing.artifacts.clear()
+    outgoing.artifact(tasks.shadowJar)
+}
+configurations.runtimeElements {
+    outgoing.artifacts.clear()
+    outgoing.artifact(tasks.shadowJar)
+}
+
+tasks.assemble {
     dependsOn(tasks.shadowJar)
-    from(zipTree(tasks.shadowJar.flatMap { it.archiveFile })) {
-        // Exclude manifest from shadowJar to avoid conflicts with main jar's manifest
-        exclude("META-INF/MANIFEST.MF")
-    }
 }
 
 if (tasks.findByName("assembleDebug") == null) {

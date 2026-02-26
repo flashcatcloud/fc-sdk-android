@@ -70,7 +70,9 @@ dependencies {
     implementation(libs.mockitoKotlin)
 
     testImplementation(libs.bundles.jUnit5)
+    testImplementation(libs.gson)
     testImplementation(libs.bundles.testTools)
+    testImplementation(libs.okHttp)
     unmock(libs.robolectric)
 }
 

@@ -59,6 +59,8 @@ dependencies {
     testImplementation(libs.elmyrJUnit4)
     testImplementation(libs.bundles.jUnit5)
     testImplementation(libs.bundles.testTools)
+    testImplementation(libs.okHttp)
+    testImplementation(libs.gson)
     testImplementation(project(":tools:unit")) {
         attributes {
             attribute(

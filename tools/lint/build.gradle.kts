@@ -24,6 +24,8 @@ dependencies {
     testImplementation(libs.androidLintApi)
     testImplementation(libs.bundles.jUnit5)
     testImplementation(libs.bundles.testTools)
+    testImplementation(libs.okHttp)
+    testImplementation(libs.gson)
 }
 
 kotlinConfig()

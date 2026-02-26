@@ -41,6 +41,16 @@ plugins {
 
 android {
     namespace = "com.datadog.android.trace.internal"
+
+    testOptions {
+        unitTests.all {
+            it.jvmArgs(
+                "--add-opens", "java.base/java.lang=ALL-UNNAMED",
+                "--add-opens", "java.base/java.util=ALL-UNNAMED",
+                "--add-opens", "java.base/java.lang.reflect=ALL-UNNAMED"
+            )
+        }
+    }
 }
 
 dependencies {
@@ -62,6 +72,8 @@ dependencies {
     testImplementation(libs.bundles.jUnit5)
     testImplementation(libs.bundles.testTools)
     testImplementation(libs.systemStubsJupiter)
+    testImplementation(libs.gson)
+    testImplementation(libs.okHttp)
 }
 
 unMock {

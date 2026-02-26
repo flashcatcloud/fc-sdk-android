@@ -58,6 +58,8 @@ dependencies {
     }
     testImplementation(libs.bundles.jUnit5)
     testImplementation(libs.bundles.testTools)
+    testImplementation(libs.gson)
+    testImplementation(libs.okHttp)
     testImplementation(libs.okHttpMock)
     testImplementation(testFixtures(project(":features:dd-sdk-android-trace")))
 }
