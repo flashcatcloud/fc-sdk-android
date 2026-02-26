@@ -29,10 +29,49 @@ tasks.named<Jar>("jar") {
     }
 }
 
-val shadowJar = tasks.shadowJar
-artifacts {
-    add("apiElements", shadowJar)
-    add("runtimeElements", shadowJar)
+tasks.register("assembleDebug") {
+    dependsOn("assemble")
+}
+
+tasks.register("assembleRelease") {
+    dependsOn("assemble")
+}
+
+// Shadow tasks to satisfy Android aggregation tasks
+tasks.register("testDebugUnitTest") {
+    dependsOn("test")
+}
+
+tasks.register("testReleaseUnitTest") {
+    dependsOn("test")
+}
+
+tasks.register("lintRelease") {
+    // No-op for this Java library
+}
+
+tasks.register("checkDependencyLicenses") {
+    // No-op for this Java library
+}
+
+tasks.register("checkApiSurfaceChanges") {
+    // No-op for this Java library
+}
+
+tasks.register("checkCompilerMetadataChanges") {
+    // No-op for this Java library
+}
+
+tasks.register("checkTransitiveDependenciesList") {
+    // No-op for this Java library
+}
+
+tasks.register("koverXmlReportRelease") {
+    // No-op or depends on koverXmlReport if applied
+}
+
+tasks.register("printDetektClasspath") {
+    // No-op
 }
 
 tasks.register("assembleDebug") {
