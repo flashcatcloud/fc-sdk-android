@@ -11,8 +11,8 @@ import com.datadog.trace.core.monitor.HealthMetrics;
 import com.datadog.trace.logger.Logger;
 import com.datadog.trace.logger.LoggerFactory;
 
-import org.jctools.queues.MessagePassingQueue;
-import org.jctools.queues.MpscBlockingConsumerArrayQueue;
+import cloud.flashcat.shaded.jctools.queues.MessagePassingQueue;
+import cloud.flashcat.shaded.jctools.queues.MpscBlockingConsumerArrayQueue;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;

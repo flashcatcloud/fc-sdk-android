@@ -47,10 +47,12 @@ dependencies {
     api(project(":dd-sdk-android-core"))
     implementation(project(":dd-sdk-android-internal"))
     implementation(libs.kotlin)
-    implementation(libs.androidXCore)
-    implementation(libs.androidXCoreKtx)
-    implementation(libs.gson)
-    implementation(libs.okHttp)
+    implementation(libs.androidx.core.v1150)
+    implementation(libs.androidx.core.ktx.v1150)
+//    implementation(libs.androidXCore)
+//    implementation(libs.androidXCoreKtx)
+    compileOnly(libs.gson)
+    compileOnly(libs.okHttp)
 
     // Generate NoOp implementations
     ksp(project(":tools:noopfactory"))
@@ -68,6 +70,8 @@ dependencies {
     testImplementation(testFixtures(project(":dd-sdk-android-internal")))
     testImplementation(libs.bundles.jUnit5)
     testImplementation(libs.bundles.testTools)
+    testImplementation(libs.gson)
+    testImplementation(libs.okHttp)
     unmock(libs.robolectric)
 }
 

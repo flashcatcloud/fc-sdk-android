@@ -13,10 +13,14 @@ import java.lang.reflect.Modifier
 internal object RemoveFinalModifier {
     @SuppressLint("DiscouragedPrivateApi")
     fun remove(field: Field) {
-        Field::class.java.getDeclaredField("accessFlags")
-            .apply {
-                isAccessible = true
-            }
-            .set(field, field.modifiers and Modifier.FINAL.inv())
+        val modifiersField = try {
+            Field::class.java.getDeclaredField("modifiers")
+        } catch (e: NoSuchFieldException) {
+            Field::class.java.getDeclaredField("accessFlags")
+        }
+        
+        modifiersField.apply {
+            isAccessible = true
+        }.set(field, field.modifiers and Modifier.FINAL.inv())
     }
 }
