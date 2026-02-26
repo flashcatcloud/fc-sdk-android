@@ -6,7 +6,7 @@
 
 package com.datadog.android.flags.internal.model
 
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android.api.context.DatadogContext
 import com.datadog.android.flags.FlagsConfiguration
 import fr.xgouchet.elmyr.annotation.StringForgery
@@ -33,7 +33,7 @@ internal class FlagsContextTest {
     lateinit var mockDatadogContext: DatadogContext
 
     @Mock
-    lateinit var mockDatadogSite: DatadogSite
+    lateinit var mockFlashcatSite: FlashcatSite
 
     @StringForgery
     lateinit var fakeApplicationId: String
@@ -54,8 +54,8 @@ internal class FlagsContextTest {
     ) {
         // Given
         whenever(mockDatadogContext.clientToken) doReturn fakeClientToken
-        whenever(mockDatadogContext.site) doReturn mockDatadogSite
-        whenever(mockDatadogSite.name) doReturn fakeSiteName
+        whenever(mockDatadogContext.site) doReturn mockFlashcatSite
+        whenever(mockFlashcatSite.name) doReturn fakeSiteName
         whenever(mockDatadogContext.env) doReturn fakeEnv
 
         val flagsConfiguration = FlagsConfiguration.Builder()
@@ -69,7 +69,7 @@ internal class FlagsContextTest {
         // Then
         assertThat(flagsContext.applicationId).isEqualTo(fakeApplicationId)
         assertThat(flagsContext.clientToken).isEqualTo(fakeClientToken)
-        assertThat(flagsContext.site).isEqualTo(mockDatadogSite)
+        assertThat(flagsContext.site).isEqualTo(mockFlashcatSite)
         assertThat(flagsContext.env).isEqualTo(fakeEnv)
         assertThat(flagsContext.customExposureEndpoint).isEqualTo(fakeExposureEndpoint)
         assertThat(flagsContext.customFlagEndpoint).isEqualTo(fakeFlagEndpoint)
@@ -79,8 +79,8 @@ internal class FlagsContextTest {
     fun `M create FlagsContext with defaults W create() { minimal configuration }`() {
         // Given
         whenever(mockDatadogContext.clientToken) doReturn fakeClientToken
-        whenever(mockDatadogContext.site) doReturn mockDatadogSite
-        whenever(mockDatadogSite.name) doReturn fakeSiteName
+        whenever(mockDatadogContext.site) doReturn mockFlashcatSite
+        whenever(mockFlashcatSite.name) doReturn fakeSiteName
         whenever(mockDatadogContext.env) doReturn fakeEnv
 
         val flagsConfiguration = FlagsConfiguration.Builder().build()
@@ -91,7 +91,7 @@ internal class FlagsContextTest {
         // Then
         assertThat(flagsContext.applicationId).isEqualTo(fakeApplicationId)
         assertThat(flagsContext.clientToken).isEqualTo(fakeClientToken)
-        assertThat(flagsContext.site).isEqualTo(mockDatadogSite)
+        assertThat(flagsContext.site).isEqualTo(mockFlashcatSite)
         assertThat(flagsContext.env).isEqualTo(fakeEnv)
         assertThat(flagsContext.customExposureEndpoint).isNull()
         assertThat(flagsContext.customFlagEndpoint).isNull()
@@ -101,7 +101,7 @@ internal class FlagsContextTest {
     fun `M handle null application ID W create() { null app ID }`() {
         // Given
         whenever(mockDatadogContext.clientToken) doReturn fakeClientToken
-        whenever(mockDatadogContext.site) doReturn mockDatadogSite
+        whenever(mockDatadogContext.site) doReturn mockFlashcatSite
         whenever(mockDatadogContext.site.name) doReturn fakeSiteName
         whenever(mockDatadogContext.env) doReturn fakeEnv
 
@@ -113,7 +113,7 @@ internal class FlagsContextTest {
         // Then
         assertThat(flagsContext.applicationId).isNull()
         assertThat(flagsContext.clientToken).isEqualTo(fakeClientToken)
-        assertThat(flagsContext.site).isEqualTo(mockDatadogSite)
+        assertThat(flagsContext.site).isEqualTo(mockFlashcatSite)
         assertThat(flagsContext.env).isEqualTo(fakeEnv)
     }
 }

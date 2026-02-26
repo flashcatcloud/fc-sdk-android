@@ -9,10 +9,10 @@ package com.datadog.android.wear.sample
 import android.app.Application
 import android.util.Log
 import com.datadog.android.Datadog
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android.core.configuration.Configuration
-import com.datadog.android.log.Logs
-import com.datadog.android.log.LogsConfiguration
+// import com.datadog.android.log.Logs
+// import com.datadog.android.log.LogsConfiguration
 import com.datadog.android.privacy.TrackingConsent
 import com.datadog.android.rum.Rum
 import com.datadog.android.rum.RumConfiguration
@@ -59,6 +59,7 @@ class WearApplication : Application() {
                 .build()
         )
 
+        /*
         Logs.enable(
             LogsConfiguration.Builder()
                 .apply {
@@ -68,6 +69,7 @@ class WearApplication : Application() {
                 }
                 .build()
         )
+        */
 
         Trace.enable(
             TraceConfiguration.Builder()
@@ -104,7 +106,7 @@ class WearApplication : Application() {
         )
 
         try {
-            configBuilder.useSite(DatadogSite.valueOf(BuildConfig.DD_SITE_NAME))
+            configBuilder.useSite(FlashcatSite.valueOf(BuildConfig.DD_SITE_NAME))
         } catch (e: IllegalArgumentException) {
             Timber.e("Error setting site to ${BuildConfig.DD_SITE_NAME}")
         }

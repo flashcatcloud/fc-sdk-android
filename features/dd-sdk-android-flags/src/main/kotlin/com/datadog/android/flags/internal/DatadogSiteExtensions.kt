@@ -6,7 +6,7 @@
 
 package com.datadog.android.flags.internal
 
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 
 /**
  * Gets the complete flags endpoint URL.
@@ -14,35 +14,27 @@ import com.datadog.android.DatadogSite
  * This is used to construct the full host in the format: `<customerDomain>.ff-cdn.<site>.<tld>`
  * @return Complete flags endpoint URL or null if site not supported
  */
-internal fun DatadogSite.getFlagsEndpoint(customerDomain: String): String? {
+internal fun FlashcatSite.getFlagsEndpoint(customerDomain: String): String? {
     val host = flagsHost(customerDomain) ?: return null
     return "https://$host$FLAGS_PATH"
 }
 
 /**
- * Extension function that returns the flags CDN host for this Datadog site.
+ * Extension function that returns the flags CDN host for this Flashcat site.
  * @param customerDomain The customer-specific subdomain prefix for the flags CDN
  * @return Flags host string in format `<customerDomain>.ff-cdn.<site>.<tld>`, or null if site not supported
  */
-private fun DatadogSite.flagsHost(customerDomain: String): String? = when (this) {
-    DatadogSite.US1_FED -> null
-
-    DatadogSite.STAGING -> "$customerDomain.ff-cdn.datad0g.com"
-    DatadogSite.EU1 -> buildFlagsHostString(customerDomain, tld = "eu") // No site in the host, .eu TLD
-    DatadogSite.US1 -> buildFlagsHostString(customerDomain) // No site in the host, default .com TLD
-
-    DatadogSite.US3 -> buildFlagsHostString(customerDomain, dc = "us3", tld = "com")
-    DatadogSite.US5 -> buildFlagsHostString(customerDomain, dc = "us5", tld = "com")
-    DatadogSite.AP1 -> buildFlagsHostString(customerDomain, dc = "ap1", tld = "com")
-    DatadogSite.AP2 -> buildFlagsHostString(customerDomain, dc = "ap2", tld = "com")
+private fun FlashcatSite.flagsHost(customerDomain: String): String? = when (this) {
+    FlashcatSite.STAGING -> "$customerDomain.ff-cdn.flashcat.cloud"
+    FlashcatSite.CN -> buildFlagsHostString(customerDomain) // No site in the host, default .cloud TLD
 }
 
-private fun buildFlagsHostString(customerDomain: String, dc: String? = null, tld: String = "com"): String {
+private fun buildFlagsHostString(customerDomain: String, dc: String? = null, tld: String = "cloud"): String {
     val parts = listOfNotNull(
         customerDomain,
         "ff-cdn",
         dc,
-        "datadoghq",
+        "flashcat",
         tld
     )
     return parts.joinToString(".")

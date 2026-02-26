@@ -6,14 +6,15 @@
 
 package com.datadog.sample.automotive
 
-import com.datadog.android.log.Logger
+// import com.datadog.android.log.Logger
 
 @Suppress("UndocumentedPublicClass")
 object SharedLogger {
     @Suppress("UndocumentedPublicProperty")
     val logger by lazy {
-        Logger.Builder()
-            .setLogcatLogsEnabled(true)
-            .build()
+        // Logger.Builder()
+        //     .setLogcatLogsEnabled(true)
+        //     .build()
+        null
     }
 }

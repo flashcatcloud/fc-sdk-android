@@ -9,14 +9,14 @@ package com.datadog.android.tv.sample
 import android.app.Application
 import android.util.Log
 import com.datadog.android.Datadog
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android.core.configuration.BatchSize
 import com.datadog.android.core.configuration.Configuration
 import com.datadog.android.core.configuration.UploadFrequency
 import com.datadog.android.core.sampling.RateBasedSampler
-import com.datadog.android.log.Logger
-import com.datadog.android.log.Logs
-import com.datadog.android.log.LogsConfiguration
+// import com.datadog.android.log.Logger
+// import com.datadog.android.log.Logs
+// import com.datadog.android.log.LogsConfiguration
 import com.datadog.android.okhttp.DatadogEventListener
 import com.datadog.android.okhttp.DatadogInterceptor
 import com.datadog.android.okhttp.trace.TracingInterceptor
@@ -25,13 +25,13 @@ import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.Rum
 import com.datadog.android.rum.RumConfiguration
 import com.datadog.android.rum.tracking.ActivityViewTrackingStrategy
-import com.datadog.android.sessionreplay.ImagePrivacy
-import com.datadog.android.sessionreplay.SessionReplay
-import com.datadog.android.sessionreplay.SessionReplayConfiguration
-import com.datadog.android.sessionreplay.SystemRequirementsConfiguration
-import com.datadog.android.sessionreplay.TextAndInputPrivacy
-import com.datadog.android.sessionreplay.TouchPrivacy
-import com.datadog.android.sessionreplay.material.MaterialExtensionSupport
+// import com.datadog.android.sessionreplay.ImagePrivacy
+// import com.datadog.android.sessionreplay.SessionReplay
+// import com.datadog.android.sessionreplay.SessionReplayConfiguration
+// import com.datadog.android.sessionreplay.SystemRequirementsConfiguration
+// import com.datadog.android.sessionreplay.TextAndInputPrivacy
+// import com.datadog.android.sessionreplay.TouchPrivacy
+// import com.datadog.android.sessionreplay.material.MaterialExtensionSupport
 import com.datadog.android.timber.DatadogTree
 import com.datadog.android.tv.sample.net.OkHttpDownloader
 import okhttp3.OkHttpClient
@@ -64,11 +64,11 @@ class TvSampleApplication : Application() {
         val rumConfig = createRumConfiguration()
         Rum.enable(rumConfig)
 
-        val logsConfig = LogsConfiguration.Builder().build()
-        Logs.enable(logsConfig)
+        // val logsConfig = LogsConfiguration.Builder().build()
+        // Logs.enable(logsConfig)
 
-        val sessionReplayConfig = createSessionReplayConfiguration()
-        SessionReplay.enable(sessionReplayConfig)
+        // val sessionReplayConfig = createSessionReplayConfiguration()
+        // SessionReplay.enable(sessionReplayConfig)
 
         GlobalRumMonitor.get().debug = true
     }
@@ -99,7 +99,7 @@ class TvSampleApplication : Application() {
             env = "test",
             variant = ""
         )
-            .useSite(DatadogSite.US1)
+            .useSite(FlashcatSite.CN)
             .setBatchSize(BatchSize.SMALL)
             .setUploadFrequency(UploadFrequency.FREQUENT)
             .build()

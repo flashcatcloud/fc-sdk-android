@@ -76,7 +76,7 @@ android {
 
     flavorDimensions += listOf("site")
     productFlavors {
-        val regions = arrayOf("us1", "us3", "us5", "us1_fed", "eu1", "ap1", "ap2", "staging")
+        val regions = arrayOf("cn", "staging")
 
         regions.forEachIndexed { index, region ->
             register(region) {
@@ -149,23 +149,23 @@ datadog {
 
 dependencies {
     // Datadog Libraries
-    implementation(project(":features:dd-sdk-android-logs"))
-    implementation(project(":features:dd-sdk-android-flags"))
-    implementation(project(":features:dd-sdk-android-flags-openfeature"))
+    // implementation(project(":features:dd-sdk-android-logs"))
+    // implementation(project(":features:dd-sdk-android-flags"))
+    // implementation(project(":features:dd-sdk-android-flags-openfeature"))
     implementation(project(":features:dd-sdk-android-rum"))
     implementation(project(":features:dd-sdk-android-rum-debug-widget"))
     implementation(project(":features:dd-sdk-android-trace"))
     implementation(project(":features:dd-sdk-android-trace-otel"))
     implementation(project(":features:dd-sdk-android-ndk"))
     implementation(project(":features:dd-sdk-android-webview"))
-    implementation(project(":features:dd-sdk-android-session-replay"))
-    implementation(project(":features:dd-sdk-android-session-replay-material"))
-    implementation(project(":features:dd-sdk-android-session-replay-compose"))
+    // implementation(project(":features:dd-sdk-android-session-replay"))
+    // implementation(project(":features:dd-sdk-android-session-replay-material"))
+    // implementation(project(":features:dd-sdk-android-session-replay-compose"))
     implementation(project(":features:dd-sdk-android-profiling"))
     implementation(project(":integrations:dd-sdk-android-trace-coroutines"))
     implementation(project(":integrations:dd-sdk-android-rum-coroutines"))
     implementation(project(":integrations:dd-sdk-android-rx"))
-    implementation(project(":integrations:dd-sdk-android-timber"))
+    // implementation(project(":integrations:dd-sdk-android-timber"))
     implementation(project(":integrations:dd-sdk-android-coil"))
     implementation(project(":integrations:dd-sdk-android-coil3"))
     implementation(project(":integrations:dd-sdk-android-glide"))
@@ -181,7 +181,7 @@ dependencies {
     coreLibraryDesugaring(libs.androidDesugaringSdk)
 
     // Sample Vendor Library
-    implementation(project(":sample:vendor-lib"))
+    // implementation(project(":sample:vendor-lib"))
 
     implementation(libs.kotlin)
 

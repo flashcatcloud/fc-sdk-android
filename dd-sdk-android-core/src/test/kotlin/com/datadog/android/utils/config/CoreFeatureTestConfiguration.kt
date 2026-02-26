@@ -7,7 +7,7 @@
 package com.datadog.android.utils.config
 
 import android.content.Context
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android.core.configuration.BatchSize
 import com.datadog.android.core.configuration.UploadFrequency
 import com.datadog.android.core.internal.CoreFeature
@@ -48,7 +48,7 @@ internal class CoreFeatureTestConfiguration<T : Context>(
     lateinit var fakeSdkVersion: String
     lateinit var fakeStorageDir: File
     lateinit var fakeUploadFrequency: UploadFrequency
-    lateinit var fakeSite: DatadogSite
+    lateinit var fakeSite: FlashcatSite
     lateinit var fakeFilePersistenceConfig: FilePersistenceConfig
     lateinit var fakeBatchSize: BatchSize
     var fakeBuildId: String? = null
@@ -96,7 +96,7 @@ internal class CoreFeatureTestConfiguration<T : Context>(
         fakeSdkVersion = forge.aStringMatching("[0-9](\\.[0-9]{1,2}){1,3}")
         fakeStorageDir = Files.createTempDirectory(forge.anHexadecimalString()).toFile()
         fakeUploadFrequency = forge.aValueFrom(UploadFrequency::class.java)
-        fakeSite = forge.aValueFrom(DatadogSite::class.java)
+        fakeSite = forge.aValueFrom(FlashcatSite::class.java)
         fakeFilePersistenceConfig = forge.getForgery()
         fakeBatchSize = forge.aValueFrom(BatchSize::class.java)
         fakeBuildId = forge.aNullable { getForgery<UUID>().toString() }

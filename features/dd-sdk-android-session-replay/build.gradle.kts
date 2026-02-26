@@ -87,8 +87,10 @@ androidLibraryConfig()
 junitConfig()
 javadocConfig()
 dependencyUpdateConfig()
-publishingConfig(
-    "The Session Replay feature to use with the Datadog monitoring " +
-        "library for Android applications."
-)
+/*
+// publishingConfig(
+//     "The Session Replay feature to use with the Datadog monitoring " +
+//         "library for Android applications."
+// )
+*/
 detektCustomConfig()

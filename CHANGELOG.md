@@ -73,7 +73,7 @@
 * [FEATURE] Feature flags context management. See [#2886](https://github.com/DataDog/dd-sdk-android/pull/2886)
 * [FEATURE] Feature flags: Send exposures as batches. See [#2895](https://github.com/DataDog/dd-sdk-android/pull/2895)
 * [FEATURE] Feature flags: Add a persistence layer. See [#2898](https://github.com/DataDog/dd-sdk-android/pull/2898)
-* [FEATURE] Feature flags: `DatadogSite` extension for Flags endpoint. See [#2922](https://github.com/DataDog/dd-sdk-android/pull/2922)
+* [FEATURE] Feature flags: `FlashcatSite` extension for Flags endpoint.
 * [FEATURE] Feature flags: `Flags.enable` and `FlagsClient` APIs. See [#2900](https://github.com/DataDog/dd-sdk-android/pull/2900)
 * [FEATURE] Feature flags: Support custom endpoints for exposures. See [#2942](https://github.com/DataDog/dd-sdk-android/pull/2942)
 * [FEATURE] Feature flags: Custom flagging endpoint and assignment download refactoring. See [#2917](https://github.com/DataDog/dd-sdk-android/pull/2917)
@@ -792,7 +792,7 @@ This is the first official production version of SDK v3 containing the new archi
 * [IMPROVEMENT] Synchronize SR info with webviews. See [#1990](https://github.com/DataDog/dd-sdk-android/pull/1990)
 * [IMPROVEMENT] Core: Start sending batches immediately after feature is initialized. See [#1991](https://github.com/DataDog/dd-sdk-android/pull/1991)
 * [IMRPOVEMENT] Create RUM Feature Integration Tests. See [#2004](https://github.com/DataDog/dd-sdk-android/pull/2004)
-* [IMRROVEMENT] Make constructors of `DatadogSite` private. See [#2010](https://github.com/DataDog/dd-sdk-android/pull/2010)
+* [IMRROVEMENT] Make constructors of `FlashcatSite` private.
 * [IMRROVEMENT] Log warning about tag modification only once. See [#2017](https://github.com/DataDog/dd-sdk-android/pull/2017)
 * [IMRROVEMENT] Add status code in user-facing message in case of `UnknownError` during batch upload. See [#2018](https://github.com/DataDog/dd-sdk-android/pull/2018)
 * [MAINTENANCE] Next dev iteration. See [#1972](https://github.com/DataDog/dd-sdk-android/pull/1972)

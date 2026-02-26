@@ -6,7 +6,7 @@
 
 package com.datadog.android.sessionreplay.internal.net
 
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android.api.InternalLogger
 import com.datadog.android.api.context.DatadogContext
 import com.datadog.android.api.feature.Feature
@@ -63,7 +63,7 @@ internal class ResourcesRequestFactoryTest {
     private lateinit var fakeMediaType: MediaType
 
     @Mock
-    lateinit var mockDatadogSite: DatadogSite
+    lateinit var mockFlashcatSite: FlashcatSite
 
     @StringForgery
     lateinit var fakeApplicationId: String
@@ -77,8 +77,8 @@ internal class ResourcesRequestFactoryTest {
     @BeforeEach
     fun `set up`(forge: Forge) {
         val fakeRumFeature = mapOf(APPLICATION_ID to fakeApplicationId)
-        whenever(mockDatadogSite.intakeEndpoint).thenReturn(DatadogSite.US1.toString())
-        whenever(fakeDatadogContext.site).thenReturn(mockDatadogSite)
+        whenever(mockFlashcatSite.intakeEndpoint).thenReturn(FlashcatSite.CN.toString())
+        whenever(fakeDatadogContext.site).thenReturn(mockFlashcatSite)
         val fakeFeaturesContext = mapOf(Feature.RUM_FEATURE_NAME to fakeRumFeature)
         whenever(fakeDatadogContext.featuresContext).thenReturn(fakeFeaturesContext)
 

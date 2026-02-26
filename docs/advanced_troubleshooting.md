@@ -20,7 +20,7 @@ This issue can occur if your dependencies rely on different Guava artifacts as t
 Solve this issue by excluding the conflicting module from your dependency:
 
 ```
-implementation ("com.datadoghq:dd-sdk-android:1.3.0") {
+implementation ("cloud.flashcat:dd-sdk-android:1.3.0") {
     exclude group: 'com.google.guava', module: 'listenablefuture'
 }
 ```

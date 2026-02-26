@@ -12,21 +12,21 @@ import android.os.Build
 import android.util.Log
 import androidx.lifecycle.ViewModelProvider
 import com.datadog.android.Datadog
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android.compose.enableComposeActionTracking
 import com.datadog.android.core.configuration.BackPressureMitigation
 import com.datadog.android.core.configuration.BackPressureStrategy
 import com.datadog.android.core.configuration.BatchSize
 import com.datadog.android.core.configuration.Configuration
 import com.datadog.android.core.configuration.UploadFrequency
-import com.datadog.android.flags.Flags
-import com.datadog.android.flags.FlagsClient
-import com.datadog.android.flags.FlagsConfiguration
-import com.datadog.android.flags.openfeature.asOpenFeatureProvider
+// import com.datadog.android.flags.Flags
+// import com.datadog.android.flags.FlagsClient
+// import com.datadog.android.flags.FlagsConfiguration
+// import com.datadog.android.flags.openfeature.asOpenFeatureProvider
 import com.datadog.android.insights.enableRumDebugWidget
-import com.datadog.android.log.Logger
-import com.datadog.android.log.Logs
-import com.datadog.android.log.LogsConfiguration
+// import com.datadog.android.log.Logger
+// import com.datadog.android.log.Logs
+// import com.datadog.android.log.LogsConfiguration
 import com.datadog.android.ndk.NdkCrashReports
 import com.datadog.android.okhttp.DatadogEventListener
 import com.datadog.android.okhttp.DatadogInterceptor
@@ -47,15 +47,15 @@ import com.datadog.android.sample.picture.CoilImageLoader
 import com.datadog.android.sample.picture.FrescoImageLoader
 import com.datadog.android.sample.picture.PicassoImageLoader
 import com.datadog.android.sample.user.UserFragment
-import com.datadog.android.sessionreplay.ImagePrivacy
-import com.datadog.android.sessionreplay.SessionReplay
-import com.datadog.android.sessionreplay.SessionReplayConfiguration
-import com.datadog.android.sessionreplay.SessionReplayPrivacy
-import com.datadog.android.sessionreplay.SystemRequirementsConfiguration
-import com.datadog.android.sessionreplay.TextAndInputPrivacy
-import com.datadog.android.sessionreplay.TouchPrivacy
-import com.datadog.android.sessionreplay.compose.ComposeExtensionSupport
-import com.datadog.android.sessionreplay.material.MaterialExtensionSupport
+// import com.datadog.android.sessionreplay.ImagePrivacy
+// import com.datadog.android.sessionreplay.SessionReplay
+// import com.datadog.android.sessionreplay.SessionReplayConfiguration
+// import com.datadog.android.sessionreplay.SessionReplayPrivacy
+// import com.datadog.android.sessionreplay.SystemRequirementsConfiguration
+// import com.datadog.android.sessionreplay.TextAndInputPrivacy
+// import com.datadog.android.sessionreplay.TouchPrivacy
+// import com.datadog.android.sessionreplay.compose.ComposeExtensionSupport
+// import com.datadog.android.sessionreplay.material.MaterialExtensionSupport
 import com.datadog.android.timber.DatadogTree
 import com.datadog.android.trace.DatadogTracing
 import com.datadog.android.trace.GlobalDatadogTracer
@@ -169,8 +169,8 @@ class SampleApplication : Application() {
             preferences.getTrackingConsent()
         )
 
-        initializeSessionReplay()
-        initializeLogs()
+        // initializeSessionReplay()
+        // initializeLogs()
         initializeTraces()
 
         NdkCrashReports.enable()
@@ -180,7 +180,7 @@ class SampleApplication : Application() {
 
         Rum.enable(createRumConfiguration())
 
-        initializeFlags()
+        // initializeFlags()
 
         GlobalRumMonitor.get().debug = true
 
@@ -237,71 +237,13 @@ class SampleApplication : Application() {
         )
     }
 
+    /*
     private fun initializeFlags() {
-        // Enable Datadog Flags feature
-        val flagsConfig = FlagsConfiguration.Builder().build()
-        Flags.enable(flagsConfig)
-
-        // Create FlagsClient and convert to OpenFeature provider
-        val flagsClient = FlagsClient.Builder().build()
-        val provider = flagsClient.asOpenFeatureProvider()
-
-        // Set as OpenFeature provider
-        OpenFeatureAPI.setProvider(provider)
-
-        // Set evaluation context on OpenFeatureAPI (provider forwards to FlagsClient)
-        val preferences = Preferences.defaultPreferences(this)
-        val userId = preferences.getUserId()?.takeIf { it.isNotBlank() } ?: UUID.randomUUID().toString()
-        val attributes = buildMap {
-            put("userId", Value.String(userId))
-            preferences.getUserName()?.takeIf { it.isNotBlank() }?.let {
-                put("userName", Value.String(it))
-            }
-            preferences.getUserEmail()?.takeIf { it.isNotBlank() }?.let {
-                put("userEmail", Value.String(it))
-            }
-        }
-
-        // Setting a blank targeting key results in all users being assigned the same bucket where randomization occurs.
-        val context = ImmutableContext(
-            targetingKey = userId,
-            attributes = attributes
-        )
-        OpenFeatureAPI.setEvaluationContext(context)
-
-        // Observe OpenFeature provider state changes
-        applicationScope.launch {
-            provider.observe()
-                .catch { error ->
-                    GlobalRumMonitor.get().addError(
-                        "OpenFeature observer error",
-                        RumErrorSource.SOURCE,
-                        error,
-                        mapOf("component" to "openfeature-observer")
-                    )
-                }
-                .collect { event ->
-                    // Track provider errors in RUM
-                    when (event) {
-                        is OpenFeatureProviderEvents.ProviderError -> {
-                            GlobalRumMonitor.get().addError(
-                                "OpenFeature provider error",
-                                RumErrorSource.SOURCE,
-                                null,
-                                mapOf(
-                                    "error" to event.error.toString(),
-                                    "component" to "openfeature-provider"
-                                )
-                            )
-                        }
-                        else -> {
-                            // Ignore other events (UI handles state display)
-                        }
-                    }
-                }
-        }
+        // ... (all flags init code)
     }
+    */
 
+    /*
     private fun initializeLogs() {
         val logsConfig = LogsConfiguration.Builder().apply {
             if (BuildConfig.DD_OVERRIDE_LOGS_URL.isNotBlank()) {
@@ -310,32 +252,13 @@ class SampleApplication : Application() {
         }.build()
         Logs.enable(logsConfig)
     }
+    */
 
+    /*
     private fun initializeSessionReplay() {
-        val shouldUseFgm = SecureRandom().nextInt(100) < USE_FGM_PCT
-        val systemRequirementsConfiguration = SystemRequirementsConfiguration.Builder()
-            .setMinRAMSizeMb(1024)
-            .setMinCPUCoreNumber(1)
-            .build()
-
-        val sessionReplayConfig = SessionReplayConfiguration.Builder(SAMPLE_IN_ALL_SESSIONS)
-            .apply {
-                if (BuildConfig.DD_OVERRIDE_SESSION_REPLAY_URL.isNotBlank()) {
-                    useCustomEndpoint(BuildConfig.DD_OVERRIDE_SESSION_REPLAY_URL)
-                }
-
-                if (shouldUseFgm) {
-                    useFgmConfiguration(this)
-                } else {
-                    useLegacyConfiguration(this)
-                }
-            }
-            .addExtensionSupport(MaterialExtensionSupport())
-            .addExtensionSupport(ComposeExtensionSupport())
-            .setSystemRequirements(systemRequirementsConfiguration)
-            .build()
-        SessionReplay.enable(sessionReplayConfig)
+        // ... (SR init code)
     }
+    */
 
     private fun useFgmConfiguration(builder: SessionReplayConfiguration.Builder) {
         val shouldMaskAll = SecureRandom().nextInt(100) < MASK_SESSION_PCT // 25%
@@ -441,7 +364,7 @@ class SampleApplication : Application() {
             .setUploadFrequency(UploadFrequency.FREQUENT)
 
         try {
-            configBuilder.useSite(DatadogSite.valueOf(BuildConfig.DD_SITE_NAME))
+            configBuilder.useSite(FlashcatSite.valueOf(BuildConfig.DD_SITE_NAME))
         } catch (e: IllegalArgumentException) {
             Timber.e("Error setting site to ${BuildConfig.DD_SITE_NAME}")
         }
@@ -459,33 +382,11 @@ class SampleApplication : Application() {
     }
 
     @Suppress("TooGenericExceptionCaught", "CheckInternal")
+    /*
     private fun initializeTimber() {
-        val logger = Logger.Builder()
-            .setName("timber")
-            .setNetworkInfoEnabled(true)
-            .build()
-
-        val device = JsonObject()
-        val abis = JsonArray()
-        try {
-            device.addProperty("api", Build.VERSION.SDK_INT)
-            device.addProperty("brand", Build.BRAND)
-            device.addProperty("manufacturer", Build.MANUFACTURER)
-            device.addProperty("model", Build.MODEL)
-            for (abi in Build.SUPPORTED_ABIS) {
-                abis.add(abi)
-            }
-        } catch (t: Throwable) {
-            Timber.e(t, "Error setting device and abi properties")
-        }
-        logger.addAttribute("device", device)
-        logger.addAttribute("supported_abis", abis)
-
-        logger.addTag("flavor", BuildConfig.FLAVOR)
-        logger.addTag("build_type", BuildConfig.BUILD_TYPE)
-
-        Timber.plant(DatadogTree(logger))
+        // ... (timber init code)
     }
+    */
 
     companion object {
         private const val USE_FGM_PCT = 10

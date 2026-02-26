@@ -20,11 +20,11 @@ Add both the Datadog Feature Flags SDK and OpenFeature Provider to your applicat
 
 ```kotlin
 dependencies {
-    implementation("com.datadoghq:dd-sdk-android-flags:<latest-version>")
-    implementation("com.datadoghq:dd-sdk-android-flags-openfeature:<latest-version>")
+    implementation("cloud.flashcat:dd-sdk-android-flags:<latest-version>")
+    implementation("cloud.flashcat:dd-sdk-android-flags-openfeature:<latest-version>")
 
     // Recommended: RUM integration to correlate flags and RUM session data
-    implementation("com.datadoghq:dd-sdk-android-rum:<latest-version>")
+    implementation("cloud.flashcat:dd-sdk-android-rum:<latest-version>")
 }
 
 ### Initial setup

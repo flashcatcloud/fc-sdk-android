@@ -8,7 +8,7 @@ package com.datadog.android.core.integration.tests
 
 import androidx.test.core.app.ApplicationProvider
 import com.datadog.android.Datadog
-import com.datadog.android.DatadogSite
+import com.datadog.android.FlashcatSite
 import com.datadog.android._InternalProxy
 import com.datadog.android.api.feature.Feature
 import com.datadog.android.api.feature.stub.StubStorageBackedFeature
@@ -157,7 +157,7 @@ class PendingToGrantedCustomPersistenceAsyncTest(
             )
                 .setUseDeveloperModeWhenDebuggable(aBool())
                 // this needs to be before allowing the clear text traffic as it invalidates this option
-                .useSite(aValueFrom(DatadogSite::class.java))
+                .useSite(aValueFrom(FlashcatSite::class.java))
                 .setFirstPartyHostsWithHeaderType(
                     aMap {
                         val fakeUrl = aStringMatching("https://[a-z0-9]+\\.com")
