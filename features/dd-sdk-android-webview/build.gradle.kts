@@ -47,7 +47,7 @@ dependencies {
     api(project(":dd-sdk-android-core"))
     implementation(project(":dd-sdk-android-internal"))
     implementation(libs.kotlin)
-    implementation(libs.gson)
+    compileOnly(libs.gson)
     implementation(libs.androidXAnnotation)
 
     // Generate NoOp implementations
@@ -63,6 +63,7 @@ dependencies {
     }
     testImplementation(testFixtures(project(":dd-sdk-android-core")))
     testImplementation(testFixtures(project(":features:dd-sdk-android-rum")))
+    testImplementation(libs.gson)
     testImplementation(libs.okHttp)
     testImplementation(libs.bundles.jUnit5)
     testImplementation(libs.bundles.testTools)

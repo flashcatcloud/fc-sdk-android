@@ -10,6 +10,7 @@ import android.content.Context
 import androidx.work.WorkManager
 import com.datadog.android.api.InternalLogger
 import com.datadog.android.core.internal.utils.cancelUploadWorker
+import com.datadog.android.core.internal.utils.isInitialized
 import com.datadog.android.core.internal.utils.triggerUploadWorker
 import java.lang.ref.Reference
 import java.lang.ref.WeakReference
@@ -25,7 +26,7 @@ internal class ProcessLifecycleCallback(
 
     override fun onStarted() {
         contextWeakRef.get()?.let {
-            if (WorkManager.isInitialized()) {
+            if (isInitialized(it)) {
                 cancelUploadWorker(it, instanceName, internalLogger)
             }
         }
@@ -37,7 +38,7 @@ internal class ProcessLifecycleCallback(
 
     override fun onStopped() {
         contextWeakRef.get()?.let {
-            if (WorkManager.isInitialized()) {
+            if (isInitialized(it)) {
                 triggerUploadWorker(it, instanceName, internalLogger)
             }
         }

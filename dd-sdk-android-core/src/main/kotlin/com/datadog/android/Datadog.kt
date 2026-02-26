@@ -7,6 +7,7 @@
 package com.datadog.android
 
 import android.content.Context
+import android.util.Log
 import androidx.annotation.AnyThread
 import androidx.annotation.WorkerThread
 import com.datadog.android.Datadog.clearAccountInfo
@@ -63,6 +64,7 @@ object Datadog {
         configuration: Configuration,
         trackingConsent: TrackingConsent
     ): SdkCore? {
+        checkRuntimeDependencies()
         synchronized(registry) {
             val existing = registry.getInstance(instanceName)
             if (existing != null) {
@@ -432,6 +434,53 @@ object Datadog {
 
     // endregion
 
+    // region Internal
+
+    private fun checkRuntimeDependencies() {
+        val missingDependencies = mutableListOf<String>()
+        if (!isClassAvailable("com.google.gson.Gson")) {
+            missingDependencies.add("Gson (com.google.code.gson:gson)")
+        }
+        if (!isClassAvailable("okhttp3.OkHttpClient")) {
+            missingDependencies.add("OkHttp (com.squareup.okhttp3:okhttp)")
+        }
+
+        if (missingDependencies.isNotEmpty()) {
+            val message = MISSING_DEPENDENCIES_ERROR.format(
+                Locale.US,
+                missingDependencies.joinToString(", ")
+            )
+            android.util.Log.e("Datadog", message)
+            unboundInternalLogger.log(
+                InternalLogger.Level.ERROR,
+                InternalLogger.Target.USER,
+                { message }
+            )
+            throw IllegalStateException(message)
+        }
+
+        if (!isClassAvailable("androidx.work.WorkManager")) {
+            unboundInternalLogger.log(
+                InternalLogger.Level.WARN,
+                InternalLogger.Target.USER,
+                { WARNING_WORKMANAGER_MISSING }
+            )
+        }
+    }
+
+    private fun isClassAvailable(className: String): Boolean {
+        return try {
+            Class.forName(className)
+            true
+        } catch (e: ClassNotFoundException) {
+            false
+        } catch (e: LinkageError) {
+            false
+        }
+    }
+
+    // endregion
+
     // region Constants
 
     internal const val MESSAGE_ALREADY_INITIALIZED =
@@ -444,6 +493,13 @@ object Datadog {
 
     internal const val CANNOT_CREATE_SDK_INSTANCE_ID_ERROR =
         "Cannot create SDK instance ID, stopping SDK initialization."
+
+    internal const val MISSING_DEPENDENCIES_ERROR =
+        "FlashCat SDK initialization failed because of missing dependencies: %s. " +
+            "Please make sure you have added them to your app's build.gradle file."
+
+    internal const val WARNING_WORKMANAGER_MISSING =
+        "WorkManager library not found. Background upload capabilities will be disabled."
 
     internal const val DD_SOURCE_TAG = "_dd.source"
     internal const val DD_SDK_VERSION_TAG = "_dd.sdk_version"

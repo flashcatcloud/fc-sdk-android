@@ -11,10 +11,9 @@ package com.datadog.sample.automotive
 @Suppress("UndocumentedPublicClass")
 object SharedLogger {
     @Suppress("UndocumentedPublicProperty")
-    val logger by lazy {
-        // Logger.Builder()
-        //     .setLogcatLogsEnabled(true)
-        //     .build()
-        null
+    val logger: Logger by lazy {
+        Logger.Builder()
+            .setLogcatLogsEnabled(true)
+            .build()
     }
 }

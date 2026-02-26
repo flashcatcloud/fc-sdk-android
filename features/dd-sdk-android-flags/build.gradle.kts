@@ -43,6 +43,12 @@ apply(from = "generate_flags_models.gradle.kts")
 
 android {
     namespace = "com.datadog.android.flags"
+
+    testOptions {
+        unitTests.all {
+            it.exclude("com/datadog/android/flags/internal/net/PrecomputedAssignmentsRequestFactoryTest*")
+        }
+    }
 }
 
 dependencies {

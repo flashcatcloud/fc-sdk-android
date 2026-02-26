@@ -44,7 +44,7 @@ android {
 dependencies {
     implementation(project(":features:dd-sdk-android-rum"))
     implementation(libs.kotlin)
-    implementation(libs.okHttp)
+    compileOnly(libs.okHttp)
     implementation(libs.coil3)
     implementation(libs.coil3NetworkOkHttp)
 
@@ -58,6 +58,8 @@ dependencies {
     }
     testImplementation(libs.bundles.jUnit5)
     testImplementation(libs.bundles.testTools)
+    testImplementation(libs.gson)
+    testImplementation(libs.okHttp)
     testImplementation(libs.okHttpMock)
 }
 

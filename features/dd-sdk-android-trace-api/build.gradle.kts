@@ -46,9 +46,9 @@ android {
 dependencies {
     api(project(":dd-sdk-android-core"))
     implementation(project(":dd-sdk-android-internal"))
-    implementation(libs.gson)
+    compileOnly(libs.gson)
     implementation(libs.androidXAnnotation)
-    implementation(libs.bundles.traceCore)
+    implementation(project(":dd-sdk-android-dependencies"))
 
     // Generate NoOp implementations
     ksp(project(":tools:noopfactory"))

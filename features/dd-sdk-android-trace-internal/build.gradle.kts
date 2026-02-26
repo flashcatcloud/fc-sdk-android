@@ -41,14 +41,24 @@ plugins {
 
 android {
     namespace = "com.datadog.android.trace.internal"
+
+    testOptions {
+        unitTests.all {
+            it.jvmArgs(
+                "--add-opens", "java.base/java.lang=ALL-UNNAMED",
+                "--add-opens", "java.base/java.util=ALL-UNNAMED",
+                "--add-opens", "java.base/java.lang.reflect=ALL-UNNAMED"
+            )
+        }
+    }
 }
 
 dependencies {
     api(project(":dd-sdk-android-core"))
     implementation(project(":dd-sdk-android-internal"))
-    implementation(libs.gson)
+    compileOnly(libs.gson)
     implementation(libs.androidXAnnotation)
-    implementation(libs.bundles.traceCore)
+    implementation(project(":dd-sdk-android-dependencies"))
 
     testImplementation(project(":tools:unit")) {
         attributes {
@@ -62,6 +72,8 @@ dependencies {
     testImplementation(libs.bundles.jUnit5)
     testImplementation(libs.bundles.testTools)
     testImplementation(libs.systemStubsJupiter)
+    testImplementation(libs.gson)
+    testImplementation(libs.okHttp)
 }
 
 unMock {

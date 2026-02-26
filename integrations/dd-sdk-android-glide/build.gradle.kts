@@ -45,8 +45,14 @@ dependencies {
     implementation(project(":features:dd-sdk-android-rum"))
     implementation(project(":integrations:dd-sdk-android-okhttp"))
     implementation(libs.kotlin)
-    implementation(libs.okHttp)
+    compileOnly(libs.okHttp)
     implementation(libs.bundles.glide)
+
+    configurations.all {
+        resolutionStrategy {
+            force(libs.okHttp)
+        }
+    }
 
     testImplementation(project(":tools:unit")) {
         attributes {
@@ -58,6 +64,8 @@ dependencies {
     }
     testImplementation(libs.bundles.jUnit5)
     testImplementation(libs.bundles.testTools)
+    testImplementation(libs.gson)
+    testImplementation(libs.okHttp)
     testImplementation(libs.okHttpMock)
 }
 

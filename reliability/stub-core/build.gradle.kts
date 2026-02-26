@@ -44,6 +44,8 @@ dependencies {
     implementation(libs.bundles.testTools)
     implementation(libs.okHttp)
     implementation(libs.gson)
+    compileOnly(libs.okHttp)
+    compileOnly(libs.gson)
 }
 
 androidLibraryConfig()

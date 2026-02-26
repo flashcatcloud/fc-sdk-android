@@ -4,6 +4,7 @@
  * Copyright 2016-Present Datadog, Inc.
  */
 
+import com.datadog.gradle.compileOnly
 import com.datadog.gradle.config.AndroidConfig
 import com.datadog.gradle.config.androidLibraryConfig
 import com.datadog.gradle.config.dependencyUpdateConfig
@@ -11,6 +12,7 @@ import com.datadog.gradle.config.java11
 import com.datadog.gradle.config.junitConfig
 import com.datadog.gradle.config.kotlinConfig
 import com.datadog.gradle.config.publishingConfig
+import org.jetbrains.kotlin.ir.backend.js.compile
 
 plugins {
     id("com.android.library")
@@ -36,10 +38,10 @@ dependencies {
     implementation(project(":dd-sdk-android-core"))
     implementation(project(":dd-sdk-android-internal"))
     implementation(libs.kotlin)
-    implementation(libs.okHttp)
+    compileOnly(libs.okHttp)
     implementation(libs.openTelemetryApi)
     implementation(libs.openTelemetrySdk)
-    implementation(libs.gson)
+    compileOnly(libs.gson)
     testImplementation(project(":tools:unit")) {
         attributes {
             attribute(
@@ -51,6 +53,8 @@ dependencies {
 
     testImplementation(libs.bundles.jUnit5)
     testImplementation(libs.bundles.testTools)
+    testImplementation(libs.gson)
+    testImplementation(libs.okHttp)
 }
 
 apply(from = "generate_trace_models.gradle.kts")

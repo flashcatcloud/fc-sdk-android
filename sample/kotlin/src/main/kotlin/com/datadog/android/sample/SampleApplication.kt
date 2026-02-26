@@ -170,7 +170,7 @@ class SampleApplication : Application() {
         )
 
         // initializeSessionReplay()
-        // initializeLogs()
+        initializeLogs()
         initializeTraces()
 
         NdkCrashReports.enable()
@@ -239,7 +239,14 @@ class SampleApplication : Application() {
 
     /*
     private fun initializeFlags() {
-        // ... (all flags init code)
+        val flagsConfig = FlagsConfiguration.Builder().build()
+        Flags.enable(flagsConfig)
+
+        val client = FlagsClient.Builder().build()
+        val provider = client.asOpenFeatureProvider()
+        applicationScope.launch {
+            OpenFeatureAPI.setProviderAndWait(provider)
+        }
     }
     */
 
@@ -384,7 +391,13 @@ class SampleApplication : Application() {
     @Suppress("TooGenericExceptionCaught", "CheckInternal")
     /*
     private fun initializeTimber() {
-        // ... (timber init code)
+        val logger = Logger.Builder()
+            .setName("timber")
+            .setNetworkInfoEnabled(true)
+            .setLogcatLogsEnabled(true)
+            .build()
+
+        Timber.plant(DatadogTree(logger))
     }
     */
 

@@ -44,8 +44,15 @@ android {
 dependencies {
     implementation(project(":features:dd-sdk-android-rum"))
     implementation(libs.kotlin)
-    implementation(libs.okHttp)
+    compileOnly(libs.okHttp)
     implementation(libs.coil)
+
+    configurations.all {
+        resolutionStrategy {
+            force(libs.okHttp)
+        }
+    }
+
 
     testImplementation(project(":tools:unit")) {
         attributes {
@@ -57,7 +64,10 @@ dependencies {
     }
     testImplementation(libs.bundles.jUnit5)
     testImplementation(libs.bundles.testTools)
+    testImplementation(libs.gson)
+    testImplementation(libs.okHttp)
     testImplementation(libs.okHttpMock)
+    testImplementation(libs.gson)
 }
 
 kotlinConfig(jvmBytecodeTarget = JvmTarget.JVM_11)

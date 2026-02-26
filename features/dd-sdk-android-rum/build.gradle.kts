@@ -60,8 +60,8 @@ dependencies {
     api(project(":dd-sdk-android-core"))
     implementation(project(":dd-sdk-android-internal"))
     implementation(libs.kotlin)
-    implementation(libs.gson)
-    implementation(libs.okHttp)
+    compileOnly(libs.gson)
+    compileOnly(libs.okHttp)
 
     // Android Instrumentation
     implementation(libs.androidXCore)
@@ -83,6 +83,7 @@ dependencies {
     }
 
     testImplementation(libs.bundles.jUnit5)
+    testImplementation(libs.gson)
     testImplementation(libs.bundles.testTools)
     testImplementation(libs.okHttp)
     testImplementation(libs.okHttpMock)

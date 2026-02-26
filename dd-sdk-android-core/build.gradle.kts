@@ -103,14 +103,15 @@ dependencies {
     implementation(libs.kotlin)
 
     // Network
-    implementation(libs.okHttp)
-    implementation(libs.gson)
+    compileOnly(libs.okHttp)
+    compileOnly(libs.gson)
+    implementation(project(":dd-sdk-android-dependencies"))
     implementation(libs.kronosNTP)
 
     // Android Instrumentation
     implementation(libs.androidXAnnotation)
     implementation(libs.androidXCollection)
-    implementation(libs.androidXWorkManager)
+    compileOnly(libs.androidXWorkManager)
 
     implementation(project(":dd-sdk-android-internal"))
 
@@ -130,6 +131,9 @@ dependencies {
         }
     }
     testImplementation(testFixtures(project(":dd-sdk-android-internal")))
+    testImplementation(libs.gson)
+    testImplementation(libs.okHttp)
+    testImplementation(libs.androidXWorkManager)
     testImplementation(libs.bundles.jUnit5)
     testImplementation(libs.bundles.testTools)
     unmock(libs.robolectric)

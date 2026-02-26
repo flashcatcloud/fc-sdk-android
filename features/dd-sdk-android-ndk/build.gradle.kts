@@ -71,7 +71,7 @@ dependencies {
     implementation(project(":dd-sdk-android-internal"))
     api(project(":dd-sdk-android-core"))
     implementation(libs.kotlin)
-    implementation(libs.okHttp)
+    compileOnly(libs.okHttp)
     implementation(libs.androidXMultidex)
 
     testImplementation(project(":tools:unit")) {
@@ -84,6 +84,8 @@ dependencies {
     }
     testImplementation(libs.bundles.jUnit5)
     testImplementation(libs.bundles.testTools)
+    testImplementation(libs.okHttp)
+    testImplementation(libs.gson)
 
     androidTestImplementation(project(":tools:unit")) {
         attributes {

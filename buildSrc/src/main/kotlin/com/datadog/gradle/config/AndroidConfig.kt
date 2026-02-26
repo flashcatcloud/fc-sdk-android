@@ -40,7 +40,7 @@ object AndroidConfig {
             }
             // Local development or other branches → Snapshot
             else -> {
-                Version(0, 3, 0, Version.Type.Snapshot)
+                Version(0, 3, 1, Version.Type.Snapshot)
             }
         }
     }
@@ -77,6 +77,7 @@ fun Project.androidLibraryConfig() {
 
         defaultConfig {
             minSdk = AndroidConfig.MIN_SDK
+            consumerProguardFiles("${rootDir.absolutePath}/consumer-rules.pro")
         }
 
         compileOptions {

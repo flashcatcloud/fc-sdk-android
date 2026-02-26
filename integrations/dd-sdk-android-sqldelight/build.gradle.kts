@@ -45,7 +45,7 @@ dependencies {
     implementation(project(":features:dd-sdk-android-trace"))
     implementation(project(":features:dd-sdk-android-rum"))
     implementation(libs.kotlin)
-    implementation(libs.okHttp)
+    compileOnly(libs.okHttp)
     implementation(libs.sqlDelight)
 
     testImplementation(project(":tools:unit")) {
@@ -58,6 +58,8 @@ dependencies {
     }
     testImplementation(libs.bundles.jUnit5)
     testImplementation(libs.bundles.testTools)
+    testImplementation(libs.gson)
+    testImplementation(libs.okHttp)
     testImplementation(libs.okHttpMock)
     testImplementation(testFixtures(project(":features:dd-sdk-android-trace")))
 }

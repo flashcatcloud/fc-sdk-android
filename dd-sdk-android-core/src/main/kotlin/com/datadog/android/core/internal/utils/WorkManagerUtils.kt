@@ -7,6 +7,7 @@
 package com.datadog.android.core.internal.utils
 
 import android.content.Context
+import android.util.Log
 import androidx.work.Constraints
 import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
@@ -15,6 +16,7 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.WorkManager
 import com.datadog.android.api.InternalLogger
 import com.datadog.android.core.UploadWorker
+import java.lang.reflect.Method
 import java.util.concurrent.TimeUnit
 
 internal const val CANCEL_ERROR_MESSAGE = "Error cancelling the UploadWorker"
@@ -77,5 +79,77 @@ internal fun triggerUploadWorker(
             { SETUP_ERROR_MESSAGE },
             e
         )
+    }
+}
+
+private const val TAG = "FC_SDK_WorkManager"
+
+private val isClassAvailable: Boolean by lazy {
+    try {
+        Class.forName("androidx.work.WorkManager")
+        true
+    } catch (e: Throwable) {
+        false
+    }
+}
+
+private val officialIsInitializedMethod: Method? by lazy {
+    if (!isClassAvailable) return@lazy null
+    try {
+        WorkManager::class.java.getMethod("isInitialized")
+    } catch (e: Throwable) {
+        null
+    }
+}
+
+@Volatile
+private var isInitializedCache: Boolean? = null
+
+/**
+ * 判断 WorkManager 是否已初始化。
+ * 兼容 WorkManager 2.8.0+ (反射调用官方方法) 和旧版本 (try-catch getInstance)。
+ * 安全应对 compileOnly 导致的类缺失。
+ */
+fun isInitialized(context: Context): Boolean {
+    isInitializedCache?.let { return it }
+
+    if (!isClassAvailable) {
+        return false.also { isInitializedCache = it }
+    }
+
+    officialIsInitializedMethod?.let { method ->
+        try {
+            val result = method.invoke(null) as Boolean
+            if (result) {
+                isInitializedCache = true
+            }
+            return result
+        } catch (e: Throwable) {
+            Log.w(TAG, "Failed to invoke isInitialized via reflection", e)
+        }
+    }
+
+    return try {
+        WorkManager.getInstance(context)
+        true.also { isInitializedCache = it }
+    } catch (e: IllegalStateException) {
+        false
+    } catch (e: Throwable) {
+        false
+    }
+}
+
+/**
+ * 安全获取实例，如果未初始化或库不存在则返回 null
+ */
+fun getWorkManagerOrNull(context: Context): WorkManager? {
+    return if (isInitialized(context)) {
+        try {
+            WorkManager.getInstance(context)
+        } catch (e: Throwable) {
+            null
+        }
+    } else {
+        null
     }
 }
