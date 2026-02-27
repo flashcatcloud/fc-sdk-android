@@ -4,9 +4,13 @@
  * Copyright 2016-Present Datadog, Inc.
  */
 
+import com.datadog.gradle.config.AndroidConfig
+import com.datadog.gradle.config.MavenConfig
+
 plugins {
     `java-library`
     id("com.gradleup.shadow")
+    `maven-publish`
 }
 
 dependencies {
@@ -28,6 +32,18 @@ tasks.shadowJar {
     
     // Use runtimeClasspath which is resolvable
     configurations = listOf(project.configurations.runtimeClasspath.get())
+}
+
+publishing {
+    publications {
+        register<MavenPublication>("maven") {
+            groupId = MavenConfig.GROUP_ID
+            artifactId = project.name
+            version = AndroidConfig.VERSION.name
+
+            artifact(tasks.shadowJar)
+        }
+    }
 }
 
 // Force the shadowJar to be the ONLY exported artifact for this module
