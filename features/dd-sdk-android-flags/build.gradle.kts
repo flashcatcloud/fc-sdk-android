@@ -91,10 +91,8 @@ androidLibraryConfig()
 junitConfig()
 javadocConfig()
 dependencyUpdateConfig()
-/*
-// publishingConfig(
-//     "The Feature Flags integration feature to use with the Datadog monitoring " +
-//         "library for Android applications."
-// )
-*/
+publishingConfig(
+    "The Feature Flags integration feature to use with the Datadog monitoring " +
+        "library for Android applications."
+)
 detektCustomConfig()
