@@ -6,6 +6,7 @@ on:
       - publish # 推送到 publish 分支时触发 snapshot 发布
     tags:
       - "v*" # 推送 tag（如 v0.1.0）时触发正式发布
+  workflow_dispatch: # 支持在 GitHub Actions 页面手动触发，选 tag 发正式版，选 branch 发快照版
 
 jobs:
   publish:
