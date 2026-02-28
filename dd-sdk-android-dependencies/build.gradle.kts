@@ -6,11 +6,15 @@
 
 import com.datadog.gradle.config.AndroidConfig
 import com.datadog.gradle.config.MavenConfig
+import com.vanniktech.maven.publish.MavenPublishBaseExtension
+import java.util.Base64
 
 plugins {
     `java-library`
     id("com.gradleup.shadow")
     `maven-publish`
+    signing
+    id("com.vanniktech.maven.publish.base")
 }
 
 dependencies {
@@ -34,6 +38,13 @@ tasks.shadowJar {
     configurations = listOf(project.configurations.runtimeClasspath.get())
 }
 
+// Use Vanniktech plugin ONLY for Maven Central Portal repository setup (not for artifact configuration)
+// This ensures the same publishToSonatype / Central Portal API is used as other modules
+configure<MavenPublishBaseExtension> {
+    publishToMavenCentral(automaticRelease = false)
+}
+
+// Manual publication configuration with shadow jar as the artifact
 publishing {
     publications {
         register<MavenPublication>("maven") {
@@ -42,8 +53,66 @@ publishing {
             version = AndroidConfig.VERSION.name
 
             artifact(tasks.shadowJar)
+
+            pom {
+                name.set(project.name)
+                description.set("Shaded dependencies for FlashCat Android SDK")
+                inceptionYear.set("2026")
+                url.set("https://github.com/flashcatcloud/fc-sdk-android/")
+
+                licenses {
+                    license {
+                        name.set("The Apache License, Version 2.0")
+                        url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                        distribution.set("repo")
+                    }
+                }
+
+                organization {
+                    name.set("FlashCat")
+                    url.set("https://flashcat.cloud/")
+                }
+
+                developers {
+                    developer {
+                        id.set("flashcat")
+                        name.set("FlashCat")
+                        email.set("support@flashcat.cloud")
+                        organization.set("FlashCat")
+                        organizationUrl.set("https://flashcat.cloud/")
+                    }
+                }
+
+                scm {
+                    url.set("https://github.com/flashcatcloud/fc-sdk-android/")
+                    connection.set("scm:git:git@github.com:flashcatcloud/fc-sdk-android.git")
+                    developerConnection.set("scm:git:git@github.com:flashcatcloud/fc-sdk-android.git")
+                }
+            }
         }
     }
+}
+
+// Signing configuration (consistent with MavenConfig.publishingConfig())
+signing {
+    val isLocalPublish = gradle.startParameter.taskNames.any {
+        it.contains("publishToMavenLocal", ignoreCase = true)
+    }
+    isRequired = !hasProperty("dd-skip-signing") && !isLocalPublish
+
+    val privateKey = System.getenv("GPG_PRIVATE_KEY")
+    val password = System.getenv("GPG_PASSWORD")
+
+    if (privateKey != null && password != null) {
+        val decodedKey = try {
+            String(Base64.getDecoder().decode(privateKey))
+        } catch (e: Exception) {
+            privateKey // Already decoded / plain text
+        }
+        useInMemoryPgpKeys(decodedKey, password)
+    }
+
+    sign(publishing.publications["maven"])
 }
 
 // Force the shadowJar to be the ONLY exported artifact for this module
