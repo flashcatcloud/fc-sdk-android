@@ -85,9 +85,7 @@ androidLibraryConfig()
 junitConfig()
 javadocConfig()
 dependencyUpdateConfig()
-/*
-// publishingConfig(
-//     "Session Replay Extension Support for Jetpack Compose."
-// )
-*/
+publishingConfig(
+    "Session Replay Extension Support for Jetpack Compose."
+)
 detektCustomConfig()
