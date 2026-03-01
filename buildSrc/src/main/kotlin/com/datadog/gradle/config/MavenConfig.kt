@@ -7,11 +7,15 @@
 package com.datadog.gradle.config
 
 import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
+import com.vanniktech.maven.publish.JavaLibrary
+import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.findByType
+import org.gradle.kotlin.dsl.get
 import org.gradle.plugins.signing.SigningExtension
 
 object MavenConfig {
@@ -23,13 +27,7 @@ fun Project.publishingConfig(
     projectDescription: String,
     customArtifactId: String = name
 ) {
-    val projectName = name
-
-    // Apply Vanniktech plugin
-    pluginManager.apply("com.vanniktech.maven.publish.base")
-
-    // Configure Android Library publishing (sources + javadoc)
-    configure<MavenPublishBaseExtension> {
+    basePublishingConfig(projectDescription, customArtifactId) {
         configure(
             AndroidSingleVariantLibrary(
                 variant = "release",
@@ -37,6 +35,39 @@ fun Project.publishingConfig(
                 publishJavadocJar = true
             )
         )
+    }
+}
+
+fun Project.publishingJavaConfig(
+    projectDescription: String,
+    customArtifactId: String = name,
+    useJavaLibraryPlatform: Boolean = true
+) {
+    basePublishingConfig(projectDescription, customArtifactId) {
+        if (useJavaLibraryPlatform) {
+            configure(
+                JavaLibrary(
+                    sourcesJar = true,
+                    javadocJar = JavadocJar.Javadoc()
+                )
+            )
+        }
+    }
+}
+
+private fun Project.basePublishingConfig(
+    projectDescription: String,
+    customArtifactId: String,
+    platformConfig: MavenPublishBaseExtension.() -> Unit
+) {
+    val projectName = name
+
+    // Apply Vanniktech plugin
+    pluginManager.apply("com.vanniktech.maven.publish.base")
+
+    // Configure publishing
+    configure<MavenPublishBaseExtension> {
+        platformConfig()
 
         // Coordinates
         coordinates(
