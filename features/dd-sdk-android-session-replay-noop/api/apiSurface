@@ -34,6 +34,8 @@ object com.datadog.android.sessionreplay.SessionReplay
   fun stopRecording(com.datadog.android.api.SdkCore = Datadog.getInstance())
 class com.datadog.android.sessionreplay.SessionReplayConfiguration
   class Builder
+    constructor()
+    constructor(Float = 100.0f)
     fun setSampleRate(Float): Builder
     fun useCustomEndpoint(String): Builder
     fun setPrivacy(SessionReplayPrivacy): Builder
@@ -42,6 +44,9 @@ class com.datadog.android.sessionreplay.SessionReplayConfiguration
     fun setTouchPrivacy(TouchPrivacy): Builder
     fun setTextAndInputPrivacy(TextAndInputPrivacy): Builder
     fun setSystemRequirementsConfiguration(SystemRequirementsConfiguration): Builder
+    fun setDynamicOptimizationEnabled(Boolean): Builder
+    fun setSystemRequirements(SystemRequirementsConfiguration): Builder
+    fun startRecordingImmediately(Boolean): Builder
     fun build(): SessionReplayConfiguration
 interface com.datadog.android.sessionreplay.SessionReplayInternalCallback
   fun addResourceItem(String, ByteArray, String)
@@ -71,6 +76,32 @@ enum com.datadog.android.sessionreplay.TouchPrivacy : PrivacyLevel
 class com.datadog.android.sessionreplay._SessionReplayInternalProxy
   constructor(SessionReplayConfiguration.Builder)
   fun setInternalCallback(SessionReplayInternalCallback): SessionReplayConfiguration.Builder
+interface com.datadog.android.sessionreplay.utils.ColorStringFormatter
+  fun formatColorAsHexString(Int): String
+  fun formatColorAndAlphaAsHexString(Int, Int): String
+object com.datadog.android.sessionreplay.utils.DefaultColorStringFormatter : ColorStringFormatter
+  override fun formatColorAsHexString(Int): String
+  override fun formatColorAndAlphaAsHexString(Int, Int): String
+object com.datadog.android.sessionreplay.utils.DefaultViewBoundsResolver : ViewBoundsResolver
+  override fun resolveViewGlobalBounds(android.view.View, Float): GlobalBounds
+  override fun resolveViewPaddedBounds(android.view.View, Float): GlobalBounds
+object com.datadog.android.sessionreplay.utils.DefaultViewIdentifierResolver : ViewIdentifierResolver
+  override fun resolveViewId(android.view.View): Long
+  override fun resolveChildUniqueIdentifier(android.view.View, String): Long?
+interface com.datadog.android.sessionreplay.utils.DrawableToColorMapper
+  fun mapDrawableToColor(android.graphics.drawable.Drawable, com.datadog.android.api.InternalLogger): Int?
+  companion object 
+    fun getDefault(List<DrawableToColorMapper> = emptyList()): DrawableToColorMapper
+    class NoopDrawableToColorMapper : DrawableToColorMapper
+      override fun mapDrawableToColor(android.graphics.drawable.Drawable, com.datadog.android.api.InternalLogger): Int?
+data class com.datadog.android.sessionreplay.utils.GlobalBounds
+  constructor(Long, Long, Long, Long)
+interface com.datadog.android.sessionreplay.utils.ViewBoundsResolver
+  fun resolveViewGlobalBounds(android.view.View, Float): GlobalBounds
+  fun resolveViewPaddedBounds(android.view.View, Float): GlobalBounds
+interface com.datadog.android.sessionreplay.utils.ViewIdentifierResolver
+  fun resolveViewId(android.view.View): Long
+  fun resolveChildUniqueIdentifier(android.view.View, String): Long?
 data class com.datadog.android.sessionreplay.model.MobileSegment
   constructor(Application, Session, View, kotlin.Long, kotlin.Long, kotlin.Long, kotlin.Long? = null, kotlin.Boolean? = null, Source, kotlin.collections.List<MobileRecord>)
   fun toJson(): com.google.gson.JsonElement
