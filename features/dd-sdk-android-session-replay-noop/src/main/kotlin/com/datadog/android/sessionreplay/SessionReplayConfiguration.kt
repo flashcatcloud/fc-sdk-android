@@ -6,6 +6,9 @@
 
 package com.datadog.android.sessionreplay
 
+import androidx.annotation.FloatRange
+import com.datadog.android.api.InternalLogger
+
 /**
  * Describes configuration to be used for the Session Replay feature.
  */
@@ -16,6 +19,25 @@ class SessionReplayConfiguration internal constructor() {
      * A Builder class for a [SessionReplayConfiguration].
      */
     class Builder {
+        /**
+         * Calling this constructor will default to a 100% session sampling rate.
+         */
+        constructor() : this(100.0f, InternalLogger.UNBOUND)
+
+        /**
+         * @param sampleRate must be a value between 0 and 100. A value of 0
+         * means no session will be recorded, 100 means all sessions will be recorded.
+         * If this value is not provided then Session Replay will default to a 100 sample rate.
+         */
+        constructor(
+            @FloatRange(from = 0.0, to = 100.0) sampleRate: Float = 100.0f
+        ) : this(sampleRate, InternalLogger.UNBOUND)
+
+        internal constructor(
+            @FloatRange(from = 0.0, to = 100.0) sampleRate: Float,
+            logger: InternalLogger
+        ) {
+        }
 
         /**
          * Sets the sample rate for this feature.
@@ -84,6 +106,34 @@ class SessionReplayConfiguration internal constructor() {
         fun setSystemRequirementsConfiguration(
             systemRequirementsConfiguration: SystemRequirementsConfiguration
         ): Builder {
+            return this
+        }
+
+        /**
+         * This option controls whether optimization is enabled or disabled for recording Session Replay data.
+         * By default the value is true, meaning the dynamic optimization is enabled.
+         */
+        fun setDynamicOptimizationEnabled(dynamicOptimizationEnabled: Boolean): Builder {
+            return this
+        }
+
+        /**
+         * Defines the minimum system requirements for enabling the Session Replay feature.
+         * When [SessionReplay.enable] is invoked, the system configuration is verified against these requirements.
+         * If the system meets the specified criteria, Session Replay will be successfully enabled.
+         * If this function is not invoked, no minimum requirements will be enforced, and Session Replay will be
+         * enabled on all devices.
+         */
+        fun setSystemRequirements(systemRequirementsConfiguration: SystemRequirementsConfiguration): Builder {
+            return this
+        }
+
+        /**
+         * Should recording start automatically (or be manually started).
+         * If not specified then by default it starts automatically.
+         * @param enabled whether recording should start automatically or not.
+         */
+        fun startRecordingImmediately(enabled: Boolean): Builder {
             return this
         }
 
