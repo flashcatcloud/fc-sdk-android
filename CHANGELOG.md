@@ -1,3 +1,16 @@
+# 0.4.0 / 2026-05-30
+
+* [IMPROVEMENT] Make `okhttp`, `gson` and `androidx.work:work-runtime` `compileOnly` dependencies so the SDK no longer forces specific versions on host apps. **Breaking:** integrating apps must now declare `okhttp` and `gson` themselves; `Datadog.initialize()` fails fast with `IllegalStateException` if either is missing. WorkManager remains optional — when absent the SDK logs a warning and disables background upload.
+* [IMPROVEMENT] WorkManager presence/initialization is now detected safely (reflection on 2.8.0+, getInstance fallback on older versions) to support it being `compileOnly`.
+* [FEATURE] Add no-op variants for Logs, Profiling, Flags, OpenFeature Flags and Session Replay (incl. Compose/Material) feature modules.
+
+---
+
+> The entries above are **FlashCat SDK** releases, versioned independently as `0.x`.
+> Everything below is the inherited **upstream Datadog `dd-sdk-android`** changelog (`3.x`) that this fork tracks — kept for reference.
+
+---
+
 # 3.5.0 / 2026-01-08
 
 * [FEATURE] RUM Debug Widget. See [#2943](https://github.com/DataDog/dd-sdk-android/pull/2943)

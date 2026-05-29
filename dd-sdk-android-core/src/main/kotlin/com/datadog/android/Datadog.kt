@@ -450,7 +450,7 @@ object Datadog {
                 Locale.US,
                 missingDependencies.joinToString(", ")
             )
-            android.util.Log.e("Datadog", message)
+            Log.e("Datadog", message)
             unboundInternalLogger.log(
                 InternalLogger.Level.ERROR,
                 InternalLogger.Target.USER,

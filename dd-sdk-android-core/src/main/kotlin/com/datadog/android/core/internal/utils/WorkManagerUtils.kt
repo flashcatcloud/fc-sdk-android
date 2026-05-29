@@ -106,11 +106,11 @@ private val officialIsInitializedMethod: Method? by lazy {
 private var isInitializedCache: Boolean? = null
 
 /**
- * 判断 WorkManager 是否已初始化。
- * 兼容 WorkManager 2.8.0+ (反射调用官方方法) 和旧版本 (try-catch getInstance)。
- * 安全应对 compileOnly 导致的类缺失。
+ * Checks whether WorkManager has been initialized.
+ * Compatible with WorkManager 2.8.0+ (reflective call to the official method) and older versions
+ * (try-catch around getInstance). Safely handles the class being absent due to compileOnly.
  */
-fun isInitialized(context: Context): Boolean {
+internal fun isInitialized(context: Context): Boolean {
     isInitializedCache?.let { return it }
 
     if (!isClassAvailable) {
@@ -136,20 +136,5 @@ fun isInitialized(context: Context): Boolean {
         false
     } catch (e: Throwable) {
         false
-    }
-}
-
-/**
- * 安全获取实例，如果未初始化或库不存在则返回 null
- */
-fun getWorkManagerOrNull(context: Context): WorkManager? {
-    return if (isInitialized(context)) {
-        try {
-            WorkManager.getInstance(context)
-        } catch (e: Throwable) {
-            null
-        }
-    } else {
-        null
     }
 }
