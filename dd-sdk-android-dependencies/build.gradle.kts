@@ -42,11 +42,28 @@ publishingJavaConfig(
     useJavaLibraryPlatform = false
 )
 
+// Maven Central requires a sources jar and a javadoc jar for every published
+// component. Because this module exports the shaded shadowJar as its main artifact,
+// the platform auto-config is disabled (useJavaLibraryPlatform = false), which also
+// skips the sources/javadoc jars Vanniktech would otherwise generate. We attach them
+// manually here. This module has no sources of its own, so both jars are effectively
+// empty — that still satisfies the Portal's "must be provided" validation.
+val sourcesJar by tasks.registering(Jar::class) {
+    archiveClassifier.set("sources")
+    from(sourceSets["main"].allSource)
+}
+
+val javadocJar by tasks.registering(Jar::class) {
+    archiveClassifier.set("javadoc")
+}
+
 // Manual publication configuration with shadow jar as the artifact
 publishing {
     publications {
         register<MavenPublication>(MavenConfig.PUBLICATION) {
             artifact(tasks.shadowJar)
+            artifact(sourcesJar)
+            artifact(javadocJar)
         }
     }
 }
