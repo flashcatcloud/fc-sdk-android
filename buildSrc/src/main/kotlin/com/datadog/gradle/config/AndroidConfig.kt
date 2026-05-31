@@ -40,7 +40,7 @@ object AndroidConfig {
             }
             // Local development or other branches → Snapshot
             else -> {
-                Version(0, 3, 1, Version.Type.Snapshot)
+                Version(0, 4, 0, Version.Type.Snapshot)
             }
         }
     }
