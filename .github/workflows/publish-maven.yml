@@ -11,6 +11,12 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # Bound the job so a stuck Gradle build is killed instead of running up to
+    # GitHub's 6h default. Headroom is deliberate: a known-good release run has
+    # taken ~52 min, and the Maven Central upload is network-bound, so a tight
+    # limit would kill legitimately-slow publishes. A hang only wastes the extra
+    # minutes (free on this public repo), so we err loose.
+    timeout-minutes: 90
 
     steps:
       - name: Checkout code
@@ -40,11 +46,18 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build project
-        run: ./gradlew clean assembleRelease --stacktrace
-
-      - name: Run tests
-        run: ./gradlew testReleaseUnitTest --stacktrace
+      # Build the library AARs and run unit tests, scoped to the SDK libraries.
+      # We deliberately do NOT run a project-wide `assembleRelease`: that also
+      # assembles every sample app (sample/* with the Us1–Us5 flavors), plus the
+      # benchmark and tooling modules — none of which are published, and which
+      # previously pushed this job past 2 hours.
+      # `bundleReleaseAar` is an Android-library-only task, so the sample
+      # application modules (which produce APK/AAB, not AAR) are skipped
+      # automatically; it packages the real artifacts as a fail-fast gate before
+      # publishing. `testReleaseUnitTest` compiles and tests the library release
+      # sources.
+      - name: Build and test SDK library modules
+        run: ./gradlew clean bundleReleaseAar testReleaseUnitTest --stacktrace
 
       - name: Stop Gradle Daemon
         run: ./gradlew --stop
