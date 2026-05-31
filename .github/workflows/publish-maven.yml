@@ -56,8 +56,12 @@ jobs:
       # automatically; it packages the real artifacts as a fail-fast gate before
       # publishing. `testReleaseUnitTest` compiles and tests the library release
       # sources.
+      # NOTE: no `clean` here. The runner is ephemeral (fresh checkout, empty
+      # build/), so clean is unnecessary; worse, running `clean` in the same
+      # invocation as `testReleaseUnitTest` races with Kover and fails with
+      # "kover-agent.args (No such file or directory)" as clean wipes build/tmp.
       - name: Build and test SDK library modules
-        run: ./gradlew clean bundleReleaseAar testReleaseUnitTest --stacktrace
+        run: ./gradlew bundleReleaseAar testReleaseUnitTest --stacktrace
 
       - name: Stop Gradle Daemon
         run: ./gradlew --stop
