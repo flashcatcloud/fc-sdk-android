@@ -1,3 +1,9 @@
+# Unreleased
+
+* [IMPROVEMENT] Stop reading SIM carrier info (`TelephonyManager.simCarrierIdName` / `simCarrierId`) in `BroadcastReceiverNetworkInfoProvider`. This call path was already unreachable at runtime (the provider is only used below API 24, while the carrier branch required API 28+), so removing it has no functional impact but eliminates the telephony-API reference from the bytecode that privacy-compliance static scanners flag.
+
+---
+
 # 0.4.1 / 2026-06-09
 
 * [BUGFIX] Ship consumer ProGuard keep rules for `com.google.gson.**` and `okhttp3.OkHttpClient` so R8-minified host apps no longer crash at `Datadog.initialize()` with "missing dependencies: Gson". The SDK resolves these `compileOnly` dependencies via `Class.forName` during its startup dependency check; without a keep rule R8 could rename/strip them, so the check failed even when the host app had declared the dependencies. (#20)
