@@ -1,3 +1,9 @@
+# 0.4.1 / 2026-06-09
+
+* [BUGFIX] Ship consumer ProGuard keep rules for `com.google.gson.**` and `okhttp3.OkHttpClient` so R8-minified host apps no longer crash at `Datadog.initialize()` with "missing dependencies: Gson". The SDK resolves these `compileOnly` dependencies via `Class.forName` during its startup dependency check; without a keep rule R8 could rename/strip them, so the check failed even when the host app had declared the dependencies. (#20)
+
+---
+
 # 0.4.0 / 2026-05-30
 
 * [IMPROVEMENT] Make `okhttp`, `gson` and `androidx.work:work-runtime` `compileOnly` dependencies so the SDK no longer forces specific versions on host apps. **Breaking:** integrating apps must now declare `okhttp` and `gson` themselves; `Datadog.initialize()` fails fast with `IllegalStateException` if either is missing. WorkManager remains optional — when absent the SDK logs a warning and disables background upload.
