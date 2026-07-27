@@ -1,3 +1,9 @@
+# 0.5.0 / 2026-07-27
+
+* [FEATURE] Add `_RumInternalProxy.notifyAppLaunch(uiCreateTimeNs, frameEndOffsetNs)` so cross-platform hosts can report an app launch (TTID) the native `RumAppStartupDetector` cannot see. The detector registers its Activity lifecycle callbacks when the RUM feature initializes, so a host that initializes the SDK after the first Activity is created - Flutter initializes from Dart `main()` - never gets a launch reported. The host supplies the moment its UI was created and how long before the call the launch frame finished displaying; the SDK derives the duration, classifies cold vs warm with the same 10s gap threshold the native detector uses, and emits the app-start and TTID events in the same order the native path does.
+
+---
+
 # 0.4.1 / 2026-06-09
 
 * [BUGFIX] Ship consumer ProGuard keep rules for `com.google.gson.**` and `okhttp3.OkHttpClient` so R8-minified host apps no longer crash at `Datadog.initialize()` with "missing dependencies: Gson". The SDK resolves these `compileOnly` dependencies via `Class.forName` during its startup dependency check; without a keep rule R8 could rename/strip them, so the check failed even when the host app had declared the dependencies. (#20)

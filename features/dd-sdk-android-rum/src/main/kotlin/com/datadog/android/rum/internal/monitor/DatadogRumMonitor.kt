@@ -131,7 +131,7 @@ internal class DatadogRumMonitor(
 
     internal var debugListener: RumDebugListener? = null
 
-    private val internalProxy = _RumInternalProxy(this)
+    private val internalProxy = _RumInternalProxy(this, sdkCore)
 
     init {
         handler.postDelayed(keepAliveRunnable, KEEP_ALIVE_MS)
