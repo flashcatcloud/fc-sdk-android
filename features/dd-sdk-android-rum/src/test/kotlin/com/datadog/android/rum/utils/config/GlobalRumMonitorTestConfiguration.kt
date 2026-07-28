@@ -33,7 +33,7 @@ internal class GlobalRumMonitorTestConfiguration :
         mockSdkCore = mock()
 
         (mockInstance as? InternalAdvancedRumMonitor)?.let {
-            whenever(it._getInternal()).thenReturn(_RumInternalProxy(mockInstance as AdvancedRumMonitor))
+            whenever(it._getInternal()).thenReturn(_RumInternalProxy(mockInstance as AdvancedRumMonitor, mockSdkCore))
         }
 
         GlobalRumMonitor.registerIfAbsent(mockInstance, mockSdkCore)

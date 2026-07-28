@@ -8,11 +8,20 @@ package com.datadog.android.rum
 
 import android.app.Activity
 import android.content.Intent
+import java.lang.ref.WeakReference
+import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.seconds
+import com.datadog.android.api.feature.Feature
+import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.event.EventMapper
 import com.datadog.android.lint.InternalApi
 import com.datadog.android.rum.RumConfiguration.Builder
+import com.datadog.android.rum.internal.RumFeature
 import com.datadog.android.rum.internal.instrumentation.insights.InsightsCollector
+import com.datadog.android.rum.internal.domain.Time
 import com.datadog.android.rum.internal.monitor.AdvancedRumMonitor
+import com.datadog.android.rum.internal.startup.RumStartupScenario
+import com.datadog.android.rum.internal.startup.RumTTIDInfo
 import com.datadog.android.rum.tracking.ActionTrackingStrategy
 import com.datadog.android.telemetry.model.TelemetryConfigurationEvent
 
@@ -35,7 +44,10 @@ import com.datadog.android.telemetry.model.TelemetryConfigurationEvent
     "ClassNaming",
     "VariableNaming"
 )
-class _RumInternalProxy internal constructor(private val rumMonitor: AdvancedRumMonitor) {
+class _RumInternalProxy internal constructor(
+    private val rumMonitor: AdvancedRumMonitor,
+    private val sdkCore: InternalSdkCore
+) {
     @Volatile private var handledSyntheticsAttribute = false
 
     fun addLongTask(durationNs: Long, target: String) {
@@ -48,6 +60,86 @@ class _RumInternalProxy internal constructor(private val rumMonitor: AdvancedRum
 
     fun updateExternalRefreshRate(frameTimeSeconds: Double) {
         rumMonitor.updateExternalRefreshRate(frameTimeSeconds)
+    }
+
+    /**
+     * Report an app-launch (TTID) vital on behalf of a host framework (e.g. Flutter) when, and
+     * only when, the native RumAppStartupDetector did not report one itself. Emits the same
+     * VitalAppLaunchEvent(metric=TTID) the native detector would.
+     *
+     * Whether the detector saw the launch is decided here rather than by the caller, because a
+     * host cannot tell: initializing the native SDK before Flutter attaches does not mean the
+     * SDK initialized early enough for the detector to observe the first Activity. Hosts are
+     * therefore expected to call this on every Android foreground launch and let the SDK
+     * arbitrate - the detector wins whenever it fired, since it always fires before any frame
+     * the host could render.
+     *
+     * [uiCreateTimeNs] is a [System.nanoTime] reading taken when the host framework's UI was
+     * created - for Flutter, when the first Activity is attached. It plays the role
+     * first-Activity-onCreate plays in RumAppStartupDetectorImpl, so a launch is classified
+     * cold or warm here exactly as it would be natively. Pass 0 when the host cannot supply
+     * it; the launch is then reported as cold, which is what a host that only knows about
+     * process start can honestly claim.
+     *
+     * [frameEndOffsetNs] is how long before this call the launch frame actually finished
+     * displaying. TTID ends at that frame, not at the moment the host got around to calling
+     * us, so without it the host's own callback scheduling and any cross-language call
+     * overhead would be counted as launch time. Pass 0 when the host cannot measure it.
+     *
+     * The process start time comes from the core rather than from
+     * android.os.Process.getStartElapsedRealtime directly, because the core already discards
+     * the buggy readings that API occasionally returns - see DefaultAppStartTimeProvider.
+     */
+    fun notifyAppLaunchIfAbsent(uiCreateTimeNs: Long, frameEndOffsetNs: Long) {
+        val rumFeature = sdkCore.getFeature(Feature.RUM_FEATURE_NAME)?.unwrap<RumFeature>() ?: return
+
+        val processStartTimeNs = sdkCore.appStartTimeNs
+        val gapNs = if (uiCreateTimeNs > 0L) uiCreateTimeNs - processStartTimeNs else 0L
+
+        // A long gap between process start and the first UI being created means the process was
+        // already alive when the user opened the app, so the launch is warm and must be measured
+        // from the UI creation instead of from process start.
+        val isCold = gapNs <= START_GAP_THRESHOLD_NS
+        val initialTimeNs = if (isCold) processStartTimeNs else uiCreateTimeNs
+
+        val nowNs = System.nanoTime()
+        val frameEndNs = nowNs - frameEndOffsetNs.coerceAtLeast(0L)
+        val durationNs = frameEndNs - initialTimeNs
+        if (durationNs <= 0L) return
+
+        // Anchored on now rather than on durationNs: the launch started that long ago in wall
+        // clock terms, whereas durationNs deliberately stops short at the launch frame.
+        val elapsedSinceStartNs = nowNs - initialTimeNs
+        val initialTime = Time(
+            timestamp = System.currentTimeMillis() -
+                TimeUnit.NANOSECONDS.toMillis(elapsedSinceStartNs),
+            nanoTime = initialTimeNs
+        )
+        val scenario = if (isCold) {
+            RumStartupScenario.Cold(
+                hasSavedInstanceStateBundle = false,
+                activity = WeakReference(null),
+                appStartActivityOnCreateGapNs = gapNs,
+                initialTime = initialTime
+            )
+        } else {
+            RumStartupScenario.WarmFirstActivity(
+                hasSavedInstanceStateBundle = false,
+                activity = WeakReference(null),
+                appStartActivityOnCreateGapNs = gapNs,
+                initialTime = initialTime
+            )
+        }
+        // Claimed only once there is something worth reporting, so a nonsensical reading does
+        // not burn the single fallback the process gets.
+        if (!rumFeature.claimAppLaunchFallback()) return
+
+        // The native detector always emits the app-start event before the TTID one, and the
+        // session scope depends on that ordering: it numbers the launch within the session and
+        // records the scenario that a later TTFD is measured against. Emitting only the TTID
+        // event would leave the launch numbered -1 and the TTFD state unset.
+        rumMonitor.sendAppStartEvent(scenario)
+        rumMonitor.sendTTIDEvent(RumTTIDInfo(scenario, durationNs))
     }
 
     fun setInternalViewAttribute(key: String, value: Any?) {
@@ -132,3 +224,7 @@ class _RumInternalProxy internal constructor(private val rumMonitor: AdvancedRum
         }
     }
 }
+
+// Kept in sync with RumAppStartupDetectorImpl.START_GAP_THRESHOLD_NS so that a launch reported
+// by a cross-platform host is classified the same way the native detector would classify it.
+private val START_GAP_THRESHOLD_NS = 10.seconds.inWholeNanoseconds
