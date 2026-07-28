@@ -11,10 +11,12 @@ import android.content.Intent
 import java.lang.ref.WeakReference
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
+import com.datadog.android.api.feature.Feature
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.event.EventMapper
 import com.datadog.android.lint.InternalApi
 import com.datadog.android.rum.RumConfiguration.Builder
+import com.datadog.android.rum.internal.RumFeature
 import com.datadog.android.rum.internal.instrumentation.insights.InsightsCollector
 import com.datadog.android.rum.internal.domain.Time
 import com.datadog.android.rum.internal.monitor.AdvancedRumMonitor
@@ -61,10 +63,16 @@ class _RumInternalProxy internal constructor(
     }
 
     /**
-     * Report an app-launch (TTID) vital measured by a host framework (e.g. Flutter), whose late
-     * SDK initialization means the native RumAppStartupDetector never sees the first Activity
-     * and so never fires. Emits the same VitalAppLaunchEvent(metric=TTID) the native detector
-     * would.
+     * Report an app-launch (TTID) vital on behalf of a host framework (e.g. Flutter) when, and
+     * only when, the native RumAppStartupDetector did not report one itself. Emits the same
+     * VitalAppLaunchEvent(metric=TTID) the native detector would.
+     *
+     * Whether the detector saw the launch is decided here rather than by the caller, because a
+     * host cannot tell: initializing the native SDK before Flutter attaches does not mean the
+     * SDK initialized early enough for the detector to observe the first Activity. Hosts are
+     * therefore expected to call this on every Android foreground launch and let the SDK
+     * arbitrate - the detector wins whenever it fired, since it always fires before any frame
+     * the host could render.
      *
      * [uiCreateTimeNs] is a [System.nanoTime] reading taken when the host framework's UI was
      * created - for Flutter, when the first Activity is attached. It plays the role
@@ -82,7 +90,9 @@ class _RumInternalProxy internal constructor(
      * android.os.Process.getStartElapsedRealtime directly, because the core already discards
      * the buggy readings that API occasionally returns - see DefaultAppStartTimeProvider.
      */
-    fun notifyAppLaunch(uiCreateTimeNs: Long, frameEndOffsetNs: Long) {
+    fun notifyAppLaunchIfAbsent(uiCreateTimeNs: Long, frameEndOffsetNs: Long) {
+        val rumFeature = sdkCore.getFeature(Feature.RUM_FEATURE_NAME)?.unwrap<RumFeature>() ?: return
+
         val processStartTimeNs = sdkCore.appStartTimeNs
         val gapNs = if (uiCreateTimeNs > 0L) uiCreateTimeNs - processStartTimeNs else 0L
 
@@ -120,6 +130,10 @@ class _RumInternalProxy internal constructor(
                 initialTime = initialTime
             )
         }
+        // Claimed only once there is something worth reporting, so a nonsensical reading does
+        // not burn the single fallback the process gets.
+        if (!rumFeature.claimAppLaunchFallback()) return
+
         // The native detector always emits the app-start event before the TTID one, and the
         // session scope depends on that ordering: it numbers the launch within the session and
         // records the scenario that a later TTFD is measured against. Emitting only the TTID

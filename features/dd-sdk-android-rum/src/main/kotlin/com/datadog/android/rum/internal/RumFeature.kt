@@ -179,6 +179,11 @@ internal class RumFeature(
     private val lateCrashEventHandler by lazy { lateCrashReporterFactory(sdkCore as InternalSdkCore) }
     private var rumAppStartupDetector: RumAppStartupDetector? = null
 
+    // Latched, never cleared: once the native detector has reported a launch it owns them for
+    // the rest of the process, and a host framework fallback must stay out of its way.
+    private val appStartupDetectedNatively = AtomicBoolean(false)
+    private val appLaunchFallbackReported = AtomicBoolean(false)
+
     // region Feature
 
     override val name: String = Feature.RUM_FEATURE_NAME
@@ -695,6 +700,20 @@ internal class RumFeature(
         (GlobalRumMonitor.get(sdkCore) as? AdvancedRumMonitor)?.addSessionReplaySkippedFrame()
     }
 
+    /**
+     * Claims the right to report an app launch from a host framework fallback.
+     *
+     * The native detector is authoritative whenever it can see the launch: it fires from the
+     * first Activity's pre-create, which always precedes any frame a host framework could
+     * render. So a host may call in unconditionally - it only wins when the detector never saw
+     * the launch, which is exactly the case the fallback exists for. The second latch keeps
+     * several engines in the same process from each reporting the same launch.
+     */
+    internal fun claimAppLaunchFallback(): Boolean {
+        if (appStartupDetectedNatively.get()) return false
+        return appLaunchFallbackReported.compareAndSet(false, true)
+    }
+
     private fun initRumAppStartupDetector() {
         rumAppStartupDetector = RumAppStartupDetector.create(
             application = appContext.applicationContext as Application,
@@ -705,6 +724,10 @@ internal class RumFeature(
                 override fun onAppStartupDetected(scenario: RumStartupScenario) {
                     val activity = scenario.activity.get() ?: return
                     val rumMonitor = (GlobalRumMonitor.get(sdkCore) as? AdvancedRumMonitor) ?: return
+
+                    // Recorded only once we know this detection will actually be reported: a
+                    // detection we cannot report must not lock out the fallback.
+                    appStartupDetectedNatively.set(true)
 
                     rumMonitor.sendAppStartEvent(scenario)
 
