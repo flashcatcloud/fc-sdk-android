@@ -1,4 +1,6 @@
-# 0.5.0 / 2026-07-27
+# 0.5.0 / 2026-07-28
+
+* [IMPROVEMENT] Stop reading SIM carrier info (`TelephonyManager.simCarrierIdName` / `simCarrierId`) in `BroadcastReceiverNetworkInfoProvider`. This call path was already unreachable at runtime (the provider is only used below API 24, while the carrier branch required API 28+), so removing it has no functional impact but eliminates the telephony-API reference from the bytecode that privacy-compliance static scanners flag.
 
 * [FEATURE] Add `_RumInternalProxy.notifyAppLaunchIfAbsent(uiCreateTimeNs, frameEndOffsetNs)` so cross-platform hosts can report an app launch (TTID) the native `RumAppStartupDetector` did not see. The detector registers its Activity lifecycle callbacks when the RUM feature initializes, so a host that initializes the SDK after the first Activity is created - Flutter initializes from Dart `main()` - never gets a launch reported. Hosts call in on every Android foreground launch and the SDK arbitrates: the detector wins whenever it fired, since it always fires before any frame a host could render, and the fallback reports at most once per process. The host supplies the moment its UI was created and how long before the call the launch frame finished displaying; the SDK derives the duration, classifies cold vs warm with the same 10s gap threshold the native detector uses, and emits the app-start and TTID events in the same order the native path does.
 
