@@ -132,6 +132,7 @@ object Rum {
             sdkCore = sdkCore,
             sessionEndedMetricDispatcher = sessionEndedMetricDispatcher,
             sampleRate = rumFeature.sampleRate,
+            remoteSampling = rumFeature.remoteSamplingStore,
             writer = rumFeature.dataWriter,
             handler = Handler(Looper.getMainLooper()),
             telemetryEventHandler = TelemetryEventHandler(

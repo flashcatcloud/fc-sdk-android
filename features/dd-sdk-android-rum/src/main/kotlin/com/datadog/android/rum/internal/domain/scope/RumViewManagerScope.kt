@@ -52,7 +52,9 @@ internal class RumViewManagerScope(
     private val memoryVitalMonitor: VitalMonitor,
     private val frameRateVitalMonitor: VitalMonitor,
     internal var applicationDisplayed: Boolean,
-    internal val sampleRate: Float,
+    // FLASHCAT FORK - var rather than val: the session scope sets this to the rate it actually
+    // drew with, which the console can change between sessions.
+    internal var sampleRate: Float,
     internal val initialResourceIdentifier: InitialResourceIdentifier,
     private val slowFramesListener: SlowFramesListener?,
     lastInteractionIdentifier: LastInteractionIdentifier?,

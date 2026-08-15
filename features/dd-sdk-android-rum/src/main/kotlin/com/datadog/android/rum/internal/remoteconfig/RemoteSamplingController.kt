@@ -1,0 +1,186 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2016-Present Datadog, Inc.
+ */
+
+package com.datadog.android.rum.internal.remoteconfig
+
+import androidx.annotation.WorkerThread
+import com.datadog.android.api.InternalLogger
+import com.datadog.android.api.feature.FeatureSdkCore
+import okhttp3.Call
+import okhttp3.Request
+import org.json.JSONObject
+import java.io.IOException
+import java.net.URLEncoder
+import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
+
+/**
+ * Keeps the stored sampling rates in step with what the console says.
+ *
+ * Nothing here can hold up the SDK or interrupt collection: the first fetch is scheduled like any
+ * other, and a request that fails, times out or comes back unreadable leaves the stored rates
+ * exactly as they were. Wiping them on a bad minute would swing a whole fleet back to the rates it
+ * was built with, which is the opposite of what someone who turned a knob deliberately wants.
+ */
+internal class RemoteSamplingController(
+    private val sdkCore: FeatureSdkCore,
+    private val configUrl: String,
+    private val store: RemoteSamplingStore,
+    private val initialSessionSampleRate: Float,
+    private val callFactory: Call.Factory,
+    private val executor: ScheduledExecutorService,
+    private val restartSession: () -> Unit
+) {
+
+    fun start() {
+        schedule(0L)
+    }
+
+    fun stop() {
+        executor.shutdownNow()
+    }
+
+    private fun schedule(delaySeconds: Long) {
+        try {
+            executor.schedule({ fetchOnce() }, delaySeconds, TimeUnit.SECONDS)
+        } catch (e: RejectedExecutionException) {
+            // The SDK is shutting down. Nothing to keep fresh.
+            sdkCore.internalLogger.log(
+                InternalLogger.Level.DEBUG,
+                InternalLogger.Target.MAINTAINER,
+                { "Remote sampling refresh not scheduled: executor is shutting down." },
+                e
+            )
+        }
+    }
+
+    @WorkerThread
+    private fun fetchOnce() {
+        // Armed before the request goes out, so a request that never comes back still leads to
+        // another attempt instead of leaving the app on whatever it last knew, forever.
+        var nextDelaySeconds = DEFAULT_TTL_SECONDS
+
+        try {
+            val request = Request.Builder().url(configUrl).get().build()
+            callFactory.newCall(request).execute().use { response ->
+                if (response.isSuccessful) {
+                    val payload = response.body?.string()
+                    if (payload != null) {
+                        nextDelaySeconds = apply(payload)
+                    }
+                }
+            }
+        } catch (e: IOException) {
+            logFetchFailure(e)
+        } catch (e: IllegalStateException) {
+            logFetchFailure(e)
+        }
+
+        schedule(nextDelaySeconds)
+    }
+
+    /**
+     * Stores what the response carried and, when the console asked for it, restarts the session so
+     * the new rates take hold now instead of at the visitor's next one.
+     *
+     * The session is only restarted when the rates this client will draw with really changed.
+     * Without that check, a console resending an unchanged configuration would cut every session in
+     * two on every poll.
+     */
+    internal fun apply(payload: String): Long {
+        val json = JSONObject(payload)
+        val ttl = json.optLong(FIELD_TTL, DEFAULT_TTL_SECONDS)
+        val enabled = json.optBoolean(FIELD_ENABLED, false)
+        val activation = json.optString(FIELD_ACTIVATION, ACTIVATION_NEXT_SESSION)
+
+        val before = RemoteSamplingRates(store.sessionSampleRate(), store.sessionReplaySampleRate())
+        val after = if (enabled) readRates(json.optJSONObject(FIELD_RUM)) else EMPTY_RATES
+        store.store(after)
+
+        if (activation == ACTIVATION_IMMEDIATE && changesThisClient(before, after)) {
+            restartSession()
+        }
+
+        return if (ttl > 0) ttl else DEFAULT_TTL_SECONDS
+    }
+
+    private fun readRates(rum: JSONObject?): RemoteSamplingRates {
+        if (rum == null) return EMPTY_RATES
+        return RemoteSamplingRates(
+            sessionSampleRate = readRate(rum, FIELD_SESSION_SAMPLE_RATE),
+            sessionReplaySampleRate = readRate(rum, FIELD_SESSION_REPLAY_SAMPLE_RATE)
+        )
+    }
+
+    /**
+     * A rate the response did not send stays absent, so the value passed to init keeps applying.
+     * An out-of-range number is treated the same way rather than clamped: a rate we cannot trust is
+     * not a rate to sample a customer's traffic with.
+     */
+    private fun readRate(rum: JSONObject, field: String): Float? {
+        if (!rum.has(field)) return null
+        val rate = rum.optDouble(field, Double.NaN)
+        return if (rate.isNaN() || rate < 0.0 || rate > MAX_RATE) null else rate.toFloat()
+    }
+
+    private fun changesThisClient(before: RemoteSamplingRates, after: RemoteSamplingRates): Boolean {
+        val sessionBefore = before.sessionSampleRate ?: initialSessionSampleRate
+        val sessionAfter = after.sessionSampleRate ?: initialSessionSampleRate
+
+        // The replay rate is configured on the Session Replay feature rather than here, so there is
+        // no init value to fall back to on this side. Comparing what was stored is exact for every
+        // change after the first, and at worst restarts one session the first time the console sets
+        // a replay rate that happens to equal the one the app was built with.
+        return sessionBefore != sessionAfter ||
+            before.sessionReplaySampleRate != after.sessionReplaySampleRate
+    }
+
+    private fun logFetchFailure(e: Throwable) {
+        sdkCore.internalLogger.log(
+            InternalLogger.Level.DEBUG,
+            InternalLogger.Target.MAINTAINER,
+            { FETCH_FAILED_MESSAGE },
+            e
+        )
+    }
+
+    companion object {
+        internal const val DEFAULT_TTL_SECONDS = 300L
+        internal const val ACTIVATION_NEXT_SESSION = "next_session"
+        internal const val ACTIVATION_IMMEDIATE = "immediate"
+
+        private const val MAX_RATE = 100.0
+        private const val FIELD_TTL = "ttl"
+        private const val FIELD_ENABLED = "enabled"
+        private const val FIELD_ACTIVATION = "activation"
+        private const val FIELD_RUM = "rum"
+        private const val FIELD_SESSION_SAMPLE_RATE = "sessionSampleRate"
+        private const val FIELD_SESSION_REPLAY_SAMPLE_RATE = "sessionReplaySampleRate"
+
+        private val EMPTY_RATES = RemoteSamplingRates(null, null)
+
+        internal const val FETCH_FAILED_MESSAGE =
+            "Unable to refresh the remote sampling rates; keeping the ones already in use."
+
+        /**
+         * Where to ask. A custom endpoint means the app was pointed at the customer's own host for
+         * the RUM intake, and the configuration lives beside it there — which is exactly the layout
+         * the private-deployment nginx template serves.
+         */
+        fun buildConfigUrl(intakeUrl: String, clientToken: String, env: String, appVersion: String): String {
+            val parameters = buildString {
+                append("?client_token=").append(encode(clientToken))
+                append("&sdk=android")
+                if (env.isNotEmpty()) append("&env=").append(encode(env))
+                if (appVersion.isNotEmpty()) append("&app_version=").append(encode(appVersion))
+            }
+            return intakeUrl.trimEnd('/') + "/config" + parameters
+        }
+
+        private fun encode(value: String): String = URLEncoder.encode(value, "UTF-8")
+    }
+}

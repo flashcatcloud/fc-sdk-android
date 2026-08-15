@@ -74,6 +74,8 @@ import com.datadog.android.rum.internal.metric.slowframes.DefaultUISlownessMetri
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
 import com.datadog.android.rum.internal.monitor.AdvancedRumMonitor
 import com.datadog.android.rum.internal.monitor.DatadogRumMonitor
+import com.datadog.android.rum.internal.remoteconfig.RemoteSamplingController
+import com.datadog.android.rum.internal.remoteconfig.RemoteSamplingStore
 import com.datadog.android.rum.internal.net.RumRequestFactory
 import com.datadog.android.rum.internal.startup.RumAppStartupDetector
 import com.datadog.android.rum.internal.startup.RumFirstDrawTimeReporter
@@ -166,6 +168,14 @@ internal class RumFeature(
     private var anrDetectorExecutorService: ExecutorService? = null
     internal var anrDetectorRunnable: ANRDetectorRunnable? = null
     internal lateinit var appContext: Context
+
+    /**
+     * FLASHCAT FORK - the sampling rates the console last sent, and the job that keeps them fresh.
+     * Both stay null when the app did not opt in, which is what makes remote configuration cost
+     * nothing — no storage, no request, no behaviour change — for everyone who has not asked for it.
+     */
+    internal var remoteSamplingStore: RemoteSamplingStore? = null
+    private var remoteSamplingController: RemoteSamplingController? = null
     internal var initialResourceIdentifier: InitialResourceIdentifier = NoOpInitialResourceIdentifier()
     internal var lastInteractionIdentifier: LastInteractionIdentifier? = NoOpLastInteractionIdentifier()
     internal var slowFramesListener: SlowFramesListener? = null
@@ -268,6 +278,8 @@ internal class RumFeature(
             initializeANRDetector()
         }
 
+        startRemoteSampling(appContext)
+
         registerTrackingStrategies(appContext)
 
         sessionListener = configuration.sessionListener
@@ -333,6 +345,10 @@ internal class RumFeature(
 
     override fun onStop() {
         sdkCore.removeEventReceiver(name)
+
+        remoteSamplingController?.stop()
+        remoteSamplingController = null
+        remoteSamplingStore = null
 
         rumContextUpdateReceivers.forEach {
             sdkCore.removeContextUpdateReceiver(it)
@@ -752,6 +768,46 @@ internal class RumFeature(
         )
     }
 
+    /**
+     * FLASHCAT FORK - begins keeping the console's sampling rates fresh.
+     *
+     * Everything about it is best-effort: if the SDK context is not readable yet, or storage is
+     * unavailable, the app simply keeps sampling at the rates it was initialised with. Nothing here
+     * may delay initialisation or interrupt collection.
+     */
+    private fun startRemoteSampling(appContext: Context) {
+        if (!configuration.remoteConfigurationEnabled) return
+
+        val context = (sdkCore as? InternalSdkCore)?.getDatadogContext() ?: return
+        val intakeUrl = configuration.customEndpointUrl ?: (context.site.intakeEndpoint + RUM_INTAKE_PATH)
+
+        val store = RemoteSamplingStore(
+            appContext = appContext,
+            storeKey = RemoteSamplingStore.buildStoreKey(context),
+            internalLogger = sdkCore.internalLogger
+        )
+        remoteSamplingStore = store
+
+        remoteSamplingController = RemoteSamplingController(
+            sdkCore = sdkCore,
+            configUrl = RemoteSamplingController.buildConfigUrl(
+                intakeUrl = intakeUrl,
+                clientToken = context.clientToken,
+                env = context.env,
+                appVersion = context.version
+            ),
+            store = store,
+            initialSessionSampleRate = sampleRate,
+            callFactory = sdkCore.createOkHttpCallFactory(),
+            executor = sdkCore.createScheduledExecutorService("rum-remote-sampling"),
+            // Looked up when it fires rather than captured now: the monitor is registered after
+            // features are initialised, and by the time a response comes back it is there.
+            restartSession = {
+                (GlobalRumMonitor.get(sdkCore) as? AdvancedRumMonitor)?.resetSession()
+            }
+        ).also { it.start() }
+    }
+
     // endregion
 
     internal data class Configuration(
@@ -786,7 +842,9 @@ internal class RumFeature(
         val rumSessionTypeOverride: RumSessionType?,
         val collectAccessibility: Boolean,
         val disableJankStats: Boolean,
-        val insightsCollector: InsightsCollector
+        val insightsCollector: InsightsCollector,
+        // FLASHCAT FORK - opt in to taking the sampling rates from the console.
+        val remoteConfigurationEnabled: Boolean = false
     )
 
     internal companion object {
@@ -867,6 +925,10 @@ internal class RumFeature(
             "Slow frames monitoring enabled."
         internal const val SLOW_FRAMES_MONITORING_DISABLED_MESSAGE =
             "Slow frames monitoring disabled."
+        // FLASHCAT FORK - where the RUM intake lives under a site host; the configuration endpoint
+        // sits beside it, which is also how the private-deployment nginx template is laid out.
+        internal const val RUM_INTAKE_PATH = "/api/v2/rum"
+
         internal const val RUM_FEATURE_NOT_YET_INITIALIZED =
             "RUM feature is not initialized yet, you need to register it with a" +
                 " SDK instance by calling SdkCore#registerFeature method."

@@ -64,6 +64,27 @@ data class RumConfiguration internal constructor(
         }
 
         /**
+         * Take the sampling rates from the application's settings in the Flashcat console instead
+         * of only from the values set here, so they can be changed without shipping a new release
+         * of this app.
+         *
+         * A change applies to sessions started after it arrives; a session already under way keeps
+         * the decision it was created with, unless the console asks for immediate activation, in
+         * which case the running session ends and a new one starts under the new rates. The values
+         * set here stay in use until the first settings arrive, and whenever they cannot be
+         * reached.
+         *
+         * Disabled by default: left off, the SDK makes no extra request and behaves exactly as it
+         * did before this existed.
+         *
+         * @param enabled whether the console may set the sampling rates.
+         */
+        fun setRemoteConfigurationEnabled(enabled: Boolean): Builder {
+            rumConfig = rumConfig.copy(remoteConfigurationEnabled = enabled)
+            return this
+        }
+
+        /**
          * Whether to collect accessibility attributes - this is disabled by default.
          *
          * @param enabled whether collecting accessibility attributes is enabled or not.

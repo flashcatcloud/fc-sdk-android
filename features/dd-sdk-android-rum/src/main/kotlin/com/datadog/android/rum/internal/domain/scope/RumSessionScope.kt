@@ -27,6 +27,7 @@ import com.datadog.android.rum.internal.instrumentation.insights.InsightsCollect
 import com.datadog.android.rum.internal.metric.SessionMetricDispatcher
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
 import com.datadog.android.rum.internal.startup.RumSessionScopeStartupManager
+import com.datadog.android.rum.internal.remoteconfig.RemoteSamplingStore
 import com.datadog.android.rum.internal.utils.percent
 import com.datadog.android.rum.internal.vitals.VitalMonitor
 import com.datadog.android.rum.metric.interactiontonextview.LastInteractionIdentifier
@@ -61,8 +62,16 @@ internal class RumSessionScope(
     private val sessionMaxDurationNanos: Long = DEFAULT_SESSION_MAX_DURATION_NS,
     rumSessionTypeOverride: RumSessionType?,
     private val rumSessionScopeStartupManagerFactory: () -> RumSessionScopeStartupManager,
-    insightsCollector: InsightsCollector
+    insightsCollector: InsightsCollector,
+    // FLASHCAT FORK - rates the console can change without the app shipping a new release. Null
+    // when the app did not opt in, which is what keeps this whole path inert by default.
+    private val remoteSampling: RemoteSamplingStore? = null
 ) : RumScope {
+
+    // FLASHCAT FORK - the rate the current session was actually drawn at. It is what events report
+    // as their configured sample rate, so it has to be the effective one rather than whatever the
+    // app passed to init.
+    internal var effectiveSampleRate: Float = sampleRate
 
     internal var sessionId = RumContext.NULL_UUID
     internal var sessionState: State = State.NOT_TRACKED
@@ -282,7 +291,12 @@ internal class RumSessionScope(
     }
 
     private fun renewSession(time: Time, reason: StartReason) {
-        val keepSession = random.nextFloat() < sampleRate.percent()
+        // FLASHCAT FORK - read the console's rate here, at the one moment a session's fate is
+        // decided. A session already running is never redrawn, so a rate arriving mid-session
+        // cannot start or stop collecting for someone in the middle of using the app.
+        effectiveSampleRate = remoteSampling?.sessionSampleRate() ?: sampleRate
+        childScope?.sampleRate = effectiveSampleRate
+        val keepSession = random.nextFloat() < effectiveSampleRate.percent()
         startReason = reason
         sessionState = if (keepSession) State.TRACKED else State.NOT_TRACKED
         sessionId = UUID.randomUUID().toString()
@@ -306,6 +320,10 @@ internal class RumSessionScope(
             mapOf(
                 SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to RUM_SESSION_RENEWED_BUS_MESSAGE,
                 RUM_KEEP_SESSION_BUS_MESSAGE_KEY to keepSession,
+                // FLASHCAT FORK - Session Replay draws its own sample when it sees this message,
+                // and the console's replay rate is fetched on this side. Passing it along is what
+                // lets one fetch drive both decisions without a second store.
+                RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to remoteSampling?.sessionReplaySampleRate(),
                 RUM_SESSION_ID_BUS_MESSAGE_KEY to sessionId
             )
         )
@@ -318,6 +336,7 @@ internal class RumSessionScope(
         internal const val SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY = "type"
         internal const val RUM_SESSION_RENEWED_BUS_MESSAGE = "rum_session_renewed"
         internal const val RUM_KEEP_SESSION_BUS_MESSAGE_KEY = "keepSession"
+        internal const val RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY = "replaySampleRate"
         internal const val RUM_SESSION_ID_BUS_MESSAGE_KEY = "sessionId"
         internal val DEFAULT_SESSION_INACTIVITY_NS = TimeUnit.MINUTES.toNanos(15)
         internal val DEFAULT_SESSION_MAX_DURATION_NS = TimeUnit.HOURS.toNanos(4)
