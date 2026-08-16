@@ -86,7 +86,11 @@ internal class RemoteSamplingController(
         lastFetchAtMs = elapsedTimeMs()
 
         try {
-            val request = Request.Builder().url(configUrl).get().build()
+            // Telling the server which version this app is running is what lets the console answer
+            // "has my change reached everyone yet". It goes on the request every client makes,
+            // whether or not its session was kept.
+            val url = store.appliedVersion()?.let { "$configUrl&applied_version=$it" } ?: configUrl
+            val request = Request.Builder().url(url).get().build()
             callFactory.newCall(request).execute().use { response ->
                 if (response.isSuccessful) {
                     val payload = response.body?.string()
@@ -119,7 +123,12 @@ internal class RemoteSamplingController(
         val activation = json.optString(FIELD_ACTIVATION, ACTIVATION_NEXT_SESSION)
 
         val before = RemoteSamplingRates(store.sessionSampleRate(), store.sessionReplaySampleRate())
-        val after = if (enabled) readRates(json.optJSONObject(FIELD_RUM)) else EMPTY_RATES
+        val version = json.optInt(FIELD_VERSION, 0).takeIf { it > 0 }
+        val after = if (enabled) {
+            readRates(json.optJSONObject(FIELD_RUM)).copy(version = version)
+        } else {
+            EMPTY_RATES.copy(version = version)
+        }
         store.store(after)
 
         if (activation == ACTIVATION_IMMEDIATE && changesThisClient(before, after)) {
@@ -179,6 +188,7 @@ internal class RemoteSamplingController(
 
         private const val MAX_RATE = 100.0
         private const val MILLIS_PER_SECOND = 1_000L
+        private const val FIELD_VERSION = "version"
         private const val FIELD_TTL = "ttl"
         private const val FIELD_ENABLED = "enabled"
         private const val FIELD_ACTIVATION = "activation"

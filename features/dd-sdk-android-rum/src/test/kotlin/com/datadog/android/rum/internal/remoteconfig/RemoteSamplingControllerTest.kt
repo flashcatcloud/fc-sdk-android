@@ -64,14 +64,14 @@ internal class RemoteSamplingControllerTest {
     fun `M store the rates the response carries W apply()`() {
         testedController.apply(body(rum = """"sessionSampleRate":42,"sessionReplaySampleRate":7"""))
 
-        verify(store).store(RemoteSamplingRates(42f, 7f))
+        verify(store).store(RemoteSamplingRates(42f, 7f, 3))
     }
 
     @Test
     fun `M store a zero rate W apply() { zero is a setting, not a missing value }`() {
         testedController.apply(body(rum = """"sessionSampleRate":0"""))
 
-        verify(store).store(RemoteSamplingRates(0f, null))
+        verify(store).store(RemoteSamplingRates(0f, null, 3))
     }
 
     @Test
@@ -80,21 +80,21 @@ internal class RemoteSamplingControllerTest {
         // would silently stop collection nobody asked to stop.
         testedController.apply(body(rum = """"sessionSampleRate":42"""))
 
-        verify(store).store(RemoteSamplingRates(42f, null))
+        verify(store).store(RemoteSamplingRates(42f, null, 3))
     }
 
     @Test
     fun `M ignore a rate outside 0-100 W apply()`() {
         testedController.apply(body(rum = """"sessionSampleRate":420"""))
 
-        verify(store).store(RemoteSamplingRates(null, null))
+        verify(store).store(RemoteSamplingRates(null, null, 3))
     }
 
     @Test
     fun `M forget the rates W apply() { remote configuration switched off }`() {
         testedController.apply(body(enabled = false, rum = """"sessionSampleRate":42"""))
 
-        verify(store).store(RemoteSamplingRates(null, null))
+        verify(store).store(RemoteSamplingRates(null, null, 3))
     }
 
     // endregion
@@ -175,6 +175,15 @@ internal class RemoteSamplingControllerTest {
     }
 
     // endregion
+
+    @Test
+    fun `M keep the version W apply() { remote configuration switched off }`() {
+        // The rates are gone, but the console still needs to see this client is up to date with
+        // the change that turned them off.
+        testedController.apply(body(enabled = false))
+
+        verify(store).store(RemoteSamplingRates(null, null, 3))
+    }
 
     // region coming back to the foreground
 

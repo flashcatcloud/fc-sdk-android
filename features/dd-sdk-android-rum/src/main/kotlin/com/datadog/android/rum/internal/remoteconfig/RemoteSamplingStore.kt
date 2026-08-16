@@ -44,6 +44,17 @@ internal class RemoteSamplingStore(
     fun sessionReplaySampleRate(): Float? = read(replayKey())
 
     /**
+     * Which version of the settings the stored rates came from, or null before the first answer.
+     * Reported back on the next request so the console can say how far a change has reached — a
+     * question the events cannot answer, because a session that was not kept sends none, and the
+     * miss rate is set by the very rate being changed.
+     */
+    fun appliedVersion(): Int? {
+        val stored = preferences?.getInt(versionKey(), ABSENT_VERSION) ?: ABSENT_VERSION
+        return if (stored == ABSENT_VERSION) null else stored
+    }
+
+    /**
      * Replaces what is stored with what the response carried. Rates the response omitted are
      * removed rather than left behind, so switching a knob off in the console really does hand that
      * knob back to the value the app was initialised with.
@@ -52,6 +63,14 @@ internal class RemoteSamplingStore(
         val editor = preferences?.edit() ?: return
         write(editor, sessionKey(), rates.sessionSampleRate)
         write(editor, replayKey(), rates.sessionReplaySampleRate)
+        // Kept even when there are no rates — that is what "remote configuration is off, use your
+        // own settings" looks like — so the console can still see this client is up to date with
+        // the change that turned them off.
+        if (rates.version == null) {
+            editor.remove(versionKey())
+        } else {
+            editor.putInt(versionKey(), rates.version)
+        }
         editor.apply()
     }
 
@@ -72,12 +91,15 @@ internal class RemoteSamplingStore(
 
     private fun replayKey() = "$storeKey.sessionReplaySampleRate"
 
+    private fun versionKey() = "$storeKey.version"
+
     companion object {
         private const val PREFERENCES_NAME = "flashcat-rum-remote-sampling"
 
         // SharedPreferences has no "absent" for a primitive read, and every legitimate rate is
         // within 0..100, so a negative sentinel can never collide with a stored value.
         private const val ABSENT = -1f
+        private const val ABSENT_VERSION = -1
 
         internal const val STORAGE_UNAVAILABLE_MESSAGE =
             "Unable to open the remote sampling store; sampling will use the rates passed to init."
@@ -100,7 +122,8 @@ internal class RemoteSamplingStore(
  */
 internal data class RemoteSamplingRates(
     val sessionSampleRate: Float?,
-    val sessionReplaySampleRate: Float?
+    val sessionReplaySampleRate: Float?,
+    val version: Int? = null
 ) {
     fun isEmpty(): Boolean = sessionSampleRate == null && sessionReplaySampleRate == null
 }
