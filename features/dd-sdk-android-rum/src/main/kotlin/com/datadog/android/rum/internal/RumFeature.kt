@@ -74,6 +74,7 @@ import com.datadog.android.rum.internal.metric.slowframes.DefaultUISlownessMetri
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
 import com.datadog.android.rum.internal.monitor.AdvancedRumMonitor
 import com.datadog.android.rum.internal.monitor.DatadogRumMonitor
+import com.datadog.android.rum.internal.remoteconfig.ProcessForegroundCallback
 import com.datadog.android.rum.internal.remoteconfig.RemoteSamplingController
 import com.datadog.android.rum.internal.remoteconfig.RemoteSamplingStore
 import com.datadog.android.rum.internal.net.RumRequestFactory
@@ -176,6 +177,7 @@ internal class RumFeature(
      */
     internal var remoteSamplingStore: RemoteSamplingStore? = null
     private var remoteSamplingController: RemoteSamplingController? = null
+    private var remoteSamplingForegroundCallback: ProcessForegroundCallback? = null
     internal var initialResourceIdentifier: InitialResourceIdentifier = NoOpInitialResourceIdentifier()
     internal var lastInteractionIdentifier: LastInteractionIdentifier? = NoOpLastInteractionIdentifier()
     internal var slowFramesListener: SlowFramesListener? = null
@@ -346,6 +348,8 @@ internal class RumFeature(
     override fun onStop() {
         sdkCore.removeEventReceiver(name)
 
+        remoteSamplingForegroundCallback?.let { (appContext as? Application)?.unregisterActivityLifecycleCallbacks(it) }
+        remoteSamplingForegroundCallback = null
         remoteSamplingController?.stop()
         remoteSamplingController = null
         remoteSamplingStore = null
@@ -805,7 +809,19 @@ internal class RumFeature(
             restartSession = {
                 (GlobalRumMonitor.get(sdkCore) as? AdvancedRumMonitor)?.resetSession()
             }
-        ).also { it.start() }
+        ).also { controller ->
+            controller.start()
+
+            // The poll timer alone is not enough on a phone: an app in the background may not have
+            // it run for hours. Asking again on the way back to the foreground is what makes the
+            // console's change land soon after someone reopens the app, and it costs the app no
+            // code of its own.
+            (appContext as? Application)?.let { application ->
+                val callback = ProcessForegroundCallback { controller.refreshIfStale() }
+                application.registerActivityLifecycleCallbacks(callback)
+                remoteSamplingForegroundCallback = callback
+            }
+        }
     }
 
     // endregion

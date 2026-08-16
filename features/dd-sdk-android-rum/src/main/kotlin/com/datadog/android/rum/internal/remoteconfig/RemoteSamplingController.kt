@@ -6,6 +6,7 @@
 
 package com.datadog.android.rum.internal.remoteconfig
 
+import android.os.SystemClock
 import androidx.annotation.WorkerThread
 import com.datadog.android.api.InternalLogger
 import com.datadog.android.api.feature.FeatureSdkCore
@@ -33,11 +34,30 @@ internal class RemoteSamplingController(
     private val initialSessionSampleRate: Float,
     private val callFactory: Call.Factory,
     private val executor: ScheduledExecutorService,
-    private val restartSession: () -> Unit
+    private val restartSession: () -> Unit,
+    private val elapsedTimeMs: () -> Long = SystemClock::elapsedRealtime
 ) {
+
+    @Volatile
+    private var lastFetchAtMs: Long = 0
+
+    @Volatile
+    private var currentTtlSeconds: Long = DEFAULT_TTL_SECONDS
 
     fun start() {
         schedule(0L)
+    }
+
+    /**
+     * Asks again if what we hold has outlived its ttl. Called when the app returns to the
+     * foreground, where the poll timer cannot be trusted: the system may not have run it for hours.
+     *
+     * The staleness check is what keeps this from turning every app switch into a request.
+     */
+    fun refreshIfStale() {
+        if (elapsedTimeMs() - lastFetchAtMs >= currentTtlSeconds * MILLIS_PER_SECOND) {
+            schedule(0L)
+        }
     }
 
     fun stop() {
@@ -63,6 +83,7 @@ internal class RemoteSamplingController(
         // Armed before the request goes out, so a request that never comes back still leads to
         // another attempt instead of leaving the app on whatever it last knew, forever.
         var nextDelaySeconds = DEFAULT_TTL_SECONDS
+        lastFetchAtMs = elapsedTimeMs()
 
         try {
             val request = Request.Builder().url(configUrl).get().build()
@@ -105,7 +126,10 @@ internal class RemoteSamplingController(
             restartSession()
         }
 
-        return if (ttl > 0) ttl else DEFAULT_TTL_SECONDS
+        // Remembered here rather than around the request, so a fetch that fails keeps the ttl the
+        // server last asked for instead of falling back to ours.
+        currentTtlSeconds = if (ttl > 0) ttl else DEFAULT_TTL_SECONDS
+        return currentTtlSeconds
     }
 
     private fun readRates(rum: JSONObject?): RemoteSamplingRates {
@@ -154,6 +178,7 @@ internal class RemoteSamplingController(
         internal const val ACTIVATION_IMMEDIATE = "immediate"
 
         private const val MAX_RATE = 100.0
+        private const val MILLIS_PER_SECOND = 1_000L
         private const val FIELD_TTL = "ttl"
         private const val FIELD_ENABLED = "enabled"
         private const val FIELD_ACTIVATION = "activation"

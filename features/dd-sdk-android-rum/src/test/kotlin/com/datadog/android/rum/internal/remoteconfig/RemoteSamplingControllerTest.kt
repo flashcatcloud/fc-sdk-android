@@ -14,19 +14,25 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.reset
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.mockito.quality.Strictness
 import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 
 @ExtendWith(MockitoExtension::class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 internal class RemoteSamplingControllerTest {
 
     private lateinit var store: RemoteSamplingStore
+    private lateinit var executor: ScheduledExecutorService
     private var restarts = 0
+    private var elapsedMs = 0L
     private lateinit var testedController: RemoteSamplingController
 
     @BeforeEach
@@ -38,14 +44,17 @@ internal class RemoteSamplingControllerTest {
         whenever(store.sessionSampleRate()).thenReturn(null)
         whenever(store.sessionReplaySampleRate()).thenReturn(null)
         restarts = 0
+        elapsedMs = 0L
+        executor = mock()
         testedController = RemoteSamplingController(
             sdkCore = mock<FeatureSdkCore>(),
             configUrl = "https://example.com/api/v2/rum/config",
             store = store,
             initialSessionSampleRate = INIT_SESSION_RATE,
             callFactory = mock<Call.Factory>(),
-            executor = mock<ScheduledExecutorService>(),
-            restartSession = { restarts++ }
+            executor = executor,
+            restartSession = { restarts++ },
+            elapsedTimeMs = { elapsedMs }
         )
     }
 
@@ -163,6 +172,37 @@ internal class RemoteSamplingControllerTest {
     @Test
     fun `M fall back to the default ttl W apply() { server sent none }`() {
         assertThat(testedController.apply(body(ttl = 0))).isEqualTo(RemoteSamplingController.DEFAULT_TTL_SECONDS)
+    }
+
+    // endregion
+
+    // region coming back to the foreground
+
+    @Test
+    fun `M ask again W refreshIfStale() { what we hold outlived its ttl }`() {
+        // An app in the background may not have had its poll timer run for hours, so returning to
+        // the foreground is its own reason to ask.
+        testedController.start()
+        testedController.apply(body(ttl = 60))
+        reset(executor)
+
+        elapsedMs = 61_000L
+        testedController.refreshIfStale()
+
+        verify(executor).schedule(any(), eq(0L), eq(TimeUnit.SECONDS))
+    }
+
+    @Test
+    fun `M ask nothing W refreshIfStale() { what we hold is still fresh }`() {
+        // Switching apps back and forth must not turn into a request each time.
+        testedController.start()
+        testedController.apply(body(ttl = 300))
+        reset(executor)
+
+        elapsedMs = 10_000L
+        testedController.refreshIfStale()
+
+        verify(executor, never()).schedule(any(), any(), any())
     }
 
     // endregion
