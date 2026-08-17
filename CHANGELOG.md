@@ -1,3 +1,9 @@
+# 0.6.0 / 2026-08-17
+
+* [FEATURE] Add `Configuration.Builder.setNtpHosts(List<String>)` so the NTP servers used to synchronize the SDK clock can be chosen at initialization. The SDK previously always synchronized against a fixed set of public-internet NTP pool hosts. A deployment isolated from the public internet cannot reach those hosts, and some environments do not permit contacting them at all, yet there was no supported way to change or disable the behaviour. Pass the NTP servers reachable from the network the app runs on, or an empty list to skip clock synchronization entirely — events are then timestamped with the device clock, which is the same fallback the SDK already applied whenever synchronization failed.
+
+---
+
 # 0.5.0 / 2026-07-28
 
 * [IMPROVEMENT] Stop reading SIM carrier info (`TelephonyManager.simCarrierIdName` / `simCarrierId`) in `BroadcastReceiverNetworkInfoProvider`. This call path was already unreachable at runtime (the provider is only used below API 24, while the carrier branch required API 28+), so removing it has no functional impact but eliminates the telephony-API reference from the bytecode that privacy-compliance static scanners flag.

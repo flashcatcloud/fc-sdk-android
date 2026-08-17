@@ -8,6 +8,7 @@ package com.datadog.android.core.configuration
 
 import com.datadog.android.Datadog
 import com.datadog.android.FlashcatSite
+import com.datadog.android.core.internal.time.DatadogNtpEndpoint
 import com.datadog.android.core.persistence.PersistenceStrategy
 import com.datadog.android.security.Encryption
 import com.datadog.android.trace.TracingHeaderType
@@ -44,7 +45,8 @@ internal constructor(
         val batchProcessingLevel: BatchProcessingLevel,
         val persistenceStrategyFactory: PersistenceStrategy.Factory?,
         val backpressureStrategy: BackPressureStrategy,
-        val uploadSchedulerStrategy: UploadSchedulerStrategy?
+        val uploadSchedulerStrategy: UploadSchedulerStrategy?,
+        val ntpHosts: List<String>
     )
 
     // region Builder
@@ -285,6 +287,22 @@ internal constructor(
             return this
         }
 
+        /**
+         * Sets the NTP servers used to synchronize the SDK clock with server time.
+         *
+         * The default servers are reachable over the public internet, which a deployment
+         * isolated from it cannot use. Point this at NTP servers reachable from the
+         * network the app runs on, or pass an empty list to skip clock synchronization
+         * entirely and timestamp events with the device clock.
+         *
+         * @param ntpHosts the NTP server host names, or an empty list to disable
+         * clock synchronization
+         */
+        fun setNtpHosts(ntpHosts: List<String>): Builder {
+            coreConfig = coreConfig.copy(ntpHosts = ntpHosts.toList())
+            return this
+        }
+
         internal fun allowClearTextHttp(): Builder {
             coreConfig = coreConfig.copy(
                 needsClearTextHttp = true
@@ -311,6 +329,10 @@ internal constructor(
             BackPressureMitigation.IGNORE_NEWEST
         )
 
+        // Declared before DEFAULT_CORE_CONFIG: companion properties initialise in
+        // declaration order, and DEFAULT_CORE_CONFIG reads this one.
+        internal val DEFAULT_NTP_HOSTS: List<String> = DatadogNtpEndpoint.values().map { it.host }
+
         internal val DEFAULT_CORE_CONFIG = Core(
             needsClearTextHttp = false,
             enableDeveloperModeWhenDebuggable = false,
@@ -324,7 +346,8 @@ internal constructor(
             batchProcessingLevel = BatchProcessingLevel.MEDIUM,
             persistenceStrategyFactory = null,
             backpressureStrategy = DEFAULT_BACKPRESSURE_STRATEGY,
-            uploadSchedulerStrategy = null
+            uploadSchedulerStrategy = null,
+            ntpHosts = DEFAULT_NTP_HOSTS
         )
 
         internal const val NETWORK_REQUESTS_TRACKING_FEATURE_NAME = "Network requests"
