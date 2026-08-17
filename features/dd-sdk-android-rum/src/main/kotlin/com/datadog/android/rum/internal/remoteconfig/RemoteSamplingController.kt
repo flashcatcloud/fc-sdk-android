@@ -44,18 +44,28 @@ internal class RemoteSamplingController(
     @Volatile
     private var currentTtlSeconds: Long = DEFAULT_TTL_SECONDS
 
+    @Volatile
+    private var refreshOnForeground: Boolean = false
+
     fun start() {
         schedule(0L)
     }
 
     /**
-     * Asks again if what we hold has outlived its ttl. Called when the app returns to the
-     * foreground, where the poll timer cannot be trusted: the system may not have run it for hours.
+     * Asks again when the app returns to the foreground, where the poll timer cannot be trusted:
+     * the system may not have run it for hours.
      *
-     * The staleness check is what keeps this from turning every app switch into a request.
+     * Off unless an operator turned it on for this application. The poll spreads requests across
+     * the ttl; returning to the foreground does the opposite, bunching them at the moment everyone
+     * opens the app — the same shape as a release herd, arriving when the endpoint can least
+     * absorb it. Worth it for an application whose owner needs a change to land within minutes,
+     * not worth it for everyone else, so it is theirs to choose rather than ours to assume.
+     *
+     * The staleness check is the second guard: it keeps switching between apps from turning into a
+     * request each time.
      */
     fun refreshIfStale() {
-        if (elapsedTimeMs() - lastFetchAtMs >= currentTtlSeconds * MILLIS_PER_SECOND) {
+        if (shouldRefreshOnForeground(refreshOnForeground, elapsedTimeMs() - lastFetchAtMs, currentTtlSeconds)) {
             schedule(0L)
         }
     }
@@ -121,6 +131,7 @@ internal class RemoteSamplingController(
         val ttl = json.optLong(FIELD_TTL, DEFAULT_TTL_SECONDS)
         val enabled = json.optBoolean(FIELD_ENABLED, false)
         val activation = json.optString(FIELD_ACTIVATION, ACTIVATION_NEXT_SESSION)
+        refreshOnForeground = json.optBoolean(FIELD_REFRESH_ON_FOREGROUND, false)
 
         val before = RemoteSamplingRates(store.sessionSampleRate(), store.sessionReplaySampleRate())
         val version = json.optInt(FIELD_VERSION, 0).takeIf { it > 0 }
@@ -189,6 +200,7 @@ internal class RemoteSamplingController(
         private const val MAX_RATE = 100.0
         private const val MILLIS_PER_SECOND = 1_000L
         private const val FIELD_VERSION = "version"
+        private const val FIELD_REFRESH_ON_FOREGROUND = "refresh_on_foreground"
         private const val FIELD_TTL = "ttl"
         private const val FIELD_ENABLED = "enabled"
         private const val FIELD_ACTIVATION = "activation"
@@ -217,5 +229,14 @@ internal class RemoteSamplingController(
         }
 
         private fun encode(value: String): String = URLEncoder.encode(value, "UTF-8")
+
+        /**
+         * Whether returning to the foreground is a reason to ask again.
+         *
+         * Both halves guard different things: the permission keeps the request pattern off unless
+         * someone chose it, and the age keeps app switching from becoming a request each time.
+         */
+        internal fun shouldRefreshOnForeground(allowed: Boolean, ageMs: Long, ttlSeconds: Long): Boolean =
+            allowed && ageMs >= ttlSeconds * MILLIS_PER_SECOND
     }
 }

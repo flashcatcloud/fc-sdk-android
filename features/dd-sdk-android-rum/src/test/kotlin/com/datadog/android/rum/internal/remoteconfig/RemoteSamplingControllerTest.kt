@@ -188,11 +188,11 @@ internal class RemoteSamplingControllerTest {
     // region coming back to the foreground
 
     @Test
-    fun `M ask again W refreshIfStale() { what we hold outlived its ttl }`() {
+    fun `M ask again W refreshIfStale() { allowed and what we hold outlived its ttl }`() {
         // An app in the background may not have had its poll timer run for hours, so returning to
         // the foreground is its own reason to ask.
         testedController.start()
-        testedController.apply(body(ttl = 60))
+        testedController.apply(body(ttl = 60, refreshOnForeground = true))
         reset(executor)
 
         elapsedMs = 61_000L
@@ -202,10 +202,24 @@ internal class RemoteSamplingControllerTest {
     }
 
     @Test
+    fun `M ask nothing W refreshIfStale() { not allowed }`() {
+        // Off by default: returning to the foreground bunches requests at the moment everyone
+        // opens the app, which is the shape the endpoint copes with worst.
+        testedController.start()
+        testedController.apply(body(ttl = 60))
+        reset(executor)
+
+        elapsedMs = 61_000L
+        testedController.refreshIfStale()
+
+        verify(executor, never()).schedule(any(), any(), any())
+    }
+
+    @Test
     fun `M ask nothing W refreshIfStale() { what we hold is still fresh }`() {
         // Switching apps back and forth must not turn into a request each time.
         testedController.start()
-        testedController.apply(body(ttl = 300))
+        testedController.apply(body(ttl = 300, refreshOnForeground = true))
         reset(executor)
 
         elapsedMs = 10_000L
@@ -253,8 +267,11 @@ internal class RemoteSamplingControllerTest {
         ttl: Int = 300,
         enabled: Boolean = true,
         activation: String = "next_session",
+        refreshOnForeground: Boolean = false,
         rum: String = ""
-    ): String = """{"version":3,"ttl":$ttl,"enabled":$enabled,"activation":"$activation","rum":{$rum}}"""
+    ): String =
+        """{"version":3,"ttl":$ttl,"enabled":$enabled,"activation":"$activation",""" +
+            """"refresh_on_foreground":$refreshOnForeground,"rum":{$rum}}"""
 
     companion object {
         private const val INIT_SESSION_RATE = 20f
