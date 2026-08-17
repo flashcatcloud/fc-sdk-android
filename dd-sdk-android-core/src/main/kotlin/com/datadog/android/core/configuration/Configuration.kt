@@ -8,7 +8,6 @@ package com.datadog.android.core.configuration
 
 import com.datadog.android.Datadog
 import com.datadog.android.FlashcatSite
-import com.datadog.android.core.internal.time.DatadogNtpEndpoint
 import com.datadog.android.core.persistence.PersistenceStrategy
 import com.datadog.android.security.Encryption
 import com.datadog.android.trace.TracingHeaderType
@@ -331,7 +330,14 @@ internal constructor(
 
         // Declared before DEFAULT_CORE_CONFIG: companion properties initialise in
         // declaration order, and DEFAULT_CORE_CONFIG reads this one.
-        internal val DEFAULT_NTP_HOSTS: List<String> = DatadogNtpEndpoint.values().map { it.host }
+        // Two cloud providers plus the community pool, so no single operator being
+        // unreachable stops the clock from synchronizing.
+        internal val DEFAULT_NTP_HOSTS: List<String> = listOf(
+            "ntp.aliyun.com",
+            "ntp1.aliyun.com",
+            "time1.cloud.tencent.com",
+            "cn.pool.ntp.org"
+        )
 
         internal val DEFAULT_CORE_CONFIG = Core(
             needsClearTextHttp = false,

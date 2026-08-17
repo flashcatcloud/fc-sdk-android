@@ -1,5 +1,7 @@
 # 0.6.0 / 2026-08-17
 
+* [CHANGE] Change the default NTP servers from `0.datadog.pool.ntp.org` through `3.datadog.pool.ntp.org` to `ntp.aliyun.com`, `ntp1.aliyun.com`, `time1.cloud.tencent.com` and `cn.pool.ntp.org`. The previous hosts are frequently slow or unreachable from mainland China, where the SDK is predominantly deployed, so clock synchronization would time out and events fell back to the device clock. The new defaults span two cloud providers and the community pool, so no single operator being unreachable stops the clock from synchronizing. Apps that need other servers can select them with `setNtpHosts`.
+
 * [FEATURE] Add `Configuration.Builder.setNtpHosts(List<String>)` so the NTP servers used to synchronize the SDK clock can be chosen at initialization. The SDK previously always synchronized against a fixed set of public-internet NTP pool hosts. A deployment isolated from the public internet cannot reach those hosts, and some environments do not permit contacting them at all, yet there was no supported way to change or disable the behaviour. Pass the NTP servers reachable from the network the app runs on, or an empty list to skip clock synchronization entirely — events are then timestamped with the device clock, which is the same fallback the SDK already applied whenever synchronization failed.
 
 ---
