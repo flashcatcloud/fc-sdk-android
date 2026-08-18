@@ -60,7 +60,12 @@ internal class ConfigurationCoreForgeryFactory :
                 mock(),
                 forge.aValueFrom(BackPressureMitigation::class.java)
             ),
-            uploadSchedulerStrategy = forge.aNullable { mock() }
+            uploadSchedulerStrategy = forge.aNullable { mock() },
+            // Always non-empty: an empty list disables clock sync, which is a distinct
+            // case covered by its own tests rather than left to chance here.
+            ntpHosts = forge.aList(size = forge.anInt(1, 5)) {
+                aStringMatching("[a-z]+\\.pool\\.ntp\\.org")
+            }
         )
     }
 }

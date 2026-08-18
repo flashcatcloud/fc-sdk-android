@@ -312,6 +312,35 @@ internal class ConfigurationBuilderTest {
     }
 
     @Test
+    fun `M use ntp hosts W setNtpHosts()`(forge: Forge) {
+        // Given
+        val ntpHosts = forge.aList(size = forge.anInt(1, 5)) {
+            aStringMatching("[a-z]+\\.pool\\.ntp\\.org")
+        }
+
+        // When
+        val config = testedBuilder
+            .setNtpHosts(ntpHosts)
+            .build()
+
+        // Then
+        assertThat(config.coreConfig).isEqualTo(
+            Configuration.DEFAULT_CORE_CONFIG.copy(ntpHosts = ntpHosts)
+        )
+    }
+
+    @Test
+    fun `M disable clock sync W setNtpHosts() { empty list }`() {
+        // When
+        val config = testedBuilder
+            .setNtpHosts(emptyList())
+            .build()
+
+        // Then
+        assertThat(config.coreConfig.ntpHosts).isEmpty()
+    }
+
+    @Test
     fun `M build with additionalConfig W setAdditionalConfiguration()`(forge: Forge) {
         // Given
         val additionalConfig = forge.aMap {
