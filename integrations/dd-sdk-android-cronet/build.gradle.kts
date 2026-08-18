@@ -51,8 +51,10 @@ dependencies {
     implementation(project(":features:dd-sdk-android-rum"))
 
     unmock(libs.robolectric)
-    // Trying to add most recent lib version in order to test the instrumentation, see CronetApiInstrumentationTest
-    testImplementation("${libs.cronetApi.get().module}:+")
+    // The tests exercise the newer Proxy API absent from the compile-time cronet version.
+    // Pinned, not "+": a floating version resolves to whatever Chromium ships next and
+    // has already broken this module's compilation once.
+    testImplementation("${libs.cronetApi.get().module}:143.7445.0")
     testImplementation(testFixtures(project(":dd-sdk-android-core")))
     testImplementation(testFixtures(project(":dd-sdk-android-internal")))
     testImplementation(testFixtures(project(":features:dd-sdk-android-rum")))
