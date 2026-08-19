@@ -449,6 +449,12 @@ internal class DatadogRumMonitor(
         )
     }
 
+    override fun setForcedSession() {
+        handleEvent(
+            RumRawEvent.SetForcedSession()
+        )
+    }
+
     @ExperimentalRumApi
     override fun reportAppFullyDisplayed() {
         handleEvent(

@@ -75,6 +75,11 @@ internal class RumSessionScope(
 
     internal var sessionId = RumContext.NULL_UUID
     internal var sessionState: State = State.NOT_TRACKED
+
+    // FLASHCAT FORK - set through `setForcedSession()`, read at draw time. Once set it stays set
+    // for the process lifetime, so every session renewed after the call is collected with replay;
+    // the host application decides on each app start whether to call again.
+    internal var forcedSession = false
     private var startReason: StartReason = StartReason.USER_APP_LAUNCH
     internal var isActive: Boolean = true
     private val sessionStartNs = AtomicLong(sdkCore.timeProvider.getDeviceElapsedTimeNanos())
@@ -158,6 +163,19 @@ internal class RumSessionScope(
     ): RumScope? {
         if (event is RumRawEvent.ResetSession) {
             renewSession(event.eventTime, StartReason.EXPLICIT_STOP)
+        } else if (event is RumRawEvent.SetForcedSession) {
+            // FLASHCAT FORK - the escape hatch for "collect this user NOW": the application knows
+            // who needs debugging, the SDK only provides the switch. The session restarts so the
+            // forced draw applies from a clean session — RUM cannot flip the replay decision of a
+            // session already under way. Calling again while the forced session runs is a no-op,
+            // so a host calling on every screen does not shred sessions.
+            if (!(forcedSession && sessionState == State.TRACKED)) {
+                forcedSession = true
+                renewSession(event.eventTime, StartReason.EXPLICIT_STOP)
+                // Forcing is a deliberate act of the host application; without this the renewal
+                // is immediately re-expired when no user interaction happened yet.
+                lastUserInteractionNs.set(sdkCore.timeProvider.getDeviceElapsedTimeNanos())
+            }
         } else if (event is RumRawEvent.StopSession) {
             stopSession()
         }
@@ -296,7 +314,7 @@ internal class RumSessionScope(
         // cannot start or stop collecting for someone in the middle of using the app.
         effectiveSampleRate = remoteSampling?.sessionSampleRate() ?: sampleRate
         childScope?.sampleRate = effectiveSampleRate
-        val keepSession = random.nextFloat() < effectiveSampleRate.percent()
+        val keepSession = forcedSession || random.nextFloat() < effectiveSampleRate.percent()
         startReason = reason
         sessionState = if (keepSession) State.TRACKED else State.NOT_TRACKED
         sessionId = UUID.randomUUID().toString()
@@ -324,6 +342,9 @@ internal class RumSessionScope(
                 // and the console's replay rate is fetched on this side. Passing it along is what
                 // lets one fetch drive both decisions without a second store.
                 RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to remoteSampling?.sessionReplaySampleRate(),
+                // FLASHCAT FORK - a forced session must come out with replay, so Session Replay
+                // skips its own draw when this is set.
+                RUM_SESSION_FORCED_BUS_MESSAGE_KEY to forcedSession,
                 RUM_SESSION_ID_BUS_MESSAGE_KEY to sessionId
             )
         )
@@ -337,6 +358,7 @@ internal class RumSessionScope(
         internal const val RUM_SESSION_RENEWED_BUS_MESSAGE = "rum_session_renewed"
         internal const val RUM_KEEP_SESSION_BUS_MESSAGE_KEY = "keepSession"
         internal const val RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY = "replaySampleRate"
+        internal const val RUM_SESSION_FORCED_BUS_MESSAGE_KEY = "sessionForced"
         internal const val RUM_SESSION_ID_BUS_MESSAGE_KEY = "sessionId"
         internal val DEFAULT_SESSION_INACTIVITY_NS = TimeUnit.MINUTES.toNanos(15)
         internal val DEFAULT_SESSION_MAX_DURATION_NS = TimeUnit.HOURS.toNanos(4)

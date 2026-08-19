@@ -63,6 +63,7 @@ import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
@@ -963,6 +964,79 @@ internal class RumSessionScopeTest {
 
     // endregion
 
+    // region Forced Session
+
+    @Test
+    fun `M start a tracked session W handleEvent(SetForcedSession) { zero sample rate }`() {
+        // Given
+        initializeTestedScope(0f)
+
+        // When
+        testedScope.handleEvent(RumRawEvent.SetForcedSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        val context = testedScope.getRumContext()
+
+        // Then
+        assertThat(context.sessionId).isNotEqualTo(RumContext.NULL_UUID)
+        assertThat(context.sessionState).isEqualTo(RumSessionScope.State.TRACKED)
+        assertThat(context.sessionStartReason).isEqualTo(RumSessionScope.StartReason.EXPLICIT_STOP)
+    }
+
+    @Test
+    fun `M keep the running forced session W handleEvent(SetForcedSession) { called again }`() {
+        // Given
+        initializeTestedScope(0f)
+        testedScope.handleEvent(RumRawEvent.SetForcedSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        val forcedSessionId = testedScope.getRumContext().sessionId
+
+        // When
+        testedScope.handleEvent(RumRawEvent.SetForcedSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        assertThat(testedScope.getRumContext().sessionId).isEqualTo(forcedSessionId)
+    }
+
+    @Test
+    fun `M keep drawing tracked sessions W handleEvent(SetForcedSession) { later renewal }`() {
+        // Given
+        initializeTestedScope(0f)
+        testedScope.handleEvent(RumRawEvent.SetForcedSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        val forcedSessionId = testedScope.getRumContext().sessionId
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        val context = testedScope.getRumContext()
+
+        // Then
+        assertThat(context.sessionId).isNotEqualTo(forcedSessionId)
+        assertThat(context.sessionState).isEqualTo(RumSessionScope.State.TRACKED)
+    }
+
+    @Test
+    fun `M tell Session Replay the session is forced W handleEvent(SetForcedSession)`() {
+        // Given
+        initializeTestedScope(0f, withMockChildScope = false)
+
+        // When
+        testedScope.handleEvent(RumRawEvent.SetForcedSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        val argumentCaptor = argumentCaptor<Any>()
+        verify(mockSessionReplayFeatureScope, atLeastOnce()).sendEvent(argumentCaptor.capture())
+        assertThat(argumentCaptor.lastValue).isEqualTo(
+            mapOf(
+                RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
+                    RumSessionScope.RUM_SESSION_RENEWED_BUS_MESSAGE,
+                RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
+                RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to true,
+                RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
+                    testedScope.getRumContext().sessionId
+            )
+        )
+    }
+
+    // endregion
+
     // region Active View
 
     @Test
@@ -1202,6 +1276,7 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     testedScope.getRumContext().sessionId
             )
@@ -1214,6 +1289,7 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     testedScope.getRumContext().sessionId
             )
@@ -1253,6 +1329,7 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     testedScope.getRumContext().sessionId
             )
@@ -1265,6 +1342,7 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     testedScope.getRumContext().sessionId
             )
@@ -1298,6 +1376,7 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to firstSessionId
             )
         )
@@ -1309,6 +1388,7 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId
             )
         )
@@ -1341,6 +1421,7 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     firstSessionId
             )
@@ -1353,6 +1434,7 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     secondSessionId
             )
@@ -1387,6 +1469,7 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     firstSessionId
             )
@@ -1399,6 +1482,7 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     secondSessionId
             )
@@ -1411,6 +1495,7 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     secondSessionId
             )
@@ -1445,6 +1530,7 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to firstSessionId
             )
         )
@@ -1456,6 +1542,7 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId
 
             )
@@ -1490,6 +1577,7 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to firstSessionId
             )
         )
@@ -1501,6 +1589,7 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId
             )
         )
@@ -1535,6 +1624,7 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to firstSessionId
             )
         )
@@ -1546,6 +1636,7 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId
             )
         )
@@ -1557,6 +1648,7 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId
             )
         )

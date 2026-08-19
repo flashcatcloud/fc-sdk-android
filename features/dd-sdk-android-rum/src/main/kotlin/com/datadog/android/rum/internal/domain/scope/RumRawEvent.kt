@@ -170,6 +170,10 @@ internal sealed class RumRawEvent {
         override val eventTime: Time = Time()
     ) : RumRawEvent()
 
+    internal data class SetForcedSession(
+        override val eventTime: Time = Time()
+    ) : RumRawEvent()
+
     internal data class KeepAlive(
         override val eventTime: Time = Time()
     ) : RumRawEvent()

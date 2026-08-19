@@ -303,6 +303,15 @@ interface RumMonitor {
     fun stopSession()
 
     /**
+     * Forces the session to be collected, with Session Replay, regardless of the configured sample
+     * rates. Call it when your own code decides a user needs debugging (an allow-list, a support
+     * flow). The current session is restarted so collection starts from a clean session; calling
+     * again while the forced session is running does nothing. The forced state lasts for the
+     * process lifetime, so decide on each app start whether to call again.
+     */
+    fun setForcedSession()
+
+    /**
      * Adds view loading time to the active view based on the time elapsed since the view was started.
      * The view loading time is automatically calculated as the difference between the current time
      * and the start time of the view.

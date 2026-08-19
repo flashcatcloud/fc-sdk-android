@@ -117,6 +117,7 @@ interface com.datadog.android.rum.RumMonitor
   fun getAttributes(): Map<String, Any?>
   fun clearAttributes()
   fun stopSession()
+  fun setForcedSession()
   fun addViewLoadingTime(Boolean)
   fun addViewAttributes(Map<String, Any?>)
   fun removeViewAttributes(Collection<String>)

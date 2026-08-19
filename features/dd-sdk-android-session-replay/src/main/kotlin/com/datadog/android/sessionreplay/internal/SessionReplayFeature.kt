@@ -117,6 +117,10 @@ internal class SessionReplayFeature(
     @Volatile
     internal var remoteReplaySampleRate: Float? = null
 
+    // FLASHCAT FORK - true when RUM renewed this session under a forced draw; replay then skips
+    // its own draw, because a forced session must come out with replay.
+    internal var sessionForced: Boolean = false
+
     // Consulted only when a remote rate exists, so an injected sampler keeps its behaviour.
     private val remoteAwareSampler: Sampler<Unit> = RateBasedSampler { remoteReplaySampleRate ?: 0f }
 
@@ -270,6 +274,7 @@ internal class SessionReplayFeature(
         // was configured with keeps applying. It is read before sampling so the session about to be
         // drawn uses it.
         remoteReplaySampleRate = sessionMetadata[RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY] as? Float
+        sessionForced = sessionMetadata[RUM_SESSION_FORCED_BUS_MESSAGE_KEY] as? Boolean ?: false
 
         if (keepSession == null || sessionId == null) {
             logEventMissingMandatoryFieldsError()
@@ -291,7 +296,7 @@ internal class SessionReplayFeature(
             // this is exactly the sampler the app was configured with.
             val remoteRate = remoteReplaySampleRate
             val sampler = if (remoteRate == null) rateBasedSampler else remoteAwareSampler
-            isSessionSampledIn.set(sampler.sample(Unit))
+            isSessionSampledIn.set(sessionForced || sampler.sample(Unit))
         }
     }
 
@@ -449,6 +454,7 @@ internal class SessionReplayFeature(
         const val RUM_SESSION_RENEWED_BUS_MESSAGE = "rum_session_renewed"
         const val RUM_KEEP_SESSION_BUS_MESSAGE_KEY = "keepSession"
         const val RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY = "replaySampleRate"
+        const val RUM_SESSION_FORCED_BUS_MESSAGE_KEY = "sessionForced"
         const val RUM_SESSION_ID_BUS_MESSAGE_KEY = "sessionId"
         internal const val SESSION_REPLAY_SAMPLE_RATE_KEY = "session_replay_sample_rate"
         internal const val SESSION_REPLAY_TEXT_AND_INPUT_PRIVACY_KEY = "session_replay_text_and_input_privacy"
