@@ -102,7 +102,7 @@ internal class DatadogRumMonitor(
     private val rumSessionScopeStartupManagerFactory: () -> RumSessionScopeStartupManager,
     insightsCollector: InsightsCollector,
     // FLASHCAT FORK - the console's sampling rates, or null when the app did not opt in.
-    remoteSampling: RemoteSamplingStore? = null
+    private val remoteSampling: RemoteSamplingStore? = null
 ) : RumMonitor, AdvancedRumMonitor {
 
     internal var rootScope = RumApplicationScope(
@@ -453,6 +453,10 @@ internal class DatadogRumMonitor(
         handleEvent(
             RumRawEvent.SetForcedSession()
         )
+    }
+
+    override fun getRemoteConfig(): String? {
+        return remoteSampling?.custom()
     }
 
     @ExperimentalRumApi

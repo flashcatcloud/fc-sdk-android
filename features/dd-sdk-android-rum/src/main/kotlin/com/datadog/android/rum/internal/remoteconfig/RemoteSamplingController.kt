@@ -136,7 +136,12 @@ internal class RemoteSamplingController(
         val before = RemoteSamplingRates(store.sessionSampleRate(), store.sessionReplaySampleRate())
         val version = json.optInt(FIELD_VERSION, 0).takeIf { it > 0 }
         val after = if (enabled) {
-            readRates(json.optJSONObject(FIELD_RUM)).copy(version = version)
+            readRates(json.optJSONObject(FIELD_RUM)).copy(
+                version = version,
+                // Stored as the raw string: the platform's job is delivery, the meaning belongs to
+                // the host application.
+                custom = json.optJSONObject(FIELD_CUSTOM)?.toString()
+            )
         } else {
             EMPTY_RATES.copy(version = version)
         }
@@ -204,6 +209,7 @@ internal class RemoteSamplingController(
         private const val FIELD_TTL = "ttl"
         private const val FIELD_ENABLED = "enabled"
         private const val FIELD_ACTIVATION = "activation"
+        private const val FIELD_CUSTOM = "custom"
         private const val FIELD_RUM = "rum"
         private const val FIELD_SESSION_SAMPLE_RATE = "sessionSampleRate"
         private const val FIELD_SESSION_REPLAY_SAMPLE_RATE = "sessionReplaySampleRate"

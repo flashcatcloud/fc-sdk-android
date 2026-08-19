@@ -41,6 +41,12 @@ internal class RemoteSamplingStore(
 
     fun sessionSampleRate(): Float? = read(sessionKey())
 
+    /**
+     * The application-defined bag the console last published, as the raw JSON object string, or
+     * null when none is published. The platform never interprets it — see [RumMonitor.getRemoteConfig].
+     */
+    fun custom(): String? = preferences?.getString(customKey(), null)
+
     fun sessionReplaySampleRate(): Float? = read(replayKey())
 
     /**
@@ -71,6 +77,11 @@ internal class RemoteSamplingStore(
         } else {
             editor.putInt(versionKey(), rates.version)
         }
+        if (rates.custom == null) {
+            editor.remove(customKey())
+        } else {
+            editor.putString(customKey(), rates.custom)
+        }
         editor.apply()
     }
 
@@ -92,6 +103,8 @@ internal class RemoteSamplingStore(
     private fun replayKey() = "$storeKey.sessionReplaySampleRate"
 
     private fun versionKey() = "$storeKey.version"
+
+    private fun customKey() = "$storeKey.custom"
 
     companion object {
         private const val PREFERENCES_NAME = "flashcat-rum-remote-sampling"
@@ -123,7 +136,9 @@ internal class RemoteSamplingStore(
 internal data class RemoteSamplingRates(
     val sessionSampleRate: Float?,
     val sessionReplaySampleRate: Float?,
-    val version: Int? = null
+    val version: Int? = null,
+    /** Raw JSON object string of the console's custom pass-through values, delivered verbatim. */
+    val custom: String? = null
 ) {
     fun isEmpty(): Boolean = sessionSampleRate == null && sessionReplaySampleRate == null
 }

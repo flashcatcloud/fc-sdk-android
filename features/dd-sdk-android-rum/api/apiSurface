@@ -118,6 +118,7 @@ interface com.datadog.android.rum.RumMonitor
   fun clearAttributes()
   fun stopSession()
   fun setForcedSession()
+  fun getRemoteConfig(): String?
   fun addViewLoadingTime(Boolean)
   fun addViewAttributes(Map<String, Any?>)
   fun removeViewAttributes(Collection<String>)

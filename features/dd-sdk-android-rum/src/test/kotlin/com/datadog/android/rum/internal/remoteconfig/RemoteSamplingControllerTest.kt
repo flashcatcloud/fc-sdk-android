@@ -8,6 +8,7 @@ package com.datadog.android.rum.internal.remoteconfig
 
 import com.datadog.android.api.feature.FeatureSdkCore
 import okhttp3.Call
+import org.json.JSONObject
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -261,6 +263,27 @@ internal class RemoteSamplingControllerTest {
         assertThat(url).doesNotContain("app_version=")
     }
 
+    @Test
+    fun `M store the custom bag verbatim W apply()`() {
+        testedController.apply(body(custom = """{"viplist":["u-1","u-2"],"debug":true}"""))
+
+        argumentCaptor<RemoteSamplingRates> {
+            verify(store).store(capture())
+            assertThat(JSONObject(firstValue.custom!!).getBoolean("debug")).isTrue()
+            assertThat(JSONObject(firstValue.custom!!).getJSONArray("viplist").length()).isEqualTo(2)
+        }
+    }
+
+    @Test
+    fun `M drop the custom bag W apply() { remote configuration switched off }`() {
+        testedController.apply(body(enabled = false, custom = """{"debug":true}"""))
+
+        argumentCaptor<RemoteSamplingRates> {
+            verify(store).store(capture())
+            assertThat(firstValue.custom).isNull()
+        }
+    }
+
     // endregion
 
     private fun body(
@@ -268,10 +291,12 @@ internal class RemoteSamplingControllerTest {
         enabled: Boolean = true,
         activation: String = "next_session",
         refreshOnForeground: Boolean = false,
-        rum: String = ""
+        rum: String = "",
+        custom: String? = null
     ): String =
         """{"version":3,"ttl":$ttl,"enabled":$enabled,"activation":"$activation",""" +
-            """"refresh_on_foreground":$refreshOnForeground,"rum":{$rum}}"""
+            """"refresh_on_foreground":$refreshOnForeground,"rum":{$rum}""" +
+            (if (custom == null) "" else ""","custom":$custom""") + "}"
 
     companion object {
         private const val INIT_SESSION_RATE = 20f
