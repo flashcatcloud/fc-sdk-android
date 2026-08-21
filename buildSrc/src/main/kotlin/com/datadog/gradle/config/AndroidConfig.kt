@@ -22,9 +22,9 @@ object AndroidConfig {
 
     /**
      * Determine version based on CI environment variables (GitHub Actions)
-     * - Tag (GITHUB_REF_TYPE == "tag") → Release version parsed from tag (e.g., v0.3.0 -> 0.3.0)
-     * - publish-new branch → Snapshot version (e.g., 0.3.0-SNAPSHOT)
-     * - Other → Default snapshot version for local development
+     * - Tag (GITHUB_REF_TYPE == "tag") → Release version parsed from tag (e.g., v0.5.0 -> 0.5.0)
+     * - Anything else, including a push to the publish branch and local builds → the snapshot
+     *   version below
      */
     val VERSION = determineVersion()
 
@@ -39,8 +39,18 @@ object AndroidConfig {
                 parseVersionFromTag(githubRefName)
             }
             // Local development or other branches → Snapshot
+            //
+            // Keep this ahead of the latest release. Maven orders 0.5.0 above
+            // 0.4.0-SNAPSHOT, so a snapshot numbered below a published version loses
+            // conflict resolution to it: a module asking for the snapshot silently gets
+            // the release instead, and any API that only exists in the snapshot is gone
+            // at runtime. That cost us a long debugging session on the Flutter plugin,
+            // where 0.4.0-SNAPSHOT -> 0.4.1 turned a new entry point into a
+            // NoSuchMethodError that the Dart side swallowed into a RUM error.
+            //
+            // So: bump this to the next unreleased minor whenever a release goes out.
             else -> {
-                Version(0, 4, 0, Version.Type.Snapshot)
+                Version(0, 6, 0, Version.Type.Snapshot)
             }
         }
     }
