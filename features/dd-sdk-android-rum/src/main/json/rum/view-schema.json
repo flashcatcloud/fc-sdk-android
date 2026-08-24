@@ -523,6 +523,12 @@
                   "type": "boolean",
                   "description": "Whether session replay recording configured to start manually",
                   "readOnly": true
+                },
+                "rc_version": {
+                  "type": "integer",
+                  "description": "FlashCat fork - version of the remote configuration the session was drawn under; 0 when none was ever fetched",
+                  "minimum": 0,
+                  "readOnly": true
                 }
               }
             },

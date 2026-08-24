@@ -41,6 +41,7 @@ import com.datadog.android.rum.internal.metric.interactiontonextview.Interaction
 import com.datadog.android.rum.internal.metric.interactiontonextview.InternalInteractionContext
 import com.datadog.android.rum.internal.metric.networksettled.InternalResourceContext
 import com.datadog.android.rum.internal.metric.networksettled.NetworkSettledMetricResolver
+import com.datadog.android.rum.internal.remoteconfig.DrawnConfiguration
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
 import com.datadog.android.rum.internal.monitor.StorageEvent
 import com.datadog.android.rum.internal.toError
@@ -81,6 +82,9 @@ internal open class RumViewScope(
     internal val type: RumViewType = RumViewType.FOREGROUND,
     private val trackFrustrations: Boolean,
     internal val sampleRate: Float,
+    // FLASHCAT FORK - the configuration the session was drawn under, reported on this view's
+    // events instead of the init values. Null when the app did not opt in to remote configuration.
+    internal val drawnConfiguration: DrawnConfiguration? = null,
     private val interactionToNextViewMetricResolver: InteractionToNextViewMetricResolver,
     private val networkSettledMetricResolver: NetworkSettledMetricResolver,
     private val slowFramesListener: SlowFramesListener?,
@@ -1346,7 +1350,16 @@ internal open class RumViewScope(
                         sessionPrecondition = rumContext.sessionStartReason.toViewSessionPrecondition()
                     ),
                     replayStats = replayStats,
-                    configuration = ViewEvent.Configuration(sessionSampleRate = sampleRate)
+                    // FLASHCAT FORK - the rates this session was actually drawn under (the
+                    // console's where it set them) and the settings version they came from, so
+                    // server-side extrapolation and audits line up with the draw. rc_version is a
+                    // FlashCat addition on top of the shared schema; our intake reads it, others
+                    // ignore it.
+                    configuration = ViewEvent.Configuration(
+                        sessionSampleRate = sampleRate,
+                        sessionReplaySampleRate = drawnConfiguration?.sessionReplaySampleRate,
+                        rcVersion = drawnConfiguration?.version?.toLong()
+                    )
                 ),
                 connectivity = datadogContext.networkInfo.toViewConnectivity(),
                 service = datadogContext.service,
@@ -1647,6 +1660,7 @@ internal open class RumViewScope(
             frameRateVitalMonitor: VitalMonitor,
             trackFrustrations: Boolean,
             sampleRate: Float,
+            drawnConfiguration: DrawnConfiguration? = null,
             interactionToNextViewMetricResolver: InteractionToNextViewMetricResolver,
             networkSettledResourceIdentifier: InitialResourceIdentifier,
             slowFramesListener: SlowFramesListener?,
@@ -1683,6 +1697,7 @@ internal open class RumViewScope(
                 type = viewType,
                 trackFrustrations = trackFrustrations,
                 sampleRate = sampleRate,
+                drawnConfiguration = drawnConfiguration,
                 interactionToNextViewMetricResolver = interactionToNextViewMetricResolver,
                 networkSettledMetricResolver = networkSettledMetricResolver,
                 viewEndedMetricDispatcher = viewEndedMetricDispatcher,

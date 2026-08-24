@@ -151,6 +151,51 @@ internal class RemoteConfigStoreTest {
 
     // endregion
 
+    // region draw record
+
+    @Test
+    fun `M read back the draw a session was recorded under W storeDrawRecord()`() {
+        val store = testedStore()
+        val record = DrawnConfiguration(
+            sessionId = "session-1",
+            version = 7,
+            sessionSampleRate = 42f,
+            sessionReplaySampleRate = 9f
+        )
+
+        store.storeDrawRecord(record)
+
+        assertThat(testedStore().readDrawRecord()).isEqualTo(record)
+    }
+
+    @Test
+    fun `M tolerate a record an older version wrote W readDrawRecord() { fields missing }`() {
+        // A field that did not exist when the record was written reads as if the console never
+        // set that knob: an SDK upgrade changes nothing for a session already drawn.
+        preferences.edit().putString(
+            "test-key.draw",
+            """{"id":"session-1","version":7,"sessionSampleRate":42.0}"""
+        ).apply()
+
+        assertThat(testedStore().readDrawRecord()).isEqualTo(
+            DrawnConfiguration(
+                sessionId = "session-1",
+                version = 7,
+                sessionSampleRate = 42f,
+                sessionReplaySampleRate = null
+            )
+        )
+    }
+
+    @Test
+    fun `M answer no record W readDrawRecord() { storage holds something we did not write }`() {
+        preferences.edit().putString("test-key.draw", "not json").apply()
+
+        assertThat(testedStore().readDrawRecord()).isNull()
+    }
+
+    // endregion
+
     private fun testedStore(): RemoteConfigStore =
         RemoteConfigStore(appContext, "test-key", mock<InternalLogger>())
 

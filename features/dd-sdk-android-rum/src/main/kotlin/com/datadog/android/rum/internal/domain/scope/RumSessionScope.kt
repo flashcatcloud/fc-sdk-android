@@ -27,6 +27,7 @@ import com.datadog.android.rum.internal.instrumentation.insights.InsightsCollect
 import com.datadog.android.rum.internal.metric.SessionMetricDispatcher
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
 import com.datadog.android.rum.internal.startup.RumSessionScopeStartupManager
+import com.datadog.android.rum.internal.remoteconfig.DrawnConfiguration
 import com.datadog.android.rum.internal.remoteconfig.RemoteConfigStore
 import com.datadog.android.rum.internal.utils.percent
 import com.datadog.android.rum.internal.vitals.VitalMonitor
@@ -76,6 +77,13 @@ internal class RumSessionScope(
     // app passed to init.
     internal var effectiveSampleRate: Float = sampleRate
 
+    // FLASHCAT FORK - the configuration the current session was drawn under, so its events can
+    // report the rates and the settings version that actually decided them. Null when the app did
+    // not opt in: events then keep reporting the init values, which in that case are the values
+    // the draw used anyway.
+    internal var drawnConfiguration: DrawnConfiguration? = null
+        private set
+
     internal var sessionId = RumContext.NULL_UUID
     internal var sessionState: State = State.NOT_TRACKED
 
@@ -116,7 +124,7 @@ internal class RumSessionScope(
         accessibilitySnapshotManager = accessibilitySnapshotManager,
         batteryInfoProvider = batteryInfoProvider,
         displayInfoProvider = displayInfoProvider,
-        insightsCollector
+        insightsCollector = insightsCollector
     )
 
     internal val activeView: RumViewScope?
@@ -321,6 +329,20 @@ internal class RumSessionScope(
         startReason = reason
         sessionState = if (keepSession) State.TRACKED else State.NOT_TRACKED
         sessionId = UUID.randomUUID().toString()
+        // FLASHCAT FORK - remember what this session was drawn under, married to its id: the
+        // events of this session report these values for as long as it lives, and the record left
+        // in storage is inert the moment another id is drawn.
+        drawnConfiguration = remoteConfig?.let { config ->
+            DrawnConfiguration(
+                sessionId = sessionId,
+                version = config.appliedVersion() ?: 0,
+                sessionSampleRate = effectiveSampleRate,
+                sessionReplaySampleRate = config.sessionReplaySampleRate()
+                    ?: initialSessionReplaySampleRate()
+            )
+        }
+        drawnConfiguration?.let { remoteConfig?.storeDrawRecord(it) }
+        childScope?.drawnConfiguration = drawnConfiguration
         sessionStartNs.set(time.nanoTime)
         rumSessionScopeStartupManager = rumSessionScopeStartupManagerFactory()
         childScope?.renewViewScopes(time)
@@ -338,6 +360,16 @@ internal class RumSessionScope(
         // console promises. Nothing here waits for the request.
         onSessionDrawn()
     }
+
+    // FLASHCAT FORK - the replay rate the app was built with, read from what Session Replay
+    // published about itself: the drawn rate is the console's where it set one and this one where
+    // it did not. Null when Session Replay is not there to say, and the field is then not reported.
+    private fun initialSessionReplaySampleRate(): Float? =
+        (
+            sdkCore.getFeatureContext(
+                Feature.SESSION_REPLAY_FEATURE_NAME
+            )[SESSION_REPLAY_SAMPLE_RATE_CONTEXT_KEY] as? Number
+            )?.toFloat()
 
     private fun updateSessionStateForSessionReplay(state: State, sessionId: String) {
         val keepSession = (state == State.TRACKED)
@@ -367,6 +399,10 @@ internal class RumSessionScope(
         internal const val RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY = "replaySampleRate"
         internal const val RUM_SESSION_FORCED_BUS_MESSAGE_KEY = "sessionForced"
         internal const val RUM_SESSION_ID_BUS_MESSAGE_KEY = "sessionId"
+
+        // FLASHCAT FORK - the key under which Session Replay publishes the rate the app configured
+        // it with; duplicated here because internal constants do not cross module boundaries.
+        internal const val SESSION_REPLAY_SAMPLE_RATE_CONTEXT_KEY = "session_replay_sample_rate"
         internal val DEFAULT_SESSION_INACTIVITY_NS = TimeUnit.MINUTES.toNanos(15)
         internal val DEFAULT_SESSION_MAX_DURATION_NS = TimeUnit.HOURS.toNanos(4)
     }

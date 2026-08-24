@@ -31,6 +31,8 @@ import com.datadog.android.rum.internal.domain.display.DisplayInfo
 import com.datadog.android.rum.internal.instrumentation.insights.InsightsCollector
 import com.datadog.android.rum.internal.metric.SessionMetricDispatcher
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
+import com.datadog.android.rum.internal.remoteconfig.DrawnConfiguration
+import com.datadog.android.rum.internal.remoteconfig.RemoteConfigStore
 import com.datadog.android.rum.internal.startup.RumAppStartupTelemetryReporter
 import com.datadog.android.rum.internal.startup.RumSessionScopeStartupManager
 import com.datadog.android.rum.internal.startup.RumStartupScenario
@@ -1037,6 +1039,132 @@ internal class RumSessionScopeTest {
 
     // endregion
 
+    // region Remote Configuration
+
+    @Test
+    fun `M draw the session with the console's rates W handleEvent { remote configuration stored }`() {
+        // Given
+        val remoteConfig = mock<RemoteConfigStore>()
+        whenever(remoteConfig.sessionSampleRate()) doReturn 42f
+        whenever(remoteConfig.sessionReplaySampleRate()) doReturn 9f
+        whenever(remoteConfig.appliedVersion()) doReturn 7
+        initializeTestedScope(sampleRate = 100f, remoteConfig = remoteConfig)
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        val context = testedScope.getRumContext()
+
+        // Then
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(42f)
+        assertThat(testedScope.drawnConfiguration).isEqualTo(
+            DrawnConfiguration(
+                sessionId = context.sessionId,
+                version = 7,
+                sessionSampleRate = 42f,
+                sessionReplaySampleRate = 9f
+            )
+        )
+    }
+
+    @Test
+    fun `M fall back to the init values W handleEvent { console set nothing }`() {
+        // Given
+        val remoteConfig = mock<RemoteConfigStore>()
+        whenever(remoteConfig.sessionSampleRate()) doReturn null
+        whenever(remoteConfig.sessionReplaySampleRate()) doReturn null
+        whenever(remoteConfig.appliedVersion()) doReturn null
+        whenever(mockSdkCore.getFeatureContext(Feature.SESSION_REPLAY_FEATURE_NAME)) doReturn
+            mapOf(RumSessionScope.SESSION_REPLAY_SAMPLE_RATE_CONTEXT_KEY to 30L)
+        initializeTestedScope(sampleRate = 80f, remoteConfig = remoteConfig)
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then - the draw used the init values, and version 0 says no configuration was ever fetched
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(80f)
+        assertThat(testedScope.drawnConfiguration?.version).isZero()
+        assertThat(testedScope.drawnConfiguration?.sessionSampleRate).isEqualTo(80f)
+        assertThat(testedScope.drawnConfiguration?.sessionReplaySampleRate).isEqualTo(30f)
+    }
+
+    @Test
+    fun `M remember the draw for the session's events W handleEvent { remote configuration on }`() {
+        // Given
+        val remoteConfig = mock<RemoteConfigStore>()
+        whenever(remoteConfig.sessionSampleRate()) doReturn 42f
+        initializeTestedScope(remoteConfig = remoteConfig)
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then - the record is married to the session it drew, and the view scopes report from it
+        val record = testedScope.drawnConfiguration
+        assertThat(record?.sessionId).isEqualTo(testedScope.getRumContext().sessionId)
+        verify(remoteConfig).storeDrawRecord(record!!)
+        verify(mockChildScope).drawnConfiguration = record
+    }
+
+    @Test
+    fun `M ask the console again W handleEvent { a session was just drawn }`() {
+        // Given
+        var fetches = 0
+        initializeTestedScope(onSessionDrawn = { fetches++ })
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        assertThat(fetches).isOne()
+    }
+
+    @Test
+    fun `M record no draw W handleEvent { the app did not opt in }`() {
+        // Given
+        initializeTestedScope()
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then - events keep reporting the init values, which are the values the draw used anyway
+        assertThat(testedScope.drawnConfiguration).isNull()
+    }
+
+    @Test
+    fun `M tell Session Replay the console's replay rate W handleEvent { remote rate stored }`(
+        @Forgery key: RumScopeKey
+    ) {
+        // Given
+        val remoteConfig = mock<RemoteConfigStore>()
+        whenever(remoteConfig.sessionSampleRate()) doReturn 100f
+        whenever(remoteConfig.sessionReplaySampleRate()) doReturn 9f
+        initializeTestedScope(withMockChildScope = false, remoteConfig = remoteConfig)
+
+        // When
+        testedScope.handleEvent(
+            RumRawEvent.StartView(key, emptyMap()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        // Then
+        val argumentCaptor = argumentCaptor<Any>()
+        verify(mockSessionReplayFeatureScope, atLeastOnce()).sendEvent(argumentCaptor.capture())
+        assertThat(argumentCaptor.lastValue).isEqualTo(
+            mapOf(
+                RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
+                    RumSessionScope.RUM_SESSION_RENEWED_BUS_MESSAGE,
+                RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
+                RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to 9f,
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
+                    testedScope.getRumContext().sessionId
+            )
+        )
+    }
+
+    // endregion
+
     // region Active View
 
     @Test
@@ -1827,7 +1955,9 @@ internal class RumSessionScopeTest {
     private fun initializeTestedScope(
         sampleRate: Float = 100f,
         withMockChildScope: Boolean = true,
-        backgroundTrackingEnabled: Boolean? = null
+        backgroundTrackingEnabled: Boolean? = null,
+        remoteConfig: RemoteConfigStore? = null,
+        onSessionDrawn: () -> Unit = {}
     ) {
         testedScope = RumSessionScope(
             parentScope = mockParentScope,
@@ -1853,7 +1983,9 @@ internal class RumSessionScopeTest {
             batteryInfoProvider = mockBatteryInfoProvider,
             displayInfoProvider = mockDisplayInfoProvider,
             rumSessionScopeStartupManagerFactory = { mockRumSessionScopeStartupManager },
-            insightsCollector = mockInsightsCollector
+            insightsCollector = mockInsightsCollector,
+            remoteConfig = remoteConfig,
+            onSessionDrawn = onSessionDrawn
         )
 
         if (withMockChildScope) {

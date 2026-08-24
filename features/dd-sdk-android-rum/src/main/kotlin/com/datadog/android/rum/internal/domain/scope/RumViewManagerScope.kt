@@ -31,6 +31,7 @@ import com.datadog.android.rum.internal.metric.SessionMetricDispatcher
 import com.datadog.android.rum.internal.metric.ViewEndedMetricDispatcher
 import com.datadog.android.rum.internal.metric.interactiontonextview.InteractionToNextViewMetricResolver
 import com.datadog.android.rum.internal.metric.networksettled.NetworkSettledMetricResolver
+import com.datadog.android.rum.internal.remoteconfig.DrawnConfiguration
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
 import com.datadog.android.rum.internal.vitals.NoOpVitalMonitor
 import com.datadog.android.rum.internal.vitals.VitalMonitor
@@ -55,6 +56,9 @@ internal class RumViewManagerScope(
     // FLASHCAT FORK - var rather than val: the session scope sets this to the rate it actually
     // drew with, which the console can change between sessions.
     internal var sampleRate: Float,
+    // FLASHCAT FORK - the configuration the session was drawn under, handed to each view scope so
+    // its events report the draw rather than the init values. Null when the app did not opt in.
+    internal var drawnConfiguration: DrawnConfiguration? = null,
     internal val initialResourceIdentifier: InitialResourceIdentifier,
     private val slowFramesListener: SlowFramesListener?,
     lastInteractionIdentifier: LastInteractionIdentifier?,
@@ -283,6 +287,7 @@ internal class RumViewManagerScope(
             frameRateVitalMonitor = frameRateVitalMonitor,
             trackFrustrations = trackFrustrations,
             sampleRate = sampleRate,
+            drawnConfiguration = drawnConfiguration,
             interactionToNextViewMetricResolver = interactionToNextViewMetricResolver,
             networkSettledResourceIdentifier = initialResourceIdentifier,
             slowFramesListener = slowFramesListener,
@@ -366,6 +371,7 @@ internal class RumViewManagerScope(
             type = viewType,
             trackFrustrations = trackFrustrations,
             sampleRate = sampleRate,
+            drawnConfiguration = drawnConfiguration,
             interactionToNextViewMetricResolver = interactionToNextViewMetricResolver,
             networkSettledMetricResolver = networkSettledMetricResolver,
             viewEndedMetricDispatcher = viewEndedMetricDispatcher,
@@ -409,6 +415,7 @@ internal class RumViewManagerScope(
             type = viewType,
             trackFrustrations = trackFrustrations,
             sampleRate = sampleRate,
+            drawnConfiguration = drawnConfiguration,
             interactionToNextViewMetricResolver = interactionToNextViewMetricResolver,
             networkSettledMetricResolver = networkSettledMetricResolver,
             viewEndedMetricDispatcher = viewEndedMetricDispatcher,

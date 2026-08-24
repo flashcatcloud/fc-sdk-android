@@ -57,6 +57,7 @@ import com.datadog.android.rum.internal.metric.interactiontonextview.InternalInt
 import com.datadog.android.rum.internal.metric.networksettled.InternalResourceContext
 import com.datadog.android.rum.internal.metric.networksettled.NetworkSettledMetricResolver
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
+import com.datadog.android.rum.internal.remoteconfig.DrawnConfiguration
 import com.datadog.android.rum.internal.monitor.AdvancedRumMonitor
 import com.datadog.android.rum.internal.monitor.StorageEvent
 import com.datadog.android.rum.internal.toAction
@@ -645,6 +646,60 @@ internal class RumViewScopeTest {
             }
         }
         verifyNoMoreInteractions(mockWriter)
+        assertThat(result).isNull()
+    }
+
+    @Test
+    fun `M report the draw the session was created under W handleEvent(StartView) { remote config on }`(
+        @Forgery key: RumScopeKey
+    ) {
+        // Given
+        val drawnConfiguration = DrawnConfiguration(
+            sessionId = fakeParentContext.sessionId,
+            version = 7,
+            sessionSampleRate = fakeSampleRate,
+            sessionReplaySampleRate = 9f
+        )
+        testedScope = newRumViewScope(trackFrustrations = true, drawnConfiguration = drawnConfiguration)
+        mockSessionReplayContext(testedScope)
+
+        // When
+        val result = testedScope.handleEvent(
+            RumRawEvent.StartView(key, emptyMap()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        // Then - the rates the session was drawn with, and rc_version naming the settings version
+        argumentCaptor<ViewEvent> {
+            verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
+            assertThat(lastValue.dd.configuration?.sessionSampleRate).isEqualTo(fakeSampleRate)
+            assertThat(lastValue.dd.configuration?.sessionReplaySampleRate).isEqualTo(9f)
+            assertThat(lastValue.dd.configuration?.rcVersion).isEqualTo(7L)
+        }
+        assertThat(result).isNull()
+    }
+
+    @Test
+    fun `M report no draw W handleEvent(StartView) { the app did not opt in }`(
+        @Forgery key: RumScopeKey
+    ) {
+        // When
+        val result = testedScope.handleEvent(
+            RumRawEvent.StartView(key, emptyMap()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        // Then - nothing new: the init values are the values the draw used anyway
+        argumentCaptor<ViewEvent> {
+            verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
+            assertThat(lastValue.dd.configuration?.sessionSampleRate).isEqualTo(fakeSampleRate)
+            assertThat(lastValue.dd.configuration?.sessionReplaySampleRate).isNull()
+            assertThat(lastValue.dd.configuration?.rcVersion).isNull()
+        }
         assertThat(result).isNull()
     }
 
@@ -9157,6 +9212,7 @@ internal class RumViewScopeTest {
         type: RumViewType = fakeViewType,
         trackFrustrations: Boolean = fakeTrackFrustrations,
         sampleRate: Float = fakeSampleRate,
+        drawnConfiguration: DrawnConfiguration? = null,
         interactionNextViewMetricResolver: InteractionToNextViewMetricResolver =
             mockInteractionToNextViewMetricResolver,
         networkSettledMetricResolver: NetworkSettledMetricResolver = mockNetworkSettledMetricResolver,
@@ -9178,6 +9234,7 @@ internal class RumViewScopeTest {
         type = type,
         trackFrustrations = trackFrustrations,
         sampleRate = sampleRate,
+        drawnConfiguration = drawnConfiguration,
         interactionToNextViewMetricResolver = interactionNextViewMetricResolver,
         networkSettledMetricResolver = networkSettledMetricResolver,
         slowFramesListener = slowFramesMetricListener,
