@@ -20,17 +20,17 @@ import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
 /**
- * Keeps the stored sampling rates in step with what the console says.
+ * Keeps the stored remote configuration in step with what the console says.
  *
  * Nothing here can hold up the SDK or interrupt collection: the first fetch is scheduled like any
  * other, and a request that fails, times out or comes back unreadable leaves the stored rates
  * exactly as they were. Wiping them on a bad minute would swing a whole fleet back to the rates it
  * was built with, which is the opposite of what someone who turned a knob deliberately wants.
  */
-internal class RemoteSamplingController(
+internal class RemoteConfigController(
     private val sdkCore: FeatureSdkCore,
     private val configUrl: String,
-    private val store: RemoteSamplingStore,
+    private val store: RemoteConfigStore,
     private val initialSessionSampleRate: Float,
     private val callFactory: Call.Factory,
     private val executor: ScheduledExecutorService,
@@ -82,7 +82,7 @@ internal class RemoteSamplingController(
             sdkCore.internalLogger.log(
                 InternalLogger.Level.DEBUG,
                 InternalLogger.Target.MAINTAINER,
-                { "Remote sampling refresh not scheduled: executor is shutting down." },
+                { "Remote configuration refresh not scheduled: executor is shutting down." },
                 e
             )
         }
@@ -133,7 +133,7 @@ internal class RemoteSamplingController(
         val activation = json.optString(FIELD_ACTIVATION, ACTIVATION_NEXT_SESSION)
         refreshOnForeground = json.optBoolean(FIELD_REFRESH_ON_FOREGROUND, false)
 
-        val before = RemoteSamplingRates(store.sessionSampleRate(), store.sessionReplaySampleRate())
+        val before = RemoteConfigValues(store.sessionSampleRate(), store.sessionReplaySampleRate())
         val version = json.optInt(FIELD_VERSION, 0).takeIf { it > 0 }
         val after = if (enabled) {
             readRates(json.optJSONObject(FIELD_RUM)).copy(
@@ -157,9 +157,9 @@ internal class RemoteSamplingController(
         return currentTtlSeconds
     }
 
-    private fun readRates(rum: JSONObject?): RemoteSamplingRates {
+    private fun readRates(rum: JSONObject?): RemoteConfigValues {
         if (rum == null) return EMPTY_RATES
-        return RemoteSamplingRates(
+        return RemoteConfigValues(
             sessionSampleRate = readRate(rum, FIELD_SESSION_SAMPLE_RATE),
             sessionReplaySampleRate = readRate(rum, FIELD_SESSION_REPLAY_SAMPLE_RATE)
         )
@@ -176,7 +176,7 @@ internal class RemoteSamplingController(
         return if (rate.isNaN() || rate < 0.0 || rate > MAX_RATE) null else rate.toFloat()
     }
 
-    private fun changesThisClient(before: RemoteSamplingRates, after: RemoteSamplingRates): Boolean {
+    private fun changesThisClient(before: RemoteConfigValues, after: RemoteConfigValues): Boolean {
         val sessionBefore = before.sessionSampleRate ?: initialSessionSampleRate
         val sessionAfter = after.sessionSampleRate ?: initialSessionSampleRate
 
@@ -214,10 +214,10 @@ internal class RemoteSamplingController(
         private const val FIELD_SESSION_SAMPLE_RATE = "sessionSampleRate"
         private const val FIELD_SESSION_REPLAY_SAMPLE_RATE = "sessionReplaySampleRate"
 
-        private val EMPTY_RATES = RemoteSamplingRates(null, null)
+        private val EMPTY_RATES = RemoteConfigValues(null, null)
 
         internal const val FETCH_FAILED_MESSAGE =
-            "Unable to refresh the remote sampling rates; keeping the ones already in use."
+            "Unable to refresh the remote configuration; keeping the values already in use."
 
         /**
          * Where to ask. A custom endpoint means the app was pointed at the customer's own host for

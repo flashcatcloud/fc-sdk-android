@@ -27,7 +27,7 @@ import com.datadog.android.rum.internal.instrumentation.insights.InsightsCollect
 import com.datadog.android.rum.internal.metric.SessionMetricDispatcher
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
 import com.datadog.android.rum.internal.startup.RumSessionScopeStartupManager
-import com.datadog.android.rum.internal.remoteconfig.RemoteSamplingStore
+import com.datadog.android.rum.internal.remoteconfig.RemoteConfigStore
 import com.datadog.android.rum.internal.utils.percent
 import com.datadog.android.rum.internal.vitals.VitalMonitor
 import com.datadog.android.rum.metric.interactiontonextview.LastInteractionIdentifier
@@ -65,7 +65,7 @@ internal class RumSessionScope(
     insightsCollector: InsightsCollector,
     // FLASHCAT FORK - rates the console can change without the app shipping a new release. Null
     // when the app did not opt in, which is what keeps this whole path inert by default.
-    private val remoteSampling: RemoteSamplingStore? = null
+    private val remoteConfig: RemoteConfigStore? = null
 ) : RumScope {
 
     // FLASHCAT FORK - the rate the current session was actually drawn at. It is what events report
@@ -312,7 +312,7 @@ internal class RumSessionScope(
         // FLASHCAT FORK - read the console's rate here, at the one moment a session's fate is
         // decided. A session already running is never redrawn, so a rate arriving mid-session
         // cannot start or stop collecting for someone in the middle of using the app.
-        effectiveSampleRate = remoteSampling?.sessionSampleRate() ?: sampleRate
+        effectiveSampleRate = remoteConfig?.sessionSampleRate() ?: sampleRate
         childScope?.sampleRate = effectiveSampleRate
         val keepSession = forcedSession || random.nextFloat() < effectiveSampleRate.percent()
         startReason = reason
@@ -341,7 +341,7 @@ internal class RumSessionScope(
                 // FLASHCAT FORK - Session Replay draws its own sample when it sees this message,
                 // and the console's replay rate is fetched on this side. Passing it along is what
                 // lets one fetch drive both decisions without a second store.
-                RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to remoteSampling?.sessionReplaySampleRate(),
+                RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to remoteConfig?.sessionReplaySampleRate(),
                 // FLASHCAT FORK - a forced session must come out with replay, so Session Replay
                 // skips its own draw when this is set.
                 RUM_SESSION_FORCED_BUS_MESSAGE_KEY to forcedSession,

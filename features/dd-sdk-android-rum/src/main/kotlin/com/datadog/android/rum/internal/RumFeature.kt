@@ -75,8 +75,8 @@ import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
 import com.datadog.android.rum.internal.monitor.AdvancedRumMonitor
 import com.datadog.android.rum.internal.monitor.DatadogRumMonitor
 import com.datadog.android.rum.internal.remoteconfig.ProcessForegroundCallback
-import com.datadog.android.rum.internal.remoteconfig.RemoteSamplingController
-import com.datadog.android.rum.internal.remoteconfig.RemoteSamplingStore
+import com.datadog.android.rum.internal.remoteconfig.RemoteConfigController
+import com.datadog.android.rum.internal.remoteconfig.RemoteConfigStore
 import com.datadog.android.rum.internal.net.RumRequestFactory
 import com.datadog.android.rum.internal.startup.RumAppStartupDetector
 import com.datadog.android.rum.internal.startup.RumFirstDrawTimeReporter
@@ -175,9 +175,9 @@ internal class RumFeature(
      * Both stay null when the app did not opt in, which is what makes remote configuration cost
      * nothing — no storage, no request, no behaviour change — for everyone who has not asked for it.
      */
-    internal var remoteSamplingStore: RemoteSamplingStore? = null
-    private var remoteSamplingController: RemoteSamplingController? = null
-    private var remoteSamplingForegroundCallback: ProcessForegroundCallback? = null
+    internal var remoteConfigStore: RemoteConfigStore? = null
+    private var remoteConfigController: RemoteConfigController? = null
+    private var remoteConfigForegroundCallback: ProcessForegroundCallback? = null
     internal var initialResourceIdentifier: InitialResourceIdentifier = NoOpInitialResourceIdentifier()
     internal var lastInteractionIdentifier: LastInteractionIdentifier? = NoOpLastInteractionIdentifier()
     internal var slowFramesListener: SlowFramesListener? = null
@@ -280,7 +280,7 @@ internal class RumFeature(
             initializeANRDetector()
         }
 
-        startRemoteSampling(appContext)
+        startRemoteConfiguration(appContext)
 
         registerTrackingStrategies(appContext)
 
@@ -348,11 +348,11 @@ internal class RumFeature(
     override fun onStop() {
         sdkCore.removeEventReceiver(name)
 
-        remoteSamplingForegroundCallback?.let { (appContext as? Application)?.unregisterActivityLifecycleCallbacks(it) }
-        remoteSamplingForegroundCallback = null
-        remoteSamplingController?.stop()
-        remoteSamplingController = null
-        remoteSamplingStore = null
+        remoteConfigForegroundCallback?.let { (appContext as? Application)?.unregisterActivityLifecycleCallbacks(it) }
+        remoteConfigForegroundCallback = null
+        remoteConfigController?.stop()
+        remoteConfigController = null
+        remoteConfigStore = null
 
         rumContextUpdateReceivers.forEach {
             sdkCore.removeContextUpdateReceiver(it)
@@ -779,22 +779,22 @@ internal class RumFeature(
      * unavailable, the app simply keeps sampling at the rates it was initialised with. Nothing here
      * may delay initialisation or interrupt collection.
      */
-    private fun startRemoteSampling(appContext: Context) {
+    private fun startRemoteConfiguration(appContext: Context) {
         if (!configuration.remoteConfigurationEnabled) return
 
         val context = (sdkCore as? InternalSdkCore)?.getDatadogContext() ?: return
         val intakeUrl = configuration.customEndpointUrl ?: (context.site.intakeEndpoint + RUM_INTAKE_PATH)
 
-        val store = RemoteSamplingStore(
+        val store = RemoteConfigStore(
             appContext = appContext,
-            storeKey = RemoteSamplingStore.buildStoreKey(context),
+            storeKey = RemoteConfigStore.buildStoreKey(context),
             internalLogger = sdkCore.internalLogger
         )
-        remoteSamplingStore = store
+        remoteConfigStore = store
 
-        remoteSamplingController = RemoteSamplingController(
+        remoteConfigController = RemoteConfigController(
             sdkCore = sdkCore,
-            configUrl = RemoteSamplingController.buildConfigUrl(
+            configUrl = RemoteConfigController.buildConfigUrl(
                 intakeUrl = intakeUrl,
                 clientToken = context.clientToken,
                 env = context.env,
@@ -803,7 +803,7 @@ internal class RumFeature(
             store = store,
             initialSessionSampleRate = sampleRate,
             callFactory = sdkCore.createOkHttpCallFactory(),
-            executor = sdkCore.createScheduledExecutorService("rum-remote-sampling"),
+            executor = sdkCore.createScheduledExecutorService("rum-remote-config"),
             // Looked up when it fires rather than captured now: the monitor is registered after
             // features are initialised, and by the time a response comes back it is there.
             restartSession = {
@@ -819,7 +819,7 @@ internal class RumFeature(
             (appContext as? Application)?.let { application ->
                 val callback = ProcessForegroundCallback { controller.refreshIfStale() }
                 application.registerActivityLifecycleCallbacks(callback)
-                remoteSamplingForegroundCallback = callback
+                remoteConfigForegroundCallback = callback
             }
         }
     }

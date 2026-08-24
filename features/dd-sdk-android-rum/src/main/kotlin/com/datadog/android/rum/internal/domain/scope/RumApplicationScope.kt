@@ -27,7 +27,7 @@ import com.datadog.android.rum.internal.domain.display.DisplayInfo
 import com.datadog.android.rum.internal.instrumentation.insights.InsightsCollector
 import com.datadog.android.rum.internal.metric.SessionMetricDispatcher
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
-import com.datadog.android.rum.internal.remoteconfig.RemoteSamplingStore
+import com.datadog.android.rum.internal.remoteconfig.RemoteConfigStore
 import com.datadog.android.rum.internal.startup.RumSessionScopeStartupManager
 import com.datadog.android.rum.internal.vitals.VitalMonitor
 import com.datadog.android.rum.metric.interactiontonextview.LastInteractionIdentifier
@@ -57,7 +57,7 @@ internal class RumApplicationScope(
     private val rumSessionScopeStartupManagerFactory: () -> RumSessionScopeStartupManager,
     private val insightsCollector: InsightsCollector,
     // FLASHCAT FORK - the console's sampling rates, or null when the app did not opt in.
-    private val remoteSampling: RemoteSamplingStore? = null
+    private val remoteConfig: RemoteConfigStore? = null
 ) : RumScope, RumViewChangedListener {
 
     override val parentScope: RumScope? = null
@@ -70,7 +70,7 @@ internal class RumApplicationScope(
             sdkCore = sdkCore,
             sessionEndedMetricDispatcher = sessionEndedMetricDispatcher,
             sampleRate = sampleRate,
-            remoteSampling = remoteSampling,
+            remoteConfig = remoteConfig,
             backgroundTrackingEnabled = backgroundTrackingEnabled,
             trackFrustrations = trackFrustrations,
             viewChangedListener = this,

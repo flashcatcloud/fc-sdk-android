@@ -29,13 +29,13 @@ import java.util.concurrent.TimeUnit
 
 @ExtendWith(MockitoExtension::class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-internal class RemoteSamplingControllerTest {
+internal class RemoteConfigControllerTest {
 
-    private lateinit var store: RemoteSamplingStore
+    private lateinit var store: RemoteConfigStore
     private lateinit var executor: ScheduledExecutorService
     private var restarts = 0
     private var elapsedMs = 0L
-    private lateinit var testedController: RemoteSamplingController
+    private lateinit var testedController: RemoteConfigController
 
     @BeforeEach
     fun setUp() {
@@ -48,7 +48,7 @@ internal class RemoteSamplingControllerTest {
         restarts = 0
         elapsedMs = 0L
         executor = mock()
-        testedController = RemoteSamplingController(
+        testedController = RemoteConfigController(
             sdkCore = mock<FeatureSdkCore>(),
             configUrl = "https://example.com/api/v2/rum/config",
             store = store,
@@ -66,14 +66,14 @@ internal class RemoteSamplingControllerTest {
     fun `M store the rates the response carries W apply()`() {
         testedController.apply(body(rum = """"sessionSampleRate":42,"sessionReplaySampleRate":7"""))
 
-        verify(store).store(RemoteSamplingRates(42f, 7f, 3))
+        verify(store).store(RemoteConfigValues(42f, 7f, 3))
     }
 
     @Test
     fun `M store a zero rate W apply() { zero is a setting, not a missing value }`() {
         testedController.apply(body(rum = """"sessionSampleRate":0"""))
 
-        verify(store).store(RemoteSamplingRates(0f, null, 3))
+        verify(store).store(RemoteConfigValues(0f, null, 3))
     }
 
     @Test
@@ -82,21 +82,21 @@ internal class RemoteSamplingControllerTest {
         // would silently stop collection nobody asked to stop.
         testedController.apply(body(rum = """"sessionSampleRate":42"""))
 
-        verify(store).store(RemoteSamplingRates(42f, null, 3))
+        verify(store).store(RemoteConfigValues(42f, null, 3))
     }
 
     @Test
     fun `M ignore a rate outside 0-100 W apply()`() {
         testedController.apply(body(rum = """"sessionSampleRate":420"""))
 
-        verify(store).store(RemoteSamplingRates(null, null, 3))
+        verify(store).store(RemoteConfigValues(null, null, 3))
     }
 
     @Test
     fun `M forget the rates W apply() { remote configuration switched off }`() {
         testedController.apply(body(enabled = false, rum = """"sessionSampleRate":42"""))
 
-        verify(store).store(RemoteSamplingRates(null, null, 3))
+        verify(store).store(RemoteConfigValues(null, null, 3))
     }
 
     // endregion
@@ -173,7 +173,7 @@ internal class RemoteSamplingControllerTest {
 
     @Test
     fun `M fall back to the default ttl W apply() { server sent none }`() {
-        assertThat(testedController.apply(body(ttl = 0))).isEqualTo(RemoteSamplingController.DEFAULT_TTL_SECONDS)
+        assertThat(testedController.apply(body(ttl = 0))).isEqualTo(RemoteConfigController.DEFAULT_TTL_SECONDS)
     }
 
     // endregion
@@ -184,7 +184,7 @@ internal class RemoteSamplingControllerTest {
         // the change that turned them off.
         testedController.apply(body(enabled = false))
 
-        verify(store).store(RemoteSamplingRates(null, null, 3))
+        verify(store).store(RemoteConfigValues(null, null, 3))
     }
 
     // region coming back to the foreground
@@ -236,7 +236,7 @@ internal class RemoteSamplingControllerTest {
 
     @Test
     fun `M put the configuration beside the intake W buildConfigUrl()`() {
-        val url = RemoteSamplingController.buildConfigUrl(
+        val url = RemoteConfigController.buildConfigUrl(
             intakeUrl = "https://rum.example.com/api/v2/rum",
             clientToken = "token",
             env = "staging",
@@ -252,7 +252,7 @@ internal class RemoteSamplingControllerTest {
 
     @Test
     fun `M leave out what the app did not set W buildConfigUrl()`() {
-        val url = RemoteSamplingController.buildConfigUrl(
+        val url = RemoteConfigController.buildConfigUrl(
             intakeUrl = "https://rum.example.com/api/v2/rum",
             clientToken = "token",
             env = "",
@@ -267,7 +267,7 @@ internal class RemoteSamplingControllerTest {
     fun `M store the custom bag verbatim W apply()`() {
         testedController.apply(body(custom = """{"viplist":["u-1","u-2"],"debug":true}"""))
 
-        argumentCaptor<RemoteSamplingRates> {
+        argumentCaptor<RemoteConfigValues> {
             verify(store).store(capture())
             assertThat(JSONObject(firstValue.custom!!).getBoolean("debug")).isTrue()
             assertThat(JSONObject(firstValue.custom!!).getJSONArray("viplist").length()).isEqualTo(2)
@@ -278,7 +278,7 @@ internal class RemoteSamplingControllerTest {
     fun `M drop the custom bag W apply() { remote configuration switched off }`() {
         testedController.apply(body(enabled = false, custom = """{"debug":true}"""))
 
-        argumentCaptor<RemoteSamplingRates> {
+        argumentCaptor<RemoteConfigValues> {
             verify(store).store(capture())
             assertThat(firstValue.custom).isNull()
         }

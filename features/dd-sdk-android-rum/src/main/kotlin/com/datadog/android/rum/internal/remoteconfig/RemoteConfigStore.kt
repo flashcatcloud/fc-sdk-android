@@ -12,7 +12,7 @@ import com.datadog.android.api.InternalLogger
 import com.datadog.android.api.context.DatadogContext
 
 /**
- * Holds the sampling rates the console last sent for this application.
+ * Holds the remote configuration the console last sent for this application.
  *
  * They live on disk rather than in memory so a rate fetched during one launch already applies to
  * the first session of the next one, instead of every cold start beginning on the rates the app was
@@ -21,7 +21,7 @@ import com.datadog.android.api.context.DatadogContext
  * A rate the console did not send is absent here, never zero: the caller falls back to the value
  * passed to the SDK at init. Inventing a zero would silently stop collection nobody asked to stop.
  */
-internal class RemoteSamplingStore(
+internal class RemoteConfigStore(
     appContext: Context,
     private val storeKey: String,
     private val internalLogger: InternalLogger
@@ -65,7 +65,7 @@ internal class RemoteSamplingStore(
      * removed rather than left behind, so switching a knob off in the console really does hand that
      * knob back to the value the app was initialised with.
      */
-    fun store(rates: RemoteSamplingRates) {
+    fun store(rates: RemoteConfigValues) {
         val editor = preferences?.edit() ?: return
         write(editor, sessionKey(), rates.sessionSampleRate)
         write(editor, replayKey(), rates.sessionReplaySampleRate)
@@ -107,7 +107,7 @@ internal class RemoteSamplingStore(
     private fun customKey() = "$storeKey.custom"
 
     companion object {
-        private const val PREFERENCES_NAME = "flashcat-rum-remote-sampling"
+        private const val PREFERENCES_NAME = "flashcat-rum-remote-config"
 
         // SharedPreferences has no "absent" for a primitive read, and every legitimate rate is
         // within 0..100, so a negative sentinel can never collide with a stored value.
@@ -115,7 +115,7 @@ internal class RemoteSamplingStore(
         private const val ABSENT_VERSION = -1
 
         internal const val STORAGE_UNAVAILABLE_MESSAGE =
-            "Unable to open the remote sampling store; sampling will use the rates passed to init."
+            "Unable to open the remote configuration store; the values passed to init will apply."
 
         /**
          * Identifies whose rates these are. It covers everything that can change the answer — which
@@ -133,7 +133,7 @@ internal class RemoteSamplingStore(
 /**
  * The rates carried by one configuration response. Null means the console did not set that knob.
  */
-internal data class RemoteSamplingRates(
+internal data class RemoteConfigValues(
     val sessionSampleRate: Float?,
     val sessionReplaySampleRate: Float?,
     val version: Int? = null,
