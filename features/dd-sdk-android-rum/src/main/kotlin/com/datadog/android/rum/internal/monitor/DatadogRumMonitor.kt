@@ -59,6 +59,7 @@ import com.datadog.android.rum.internal.instrumentation.insights.InsightsCollect
 import com.datadog.android.rum.internal.metric.SessionMetricDispatcher
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
 import com.datadog.android.rum.internal.remoteconfig.RemoteConfigStore
+import com.datadog.android.rum.internal.remoteconfig.decodeCustomValues
 import com.datadog.android.rum.internal.startup.RumSessionScopeStartupManager
 import com.datadog.android.rum.internal.startup.RumStartupScenario
 import com.datadog.android.rum.internal.startup.RumTTIDInfo
@@ -459,8 +460,8 @@ internal class DatadogRumMonitor(
         )
     }
 
-    override fun getRemoteConfig(): String? {
-        return remoteConfig?.custom()
+    override fun getRemoteConfig(): Map<String, Any?>? {
+        return decodeCustomValues(remoteConfig?.custom())
     }
 
     @ExperimentalRumApi

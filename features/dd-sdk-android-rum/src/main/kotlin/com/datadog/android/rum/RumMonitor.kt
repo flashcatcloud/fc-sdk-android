@@ -312,14 +312,15 @@ interface RumMonitor {
     fun setForcedSession()
 
     /**
-     * Returns the custom values published for this application in the console, as the raw JSON
-     * object string, or null when nothing is published or remote configuration is off. The SDK
-     * delivers them verbatim and never interprets them - what a value means is entirely up to your
-     * own code (a debug allow-list to pair with [setForcedSession], a feature toggle). Values are
-     * cached locally, so what a previous launch fetched answers immediately on the next. The
-     * content is readable by anyone holding the public client token - it is public information.
+     * Returns the custom values published for this application in the console, or null when
+     * nothing is published or remote configuration is off. The SDK delivers them verbatim and
+     * never interprets them - what a value means is entirely up to your own code (a debug
+     * allow-list to pair with [setForcedSession], a feature toggle). Nested objects and arrays
+     * come back as [Map] and [List]. Values are cached locally, so what a previous launch fetched
+     * answers immediately on the next. The content is readable by anyone holding the public client
+     * token - it is public information.
      */
-    fun getRemoteConfig(): String?
+    fun getRemoteConfig(): Map<String, Any?>?
 
     /**
      * Adds view loading time to the active view based on the time elapsed since the view was started.
