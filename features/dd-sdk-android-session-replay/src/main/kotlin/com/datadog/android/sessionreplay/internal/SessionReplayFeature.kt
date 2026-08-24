@@ -112,18 +112,11 @@ internal class SessionReplayFeature(
     // are we recording at the moment
     private val isRecording = AtomicBoolean(false)
 
-    // is the current session sampled in
-    // FLASHCAT FORK - the replay rate the console last sent, or null when it set none.
-    @Volatile
-    internal var remoteReplaySampleRate: Float? = null
-
     // FLASHCAT FORK - true when RUM renewed this session under a forced draw; replay then skips
     // its own draw, because a forced session must come out with replay.
     internal var sessionForced: Boolean = false
 
-    // Consulted only when a remote rate exists, so an injected sampler keeps its behaviour.
-    private val remoteAwareSampler: Sampler<Unit> = RateBasedSampler { remoteReplaySampleRate ?: 0f }
-
+    // is the current session sampled in
     private val isSessionSampledIn = AtomicBoolean(false)
 
     internal var sessionReplayRecorder: Recorder = NoOpRecorder()
@@ -270,10 +263,6 @@ internal class SessionReplayFeature(
     private fun parseSessionMetadata(sessionMetadata: Map<*, *>): SessionData? {
         val keepSession = sessionMetadata[RUM_KEEP_SESSION_BUS_MESSAGE_KEY] as? Boolean
         val sessionId = sessionMetadata[RUM_SESSION_ID_BUS_MESSAGE_KEY] as? String
-        // FLASHCAT FORK - absent, or null, means the console set no replay rate and the one the app
-        // was configured with keeps applying. It is read before sampling so the session about to be
-        // drawn uses it.
-        remoteReplaySampleRate = sessionMetadata[RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY] as? Float
         sessionForced = sessionMetadata[RUM_SESSION_FORCED_BUS_MESSAGE_KEY] as? Boolean ?: false
 
         if (keepSession == null || sessionId == null) {
@@ -290,13 +279,7 @@ internal class SessionReplayFeature(
 
     private fun applySampling(alreadySeenSession: Boolean) {
         if (!alreadySeenSession) {
-            // FLASHCAT FORK - the console can set the replay rate without the app shipping a new
-            // release. RUM fetches it and passes it along with the session it just renewed, so one
-            // request drives both the session and the replay decision. With nothing set remotely
-            // this is exactly the sampler the app was configured with.
-            val remoteRate = remoteReplaySampleRate
-            val sampler = if (remoteRate == null) rateBasedSampler else remoteAwareSampler
-            isSessionSampledIn.set(sessionForced || sampler.sample(Unit))
+            isSessionSampledIn.set(sessionForced || rateBasedSampler.sample(Unit))
         }
     }
 
@@ -453,7 +436,6 @@ internal class SessionReplayFeature(
         const val SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY = "type"
         const val RUM_SESSION_RENEWED_BUS_MESSAGE = "rum_session_renewed"
         const val RUM_KEEP_SESSION_BUS_MESSAGE_KEY = "keepSession"
-        const val RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY = "replaySampleRate"
         const val RUM_SESSION_FORCED_BUS_MESSAGE_KEY = "sessionForced"
         const val RUM_SESSION_ID_BUS_MESSAGE_KEY = "sessionId"
         internal const val SESSION_REPLAY_SAMPLE_RATE_KEY = "session_replay_sample_rate"

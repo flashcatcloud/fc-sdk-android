@@ -196,7 +196,7 @@ internal class RemoteConfigController(
         val activation = json.optString(FIELD_ACTIVATION, ACTIVATION_NEXT_SESSION)
         refreshOnForeground = json.optBoolean(FIELD_REFRESH_ON_FOREGROUND, false)
 
-        val before = RemoteConfigValues(store.sessionSampleRate(), store.sessionReplaySampleRate())
+        val before = RemoteConfigValues(store.sessionSampleRate())
         val version = json.optInt(FIELD_VERSION, 0).takeIf { it > 0 }
         val after = if (enabled) {
             readValues(json.optJSONObject(FIELD_RUM)).copy(
@@ -223,8 +223,7 @@ internal class RemoteConfigController(
     private fun readValues(rum: JSONObject?): RemoteConfigValues {
         if (rum == null) return EMPTY_VALUES
         return RemoteConfigValues(
-            sessionSampleRate = readRate(rum, FIELD_SESSION_SAMPLE_RATE),
-            sessionReplaySampleRate = readRate(rum, FIELD_SESSION_REPLAY_SAMPLE_RATE)
+            sessionSampleRate = readRate(rum, FIELD_SESSION_SAMPLE_RATE)
         )
     }
 
@@ -239,17 +238,9 @@ internal class RemoteConfigController(
         return if (rate.isNaN() || rate < 0.0 || rate > MAX_RATE) null else rate.toFloat()
     }
 
-    private fun changesThisClient(before: RemoteConfigValues, after: RemoteConfigValues): Boolean {
-        val sessionBefore = before.sessionSampleRate ?: initialSessionSampleRate
-        val sessionAfter = after.sessionSampleRate ?: initialSessionSampleRate
-
-        // The replay rate is configured on the Session Replay feature rather than here, so there is
-        // no init value to fall back to on this side. Comparing what was stored is exact for every
-        // change after the first, and at worst restarts one session the first time the console sets
-        // a replay rate that happens to equal the one the app was built with.
-        return sessionBefore != sessionAfter ||
-            before.sessionReplaySampleRate != after.sessionReplaySampleRate
-    }
+    private fun changesThisClient(before: RemoteConfigValues, after: RemoteConfigValues): Boolean =
+        (before.sessionSampleRate ?: initialSessionSampleRate) !=
+            (after.sessionSampleRate ?: initialSessionSampleRate)
 
     private fun logFetchFailure(e: Throwable) {
         sdkCore.internalLogger.log(
@@ -287,9 +278,8 @@ internal class RemoteConfigController(
         private const val FIELD_CUSTOM = "custom"
         private const val FIELD_RUM = "rum"
         private const val FIELD_SESSION_SAMPLE_RATE = "sessionSampleRate"
-        private const val FIELD_SESSION_REPLAY_SAMPLE_RATE = "sessionReplaySampleRate"
 
-        private val EMPTY_VALUES = RemoteConfigValues(null, null)
+        private val EMPTY_VALUES = RemoteConfigValues(null)
 
         private const val HTTP_NOT_MODIFIED = 304
         private const val HEADER_ETAG = "ETag"

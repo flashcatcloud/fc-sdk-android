@@ -10,9 +10,9 @@ import org.json.JSONException
 import org.json.JSONObject
 
 /**
- * FLASHCAT FORK - the configuration a session was drawn under: the rates actually used at the draw
- * (the console's where it set them, the init values where it did not) and the remote settings
- * version they came from. Events carry these instead of the init values, so server-side
+ * FLASHCAT FORK - the configuration a session was drawn under: the rate actually used at the draw
+ * (the console's where it set one, the init value where it did not) and the remote settings
+ * version it came from. Events carry these instead of the init values, so server-side
  * extrapolation and audits line up with the draw that kept the session — a session is never
  * re-judged, so the metadata must be from its creation, not from whatever has arrived since.
  */
@@ -21,27 +21,19 @@ internal data class DrawnConfiguration(
     val sessionId: String,
     /** The remote settings version the draw read, or 0 when none was ever fetched. */
     val version: Int,
-    val sessionSampleRate: Float,
-    /** Null when the draw could not know it (Session Replay not publishing); then not reported. */
-    val sessionReplaySampleRate: Float?
+    val sessionSampleRate: Float
 ) {
 
     fun toJsonString(): String = JSONObject()
         .put(FIELD_SESSION_ID, sessionId)
         .put(FIELD_VERSION, version)
         .put(FIELD_SESSION_SAMPLE_RATE, sessionSampleRate.toDouble())
-        .apply {
-            if (sessionReplaySampleRate != null) {
-                put(FIELD_SESSION_REPLAY_SAMPLE_RATE, sessionReplaySampleRate.toDouble())
-            }
-        }
         .toString()
 
     companion object {
         private const val FIELD_SESSION_ID = "id"
         private const val FIELD_VERSION = "version"
         private const val FIELD_SESSION_SAMPLE_RATE = "sessionSampleRate"
-        private const val FIELD_SESSION_REPLAY_SAMPLE_RATE = "sessionReplaySampleRate"
 
         /**
          * Parses a stored record, tolerating what older versions did not write: a field missing
@@ -57,12 +49,7 @@ internal data class DrawnConfiguration(
                 DrawnConfiguration(
                     sessionId = sessionId,
                     version = obj.optInt(FIELD_VERSION, 0),
-                    sessionSampleRate = obj.getDouble(FIELD_SESSION_SAMPLE_RATE).toFloat(),
-                    sessionReplaySampleRate = if (obj.has(FIELD_SESSION_REPLAY_SAMPLE_RATE)) {
-                        obj.getDouble(FIELD_SESSION_REPLAY_SAMPLE_RATE).toFloat()
-                    } else {
-                        null
-                    }
+                    sessionSampleRate = obj.getDouble(FIELD_SESSION_SAMPLE_RATE).toFloat()
                 )
             }
         } catch (e: JSONException) {

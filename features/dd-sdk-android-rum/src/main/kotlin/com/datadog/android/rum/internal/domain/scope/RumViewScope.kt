@@ -1357,7 +1357,6 @@ internal open class RumViewScope(
                     // ignore it.
                     configuration = ViewEvent.Configuration(
                         sessionSampleRate = sampleRate,
-                        sessionReplaySampleRate = drawnConfiguration?.sessionReplaySampleRate,
                         rcVersion = drawnConfiguration?.version?.toLong()
                     )
                 ),

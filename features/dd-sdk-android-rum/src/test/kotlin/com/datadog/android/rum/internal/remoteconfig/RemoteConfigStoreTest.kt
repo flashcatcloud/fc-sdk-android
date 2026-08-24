@@ -85,7 +85,6 @@ internal class RemoteConfigStoreTest {
         testedStore().store(
             RemoteConfigValues(
                 sessionSampleRate = 42f,
-                sessionReplaySampleRate = 7f,
                 version = 3,
                 custom = """{"viplist":["u-1"]}""",
                 etag = "\"v3\""
@@ -95,7 +94,6 @@ internal class RemoteConfigStoreTest {
         // A fresh instance over the same preferences is what the next process start looks like.
         val nextLaunch = testedStore()
         assertThat(nextLaunch.sessionSampleRate()).isEqualTo(42f)
-        assertThat(nextLaunch.sessionReplaySampleRate()).isEqualTo(7f)
         assertThat(nextLaunch.appliedVersion()).isEqualTo(3)
         assertThat(nextLaunch.custom()).isEqualTo("""{"viplist":["u-1"]}""")
         assertThat(nextLaunch.etag()).isEqualTo("\"v3\"")
@@ -106,7 +104,6 @@ internal class RemoteConfigStoreTest {
         val store = testedStore()
 
         assertThat(store.sessionSampleRate()).isNull()
-        assertThat(store.sessionReplaySampleRate()).isNull()
         assertThat(store.appliedVersion()).isNull()
         assertThat(store.custom()).isNull()
         assertThat(store.etag()).isNull()
@@ -116,12 +113,11 @@ internal class RemoteConfigStoreTest {
     fun `M forget the knobs a response omitted W store()`() {
         // A knob nobody configured must go back to the init value, not linger at the last one.
         val store = testedStore()
-        store.store(RemoteConfigValues(42f, 7f, 3, custom = """{"debug":true}""", etag = "\"v3\""))
+        store.store(RemoteConfigValues(42f, 3, custom = """{"debug":true}""", etag = "\"v3\""))
 
-        store.store(RemoteConfigValues(null, null, 4))
+        store.store(RemoteConfigValues(null, 4))
 
         assertThat(store.sessionSampleRate()).isNull()
-        assertThat(store.sessionReplaySampleRate()).isNull()
         assertThat(store.custom()).isNull()
         assertThat(store.appliedVersion()).isEqualTo(4)
     }
@@ -129,9 +125,9 @@ internal class RemoteConfigStoreTest {
     @Test
     fun `M keep the version W store() { remote configuration switched off }`() {
         val store = testedStore()
-        store.store(RemoteConfigValues(42f, 7f, 3))
+        store.store(RemoteConfigValues(42f, 3))
 
-        store.store(RemoteConfigValues(null, null, 4))
+        store.store(RemoteConfigValues(null, 4))
 
         assertThat(store.appliedVersion()).isEqualTo(4)
     }
@@ -142,10 +138,9 @@ internal class RemoteConfigStoreTest {
             .thenThrow(SecurityException("no storage for you"))
         val store = RemoteConfigStore(appContext, "key", mock<InternalLogger>())
 
-        store.store(RemoteConfigValues(42f, 7f, 3))
+        store.store(RemoteConfigValues(42f, 3))
 
         assertThat(store.sessionSampleRate()).isNull()
-        assertThat(store.sessionReplaySampleRate()).isNull()
         assertThat(store.appliedVersion()).isNull()
     }
 
@@ -159,8 +154,7 @@ internal class RemoteConfigStoreTest {
         val record = DrawnConfiguration(
             sessionId = "session-1",
             version = 7,
-            sessionSampleRate = 42f,
-            sessionReplaySampleRate = 9f
+            sessionSampleRate = 42f
         )
 
         store.storeDrawRecord(record)
@@ -170,19 +164,18 @@ internal class RemoteConfigStoreTest {
 
     @Test
     fun `M tolerate a record an older version wrote W readDrawRecord() { fields missing }`() {
-        // A field that did not exist when the record was written reads as if the console never
-        // set that knob: an SDK upgrade changes nothing for a session already drawn.
+        // A record written before the version field existed reads as version 0 — "no configuration
+        // was ever fetched" — so an SDK upgrade changes nothing for a session already drawn.
         preferences.edit().putString(
             "test-key.draw",
-            """{"id":"session-1","version":7,"sessionSampleRate":42.0}"""
+            """{"id":"session-1","sessionSampleRate":42.0}"""
         ).apply()
 
         assertThat(testedStore().readDrawRecord()).isEqualTo(
             DrawnConfiguration(
                 sessionId = "session-1",
-                version = 7,
-                sessionSampleRate = 42f,
-                sessionReplaySampleRate = null
+                version = 0,
+                sessionSampleRate = 42f
             )
         )
     }

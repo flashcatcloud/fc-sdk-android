@@ -53,7 +53,6 @@ internal class RemoteConfigControllerTest {
         // the whole point of several of these tests, and a default that is not null would quietly
         // turn them into tests of something else.
         whenever(store.sessionSampleRate()).thenReturn(null)
-        whenever(store.sessionReplaySampleRate()).thenReturn(null)
         restarts = 0
         elapsedMs = 0L
         executor = mock()
@@ -78,40 +77,40 @@ internal class RemoteConfigControllerTest {
     // region storing
 
     @Test
-    fun `M store the rates the response carries W apply()`() {
-        testedController.apply(body(rum = """"sessionSampleRate":42,"sessionReplaySampleRate":7"""))
+    fun `M store the rate the response carries W apply()`() {
+        testedController.apply(body(rum = """"sessionSampleRate":42"""))
 
-        verify(store).store(RemoteConfigValues(42f, 7f, 3))
+        verify(store).store(RemoteConfigValues(42f, 3))
     }
 
     @Test
     fun `M store a zero rate W apply() { zero is a setting, not a missing value }`() {
         testedController.apply(body(rum = """"sessionSampleRate":0"""))
 
-        verify(store).store(RemoteConfigValues(0f, null, 3))
+        verify(store).store(RemoteConfigValues(0f, 3))
     }
 
     @Test
-    fun `M leave a rate absent W apply() { response omits it }`() {
+    fun `M leave the rate absent W apply() { response omits it }`() {
         // An absent rate must fall back to what the app passed to init. Writing a zero in its place
         // would silently stop collection nobody asked to stop.
-        testedController.apply(body(rum = """"sessionSampleRate":42"""))
+        testedController.apply(body(rum = ""))
 
-        verify(store).store(RemoteConfigValues(42f, null, 3))
+        verify(store).store(RemoteConfigValues(null, 3))
     }
 
     @Test
     fun `M ignore a rate outside 0-100 W apply()`() {
         testedController.apply(body(rum = """"sessionSampleRate":420"""))
 
-        verify(store).store(RemoteConfigValues(null, null, 3))
+        verify(store).store(RemoteConfigValues(null, 3))
     }
 
     @Test
     fun `M forget the rates W apply() { remote configuration switched off }`() {
         testedController.apply(body(enabled = false, rum = """"sessionSampleRate":42"""))
 
-        verify(store).store(RemoteConfigValues(null, null, 3))
+        verify(store).store(RemoteConfigValues(null, 3))
     }
 
     // endregion
@@ -156,18 +155,6 @@ internal class RemoteConfigControllerTest {
     }
 
     @Test
-    fun `M restart the session W apply() { immediate and only the replay rate changed }`() {
-        whenever(store.sessionSampleRate()).thenReturn(null)
-        whenever(store.sessionReplaySampleRate()).thenReturn(10f)
-
-        testedController.apply(
-            body(activation = "immediate", rum = """"sessionSampleRate":$INIT_SESSION_RATE,"sessionReplaySampleRate":90""")
-        )
-
-        assertThat(restarts).isOne()
-    }
-
-    @Test
     fun `M restart the session W apply() { immediate and the kill switch takes the rates away }`() {
         whenever(store.sessionSampleRate()).thenReturn(100f)
 
@@ -184,7 +171,7 @@ internal class RemoteConfigControllerTest {
         // the change that turned them off.
         testedController.apply(body(enabled = false))
 
-        verify(store).store(RemoteConfigValues(null, null, 3))
+        verify(store).store(RemoteConfigValues(null, 3))
     }
 
     // region fetching
@@ -212,7 +199,7 @@ internal class RemoteConfigControllerTest {
 
         runPendingFetch()
 
-        verify(store).store(RemoteConfigValues(42f, null, 3))
+        verify(store).store(RemoteConfigValues(42f, 3))
     }
 
     @Test

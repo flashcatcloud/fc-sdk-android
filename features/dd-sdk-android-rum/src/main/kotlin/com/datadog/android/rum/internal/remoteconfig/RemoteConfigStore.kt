@@ -47,8 +47,6 @@ internal class RemoteConfigStore(
      */
     fun custom(): String? = preferences?.getString(customKey(), null)
 
-    fun sessionReplaySampleRate(): Float? = read(replayKey())
-
     /**
      * The validator the server sent with the stored configuration, echoed back as If-None-Match so
      * an unchanged answer costs a 304 instead of a body. It belongs to this stored configuration
@@ -87,7 +85,6 @@ internal class RemoteConfigStore(
     fun store(values: RemoteConfigValues) {
         val editor = preferences?.edit() ?: return
         write(editor, sessionKey(), values.sessionSampleRate)
-        write(editor, replayKey(), values.sessionReplaySampleRate)
         // Kept even when there are no rates — that is what "remote configuration is off, use your
         // own settings" looks like — so the console can still see this client is up to date with
         // the change that turned them off.
@@ -123,8 +120,6 @@ internal class RemoteConfigStore(
     }
 
     private fun sessionKey() = "$storeKey.sessionSampleRate"
-
-    private fun replayKey() = "$storeKey.sessionReplaySampleRate"
 
     private fun versionKey() = "$storeKey.version"
 
@@ -189,12 +184,11 @@ internal class RemoteConfigStore(
  */
 internal data class RemoteConfigValues(
     val sessionSampleRate: Float?,
-    val sessionReplaySampleRate: Float?,
     val version: Int? = null,
     /** Raw JSON object string of the console's custom pass-through values, delivered verbatim. */
     val custom: String? = null,
     /** The validator to echo back as If-None-Match on the next request, quoted as the server sent it. */
     val etag: String? = null
 ) {
-    fun isEmpty(): Boolean = sessionSampleRate == null && sessionReplaySampleRate == null
+    fun isEmpty(): Boolean = sessionSampleRate == null
 }

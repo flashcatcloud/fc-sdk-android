@@ -336,9 +336,7 @@ internal class RumSessionScope(
             DrawnConfiguration(
                 sessionId = sessionId,
                 version = config.appliedVersion() ?: 0,
-                sessionSampleRate = effectiveSampleRate,
-                sessionReplaySampleRate = config.sessionReplaySampleRate()
-                    ?: initialSessionReplaySampleRate()
+                sessionSampleRate = effectiveSampleRate
             )
         }
         drawnConfiguration?.let { remoteConfig?.storeDrawRecord(it) }
@@ -361,26 +359,12 @@ internal class RumSessionScope(
         onSessionDrawn()
     }
 
-    // FLASHCAT FORK - the replay rate the app was built with, read from what Session Replay
-    // published about itself: the drawn rate is the console's where it set one and this one where
-    // it did not. Null when Session Replay is not there to say, and the field is then not reported.
-    private fun initialSessionReplaySampleRate(): Float? =
-        (
-            sdkCore.getFeatureContext(
-                Feature.SESSION_REPLAY_FEATURE_NAME
-            )[SESSION_REPLAY_SAMPLE_RATE_CONTEXT_KEY] as? Number
-            )?.toFloat()
-
     private fun updateSessionStateForSessionReplay(state: State, sessionId: String) {
         val keepSession = (state == State.TRACKED)
         sdkCore.getFeature(Feature.SESSION_REPLAY_FEATURE_NAME)?.sendEvent(
             mapOf(
                 SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to RUM_SESSION_RENEWED_BUS_MESSAGE,
                 RUM_KEEP_SESSION_BUS_MESSAGE_KEY to keepSession,
-                // FLASHCAT FORK - Session Replay draws its own sample when it sees this message,
-                // and the console's replay rate is fetched on this side. Passing it along is what
-                // lets one fetch drive both decisions without a second store.
-                RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to remoteConfig?.sessionReplaySampleRate(),
                 // FLASHCAT FORK - a forced session must come out with replay, so Session Replay
                 // skips its own draw when this is set.
                 RUM_SESSION_FORCED_BUS_MESSAGE_KEY to forcedSession,
@@ -396,13 +380,9 @@ internal class RumSessionScope(
         internal const val SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY = "type"
         internal const val RUM_SESSION_RENEWED_BUS_MESSAGE = "rum_session_renewed"
         internal const val RUM_KEEP_SESSION_BUS_MESSAGE_KEY = "keepSession"
-        internal const val RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY = "replaySampleRate"
         internal const val RUM_SESSION_FORCED_BUS_MESSAGE_KEY = "sessionForced"
         internal const val RUM_SESSION_ID_BUS_MESSAGE_KEY = "sessionId"
 
-        // FLASHCAT FORK - the key under which Session Replay publishes the rate the app configured
-        // it with; duplicated here because internal constants do not cross module boundaries.
-        internal const val SESSION_REPLAY_SAMPLE_RATE_CONTEXT_KEY = "session_replay_sample_rate"
         internal val DEFAULT_SESSION_INACTIVITY_NS = TimeUnit.MINUTES.toNanos(15)
         internal val DEFAULT_SESSION_MAX_DURATION_NS = TimeUnit.HOURS.toNanos(4)
     }

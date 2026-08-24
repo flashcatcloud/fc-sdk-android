@@ -657,8 +657,7 @@ internal class RumViewScopeTest {
         val drawnConfiguration = DrawnConfiguration(
             sessionId = fakeParentContext.sessionId,
             version = 7,
-            sessionSampleRate = fakeSampleRate,
-            sessionReplaySampleRate = 9f
+            sessionSampleRate = fakeSampleRate
         )
         testedScope = newRumViewScope(trackFrustrations = true, drawnConfiguration = drawnConfiguration)
         mockSessionReplayContext(testedScope)
@@ -675,7 +674,6 @@ internal class RumViewScopeTest {
         argumentCaptor<ViewEvent> {
             verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
             assertThat(lastValue.dd.configuration?.sessionSampleRate).isEqualTo(fakeSampleRate)
-            assertThat(lastValue.dd.configuration?.sessionReplaySampleRate).isEqualTo(9f)
             assertThat(lastValue.dd.configuration?.rcVersion).isEqualTo(7L)
         }
         assertThat(result).isNull()
@@ -697,7 +695,6 @@ internal class RumViewScopeTest {
         argumentCaptor<ViewEvent> {
             verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
             assertThat(lastValue.dd.configuration?.sessionSampleRate).isEqualTo(fakeSampleRate)
-            assertThat(lastValue.dd.configuration?.sessionReplaySampleRate).isNull()
             assertThat(lastValue.dd.configuration?.rcVersion).isNull()
         }
         assertThat(result).isNull()

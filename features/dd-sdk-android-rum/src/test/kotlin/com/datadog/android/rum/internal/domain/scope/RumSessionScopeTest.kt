@@ -1029,7 +1029,6 @@ internal class RumSessionScopeTest {
                 RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
                     RumSessionScope.RUM_SESSION_RENEWED_BUS_MESSAGE,
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
-                RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to true,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     testedScope.getRumContext().sessionId
@@ -1046,7 +1045,6 @@ internal class RumSessionScopeTest {
         // Given
         val remoteConfig = mock<RemoteConfigStore>()
         whenever(remoteConfig.sessionSampleRate()) doReturn 42f
-        whenever(remoteConfig.sessionReplaySampleRate()) doReturn 9f
         whenever(remoteConfig.appliedVersion()) doReturn 7
         initializeTestedScope(sampleRate = 100f, remoteConfig = remoteConfig)
 
@@ -1060,8 +1058,7 @@ internal class RumSessionScopeTest {
             DrawnConfiguration(
                 sessionId = context.sessionId,
                 version = 7,
-                sessionSampleRate = 42f,
-                sessionReplaySampleRate = 9f
+                sessionSampleRate = 42f
             )
         )
     }
@@ -1071,10 +1068,7 @@ internal class RumSessionScopeTest {
         // Given
         val remoteConfig = mock<RemoteConfigStore>()
         whenever(remoteConfig.sessionSampleRate()) doReturn null
-        whenever(remoteConfig.sessionReplaySampleRate()) doReturn null
         whenever(remoteConfig.appliedVersion()) doReturn null
-        whenever(mockSdkCore.getFeatureContext(Feature.SESSION_REPLAY_FEATURE_NAME)) doReturn
-            mapOf(RumSessionScope.SESSION_REPLAY_SAMPLE_RATE_CONTEXT_KEY to 30L)
         initializeTestedScope(sampleRate = 80f, remoteConfig = remoteConfig)
 
         // When
@@ -1084,7 +1078,6 @@ internal class RumSessionScopeTest {
         assertThat(testedScope.effectiveSampleRate).isEqualTo(80f)
         assertThat(testedScope.drawnConfiguration?.version).isZero()
         assertThat(testedScope.drawnConfiguration?.sessionSampleRate).isEqualTo(80f)
-        assertThat(testedScope.drawnConfiguration?.sessionReplaySampleRate).isEqualTo(30f)
     }
 
     @Test
@@ -1136,7 +1129,6 @@ internal class RumSessionScopeTest {
         // Given
         val remoteConfig = mock<RemoteConfigStore>()
         whenever(remoteConfig.sessionSampleRate()) doReturn 100f
-        whenever(remoteConfig.sessionReplaySampleRate()) doReturn 9f
         initializeTestedScope(withMockChildScope = false, remoteConfig = remoteConfig)
 
         // When
@@ -1155,7 +1147,6 @@ internal class RumSessionScopeTest {
                 RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
                     RumSessionScope.RUM_SESSION_RENEWED_BUS_MESSAGE,
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
-                RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to 9f,
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     testedScope.getRumContext().sessionId
@@ -1403,7 +1394,6 @@ internal class RumSessionScopeTest {
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
-                RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     testedScope.getRumContext().sessionId
@@ -1416,7 +1406,6 @@ internal class RumSessionScopeTest {
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
-                RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     testedScope.getRumContext().sessionId
@@ -1456,7 +1445,6 @@ internal class RumSessionScopeTest {
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to false,
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
-                RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     testedScope.getRumContext().sessionId
@@ -1469,7 +1457,6 @@ internal class RumSessionScopeTest {
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to false,
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
-                RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     testedScope.getRumContext().sessionId
@@ -1503,7 +1490,6 @@ internal class RumSessionScopeTest {
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
-                RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to firstSessionId
             )
@@ -1515,7 +1501,6 @@ internal class RumSessionScopeTest {
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
-                RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId
             )
@@ -1548,7 +1533,6 @@ internal class RumSessionScopeTest {
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
-                RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     firstSessionId
@@ -1561,7 +1545,6 @@ internal class RumSessionScopeTest {
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
-                RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     secondSessionId
@@ -1596,7 +1579,6 @@ internal class RumSessionScopeTest {
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
-                RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     firstSessionId
@@ -1609,7 +1591,6 @@ internal class RumSessionScopeTest {
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
-                RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     secondSessionId
@@ -1622,7 +1603,6 @@ internal class RumSessionScopeTest {
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
-                RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     secondSessionId
@@ -1657,7 +1637,6 @@ internal class RumSessionScopeTest {
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to false,
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
-                RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to firstSessionId
             )
@@ -1669,7 +1648,6 @@ internal class RumSessionScopeTest {
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to false,
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
-                RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId
 
@@ -1704,7 +1682,6 @@ internal class RumSessionScopeTest {
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to false,
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
-                RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to firstSessionId
             )
@@ -1716,7 +1693,6 @@ internal class RumSessionScopeTest {
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to false,
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
-                RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId
             )
@@ -1751,7 +1727,6 @@ internal class RumSessionScopeTest {
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to false,
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
-                RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to firstSessionId
             )
@@ -1763,7 +1738,6 @@ internal class RumSessionScopeTest {
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to false,
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
-                RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId
             )
@@ -1775,7 +1749,6 @@ internal class RumSessionScopeTest {
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to false,
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
-                RumSessionScope.RUM_REPLAY_SAMPLE_RATE_BUS_MESSAGE_KEY to null,
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId
             )
