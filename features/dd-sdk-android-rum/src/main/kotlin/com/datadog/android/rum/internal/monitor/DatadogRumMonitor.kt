@@ -102,7 +102,10 @@ internal class DatadogRumMonitor(
     private val rumSessionScopeStartupManagerFactory: () -> RumSessionScopeStartupManager,
     insightsCollector: InsightsCollector,
     // FLASHCAT FORK - the console's sampling rates, or null when the app did not opt in.
-    private val remoteConfig: RemoteConfigStore? = null
+    private val remoteConfig: RemoteConfigStore? = null,
+    // FLASHCAT FORK - fired after each session draw, so the stored configuration is re-fetched on
+    // the only rhythm that can matter. No-op when the app did not opt in.
+    private val onSessionDrawn: () -> Unit = {}
 ) : RumMonitor, AdvancedRumMonitor {
 
     internal var rootScope = RumApplicationScope(
@@ -126,7 +129,8 @@ internal class DatadogRumMonitor(
         displayInfoProvider = displayInfoProvider,
         rumSessionScopeStartupManagerFactory = rumSessionScopeStartupManagerFactory,
         insightsCollector = insightsCollector,
-        remoteConfig = remoteConfig
+        remoteConfig = remoteConfig,
+        onSessionDrawn = onSessionDrawn
     )
 
     internal val keepAliveRunnable = Runnable {

@@ -8,6 +8,11 @@ package com.datadog.android.rum.internal.remoteconfig
 
 import com.datadog.android.api.feature.FeatureSdkCore
 import okhttp3.Call
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.Protocol
+import okhttp3.Request
+import okhttp3.Response
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.json.JSONObject
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -20,11 +25,13 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
-import org.mockito.kotlin.reset
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.mockito.quality.Strictness
+import java.io.IOException
 import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
 @ExtendWith(MockitoExtension::class)
@@ -33,6 +40,8 @@ internal class RemoteConfigControllerTest {
 
     private lateinit var store: RemoteConfigStore
     private lateinit var executor: ScheduledExecutorService
+    private lateinit var callFactory: Call.Factory
+    private lateinit var call: Call
     private var restarts = 0
     private var elapsedMs = 0L
     private lateinit var testedController: RemoteConfigController
@@ -48,15 +57,21 @@ internal class RemoteConfigControllerTest {
         restarts = 0
         elapsedMs = 0L
         executor = mock()
+        callFactory = mock()
+        call = mock()
+        whenever(callFactory.newCall(any())).thenReturn(call)
+        val sdkCore = mock<FeatureSdkCore>()
+        whenever(sdkCore.internalLogger).thenReturn(mock())
         testedController = RemoteConfigController(
-            sdkCore = mock<FeatureSdkCore>(),
+            sdkCore = sdkCore,
             configUrl = "https://example.com/api/v2/rum/config",
             store = store,
             initialSessionSampleRate = INIT_SESSION_RATE,
-            callFactory = mock<Call.Factory>(),
+            callFactory = callFactory,
             executor = executor,
             restartSession = { restarts++ },
-            elapsedTimeMs = { elapsedMs }
+            elapsedTimeMs = { elapsedMs },
+            jitter = { 0.5 }
         )
     }
 
@@ -123,8 +138,7 @@ internal class RemoteConfigControllerTest {
 
     @Test
     fun `M leave the running session alone W apply() { immediate but nothing changed }`() {
-        // A console resending an unchanged configuration on every poll must not cut every session
-        // in two.
+        // A console resending an unchanged configuration must not cut every session in two.
         whenever(store.sessionSampleRate()).thenReturn(100f)
 
         testedController.apply(body(activation = "immediate", rum = """"sessionSampleRate":100"""))
@@ -164,20 +178,6 @@ internal class RemoteConfigControllerTest {
 
     // endregion
 
-    // region ttl
-
-    @Test
-    fun `M follow the server ttl W apply()`() {
-        assertThat(testedController.apply(body(ttl = 42))).isEqualTo(42L)
-    }
-
-    @Test
-    fun `M fall back to the default ttl W apply() { server sent none }`() {
-        assertThat(testedController.apply(body(ttl = 0))).isEqualTo(RemoteConfigController.DEFAULT_TTL_SECONDS)
-    }
-
-    // endregion
-
     @Test
     fun `M keep the version W apply() { remote configuration switched off }`() {
         // The rates are gone, but the console still needs to see this client is up to date with
@@ -187,47 +187,180 @@ internal class RemoteConfigControllerTest {
         verify(store).store(RemoteConfigValues(null, null, 3))
     }
 
+    // region fetching
+
+    @Test
+    fun `M fetch right away W start()`() {
+        testedController.start()
+
+        verify(executor).execute(any())
+    }
+
+    @Test
+    fun `M never run two fetches at once W start() { previous one still running }`() {
+        testedController.start()
+        testedController.onSessionStarted()
+
+        // The captured runnable never ran, so the first fetch is still in flight and the second
+        // trigger must not pile another request on top of it.
+        verify(executor).execute(any())
+    }
+
+    @Test
+    fun `M store what the server answered W fetch succeeds`() {
+        whenever(call.execute()).thenReturn(response(200, body(rum = """"sessionSampleRate":42""")))
+
+        runPendingFetch()
+
+        verify(store).store(RemoteConfigValues(42f, null, 3))
+    }
+
+    @Test
+    fun `M tell the server which version is applied W fetch`() {
+        whenever(store.appliedVersion()).thenReturn(7)
+        whenever(call.execute()).thenReturn(response(200, body()))
+
+        runPendingFetch()
+
+        argumentCaptor<Request> {
+            verify(callFactory).newCall(capture())
+            assertThat(firstValue.url.toString()).contains("applied_version=7")
+        }
+    }
+
+    @Test
+    fun `M not retry W fetch succeeds`() {
+        whenever(call.execute()).thenReturn(response(200, body()))
+
+        runPendingFetch()
+
+        verify(executor, never()).schedule(any<Runnable>(), any(), any())
+    }
+
+    @Test
+    fun `M keep the stored values W fetch fails`() {
+        whenever(call.execute()).thenThrow(IOException("no route to host"))
+
+        runPendingFetch()
+
+        verify(store, never()).store(any())
+    }
+
+    @Test
+    fun `M retry quickly W fetch fails`() {
+        whenever(call.execute()).thenThrow(IOException("no route to host"))
+
+        runPendingFetch()
+
+        // No jitter at 0.5: the first retry is exactly the quick one.
+        verify(executor).schedule(any<Runnable>(), eq(5L), eq(TimeUnit.SECONDS))
+    }
+
+    @Test
+    fun `M retry patiently W the quick retry also fails`() {
+        whenever(call.execute()).thenThrow(IOException("no route to host"))
+
+        runPendingFetch()
+        whenever(executor.schedule(any<Runnable>(), any(), any())).thenReturn(mock<ScheduledFuture<*>>())
+        runPendingRetry()
+
+        verify(executor).schedule(any<Runnable>(), eq(60L), eq(TimeUnit.SECONDS))
+    }
+
+    @Test
+    fun `M stop retrying until the next trigger W the patient retry also fails`() {
+        whenever(call.execute()).thenThrow(IOException("no route to host"))
+
+        runPendingFetch()
+        whenever(executor.schedule(any<Runnable>(), any(), any())).thenReturn(mock<ScheduledFuture<*>>())
+        runPendingRetry()
+        runPendingRetry()
+
+        // Two retries were scheduled (5s and 60s) and no third one ever is.
+        verify(executor, times(2)).schedule(any<Runnable>(), any(), any())
+    }
+
+    @Test
+    fun `M re-arm the backoff W onSessionStarted() { a retry was still waiting }`() {
+        whenever(call.execute()).thenThrow(IOException("no route to host"))
+        val pendingRetry = mock<ScheduledFuture<*>>()
+        whenever(executor.schedule(any<Runnable>(), any(), any())).thenReturn(pendingRetry)
+
+        runPendingFetch()
+        testedController.onSessionStarted()
+
+        verify(pendingRetry).cancel(false)
+        // The trigger runs its own fetch right away instead of waiting out the retry.
+        verify(executor, times(2)).execute(any())
+    }
+
+    @Test
+    fun `M spread the retry by plus-minus 20 percent W jittered()`() {
+        assertThat(RemoteConfigController.jittered(5L, 0.0)).isEqualTo(4L)
+        assertThat(RemoteConfigController.jittered(5L, 1.0)).isEqualTo(6L)
+        assertThat(RemoteConfigController.jittered(60L, 0.0)).isEqualTo(48L)
+        assertThat(RemoteConfigController.jittered(60L, 1.0)).isEqualTo(72L)
+    }
+
+    // endregion
+
     // region coming back to the foreground
 
     @Test
     fun `M ask again W refreshIfStale() { allowed and what we hold outlived its ttl }`() {
-        // An app in the background may not have had its poll timer run for hours, so returning to
-        // the foreground is its own reason to ask.
-        testedController.start()
         testedController.apply(body(ttl = 60, refreshOnForeground = true))
-        reset(executor)
 
         elapsedMs = 61_000L
         testedController.refreshIfStale()
 
-        verify(executor).schedule(any(), eq(0L), eq(TimeUnit.SECONDS))
+        verify(executor).execute(any())
     }
 
     @Test
     fun `M ask nothing W refreshIfStale() { not allowed }`() {
         // Off by default: returning to the foreground bunches requests at the moment everyone
         // opens the app, which is the shape the endpoint copes with worst.
-        testedController.start()
         testedController.apply(body(ttl = 60))
-        reset(executor)
 
         elapsedMs = 61_000L
         testedController.refreshIfStale()
 
-        verify(executor, never()).schedule(any(), any(), any())
+        verify(executor, never()).execute(any())
     }
 
     @Test
     fun `M ask nothing W refreshIfStale() { what we hold is still fresh }`() {
         // Switching apps back and forth must not turn into a request each time.
-        testedController.start()
         testedController.apply(body(ttl = 300, refreshOnForeground = true))
-        reset(executor)
 
         elapsedMs = 10_000L
         testedController.refreshIfStale()
 
-        verify(executor, never()).schedule(any(), any(), any())
+        verify(executor, never()).execute(any())
+    }
+
+    @Test
+    fun `M follow the server ttl for staleness W refreshIfStale()`() {
+        testedController.apply(body(ttl = 42, refreshOnForeground = true))
+
+        elapsedMs = 41_000L
+        testedController.refreshIfStale()
+        elapsedMs = 43_000L
+        testedController.refreshIfStale()
+
+        verify(executor).execute(any())
+    }
+
+    @Test
+    fun `M fall back to the default ttl for staleness W refreshIfStale() { server sent none }`() {
+        testedController.apply(body(ttl = 0, refreshOnForeground = true))
+
+        elapsedMs = RemoteConfigController.DEFAULT_TTL_SECONDS * 1_000L - 1
+        testedController.refreshIfStale()
+        elapsedMs = RemoteConfigController.DEFAULT_TTL_SECONDS * 1_000L + 1
+        testedController.refreshIfStale()
+
+        verify(executor).execute(any())
     }
 
     // endregion
@@ -286,6 +419,39 @@ internal class RemoteConfigControllerTest {
 
     // endregion
 
+    // region test helpers
+
+    /**
+     * Runs the runnable the controller handed to the executor: the fetch it would do on a worker
+     * thread in a running app.
+     */
+    private fun runPendingFetch() {
+        testedController.start()
+        argumentCaptor<Runnable> {
+            verify(executor).execute(capture())
+            firstValue.run()
+        }
+    }
+
+    /**
+     * Runs the runnable the controller scheduled as a retry after a failed fetch.
+     */
+    private fun runPendingRetry() {
+        argumentCaptor<Runnable> {
+            verify(executor, org.mockito.kotlin.atLeastOnce()).schedule(capture(), any(), any())
+            lastValue.run()
+        }
+    }
+
+    private fun response(code: Int, payload: String): Response =
+        Response.Builder()
+            .request(Request.Builder().url("https://example.com/api/v2/rum/config").build())
+            .protocol(Protocol.HTTP_1_1)
+            .code(code)
+            .message("OK")
+            .body(payload.toResponseBody("application/json".toMediaType()))
+            .build()
+
     private fun body(
         ttl: Int = 300,
         enabled: Boolean = true,
@@ -297,6 +463,8 @@ internal class RemoteConfigControllerTest {
         """{"version":3,"ttl":$ttl,"enabled":$enabled,"activation":"$activation",""" +
             """"refresh_on_foreground":$refreshOnForeground,"rum":{$rum}""" +
             (if (custom == null) "" else ""","custom":$custom""") + "}"
+
+    // endregion
 
     companion object {
         private const val INIT_SESSION_RATE = 20f

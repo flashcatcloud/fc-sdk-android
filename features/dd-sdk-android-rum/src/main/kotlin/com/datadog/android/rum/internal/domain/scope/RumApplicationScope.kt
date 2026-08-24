@@ -57,7 +57,10 @@ internal class RumApplicationScope(
     private val rumSessionScopeStartupManagerFactory: () -> RumSessionScopeStartupManager,
     private val insightsCollector: InsightsCollector,
     // FLASHCAT FORK - the console's sampling rates, or null when the app did not opt in.
-    private val remoteConfig: RemoteConfigStore? = null
+    private val remoteConfig: RemoteConfigStore? = null,
+    // FLASHCAT FORK - fired after each session draw, so the stored configuration is re-fetched on
+    // the only rhythm that can matter. No-op when the app did not opt in.
+    private val onSessionDrawn: () -> Unit = {}
 ) : RumScope, RumViewChangedListener {
 
     override val parentScope: RumScope? = null
@@ -71,6 +74,7 @@ internal class RumApplicationScope(
             sessionEndedMetricDispatcher = sessionEndedMetricDispatcher,
             sampleRate = sampleRate,
             remoteConfig = remoteConfig,
+            onSessionDrawn = onSessionDrawn,
             backgroundTrackingEnabled = backgroundTrackingEnabled,
             trackFrustrations = trackFrustrations,
             viewChangedListener = this,
@@ -210,7 +214,9 @@ internal class RumApplicationScope(
             batteryInfoProvider = batteryInfoProvider,
             displayInfoProvider = displayInfoProvider,
             rumSessionScopeStartupManagerFactory = rumSessionScopeStartupManagerFactory,
-            insightsCollector = insightsCollector
+            insightsCollector = insightsCollector,
+            remoteConfig = remoteConfig,
+            onSessionDrawn = onSessionDrawn
         )
         childScopes.add(newSession)
         if (event !is RumRawEvent.StartView) {

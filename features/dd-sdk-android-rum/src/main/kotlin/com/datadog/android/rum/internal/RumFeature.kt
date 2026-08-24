@@ -176,7 +176,7 @@ internal class RumFeature(
      * nothing — no storage, no request, no behaviour change — for everyone who has not asked for it.
      */
     internal var remoteConfigStore: RemoteConfigStore? = null
-    private var remoteConfigController: RemoteConfigController? = null
+    internal var remoteConfigController: RemoteConfigController? = null
     private var remoteConfigForegroundCallback: ProcessForegroundCallback? = null
     internal var initialResourceIdentifier: InitialResourceIdentifier = NoOpInitialResourceIdentifier()
     internal var lastInteractionIdentifier: LastInteractionIdentifier? = NoOpLastInteractionIdentifier()

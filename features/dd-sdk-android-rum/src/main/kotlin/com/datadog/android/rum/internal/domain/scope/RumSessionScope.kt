@@ -65,7 +65,10 @@ internal class RumSessionScope(
     insightsCollector: InsightsCollector,
     // FLASHCAT FORK - rates the console can change without the app shipping a new release. Null
     // when the app did not opt in, which is what keeps this whole path inert by default.
-    private val remoteConfig: RemoteConfigStore? = null
+    private val remoteConfig: RemoteConfigStore? = null,
+    // FLASHCAT FORK - fired after each draw, so the stored configuration is re-fetched on the only
+    // rhythm that can matter: a changed value can only apply to the next session anyway.
+    private val onSessionDrawn: () -> Unit = {}
 ) : RumScope {
 
     // FLASHCAT FORK - the rate the current session was actually drawn at. It is what events report
@@ -330,6 +333,10 @@ internal class RumSessionScope(
             )
         }
         sessionListener?.onSessionStarted(sessionId, !keepSession)
+        // FLASHCAT FORK - the draw is done, so now is the moment to ask again: the response lands
+        // in storage for the NEXT session's draw, which is exactly the next-session semantics the
+        // console promises. Nothing here waits for the request.
+        onSessionDrawn()
     }
 
     private fun updateSessionStateForSessionReplay(state: State, sessionId: String) {

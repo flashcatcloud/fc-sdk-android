@@ -17,15 +17,24 @@ import java.io.IOException
 import java.net.URLEncoder
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.random.Random
 
 /**
  * Keeps the stored remote configuration in step with what the console says.
  *
- * Nothing here can hold up the SDK or interrupt collection: the first fetch is scheduled like any
- * other, and a request that fails, times out or comes back unreadable leaves the stored rates
- * exactly as they were. Wiping them on a bad minute would swing a whole fleet back to the rates it
- * was built with, which is the opposite of what someone who turned a knob deliberately wants.
+ * Fetching follows the rhythm of the sessions that read it: once at start-up and once whenever a
+ * new session begins — a change can only matter at the next draw, so asking more often than
+ * sessions are drawn would be requests for nothing. There is no timer between sessions; the
+ * server's `ttl` field is accepted and only bounds how stale the stored values may be when the
+ * console allows a foreground refresh, reserved for a future polling mode.
+ *
+ * Nothing here can hold up the SDK or interrupt collection: a trigger never blocks on the request,
+ * and a request that fails, times out or comes back unreadable leaves the stored values exactly
+ * as they were. Wiping them on a bad minute would swing a whole fleet back to the values it was
+ * built with, which is the opposite of what someone who turned a knob deliberately wants.
  */
 internal class RemoteConfigController(
     private val sdkCore: FeatureSdkCore,
@@ -35,7 +44,8 @@ internal class RemoteConfigController(
     private val callFactory: Call.Factory,
     private val executor: ScheduledExecutorService,
     private val restartSession: () -> Unit,
-    private val elapsedTimeMs: () -> Long = SystemClock::elapsedRealtime
+    private val elapsedTimeMs: () -> Long = SystemClock::elapsedRealtime,
+    private val jitter: () -> Double = { Random.nextDouble() }
 ) {
 
     @Volatile
@@ -47,26 +57,36 @@ internal class RemoteConfigController(
     @Volatile
     private var refreshOnForeground: Boolean = false
 
-    fun start() {
-        schedule(0L)
-    }
+    private val inFlight = AtomicBoolean(false)
+    private var failedAttempts = 0
+    private var pendingRetry: ScheduledFuture<*>? = null
+
+    fun start() = triggerFetch()
 
     /**
-     * Asks again when the app returns to the foreground, where the poll timer cannot be trusted:
-     * the system may not have run it for hours.
+     * A new session is the one moment a changed configuration can matter: its draw has just
+     * happened with whatever was stored, and the response to this request lands in storage for
+     * the next draw. It never waits for the request — a session is never delayed by the network.
+     */
+    fun onSessionStarted() = triggerFetch()
+
+    /**
+     * Asks again when the app returns to the foreground, where timers cannot be trusted:
+     * the system may not have run them for hours.
      *
-     * Off unless an operator turned it on for this application. The poll spreads requests across
-     * the ttl; returning to the foreground does the opposite, bunching them at the moment everyone
-     * opens the app — the same shape as a release herd, arriving when the endpoint can least
-     * absorb it. Worth it for an application whose owner needs a change to land within minutes,
-     * not worth it for everyone else, so it is theirs to choose rather than ours to assume.
+     * Off unless an operator turned it on for this application. Session starts spread requests
+     * across the day; returning to the foreground does the opposite, bunching them at the moment
+     * everyone opens the app — the same shape as a release herd, arriving when the endpoint can
+     * least absorb it. Worth it for an application whose owner needs a change to land within
+     * minutes, not worth it for everyone else, so it is theirs to choose rather than ours to
+     * assume.
      *
      * The staleness check is the second guard: it keeps switching between apps from turning into a
      * request each time.
      */
     fun refreshIfStale() {
         if (shouldRefreshOnForeground(refreshOnForeground, elapsedTimeMs() - lastFetchAtMs, currentTtlSeconds)) {
-            schedule(0L)
+            triggerFetch()
         }
     }
 
@@ -74,28 +94,33 @@ internal class RemoteConfigController(
         executor.shutdownNow()
     }
 
-    private fun schedule(delaySeconds: Long) {
+    /**
+     * Runs a fetch now, dropping any retry still waiting: a natural trigger re-arms the whole
+     * backoff, so a session starting in the middle of an outage does not wait out the patient
+     * retry before asking again.
+     */
+    private fun triggerFetch() {
+        synchronized(this) {
+            pendingRetry?.cancel(false)
+            failedAttempts = 0
+        }
+        if (!inFlight.compareAndSet(false, true)) return
         try {
-            executor.schedule({ fetchOnce() }, delaySeconds, TimeUnit.SECONDS)
+            executor.execute { fetchOnce() }
         } catch (e: RejectedExecutionException) {
             // The SDK is shutting down. Nothing to keep fresh.
-            sdkCore.internalLogger.log(
-                InternalLogger.Level.DEBUG,
-                InternalLogger.Target.MAINTAINER,
-                { "Remote configuration refresh not scheduled: executor is shutting down." },
-                e
-            )
+            inFlight.set(false)
+            logScheduleRejected(e)
         }
     }
 
     @WorkerThread
     private fun fetchOnce() {
-        // Armed before the request goes out, so a request that never comes back still leads to
-        // another attempt instead of leaving the app on whatever it last knew, forever.
-        var nextDelaySeconds = DEFAULT_TTL_SECONDS
+        // Stamped before the request goes out, so a request that never comes back still counts as
+        // an attempt for the staleness gate instead of leaving the app on whatever it last knew.
         lastFetchAtMs = elapsedTimeMs()
 
-        try {
+        val succeeded = try {
             // Telling the server which version this app is running is what lets the console answer
             // "has my change reached everyone yet". It goes on the request every client makes,
             // whether or not its session was kept.
@@ -103,30 +128,55 @@ internal class RemoteConfigController(
             val request = Request.Builder().url(url).get().build()
             callFactory.newCall(request).execute().use { response ->
                 if (response.isSuccessful) {
-                    val payload = response.body?.string()
-                    if (payload != null) {
-                        nextDelaySeconds = apply(payload)
-                    }
+                    response.body?.string()?.let { apply(it) } != null
+                } else {
+                    false
                 }
             }
         } catch (e: IOException) {
             logFetchFailure(e)
+            false
         } catch (e: IllegalStateException) {
             logFetchFailure(e)
+            false
         }
 
-        schedule(nextDelaySeconds)
+        inFlight.set(false)
+        if (!succeeded) scheduleRetry()
+    }
+
+    /**
+     * A failed fetch is retried quickly, then patiently, then not at all until the next natural
+     * trigger (a new session, or the next app start). The budget is deliberately tiny — two extra
+     * requests per outage per client, so a fleet can never turn an endpoint incident into a storm.
+     */
+    private fun scheduleRetry() {
+        synchronized(this) {
+            if (failedAttempts >= RETRY_DELAYS_SECONDS.size) return
+            val delaySeconds = jittered(RETRY_DELAYS_SECONDS[failedAttempts], jitter())
+            failedAttempts++
+            try {
+                pendingRetry = executor.schedule(
+                    { if (inFlight.compareAndSet(false, true)) fetchOnce() },
+                    delaySeconds,
+                    TimeUnit.SECONDS
+                )
+            } catch (e: RejectedExecutionException) {
+                // The SDK is shutting down. Nothing to keep fresh.
+                logScheduleRejected(e)
+            }
+        }
     }
 
     /**
      * Stores what the response carried and, when the console asked for it, restarts the session so
-     * the new rates take hold now instead of at the visitor's next one.
+     * the new values take hold now instead of at the visitor's next one.
      *
-     * The session is only restarted when the rates this client will draw with really changed.
+     * The session is only restarted when the values this client will draw with really changed.
      * Without that check, a console resending an unchanged configuration would cut every session in
-     * two on every poll.
+     * two on every fetch.
      */
-    internal fun apply(payload: String): Long {
+    internal fun apply(payload: String) {
         val json = JSONObject(payload)
         val ttl = json.optLong(FIELD_TTL, DEFAULT_TTL_SECONDS)
         val enabled = json.optBoolean(FIELD_ENABLED, false)
@@ -136,14 +186,14 @@ internal class RemoteConfigController(
         val before = RemoteConfigValues(store.sessionSampleRate(), store.sessionReplaySampleRate())
         val version = json.optInt(FIELD_VERSION, 0).takeIf { it > 0 }
         val after = if (enabled) {
-            readRates(json.optJSONObject(FIELD_RUM)).copy(
+            readValues(json.optJSONObject(FIELD_RUM)).copy(
                 version = version,
                 // Stored as the raw string: the platform's job is delivery, the meaning belongs to
                 // the host application.
                 custom = json.optJSONObject(FIELD_CUSTOM)?.toString()
             )
         } else {
-            EMPTY_RATES.copy(version = version)
+            EMPTY_VALUES.copy(version = version)
         }
         store.store(after)
 
@@ -154,11 +204,10 @@ internal class RemoteConfigController(
         // Remembered here rather than around the request, so a fetch that fails keeps the ttl the
         // server last asked for instead of falling back to ours.
         currentTtlSeconds = if (ttl > 0) ttl else DEFAULT_TTL_SECONDS
-        return currentTtlSeconds
     }
 
-    private fun readRates(rum: JSONObject?): RemoteConfigValues {
-        if (rum == null) return EMPTY_RATES
+    private fun readValues(rum: JSONObject?): RemoteConfigValues {
+        if (rum == null) return EMPTY_VALUES
         return RemoteConfigValues(
             sessionSampleRate = readRate(rum, FIELD_SESSION_SAMPLE_RATE),
             sessionReplaySampleRate = readRate(rum, FIELD_SESSION_REPLAY_SAMPLE_RATE)
@@ -166,7 +215,7 @@ internal class RemoteConfigController(
     }
 
     /**
-     * A rate the response did not send stays absent, so the value passed to init keeps applying.
+     * A value the response did not send stays absent, so the value passed to init keeps applying.
      * An out-of-range number is treated the same way rather than clamped: a rate we cannot trust is
      * not a rate to sample a customer's traffic with.
      */
@@ -197,13 +246,25 @@ internal class RemoteConfigController(
         )
     }
 
+    private fun logScheduleRejected(e: RejectedExecutionException) {
+        sdkCore.internalLogger.log(
+            InternalLogger.Level.DEBUG,
+            InternalLogger.Target.MAINTAINER,
+            { "Remote configuration refresh not scheduled: executor is shutting down." },
+            e
+        )
+    }
+
     companion object {
         internal const val DEFAULT_TTL_SECONDS = 300L
         internal const val ACTIVATION_NEXT_SESSION = "next_session"
         internal const val ACTIVATION_IMMEDIATE = "immediate"
 
+        internal val RETRY_DELAYS_SECONDS = longArrayOf(5L, 60L)
+
         private const val MAX_RATE = 100.0
         private const val MILLIS_PER_SECOND = 1_000L
+        private const val JITTER_FRACTION = 0.2
         private const val FIELD_VERSION = "version"
         private const val FIELD_REFRESH_ON_FOREGROUND = "refresh_on_foreground"
         private const val FIELD_TTL = "ttl"
@@ -214,7 +275,7 @@ internal class RemoteConfigController(
         private const val FIELD_SESSION_SAMPLE_RATE = "sessionSampleRate"
         private const val FIELD_SESSION_REPLAY_SAMPLE_RATE = "sessionReplaySampleRate"
 
-        private val EMPTY_RATES = RemoteConfigValues(null, null)
+        private val EMPTY_VALUES = RemoteConfigValues(null, null)
 
         internal const val FETCH_FAILED_MESSAGE =
             "Unable to refresh the remote configuration; keeping the values already in use."
@@ -244,5 +305,13 @@ internal class RemoteConfigController(
          */
         internal fun shouldRefreshOnForeground(allowed: Boolean, ageMs: Long, ttlSeconds: Long): Boolean =
             allowed && ageMs >= ttlSeconds * MILLIS_PER_SECOND
+
+        /**
+         * Spreads a delay by ±20%. An endpoint incident aligns every failed client's retry clock to
+         * the same moment; without this, recovery would be greeted by the whole fleet at once,
+         * exactly when the endpoint is weakest.
+         */
+        internal fun jittered(delaySeconds: Long, randomFraction: Double): Long =
+            (delaySeconds * (1 - JITTER_FRACTION + 2 * JITTER_FRACTION * randomFraction)).toLong()
     }
 }
