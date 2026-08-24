@@ -125,12 +125,25 @@ internal class RemoteConfigController(
             // "has my change reached everyone yet". It goes on the request every client makes,
             // whether or not its session was kept.
             val url = store.appliedVersion()?.let { "$configUrl&applied_version=$it" } ?: configUrl
-            val request = Request.Builder().url(url).get().build()
-            callFactory.newCall(request).execute().use { response ->
-                if (response.isSuccessful) {
-                    response.body?.string()?.let { apply(it) } != null
-                } else {
-                    false
+            val requestBuilder = Request.Builder().url(url).get()
+            // The answer varies per caller, so the validator only means something paired with the
+            // configuration it validated: it is stored beside it and echoed back exactly as sent.
+            store.etag()?.let { requestBuilder.header(HEADER_IF_NONE_MATCH, it) }
+            callFactory.newCall(requestBuilder.build()).execute().use { response ->
+                when {
+                    // Unchanged: what is stored is still the answer, so there is nothing to apply —
+                    // but the ask itself succeeded, and no retry is owed.
+                    response.code == HTTP_NOT_MODIFIED -> true
+                    response.isSuccessful -> {
+                        val payload = response.body?.string()
+                        if (payload == null) {
+                            false
+                        } else {
+                            apply(payload, response.header(HEADER_ETAG))
+                            true
+                        }
+                    }
+                    else -> false
                 }
             }
         } catch (e: IOException) {
@@ -176,7 +189,7 @@ internal class RemoteConfigController(
      * Without that check, a console resending an unchanged configuration would cut every session in
      * two on every fetch.
      */
-    internal fun apply(payload: String) {
+    internal fun apply(payload: String, etag: String? = null) {
         val json = JSONObject(payload)
         val ttl = json.optLong(FIELD_TTL, DEFAULT_TTL_SECONDS)
         val enabled = json.optBoolean(FIELD_ENABLED, false)
@@ -190,10 +203,11 @@ internal class RemoteConfigController(
                 version = version,
                 // Stored as the raw string: the platform's job is delivery, the meaning belongs to
                 // the host application.
-                custom = json.optJSONObject(FIELD_CUSTOM)?.toString()
+                custom = json.optJSONObject(FIELD_CUSTOM)?.toString(),
+                etag = etag
             )
         } else {
-            EMPTY_VALUES.copy(version = version)
+            EMPTY_VALUES.copy(version = version, etag = etag)
         }
         store.store(after)
 
@@ -277,6 +291,10 @@ internal class RemoteConfigController(
 
         private val EMPTY_VALUES = RemoteConfigValues(null, null)
 
+        private const val HTTP_NOT_MODIFIED = 304
+        private const val HEADER_ETAG = "ETag"
+        private const val HEADER_IF_NONE_MATCH = "If-None-Match"
+
         internal const val FETCH_FAILED_MESSAGE =
             "Unable to refresh the remote configuration; keeping the values already in use."
 
@@ -284,13 +302,23 @@ internal class RemoteConfigController(
          * Where to ask. A custom endpoint means the app was pointed at the customer's own host for
          * the RUM intake, and the configuration lives beside it there — which is exactly the layout
          * the private-deployment nginx template serves.
+         *
+         * The SDK version rides along purely as information: it keys nothing on this side (see the
+         * store key), and the server may one day target a configuration at a range of them.
          */
-        fun buildConfigUrl(intakeUrl: String, clientToken: String, env: String, appVersion: String): String {
+        fun buildConfigUrl(
+            intakeUrl: String,
+            clientToken: String,
+            env: String,
+            appVersion: String,
+            sdkVersion: String
+        ): String {
             val parameters = buildString {
                 append("?client_token=").append(encode(clientToken))
                 append("&sdk=android")
                 if (env.isNotEmpty()) append("&env=").append(encode(env))
                 if (appVersion.isNotEmpty()) append("&app_version=").append(encode(appVersion))
+                if (sdkVersion.isNotEmpty()) append("&sdk_version=").append(encode(sdkVersion))
             }
             return intakeUrl.trimEnd('/') + "/config" + parameters
         }

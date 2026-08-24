@@ -50,6 +50,13 @@ internal class RemoteConfigStore(
     fun sessionReplaySampleRate(): Float? = read(replayKey())
 
     /**
+     * The validator the server sent with the stored configuration, echoed back as If-None-Match so
+     * an unchanged answer costs a 304 instead of a body. It belongs to this stored configuration
+     * specifically: the answer varies per caller, so it cannot be shared or guessed.
+     */
+    fun etag(): String? = preferences?.getString(etagKey(), null)
+
+    /**
      * Which version of the settings the stored rates came from, or null before the first answer.
      * Reported back on the next request so the console can say how far a change has reached — a
      * question the events cannot answer, because a session that was not kept sends none, and the
@@ -65,22 +72,27 @@ internal class RemoteConfigStore(
      * removed rather than left behind, so switching a knob off in the console really does hand that
      * knob back to the value the app was initialised with.
      */
-    fun store(rates: RemoteConfigValues) {
+    fun store(values: RemoteConfigValues) {
         val editor = preferences?.edit() ?: return
-        write(editor, sessionKey(), rates.sessionSampleRate)
-        write(editor, replayKey(), rates.sessionReplaySampleRate)
+        write(editor, sessionKey(), values.sessionSampleRate)
+        write(editor, replayKey(), values.sessionReplaySampleRate)
         // Kept even when there are no rates — that is what "remote configuration is off, use your
         // own settings" looks like — so the console can still see this client is up to date with
         // the change that turned them off.
-        if (rates.version == null) {
+        if (values.version == null) {
             editor.remove(versionKey())
         } else {
-            editor.putInt(versionKey(), rates.version)
+            editor.putInt(versionKey(), values.version)
         }
-        if (rates.custom == null) {
+        if (values.custom == null) {
             editor.remove(customKey())
         } else {
-            editor.putString(customKey(), rates.custom)
+            editor.putString(customKey(), values.custom)
+        }
+        if (values.etag == null) {
+            editor.remove(etagKey())
+        } else {
+            editor.putString(etagKey(), values.etag)
         }
         editor.apply()
     }
@@ -106,8 +118,18 @@ internal class RemoteConfigStore(
 
     private fun customKey() = "$storeKey.custom"
 
+    private fun etagKey() = "$storeKey.etag"
+
     companion object {
         private const val PREFERENCES_NAME = "flashcat-rum-remote-config"
+
+        /**
+         * The `1` is the storage format version, not the SDK version: it changes only when the
+         * shape of what we store changes, so an SDK upgrade keeps the cache (losing it would put
+         * the first session after every upgrade back on the init values), while a format change
+         * orphans the old entry instead of asking new code to parse it.
+         */
+        internal const val STORE_KEY_PREFIX = "_fc_rc_1_"
 
         // SharedPreferences has no "absent" for a primitive read, and every legitimate rate is
         // within 0..100, so a negative sentinel can never collide with a stored value.
@@ -118,27 +140,47 @@ internal class RemoteConfigStore(
             "Unable to open the remote configuration store; the values passed to init will apply."
 
         /**
-         * Identifies whose rates these are. It covers everything that can change the answer — which
-         * application, in which environment, at which version — so an app that ships a new version
-         * does not read the previous one's rates.
+         * Identifies whose configuration this is. It covers everything that can change the answer —
+         * which endpoint the app asks, which application, in which environment, at which app
+         * version — so an app that ships a new version, or two applications sharing a device, never
+         * read each other's values.
          *
-         * It deliberately leaves out the SDK version: including it would discard the stored rates on
-         * every SDK upgrade and put the first session after an upgrade back on the init values.
+         * It deliberately leaves out the SDK version: including it would discard the stored values
+         * on every SDK upgrade and put the first session after an upgrade back on the init values.
+         * The storage format version lives in [STORE_KEY_PREFIX] instead, so only a real format
+         * change orphans the cache.
          */
-        fun buildStoreKey(context: DatadogContext): String =
-            "${context.service}|${context.env}|${context.version}"
+        fun buildStoreKey(context: DatadogContext, intakeUrl: String, applicationId: String): String {
+            val host = try {
+                @Suppress("UnsafeThirdPartyFunctionCall") // caught right below
+                java.net.URI(intakeUrl).host ?: intakeUrl
+            } catch (e: IllegalArgumentException) {
+                intakeUrl
+            } catch (e: java.net.URISyntaxException) {
+                intakeUrl
+            }
+            return STORE_KEY_PREFIX + listOf(
+                host,
+                applicationId,
+                context.service,
+                context.env,
+                context.version
+            ).joinToString("|")
+        }
     }
 }
 
 /**
- * The rates carried by one configuration response. Null means the console did not set that knob.
+ * The values carried by one configuration response. Null means the console did not set that knob.
  */
 internal data class RemoteConfigValues(
     val sessionSampleRate: Float?,
     val sessionReplaySampleRate: Float?,
     val version: Int? = null,
     /** Raw JSON object string of the console's custom pass-through values, delivered verbatim. */
-    val custom: String? = null
+    val custom: String? = null,
+    /** The validator to echo back as If-None-Match on the next request, quoted as the server sent it. */
+    val etag: String? = null
 ) {
     fun isEmpty(): Boolean = sessionSampleRate == null && sessionReplaySampleRate == null
 }

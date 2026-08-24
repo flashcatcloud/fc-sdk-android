@@ -229,6 +229,68 @@ internal class RemoteConfigControllerTest {
     }
 
     @Test
+    fun `M offer the stored validator W fetch { one was stored }`() {
+        whenever(store.etag()).thenReturn("\"abc123\"")
+        whenever(call.execute()).thenReturn(response(200, body()))
+
+        runPendingFetch()
+
+        argumentCaptor<Request> {
+            verify(callFactory).newCall(capture())
+            assertThat(firstValue.header("If-None-Match")).isEqualTo("\"abc123\"")
+        }
+    }
+
+    @Test
+    fun `M offer no validator W fetch { none was stored }`() {
+        whenever(store.etag()).thenReturn(null)
+        whenever(call.execute()).thenReturn(response(200, body()))
+
+        runPendingFetch()
+
+        argumentCaptor<Request> {
+            verify(callFactory).newCall(capture())
+            assertThat(firstValue.header("If-None-Match")).isNull()
+        }
+    }
+
+    @Test
+    fun `M keep the stored values and call it a success W fetch answers not modified`() {
+        whenever(call.execute()).thenReturn(response(304, ""))
+
+        runPendingFetch()
+
+        verify(store, never()).store(any())
+        verify(executor, never()).schedule(any<Runnable>(), any(), any())
+    }
+
+    @Test
+    fun `M store the validator the answer came with W fetch succeeds`() {
+        whenever(call.execute()).thenReturn(response(200, body(), etag = "\"v42\""))
+
+        runPendingFetch()
+
+        argumentCaptor<RemoteConfigValues> {
+            verify(store).store(capture())
+            assertThat(firstValue.etag).isEqualTo("\"v42\"")
+        }
+    }
+
+    @Test
+    fun `M keep the validator W apply() { remote configuration switched off }`() {
+        // The values are gone, but the validator belongs to the answer that turned them off and is
+        // what the next If-None-Match is built from.
+        testedController.apply(body(enabled = false), etag = "\"v43\"")
+
+        argumentCaptor<RemoteConfigValues> {
+            verify(store).store(capture())
+            assertThat(firstValue.sessionSampleRate).isNull()
+            assertThat(firstValue.version).isEqualTo(3)
+            assertThat(firstValue.etag).isEqualTo("\"v43\"")
+        }
+    }
+
+    @Test
     fun `M not retry W fetch succeeds`() {
         whenever(call.execute()).thenReturn(response(200, body()))
 
@@ -373,7 +435,8 @@ internal class RemoteConfigControllerTest {
             intakeUrl = "https://rum.example.com/api/v2/rum",
             clientToken = "token",
             env = "staging",
-            appVersion = "1.2.3"
+            appVersion = "1.2.3",
+            sdkVersion = "2.26.0"
         )
 
         assertThat(url).startsWith("https://rum.example.com/api/v2/rum/config?")
@@ -381,6 +444,7 @@ internal class RemoteConfigControllerTest {
         assertThat(url).contains("sdk=android")
         assertThat(url).contains("env=staging")
         assertThat(url).contains("app_version=1.2.3")
+        assertThat(url).contains("sdk_version=2.26.0")
     }
 
     @Test
@@ -389,11 +453,13 @@ internal class RemoteConfigControllerTest {
             intakeUrl = "https://rum.example.com/api/v2/rum",
             clientToken = "token",
             env = "",
-            appVersion = ""
+            appVersion = "",
+            sdkVersion = ""
         )
 
         assertThat(url).doesNotContain("env=")
         assertThat(url).doesNotContain("app_version=")
+        assertThat(url).doesNotContain("sdk_version=")
     }
 
     @Test
@@ -443,12 +509,13 @@ internal class RemoteConfigControllerTest {
         }
     }
 
-    private fun response(code: Int, payload: String): Response =
+    private fun response(code: Int, payload: String, etag: String? = null): Response =
         Response.Builder()
             .request(Request.Builder().url("https://example.com/api/v2/rum/config").build())
             .protocol(Protocol.HTTP_1_1)
             .code(code)
             .message("OK")
+            .apply { if (etag != null) header("ETag", etag) }
             .body(payload.toResponseBody("application/json".toMediaType()))
             .build()
 

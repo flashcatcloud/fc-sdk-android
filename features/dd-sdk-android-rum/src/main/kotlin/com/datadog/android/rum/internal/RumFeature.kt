@@ -773,10 +773,10 @@ internal class RumFeature(
     }
 
     /**
-     * FLASHCAT FORK - begins keeping the console's sampling rates fresh.
+     * FLASHCAT FORK - begins keeping the console's configuration fresh.
      *
      * Everything about it is best-effort: if the SDK context is not readable yet, or storage is
-     * unavailable, the app simply keeps sampling at the rates it was initialised with. Nothing here
+     * unavailable, the app simply keeps the values it was initialised with. Nothing here
      * may delay initialisation or interrupt collection.
      */
     private fun startRemoteConfiguration(appContext: Context) {
@@ -787,7 +787,11 @@ internal class RumFeature(
 
         val store = RemoteConfigStore(
             appContext = appContext,
-            storeKey = RemoteConfigStore.buildStoreKey(context),
+            storeKey = RemoteConfigStore.buildStoreKey(
+                context = context,
+                intakeUrl = intakeUrl,
+                applicationId = applicationId
+            ),
             internalLogger = sdkCore.internalLogger
         )
         remoteConfigStore = store
@@ -798,7 +802,8 @@ internal class RumFeature(
                 intakeUrl = intakeUrl,
                 clientToken = context.clientToken,
                 env = context.env,
-                appVersion = context.version
+                appVersion = context.version,
+                sdkVersion = context.sdkVersion
             ),
             store = store,
             initialSessionSampleRate = sampleRate,
@@ -812,8 +817,8 @@ internal class RumFeature(
         ).also { controller ->
             controller.start()
 
-            // The poll timer alone is not enough on a phone: an app in the background may not have
-            // it run for hours. Asking again on the way back to the foreground is what makes the
+            // An app in the background may not run another session for hours. Asking again on the
+            // way back to the foreground — when the console allows it — is what makes the
             // console's change land soon after someone reopens the app, and it costs the app no
             // code of its own.
             (appContext as? Application)?.let { application ->
