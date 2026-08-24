@@ -9,6 +9,7 @@ import com.datadog.android.internal.utils.appendIfNotEmpty
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.junit5.ForgeExtension
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.extension.Extensions
@@ -19,6 +20,11 @@ import kotlin.system.measureNanoTime
 
 @Extensions(
     ExtendWith(ForgeExtension::class)
+)
+@Disabled(
+    "Wall-clock micro-benchmark rather than a correctness test: it compares two string-building " +
+        "approaches by measured time, so it flips on a shared CI runner and fails a release that is " +
+        "otherwise sound. Run it locally when the performance claim needs revisiting."
 )
 internal class JointToStringVsStringBuilderPerformanceTest {
 
