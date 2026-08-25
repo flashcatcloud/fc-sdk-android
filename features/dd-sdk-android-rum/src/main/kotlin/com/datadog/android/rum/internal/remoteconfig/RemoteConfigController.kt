@@ -223,7 +223,7 @@ internal class RemoteConfigController(
     private fun readValues(rum: JSONObject?): RemoteConfigValues {
         if (rum == null) return EMPTY_VALUES
         return RemoteConfigValues(
-            sessionSampleRate = readRate(rum, FIELD_SESSION_SAMPLE_RATE)
+            sessionSampleRate = readRate(rum)
         )
     }
 
@@ -232,9 +232,9 @@ internal class RemoteConfigController(
      * An out-of-range number is treated the same way rather than clamped: a rate we cannot trust is
      * not a rate to sample a customer's traffic with.
      */
-    private fun readRate(rum: JSONObject, field: String): Float? {
-        if (!rum.has(field)) return null
-        val rate = rum.optDouble(field, Double.NaN)
+    private fun readRate(rum: JSONObject): Float? {
+        if (!rum.has(FIELD_SESSION_SAMPLE_RATE)) return null
+        val rate = rum.optDouble(FIELD_SESSION_SAMPLE_RATE, Double.NaN)
         return if (rate.isNaN() || rate < 0.0 || rate > MAX_RATE) null else rate.toFloat()
     }
 
@@ -265,7 +265,7 @@ internal class RemoteConfigController(
         internal const val ACTIVATION_NEXT_SESSION = "next_session"
         internal const val ACTIVATION_IMMEDIATE = "immediate"
 
-        internal val RETRY_DELAYS_SECONDS = longArrayOf(5L, 60L)
+        private val RETRY_DELAYS_SECONDS = longArrayOf(5L, 60L)
 
         private const val MAX_RATE = 100.0
         private const val MILLIS_PER_SECOND = 1_000L

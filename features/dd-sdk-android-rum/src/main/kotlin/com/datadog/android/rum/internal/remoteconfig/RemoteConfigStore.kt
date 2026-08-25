@@ -189,6 +189,4 @@ internal data class RemoteConfigValues(
     val custom: String? = null,
     /** The validator to echo back as If-None-Match on the next request, quoted as the server sent it. */
     val etag: String? = null
-) {
-    fun isEmpty(): Boolean = sessionSampleRate == null
-}
+)
