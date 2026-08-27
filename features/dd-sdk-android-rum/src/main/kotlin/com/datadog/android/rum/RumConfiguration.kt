@@ -85,6 +85,24 @@ data class RumConfiguration internal constructor(
         }
 
         /**
+         * Have the last word on session sampling.
+         *
+         * The callback runs synchronously each time a new session is about to be drawn, with the
+         * rate that would apply and the console's custom values; return a rate to override it, or
+         * null to leave it alone. The typical use is an allow-list: keep every session of the
+         * handful of users you are debugging while the fleet stays at a low rate.
+         *
+         * It is the last step of the draw, after the console's rate, precisely so an allow-list can
+         * keep collecting a visitor the console's rate would drop.
+         *
+         * @param callback the hook to consult at every draw.
+         */
+        fun setBeforeSampling(callback: BeforeSamplingCallback): Builder {
+            rumConfig = rumConfig.copy(beforeSampling = callback)
+            return this
+        }
+
+        /**
          * Whether to collect accessibility attributes - this is disabled by default.
          *
          * @param enabled whether collecting accessibility attributes is enabled or not.

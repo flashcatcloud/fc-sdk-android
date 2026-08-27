@@ -1,3 +1,20 @@
+public abstract interface class com/datadog/android/rum/BeforeSamplingCallback {
+	public abstract fun sampleRate (Lcom/datadog/android/rum/BeforeSamplingContext;)Ljava/lang/Float;
+}
+
+public final class com/datadog/android/rum/BeforeSamplingContext {
+	public fun <init> (FLjava/util/Map;)V
+	public final fun component1 ()F
+	public final fun component2 ()Ljava/util/Map;
+	public final fun copy (FLjava/util/Map;)Lcom/datadog/android/rum/BeforeSamplingContext;
+	public static synthetic fun copy$default (Lcom/datadog/android/rum/BeforeSamplingContext;FLjava/util/Map;ILjava/lang/Object;)Lcom/datadog/android/rum/BeforeSamplingContext;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCustom ()Ljava/util/Map;
+	public final fun getSessionSampleRate ()F
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class com/datadog/android/rum/CloseableExtKt {
 	public static final fun useMonitored (Ljava/io/Closeable;Lcom/datadog/android/api/SdkCore;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 	public static synthetic fun useMonitored$default (Ljava/io/Closeable;Lcom/datadog/android/api/SdkCore;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
@@ -103,6 +120,7 @@ public final class com/datadog/android/rum/RumConfiguration$Builder {
 	public final fun collectAccessibility (Z)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun disableUserInteractionTracking ()Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun setActionEventMapper (Lcom/datadog/android/event/EventMapper;)Lcom/datadog/android/rum/RumConfiguration$Builder;
+	public final fun setBeforeSampling (Lcom/datadog/android/rum/BeforeSamplingCallback;)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun setErrorEventMapper (Lcom/datadog/android/event/EventMapper;)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun setInitialResourceIdentifier (Lcom/datadog/android/rum/metric/networksettled/InitialResourceIdentifier;)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun setLastInteractionIdentifier (Lcom/datadog/android/rum/metric/interactiontonextview/LastInteractionIdentifier;)Lcom/datadog/android/rum/RumConfiguration$Builder;

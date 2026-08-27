@@ -20,6 +20,8 @@ import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.core.internal.net.FirstPartyHostHeaderTypeResolver
 import com.datadog.android.internal.profiling.ProfilerStopEvent
 import com.datadog.android.internal.tests.stub.StubTimeProvider
+import com.datadog.android.rum.BeforeSamplingCallback
+import com.datadog.android.rum.BeforeSamplingContext
 import com.datadog.android.rum.RumSessionListener
 import com.datadog.android.rum.RumSessionType
 import com.datadog.android.rum.internal.domain.InfoProvider
@@ -984,6 +986,27 @@ internal class RumSessionScopeTest {
     }
 
     @Test
+    fun `M keep the running session W handleEvent(SetForcedSession) { already collected }`(
+        @Forgery key: RumScopeKey
+    ) {
+        // Given a live session the draw already kept. It has to be started by an interaction:
+        // a session renewed with no interaction behind it expires on the very next event.
+        initializeTestedScope(100f, withMockChildScope = false)
+        testedScope.handleEvent(RumRawEvent.StartView(key, emptyMap()), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        val collectedSessionId = testedScope.getRumContext().sessionId
+        assertThat(testedScope.getRumContext().sessionState).isEqualTo(RumSessionScope.State.TRACKED)
+
+        // When
+        testedScope.handleEvent(RumRawEvent.SetForcedSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        // RUM cannot retro-collect what a running session already dropped, so cutting a session
+        // that is already collected in two would gain nothing. Same behaviour as iOS and HarmonyOS.
+        assertThat(testedScope.getRumContext().sessionId).isEqualTo(collectedSessionId)
+        assertThat(testedScope.forcedSession).isTrue()
+    }
+
+    @Test
     fun `M keep the running forced session W handleEvent(SetForcedSession) { called again }`() {
         // Given
         initializeTestedScope(0f)
@@ -1925,12 +1948,81 @@ internal class RumSessionScopeTest {
         )
     }
 
+    // region beforeSampling
+
+    @Test
+    fun `M draw with the hook's rate W handleEvent { beforeSampling overrides }`() {
+        // Given
+        val remoteConfig = mock<RemoteConfigStore>()
+        whenever(remoteConfig.sessionSampleRate()) doReturn 1f
+        initializeTestedScope(sampleRate = 100f, remoteConfig = remoteConfig, beforeSampling = { 100f })
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(100f)
+    }
+
+    @Test
+    fun `M see the console's rate W handleEvent { beforeSampling reads its context }`() {
+        // Given
+        val remoteConfig = mock<RemoteConfigStore>()
+        whenever(remoteConfig.sessionSampleRate()) doReturn 42f
+        whenever(remoteConfig.custom()) doReturn """{"vip":["a"]}"""
+        var seen: BeforeSamplingContext? = null
+        initializeTestedScope(
+            sampleRate = 100f,
+            remoteConfig = remoteConfig,
+            beforeSampling = { seen = it; null }
+        )
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        // The hook is consulted AFTER the console, so what it sees is the rate that would apply.
+        assertThat(seen?.sessionSampleRate).isEqualTo(42f)
+        assertThat(seen?.custom).isEqualTo(mapOf("vip" to listOf("a")))
+    }
+
+    @Test
+    fun `M keep the incoming rate W handleEvent { beforeSampling returns nothing }`() {
+        initializeTestedScope(sampleRate = 30f, beforeSampling = { null })
+
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(30f)
+    }
+
+    @Test
+    fun `M keep the incoming rate W handleEvent { beforeSampling returns an impossible rate }`() {
+        initializeTestedScope(sampleRate = 30f, beforeSampling = { 150f })
+
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(30f)
+    }
+
+    @Test
+    fun `M keep collecting W handleEvent { beforeSampling throws }`() {
+        // A mistake in the host application must never take a customer's collection down with it.
+        initializeTestedScope(sampleRate = 30f, beforeSampling = { throw IllegalStateException("boom") })
+
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(30f)
+    }
+
+    // endregion
+
     private fun initializeTestedScope(
         sampleRate: Float = 100f,
         withMockChildScope: Boolean = true,
         backgroundTrackingEnabled: Boolean? = null,
         remoteConfig: RemoteConfigStore? = null,
-        onSessionDrawn: () -> Unit = {}
+        onSessionDrawn: () -> Unit = {},
+        beforeSampling: BeforeSamplingCallback? = null
     ) {
         testedScope = RumSessionScope(
             parentScope = mockParentScope,
@@ -1958,7 +2050,8 @@ internal class RumSessionScopeTest {
             rumSessionScopeStartupManagerFactory = { mockRumSessionScopeStartupManager },
             insightsCollector = mockInsightsCollector,
             remoteConfig = remoteConfig,
-            onSessionDrawn = onSessionDrawn
+            onSessionDrawn = onSessionDrawn,
+            beforeSampling = beforeSampling
         )
 
         if (withMockChildScope) {

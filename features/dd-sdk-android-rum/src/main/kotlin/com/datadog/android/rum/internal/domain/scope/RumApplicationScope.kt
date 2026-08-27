@@ -14,6 +14,7 @@ import com.datadog.android.api.feature.EventWriteScope
 import com.datadog.android.api.storage.DataWriter
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.core.internal.net.FirstPartyHostHeaderTypeResolver
+import com.datadog.android.rum.BeforeSamplingCallback
 import com.datadog.android.rum.DdRumContentProvider
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.RumSessionListener
@@ -60,7 +61,9 @@ internal class RumApplicationScope(
     private val remoteConfig: RemoteConfigStore? = null,
     // FLASHCAT FORK - fired after each session draw, so the stored configuration is re-fetched on
     // the only rhythm that can matter. No-op when the app did not opt in.
-    private val onSessionDrawn: () -> Unit = {}
+    private val onSessionDrawn: () -> Unit = {},
+    // FLASHCAT FORK - the host application's last word on the draw. Null unless the app set one.
+    private val beforeSampling: BeforeSamplingCallback? = null
 ) : RumScope, RumViewChangedListener {
 
     override val parentScope: RumScope? = null
@@ -75,6 +78,7 @@ internal class RumApplicationScope(
             sampleRate = sampleRate,
             remoteConfig = remoteConfig,
             onSessionDrawn = onSessionDrawn,
+            beforeSampling = beforeSampling,
             backgroundTrackingEnabled = backgroundTrackingEnabled,
             trackFrustrations = trackFrustrations,
             viewChangedListener = this,
@@ -216,7 +220,8 @@ internal class RumApplicationScope(
             rumSessionScopeStartupManagerFactory = rumSessionScopeStartupManagerFactory,
             insightsCollector = insightsCollector,
             remoteConfig = remoteConfig,
-            onSessionDrawn = onSessionDrawn
+            onSessionDrawn = onSessionDrawn,
+            beforeSampling = beforeSampling
         )
         childScopes.add(newSession)
         if (event !is RumRawEvent.StartView) {

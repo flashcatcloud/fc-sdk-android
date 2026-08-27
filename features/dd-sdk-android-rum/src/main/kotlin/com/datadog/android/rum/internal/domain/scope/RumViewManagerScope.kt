@@ -31,8 +31,8 @@ import com.datadog.android.rum.internal.metric.SessionMetricDispatcher
 import com.datadog.android.rum.internal.metric.ViewEndedMetricDispatcher
 import com.datadog.android.rum.internal.metric.interactiontonextview.InteractionToNextViewMetricResolver
 import com.datadog.android.rum.internal.metric.networksettled.NetworkSettledMetricResolver
-import com.datadog.android.rum.internal.remoteconfig.DrawnConfiguration
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
+import com.datadog.android.rum.internal.remoteconfig.DrawnConfiguration
 import com.datadog.android.rum.internal.vitals.NoOpVitalMonitor
 import com.datadog.android.rum.internal.vitals.VitalMonitor
 import com.datadog.android.rum.metric.interactiontonextview.LastInteractionIdentifier

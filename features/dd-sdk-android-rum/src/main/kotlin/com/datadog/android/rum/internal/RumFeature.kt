@@ -36,6 +36,7 @@ import com.datadog.android.event.NoOpEventMapper
 import com.datadog.android.internal.flags.RumFlagEvaluationMessage
 import com.datadog.android.internal.system.BuildSdkVersionProvider
 import com.datadog.android.internal.telemetry.InternalTelemetryEvent
+import com.datadog.android.rum.BeforeSamplingCallback
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.RumErrorSource
 import com.datadog.android.rum.RumSessionListener
@@ -74,10 +75,10 @@ import com.datadog.android.rum.internal.metric.slowframes.DefaultUISlownessMetri
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
 import com.datadog.android.rum.internal.monitor.AdvancedRumMonitor
 import com.datadog.android.rum.internal.monitor.DatadogRumMonitor
+import com.datadog.android.rum.internal.net.RumRequestFactory
 import com.datadog.android.rum.internal.remoteconfig.ProcessForegroundCallback
 import com.datadog.android.rum.internal.remoteconfig.RemoteConfigController
 import com.datadog.android.rum.internal.remoteconfig.RemoteConfigStore
-import com.datadog.android.rum.internal.net.RumRequestFactory
 import com.datadog.android.rum.internal.startup.RumAppStartupDetector
 import com.datadog.android.rum.internal.startup.RumFirstDrawTimeReporter
 import com.datadog.android.rum.internal.startup.RumStartupScenario
@@ -865,7 +866,10 @@ internal class RumFeature(
         val disableJankStats: Boolean,
         val insightsCollector: InsightsCollector,
         // FLASHCAT FORK - opt in to taking the sampling rates from the console.
-        val remoteConfigurationEnabled: Boolean = false
+        val remoteConfigurationEnabled: Boolean = false,
+        // FLASHCAT FORK - the host application's last word on the session draw, consulted after
+        // the console's rate. Null unless the app set one.
+        val beforeSampling: BeforeSamplingCallback? = null
     )
 
     internal companion object {

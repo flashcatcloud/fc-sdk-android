@@ -26,6 +26,7 @@ import com.datadog.android.core.metrics.MethodCallSamplingRate
 import com.datadog.android.internal.telemetry.InternalTelemetryEvent
 import com.datadog.android.internal.telemetry.InternalTelemetryEvent.ApiUsage.AddOperationStepVital.ActionType
 import com.datadog.android.internal.thread.NamedCallable
+import com.datadog.android.rum.BeforeSamplingCallback
 import com.datadog.android.rum.DdRumContentProvider
 import com.datadog.android.rum.ExperimentalRumApi
 import com.datadog.android.rum.RumActionType
@@ -106,7 +107,9 @@ internal class DatadogRumMonitor(
     private val remoteConfig: RemoteConfigStore? = null,
     // FLASHCAT FORK - fired after each session draw, so the stored configuration is re-fetched on
     // the only rhythm that can matter. No-op when the app did not opt in.
-    private val onSessionDrawn: () -> Unit = {}
+    private val onSessionDrawn: () -> Unit = {},
+    // FLASHCAT FORK - the host application's last word on the draw. Null unless the app set one.
+    private val beforeSampling: BeforeSamplingCallback? = null
 ) : RumMonitor, AdvancedRumMonitor {
 
     internal var rootScope = RumApplicationScope(
@@ -131,7 +134,8 @@ internal class DatadogRumMonitor(
         rumSessionScopeStartupManagerFactory = rumSessionScopeStartupManagerFactory,
         insightsCollector = insightsCollector,
         remoteConfig = remoteConfig,
-        onSessionDrawn = onSessionDrawn
+        onSessionDrawn = onSessionDrawn,
+        beforeSampling = beforeSampling
     )
 
     internal val keepAliveRunnable = Runnable {

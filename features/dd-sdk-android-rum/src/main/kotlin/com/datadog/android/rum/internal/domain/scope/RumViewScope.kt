@@ -41,9 +41,9 @@ import com.datadog.android.rum.internal.metric.interactiontonextview.Interaction
 import com.datadog.android.rum.internal.metric.interactiontonextview.InternalInteractionContext
 import com.datadog.android.rum.internal.metric.networksettled.InternalResourceContext
 import com.datadog.android.rum.internal.metric.networksettled.NetworkSettledMetricResolver
-import com.datadog.android.rum.internal.remoteconfig.DrawnConfiguration
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
 import com.datadog.android.rum.internal.monitor.StorageEvent
+import com.datadog.android.rum.internal.remoteconfig.DrawnConfiguration
 import com.datadog.android.rum.internal.toError
 import com.datadog.android.rum.internal.toLongTask
 import com.datadog.android.rum.internal.toView
@@ -1357,7 +1357,9 @@ internal open class RumViewScope(
                     // ignore it.
                     configuration = ViewEvent.Configuration(
                         sessionSampleRate = sampleRate,
-                        rcVersion = drawnConfiguration?.version?.toLong()
+                        // Omitted rather than sent as 0 before the first configuration arrives —
+                        // the same shape iOS and HarmonyOS send, so one wire form means one thing.
+                        rcVersion = drawnConfiguration?.version?.takeIf { it > 0 }?.toLong()
                     )
                 ),
                 connectivity = datadogContext.networkInfo.toViewConnectivity(),

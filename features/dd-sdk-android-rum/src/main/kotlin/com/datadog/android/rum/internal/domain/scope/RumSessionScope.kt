@@ -7,6 +7,7 @@
 package com.datadog.android.rum.internal.domain.scope
 
 import androidx.annotation.WorkerThread
+import com.datadog.android.api.InternalLogger
 import com.datadog.android.api.context.DatadogContext
 import com.datadog.android.api.feature.EventWriteScope
 import com.datadog.android.api.feature.Feature
@@ -15,6 +16,8 @@ import com.datadog.android.api.storage.NoOpDataWriter
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.core.internal.net.FirstPartyHostHeaderTypeResolver
 import com.datadog.android.internal.profiling.ProfilerStopEvent
+import com.datadog.android.rum.BeforeSamplingCallback
+import com.datadog.android.rum.BeforeSamplingContext
 import com.datadog.android.rum.RumSessionListener
 import com.datadog.android.rum.RumSessionType
 import com.datadog.android.rum.internal.domain.InfoProvider
@@ -26,9 +29,10 @@ import com.datadog.android.rum.internal.domain.display.DisplayInfo
 import com.datadog.android.rum.internal.instrumentation.insights.InsightsCollector
 import com.datadog.android.rum.internal.metric.SessionMetricDispatcher
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
-import com.datadog.android.rum.internal.startup.RumSessionScopeStartupManager
 import com.datadog.android.rum.internal.remoteconfig.DrawnConfiguration
 import com.datadog.android.rum.internal.remoteconfig.RemoteConfigStore
+import com.datadog.android.rum.internal.remoteconfig.decodeCustomValues
+import com.datadog.android.rum.internal.startup.RumSessionScopeStartupManager
 import com.datadog.android.rum.internal.utils.percent
 import com.datadog.android.rum.internal.vitals.VitalMonitor
 import com.datadog.android.rum.metric.interactiontonextview.LastInteractionIdentifier
@@ -69,7 +73,10 @@ internal class RumSessionScope(
     private val remoteConfig: RemoteConfigStore? = null,
     // FLASHCAT FORK - fired after each draw, so the stored configuration is re-fetched on the only
     // rhythm that can matter: a changed value can only apply to the next session anyway.
-    private val onSessionDrawn: () -> Unit = {}
+    private val onSessionDrawn: () -> Unit = {},
+    // FLASHCAT FORK - the host application's last word on the draw, consulted after the console's
+    // rate. Null unless the app set one.
+    private val beforeSampling: BeforeSamplingCallback? = null
 ) : RumScope {
 
     // FLASHCAT FORK - the rate the current session was actually drawn at. It is what events report
@@ -176,12 +183,13 @@ internal class RumSessionScope(
             renewSession(event.eventTime, StartReason.EXPLICIT_STOP)
         } else if (event is RumRawEvent.SetForcedSession) {
             // FLASHCAT FORK - the escape hatch for "collect this user NOW": the application knows
-            // who needs debugging, the SDK only provides the switch. The session restarts so the
-            // forced draw applies from a clean session — RUM cannot flip the replay decision of a
-            // session already under way. Calling again while the forced session runs is a no-op,
-            // so a host calling on every screen does not shred sessions.
-            if (!(forcedSession && sessionState == State.TRACKED)) {
-                forcedSession = true
+            // who needs debugging, the SDK only provides the switch. From here on every draw keeps
+            // the session, for the lifetime of the process.
+            forcedSession = true
+            // A session already being collected keeps running: RUM cannot retro-collect what a
+            // running session already dropped, so cutting it in two would gain nothing. One that
+            // was NOT collected restarts now, so a collected one takes its place.
+            if (sessionState != State.TRACKED) {
                 renewSession(event.eventTime, StartReason.EXPLICIT_STOP)
                 // Forcing is a deliberate act of the host application; without this the renewal
                 // is immediately re-expired when no user interaction happened yet.
@@ -323,7 +331,10 @@ internal class RumSessionScope(
         // FLASHCAT FORK - read the console's rate here, at the one moment a session's fate is
         // decided. A session already running is never redrawn, so a rate arriving mid-session
         // cannot start or stop collecting for someone in the middle of using the app.
-        effectiveSampleRate = remoteConfig?.sessionSampleRate() ?: sampleRate
+        // Order matters: the console's rate first, then the app's own hook. The hook is the last
+        // word precisely so an allow-list can keep collecting a visitor the console's rate would
+        // drop.
+        effectiveSampleRate = askBeforeSampling(remoteConfig?.sessionSampleRate() ?: sampleRate)
         childScope?.sampleRate = effectiveSampleRate
         val keepSession = forcedSession || random.nextFloat() < effectiveSampleRate.percent()
         startReason = reason
@@ -359,6 +370,32 @@ internal class RumSessionScope(
         onSessionDrawn()
     }
 
+    /**
+     * FLASHCAT FORK - asks the host application's hook for the rate to draw with. Anything
+     * unusable — a throw, a null, a rate outside 0..100 — leaves the incoming rate alone: a mistake
+     * in the host application must never take a customer's collection down with it.
+     */
+    private fun askBeforeSampling(rate: Float): Float {
+        val hook = beforeSampling ?: return rate
+        val override = try {
+            val custom = decodeCustomValues(remoteConfig?.custom())
+            hook.sampleRate(BeforeSamplingContext(sessionSampleRate = rate, custom = custom))
+        } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
+            sdkCore.internalLogger.log(
+                InternalLogger.Level.ERROR,
+                InternalLogger.Target.USER,
+                { BEFORE_SAMPLING_THREW_MESSAGE.format(rate) },
+                e
+            )
+            null
+        }
+        return if (override == null || override.isNaN() || override < 0f || override > MAX_SAMPLE_RATE) {
+            rate
+        } else {
+            override
+        }
+    }
+
     private fun updateSessionStateForSessionReplay(state: State, sessionId: String) {
         val keepSession = (state == State.TRACKED)
         sdkCore.getFeature(Feature.SESSION_REPLAY_FEATURE_NAME)?.sendEvent(
@@ -382,6 +419,11 @@ internal class RumSessionScope(
         internal const val RUM_KEEP_SESSION_BUS_MESSAGE_KEY = "keepSession"
         internal const val RUM_SESSION_FORCED_BUS_MESSAGE_KEY = "sessionForced"
         internal const val RUM_SESSION_ID_BUS_MESSAGE_KEY = "sessionId"
+
+        private const val MAX_SAMPLE_RATE = 100f
+
+        internal const val BEFORE_SAMPLING_THREW_MESSAGE =
+            "The beforeSampling callback failed; drawing this session at %s instead."
 
         internal val DEFAULT_SESSION_INACTIVITY_NS = TimeUnit.MINUTES.toNanos(15)
         internal val DEFAULT_SESSION_MAX_DURATION_NS = TimeUnit.HOURS.toNanos(4)
