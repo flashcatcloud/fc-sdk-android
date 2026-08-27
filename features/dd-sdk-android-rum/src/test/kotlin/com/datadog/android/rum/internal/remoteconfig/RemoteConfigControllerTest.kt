@@ -517,13 +517,19 @@ internal class RemoteConfigControllerTest {
     }
 
     @Test
-    fun `M refuse the whole configuration W apply() { no schema at all }`() {
+    fun `M read the configuration W apply() { no schema at all }`() {
+        // A body with no stamp is, by construction, the shape that existed before the stamp did —
+        // the shape this reader was written against. Refusing it would switch remote configuration
+        // silently off against a server that merely predates the field, with nothing to say so.
         val outcome = testedController.apply(
             body(rum = """"sessionSampleRate":42""", schemaVersion = null)
         )
 
-        assertThat(outcome).isEqualTo(RemoteConfigController.Outcome.UNSUPPORTED_SCHEMA)
-        verify(store, never()).store(any())
+        assertThat(outcome).isEqualTo(RemoteConfigController.Outcome.APPLIED)
+        argumentCaptor<RemoteConfigValues> {
+            verify(store).store(capture())
+            assertThat(firstValue.sessionSampleRate).isEqualTo(42f)
+        }
     }
 
     @Test

@@ -229,7 +229,14 @@ internal class RemoteConfigController(
         // and a reader that guesses instead of checking is exactly what this field exists to
         // prevent — which is why it has to be honoured by the first SDK that ships, not by a
         // later one: only code already on the device can refuse.
-        if (json.optInt(FIELD_SCHEMA_VERSION, SCHEMA_VERSION_ABSENT) != SUPPORTED_SCHEMA_VERSION) {
+        //
+        // No stamp at all is not a refusal. A body without one is, by construction, the shape that
+        // existed before the stamp did, which is the shape this reader was written against;
+        // refusing it would switch remote configuration silently off against a server that merely
+        // predates the field. Only a stamp we can see and do not recognise is a reason to refuse.
+        if (json.has(FIELD_SCHEMA_VERSION) &&
+            json.optInt(FIELD_SCHEMA_VERSION, SCHEMA_VERSION_ABSENT) != SUPPORTED_SCHEMA_VERSION
+        ) {
             logUnsupportedSchema(json.optInt(FIELD_SCHEMA_VERSION, SCHEMA_VERSION_ABSENT))
             return Outcome.UNSUPPORTED_SCHEMA
         }
