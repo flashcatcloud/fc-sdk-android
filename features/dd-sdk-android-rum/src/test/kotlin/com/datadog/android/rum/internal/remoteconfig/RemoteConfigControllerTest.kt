@@ -13,8 +13,8 @@ import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
-import org.json.JSONObject
 import org.assertj.core.api.Assertions.assertThat
+import org.json.JSONObject
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -472,6 +472,81 @@ internal class RemoteConfigControllerTest {
 
     // endregion
 
+    // region contract guards
+
+    @Test
+    fun `M keep the stored values and ask again W apply() { body is not a configuration }`() {
+        val outcome = testedController.apply("<html>captive portal</html>")
+
+        assertThat(outcome).isEqualTo(RemoteConfigController.Outcome.UNREADABLE)
+        verify(store, never()).store(any())
+        assertThat(restarts).isEqualTo(0)
+    }
+
+    @Test
+    fun `M not wedge the controller W fetch() { body is not a configuration }`() {
+        whenever(call.execute()).thenReturn(response(200, "<html>captive portal</html>"))
+        runPendingFetch()
+
+        // The whole point: an unreadable body must leave the controller able to ask again. If the
+        // parse escaped, inFlight would still be set and this second trigger would be dropped.
+        testedController.onSessionStarted()
+
+        verify(executor, times(2)).execute(any())
+    }
+
+    @Test
+    fun `M ask again W fetch() { body is not a configuration }`() {
+        whenever(call.execute()).thenReturn(response(200, "not json at all"))
+
+        runPendingFetch()
+
+        verify(executor).schedule(any(), any(), any())
+    }
+
+    @Test
+    fun `M refuse the whole configuration W apply() { schema this SDK does not read }`() {
+        val outcome = testedController.apply(
+            body(rum = """"sessionSampleRate":42""", schemaVersion = 99)
+        )
+
+        assertThat(outcome).isEqualTo(RemoteConfigController.Outcome.UNSUPPORTED_SCHEMA)
+        // Nothing of a body we cannot vouch for reaches storage, not even the fields that happened
+        // to parse.
+        verify(store, never()).store(any())
+    }
+
+    @Test
+    fun `M refuse the whole configuration W apply() { no schema at all }`() {
+        val outcome = testedController.apply(
+            body(rum = """"sessionSampleRate":42""", schemaVersion = null)
+        )
+
+        assertThat(outcome).isEqualTo(RemoteConfigController.Outcome.UNSUPPORTED_SCHEMA)
+        verify(store, never()).store(any())
+    }
+
+    @Test
+    fun `M not ask again W fetch() { schema this SDK does not read }`() {
+        whenever(call.execute()).thenReturn(response(200, body(schemaVersion = 99)))
+
+        runPendingFetch()
+
+        // Retrying would fetch the same refusal. The server answered; this SDK simply cannot use
+        // the answer until it is updated.
+        verify(executor, never()).schedule(any(), any(), any())
+    }
+
+    @Test
+    fun `M apply the configuration W apply() { schema this SDK reads }`() {
+        val outcome = testedController.apply(body(rum = """"sessionSampleRate":42"""))
+
+        assertThat(outcome).isEqualTo(RemoteConfigController.Outcome.APPLIED)
+        verify(store).store(any())
+    }
+
+    // endregion
+
     // region test helpers
 
     /**
@@ -512,9 +587,11 @@ internal class RemoteConfigControllerTest {
         activation: String = "next_session",
         refreshOnForeground: Boolean = false,
         rum: String = "",
-        custom: String? = null
+        custom: String? = null,
+        schemaVersion: Int? = RemoteConfigController.SUPPORTED_SCHEMA_VERSION
     ): String =
-        """{"version":3,"ttl":$ttl,"enabled":$enabled,"activation":"$activation",""" +
+        "{" + (if (schemaVersion == null) "" else """"schema_version":$schemaVersion,""") +
+            """"version":3,"ttl":$ttl,"enabled":$enabled,"activation":"$activation",""" +
             """"refresh_on_foreground":$refreshOnForeground,"rum":{$rum}""" +
             (if (custom == null) "" else ""","custom":$custom""") + "}"
 

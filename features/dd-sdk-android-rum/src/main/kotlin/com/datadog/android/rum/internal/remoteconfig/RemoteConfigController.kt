@@ -12,6 +12,7 @@ import com.datadog.android.api.InternalLogger
 import com.datadog.android.api.feature.FeatureSdkCore
 import okhttp3.Call
 import okhttp3.Request
+import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
 import java.net.URLEncoder
@@ -139,8 +140,11 @@ internal class RemoteConfigController(
                         if (payload == null) {
                             false
                         } else {
-                            apply(payload, response.header(HEADER_ETAG))
-                            true
+                            // An unreadable body is the only outcome worth asking again for. A
+                            // body we understood — even one we must refuse because its schema is
+                            // newer than this SDK — is an answered question, and repeating it
+                            // would just be the same refusal twice.
+                            apply(payload, response.header(HEADER_ETAG)) != Outcome.UNREADABLE
                         }
                     }
                     else -> false
@@ -182,6 +186,29 @@ internal class RemoteConfigController(
     }
 
     /**
+     * What reading one response body came to. Only [UNREADABLE] is worth asking again for: the
+     * other two are answers, whether or not this SDK can act on them.
+     */
+    internal enum class Outcome {
+        /** The body was read and its values are now stored. */
+        APPLIED,
+
+        /**
+         * The body was not a configuration at all — not JSON, or truncated. A captive portal
+         * answering 200 with a login page looks exactly like this, so it is treated as a request
+         * that did not arrive rather than as a configuration saying nothing.
+         */
+        UNREADABLE,
+
+        /**
+         * The body is a configuration written to a contract this SDK does not know. Refused whole:
+         * a payload shaped for a newer reader can be misread field by field while every individual
+         * field still parses, and half-understood sampling settings are worse than none.
+         */
+        UNSUPPORTED_SCHEMA
+    }
+
+    /**
      * Stores what the response carried and, when the console asked for it, restarts the session so
      * the new values take hold now instead of at the visitor's next one.
      *
@@ -189,8 +216,24 @@ internal class RemoteConfigController(
      * Without that check, a console resending an unchanged configuration would cut every session in
      * two on every fetch.
      */
-    internal fun apply(payload: String, etag: String? = null) {
-        val json = JSONObject(payload)
+    internal fun apply(payload: String, etag: String? = null): Outcome {
+        val json = try {
+            @Suppress("UnsafeThirdPartyFunctionCall") // caught right here
+            JSONObject(payload)
+        } catch (e: JSONException) {
+            logUnreadableBody(e)
+            return Outcome.UNREADABLE
+        }
+
+        // Checked before anything is read out of the body. The server states the shape it wrote,
+        // and a reader that guesses instead of checking is exactly what this field exists to
+        // prevent — which is why it has to be honoured by the first SDK that ships, not by a
+        // later one: only code already on the device can refuse.
+        if (json.optInt(FIELD_SCHEMA_VERSION, SCHEMA_VERSION_ABSENT) != SUPPORTED_SCHEMA_VERSION) {
+            logUnsupportedSchema(json.optInt(FIELD_SCHEMA_VERSION, SCHEMA_VERSION_ABSENT))
+            return Outcome.UNSUPPORTED_SCHEMA
+        }
+
         val ttl = json.optLong(FIELD_TTL, DEFAULT_TTL_SECONDS)
         val enabled = json.optBoolean(FIELD_ENABLED, false)
         val activation = json.optString(FIELD_ACTIVATION, ACTIVATION_NEXT_SESSION)
@@ -218,6 +261,7 @@ internal class RemoteConfigController(
         // Remembered here rather than around the request, so a fetch that fails keeps the ttl the
         // server last asked for instead of falling back to ours.
         currentTtlSeconds = if (ttl > 0) ttl else DEFAULT_TTL_SECONDS
+        return Outcome.APPLIED
     }
 
     private fun readValues(rum: JSONObject?): RemoteConfigValues {
@@ -241,6 +285,23 @@ internal class RemoteConfigController(
     private fun changesThisClient(before: RemoteConfigValues, after: RemoteConfigValues): Boolean =
         (before.sessionSampleRate ?: initialSessionSampleRate) !=
             (after.sessionSampleRate ?: initialSessionSampleRate)
+
+    private fun logUnreadableBody(e: JSONException) {
+        sdkCore.internalLogger.log(
+            InternalLogger.Level.DEBUG,
+            InternalLogger.Target.MAINTAINER,
+            { UNREADABLE_BODY_MESSAGE },
+            e
+        )
+    }
+
+    private fun logUnsupportedSchema(received: Int) {
+        sdkCore.internalLogger.log(
+            InternalLogger.Level.WARN,
+            InternalLogger.Target.MAINTAINER,
+            { UNSUPPORTED_SCHEMA_MESSAGE.format(received, SUPPORTED_SCHEMA_VERSION) }
+        )
+    }
 
     private fun logFetchFailure(e: Throwable) {
         sdkCore.internalLogger.log(
@@ -270,6 +331,7 @@ internal class RemoteConfigController(
         private const val MAX_RATE = 100.0
         private const val MILLIS_PER_SECOND = 1_000L
         private const val JITTER_FRACTION = 0.2
+        private const val FIELD_SCHEMA_VERSION = "schema_version"
         private const val FIELD_VERSION = "version"
         private const val FIELD_REFRESH_ON_FOREGROUND = "refresh_on_foreground"
         private const val FIELD_TTL = "ttl"
@@ -284,6 +346,21 @@ internal class RemoteConfigController(
         private const val HTTP_NOT_MODIFIED = 304
         private const val HEADER_ETAG = "ETag"
         private const val HEADER_IF_NONE_MATCH = "If-None-Match"
+
+        /**
+         * The contract this SDK reads. It is not the SDK version and not the settings version:
+         * it names the SHAPE of the body, and the server bumps it only when a body would be
+         * misread by a reader written against the previous shape.
+         */
+        internal const val SUPPORTED_SCHEMA_VERSION = 1
+        private const val SCHEMA_VERSION_ABSENT = 0
+
+        internal const val UNREADABLE_BODY_MESSAGE =
+            "The remote configuration response was not readable; keeping the values already in use."
+
+        internal const val UNSUPPORTED_SCHEMA_MESSAGE =
+            "Ignoring a remote configuration written to schema version %d; this SDK reads version" +
+                " %d. Update the SDK to take the console's settings again."
 
         internal const val FETCH_FAILED_MESSAGE =
             "Unable to refresh the remote configuration; keeping the values already in use."
