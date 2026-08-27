@@ -350,7 +350,6 @@ internal class RumSessionScope(
                 sessionSampleRate = effectiveSampleRate
             )
         }
-        drawnConfiguration?.let { remoteConfig?.storeDrawRecord(it) }
         childScope?.drawnConfiguration = drawnConfiguration
         sessionStartNs.set(time.nanoTime)
         rumSessionScopeStartupManager = rumSessionScopeStartupManagerFactory()

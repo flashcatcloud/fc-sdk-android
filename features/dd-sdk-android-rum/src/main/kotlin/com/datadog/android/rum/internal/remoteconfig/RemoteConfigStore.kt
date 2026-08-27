@@ -55,18 +55,6 @@ internal class RemoteConfigStore(
     fun etag(): String? = preferences?.getString(etagKey(), null)
 
     /**
-     * Which configuration the given session was drawn under, kept next to the values it was drawn
-     * from. The session id inside is the validity check: a record from a previous, expired session
-     * simply never matches again.
-     */
-    fun storeDrawRecord(record: DrawnConfiguration) {
-        preferences?.edit()?.putString(drawRecordKey(), record.toJsonString())?.apply()
-    }
-
-    fun readDrawRecord(): DrawnConfiguration? =
-        preferences?.getString(drawRecordKey(), null)?.let { DrawnConfiguration.fromJsonString(it) }
-
-    /**
      * Which version of the settings the stored rates came from, or null before the first answer.
      * Reported back on the next request so the console can say how far a change has reached — a
      * question the events cannot answer, because a session that was not kept sends none, and the
@@ -127,7 +115,6 @@ internal class RemoteConfigStore(
 
     private fun etagKey() = "$storeKey.etag"
 
-    private fun drawRecordKey() = "$storeKey.draw"
 
     companion object {
         private const val PREFERENCES_NAME = "flashcat-rum-remote-config"

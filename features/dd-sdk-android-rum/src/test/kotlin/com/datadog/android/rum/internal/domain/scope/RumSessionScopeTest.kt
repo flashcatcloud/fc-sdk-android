@@ -1116,7 +1116,6 @@ internal class RumSessionScopeTest {
         // Then - the record is married to the session it drew, and the view scopes report from it
         val record = testedScope.drawnConfiguration
         assertThat(record?.sessionId).isEqualTo(testedScope.getRumContext().sessionId)
-        verify(remoteConfig).storeDrawRecord(record!!)
         verify(mockChildScope).drawnConfiguration = record
     }
 
