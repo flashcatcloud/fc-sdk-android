@@ -654,11 +654,7 @@ internal class RumViewScopeTest {
         @Forgery key: RumScopeKey
     ) {
         // Given
-        val drawnConfiguration = DrawnConfiguration(
-            sessionId = fakeParentContext.sessionId,
-            version = 7,
-            sessionSampleRate = fakeSampleRate
-        )
+        val drawnConfiguration = DrawnConfiguration(version = 7)
         testedScope = newRumViewScope(trackFrustrations = true, drawnConfiguration = drawnConfiguration)
         mockSessionReplayContext(testedScope)
 

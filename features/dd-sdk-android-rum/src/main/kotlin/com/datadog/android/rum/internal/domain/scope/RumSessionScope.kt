@@ -340,15 +340,11 @@ internal class RumSessionScope(
         startReason = reason
         sessionState = if (keepSession) State.TRACKED else State.NOT_TRACKED
         sessionId = UUID.randomUUID().toString()
-        // FLASHCAT FORK - remember what this session was drawn under, married to its id: the
-        // events of this session report these values for as long as it lives, and the record left
-        // in storage is inert the moment another id is drawn.
+        // FLASHCAT FORK - remember which console configuration this session was drawn under: its
+        // events report that version for as long as it lives, so an auditor can recover the exact
+        // settings from the console's history.
         drawnConfiguration = remoteConfig?.let { config ->
-            DrawnConfiguration(
-                sessionId = sessionId,
-                version = config.appliedVersion() ?: 0,
-                sessionSampleRate = effectiveSampleRate
-            )
+            DrawnConfiguration(version = config.appliedVersion() ?: 0)
         }
         childScope?.drawnConfiguration = drawnConfiguration
         sessionStartNs.set(time.nanoTime)

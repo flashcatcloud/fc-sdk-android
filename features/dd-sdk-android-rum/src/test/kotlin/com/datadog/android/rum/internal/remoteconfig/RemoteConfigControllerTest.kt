@@ -517,6 +517,28 @@ internal class RemoteConfigControllerTest {
     }
 
     @Test
+    fun `M refuse the whole configuration W apply() { schema is not a number }`() {
+        // org.json would turn "1" into 1 and accept a body the other SDKs refuse. The point of this
+        // field is that every reader agrees about the same response.
+        val outcome = testedController.apply(
+            """{"schema_version":"1","version":3,"enabled":true,"rum":{"sessionSampleRate":42}}"""
+        )
+
+        assertThat(outcome).isEqualTo(RemoteConfigController.Outcome.UNSUPPORTED_SCHEMA)
+        verify(store, never()).store(any())
+    }
+
+    @Test
+    fun `M read the configuration W apply() { schema is an explicit null }`() {
+        // Absent and null say the same thing: nothing was stamped.
+        val outcome = testedController.apply(
+            """{"schema_version":null,"version":3,"enabled":true,"rum":{"sessionSampleRate":42}}"""
+        )
+
+        assertThat(outcome).isEqualTo(RemoteConfigController.Outcome.APPLIED)
+    }
+
+    @Test
     fun `M read the configuration W apply() { no schema at all }`() {
         // A body with no stamp is, by construction, the shape that existed before the stamp did —
         // the shape this reader was written against. Refusing it would switch remote configuration

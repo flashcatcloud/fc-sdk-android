@@ -234,8 +234,15 @@ internal class RemoteConfigController(
         // existed before the stamp did, which is the shape this reader was written against;
         // refusing it would switch remote configuration silently off against a server that merely
         // predates the field. Only a stamp we can see and do not recognise is a reason to refuse.
-        if (json.has(FIELD_SCHEMA_VERSION) &&
-            json.optInt(FIELD_SCHEMA_VERSION, SCHEMA_VERSION_ABSENT) != SUPPORTED_SCHEMA_VERSION
+        // A stamp that is not a number is not a stamp: optInt would quietly turn the string "1"
+        // into 1 and accept a body the other SDKs refuse, and the point of this field is that
+        // every reader agrees about the same response.
+        val stamped = json.has(FIELD_SCHEMA_VERSION) && !json.isNull(FIELD_SCHEMA_VERSION)
+        if (stamped &&
+            (
+                json.opt(FIELD_SCHEMA_VERSION) !is Number ||
+                    json.optInt(FIELD_SCHEMA_VERSION, SCHEMA_VERSION_ABSENT) != SUPPORTED_SCHEMA_VERSION
+                )
         ) {
             logUnsupportedSchema(json.optInt(FIELD_SCHEMA_VERSION, SCHEMA_VERSION_ABSENT))
             return Outcome.UNSUPPORTED_SCHEMA

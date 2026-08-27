@@ -1078,11 +1078,7 @@ internal class RumSessionScopeTest {
         // Then
         assertThat(testedScope.effectiveSampleRate).isEqualTo(42f)
         assertThat(testedScope.drawnConfiguration).isEqualTo(
-            DrawnConfiguration(
-                sessionId = context.sessionId,
-                version = 7,
-                sessionSampleRate = 42f
-            )
+            DrawnConfiguration(version = 7)
         )
     }
 
@@ -1100,7 +1096,6 @@ internal class RumSessionScopeTest {
         // Then - the draw used the init values, and version 0 says no configuration was ever fetched
         assertThat(testedScope.effectiveSampleRate).isEqualTo(80f)
         assertThat(testedScope.drawnConfiguration?.version).isZero()
-        assertThat(testedScope.drawnConfiguration?.sessionSampleRate).isEqualTo(80f)
     }
 
     @Test
@@ -1108,14 +1103,15 @@ internal class RumSessionScopeTest {
         // Given
         val remoteConfig = mock<RemoteConfigStore>()
         whenever(remoteConfig.sessionSampleRate()) doReturn 42f
+        whenever(remoteConfig.appliedVersion()) doReturn 9
         initializeTestedScope(remoteConfig = remoteConfig)
 
         // When
         testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
 
-        // Then - the record is married to the session it drew, and the view scopes report from it
+        // Then - the version in force at the draw travels to the view scopes, which report it
         val record = testedScope.drawnConfiguration
-        assertThat(record?.sessionId).isEqualTo(testedScope.getRumContext().sessionId)
+        assertThat(record?.version).isEqualTo(9)
         verify(mockChildScope).drawnConfiguration = record
     }
 
