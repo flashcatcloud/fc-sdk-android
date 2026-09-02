@@ -146,8 +146,113 @@ internal class RemoteConfigStoreTest {
 
     // endregion
 
-    private fun testedStore(): RemoteConfigStore =
-        RemoteConfigStore(appContext, "test-key", mock<InternalLogger>())
+    // region sweeping the entries of versions this device no longer runs
+
+    @Test
+    fun `M remove an entry nothing has refreshed for longer than the threshold W sweepAbandoned()`() {
+        // The key covers the app version, so every release the device installs leaves one behind.
+        storeUnder(OTHER_VERSION_KEY, atMs = NOW - THREE_DAYS_MS)
+        val store = testedStore(nowMs = NOW)
+
+        store.sweepAbandoned()
+
+        assertThat(preferences.all.keys.filter { it.startsWith(OTHER_VERSION_KEY) }).isEmpty()
+    }
+
+    @Test
+    fun `M keep an entry something refreshed recently W sweepAbandoned()`() {
+        storeUnder(OTHER_VERSION_KEY, atMs = NOW - ONE_DAY_MS)
+        val store = testedStore(nowMs = NOW)
+
+        store.sweepAbandoned()
+
+        assertThat(preferences.all.keys.filter { it.startsWith(OTHER_VERSION_KEY) }).isNotEmpty()
+    }
+
+    @Test
+    fun `M remove every key of an abandoned entry W sweepAbandoned()`() {
+        // An entry is spread over several keys, and leaving any of them behind leaks just as well.
+        storeUnder(OTHER_VERSION_KEY, atMs = NOW - THREE_DAYS_MS)
+        val before = preferences.all.keys.count { it.startsWith(OTHER_VERSION_KEY) }
+
+        testedStore(nowMs = NOW).sweepAbandoned()
+
+        assertThat(before).isGreaterThan(1)
+        assertThat(preferences.all.keys.none { it.startsWith(OTHER_VERSION_KEY) }).isTrue()
+    }
+
+    @Test
+    fun `M never remove its own entry W sweepAbandoned() { however old it looks }`() {
+        // The one entry certainly in use: the caller is about to read it.
+        storeUnder(STORE_KEY, atMs = NOW - THREE_DAYS_MS)
+        val store = testedStore(nowMs = NOW)
+
+        store.sweepAbandoned()
+
+        assertThat(store.appliedVersion()).isEqualTo(7)
+        assertThat(store.sessionSampleRate()).isEqualTo(42f)
+    }
+
+    @Test
+    fun `M leave alone every key it did not write W sweepAbandoned()`() {
+        preferences.edit().putString("a-key-the-host-app-owns", "not ours").apply()
+        storeUnder(OTHER_VERSION_KEY, atMs = NOW - THREE_DAYS_MS)
+
+        testedStore(nowMs = NOW).sweepAbandoned()
+
+        assertThat(preferences.getString("a-key-the-host-app-owns", null)).isEqualTo("not ours")
+    }
+
+    @Test
+    fun `M take a store key containing separators apart correctly W sweepAbandoned()`() {
+        // A service name and an app version both routinely contain dots, so the suffix cannot be
+        // found by splitting on the last one.
+        val dotted = "${RemoteConfigStore.STORE_KEY_PREFIX}host|app|com.example.shop|prod|1.2.3"
+        storeUnder(dotted, atMs = NOW - THREE_DAYS_MS)
+
+        testedStore(nowMs = NOW).sweepAbandoned()
+
+        assertThat(preferences.all.keys.none { it.startsWith(dotted) }).isTrue()
+    }
+
+    @Test
+    fun `M record when it was written W store()`() {
+        val store = testedStore(nowMs = NOW)
+
+        store.store(RemoteConfigValues(42f, 7))
+
+        assertThat(preferences.getLong("$STORE_KEY.writtenAt", 0L)).isEqualTo(NOW)
+    }
+
+    @Test
+    fun `M refresh the write time without changing the values W touch()`() {
+        // The 304 path: the answer is unchanged, so nothing is stored, and age is all the sweep
+        // reads. Without this a settled client's entry would never look in use again.
+        val store = testedStore(nowMs = NOW - THREE_DAYS_MS)
+        store.store(RemoteConfigValues(42f, 7, custom = """{"debug":true}""", etag = "\"v7\""))
+
+        testedStore(nowMs = NOW).touch()
+
+        assertThat(preferences.getLong("$STORE_KEY.writtenAt", 0L)).isEqualTo(NOW)
+        assertThat(store.sessionSampleRate()).isEqualTo(42f)
+        assertThat(store.appliedVersion()).isEqualTo(7)
+        assertThat(store.etag()).isEqualTo("\"v7\"")
+    }
+
+    // endregion
+
+    /** Writes a complete entry under [key], stamped as written at [atMs]. */
+    private fun storeUnder(key: String, atMs: Long) {
+        RemoteConfigStore(appContext, key, mock<InternalLogger>()) { atMs }
+            .store(RemoteConfigValues(42f, 7, custom = """{"debug":true}""", etag = "\"v7\""))
+    }
+
+    private fun testedStore(nowMs: Long? = null): RemoteConfigStore =
+        if (nowMs == null) {
+            RemoteConfigStore(appContext, STORE_KEY, mock<InternalLogger>())
+        } else {
+            RemoteConfigStore(appContext, STORE_KEY, mock<InternalLogger>()) { nowMs }
+        }
 
     private fun datadogContext(): DatadogContext {
         val context = mock<DatadogContext>()
@@ -218,5 +323,15 @@ internal class RemoteConfigStoreTest {
         private const val ENV = "staging"
         private const val APP_VERSION = "1.2.3"
         private const val SDK_VERSION = "9.9.9"
+
+        // Shaped like a real store key, and carrying the prefix, so the sweep considers it at all:
+        // a key it skips for the wrong reason would let the "never remove its own entry" test pass
+        // with the guard gone.
+        private val STORE_KEY = "${RemoteConfigStore.STORE_KEY_PREFIX}host|app|shop|prod|1.0.0"
+        private val OTHER_VERSION_KEY = "${RemoteConfigStore.STORE_KEY_PREFIX}host|app|shop|prod|0.9.0"
+
+        private const val NOW = 1_800_000_000_000L
+        private const val ONE_DAY_MS = 24L * 60 * 60 * 1000
+        private const val THREE_DAYS_MS = 3 * ONE_DAY_MS
     }
 }

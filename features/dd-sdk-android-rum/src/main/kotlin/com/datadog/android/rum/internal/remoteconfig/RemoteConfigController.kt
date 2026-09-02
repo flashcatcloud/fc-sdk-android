@@ -59,6 +59,9 @@ internal class RemoteConfigController(
     private var refreshOnForeground: Boolean = false
 
     private val inFlight = AtomicBoolean(false)
+
+    /** Whether the entries of app versions this device no longer runs have been cleared yet. */
+    private val swept = AtomicBoolean(false)
     private var failedAttempts = 0
     private var pendingRetry: ScheduledFuture<*>? = null
 
@@ -117,6 +120,27 @@ internal class RemoteConfigController(
 
     @WorkerThread
     private fun fetchOnce() {
+        try {
+            fetchAndApply()
+        } finally {
+            // Released whatever happened above, because every later fetch — a new session, a
+            // return to the foreground, a retry — is gated on this flag. Anything that got out of
+            // here without clearing it would end remote configuration for the rest of the
+            // process's life, silently and with nothing left to ask again.
+            inFlight.set(false)
+        }
+    }
+
+    @WorkerThread
+    private fun fetchAndApply() {
+        // Housekeeping, once per launch and here rather than at construction: this is the first
+        // place that is both off the main thread — nothing about remote configuration may hold up
+        // initialisation — and certain to run before anything is stored. Repeating it at every
+        // fetch would walk the preferences file again at every session start to learn nothing new.
+        if (swept.compareAndSet(false, true)) {
+            store.sweepAbandoned()
+        }
+
         // Stamped before the request goes out, so a request that never comes back still counts as
         // an attempt for the staleness gate instead of leaving the app on whatever it last knew.
         lastFetchAtMs = elapsedTimeMs()
@@ -133,8 +157,13 @@ internal class RemoteConfigController(
             callFactory.newCall(requestBuilder.build()).execute().use { response ->
                 when {
                     // Unchanged: what is stored is still the answer, so there is nothing to apply —
-                    // but the ask itself succeeded, and no retry is owed.
-                    response.code == HTTP_NOT_MODIFIED -> true
+                    // but the ask itself succeeded, and no retry is owed. The entry is still marked
+                    // as in use, because this is the one answer that stores nothing and the sweep
+                    // reads nothing but age.
+                    response.code == HTTP_NOT_MODIFIED -> {
+                        store.touch()
+                        true
+                    }
                     response.isSuccessful -> {
                         val payload = response.body?.string()
                         if (payload == null) {
@@ -158,7 +187,8 @@ internal class RemoteConfigController(
             false
         }
 
-        inFlight.set(false)
+        // The flag this fetch holds is released by the caller's `finally`, not here: a retry only
+        // schedules work for later, and the runnable it schedules takes the flag for itself.
         if (!succeeded) scheduleRetry()
     }
 

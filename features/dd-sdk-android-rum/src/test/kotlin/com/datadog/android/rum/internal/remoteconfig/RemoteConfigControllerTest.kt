@@ -14,6 +14,7 @@ import okhttp3.Request
 import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.json.JSONObject
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -249,6 +250,58 @@ internal class RemoteConfigControllerTest {
 
         verify(store, never()).store(any())
         verify(executor, never()).schedule(any<Runnable>(), any(), any())
+    }
+
+    @Test
+    fun `M mark the entry as still in use W fetch answers not modified`() {
+        // The one answer that stores nothing. A settled client meets it at almost every fetch, and
+        // the sweep reads nothing but age, so without this its entry would stop looking in use.
+        whenever(call.execute()).thenReturn(response(304, ""))
+
+        runPendingFetch()
+
+        verify(store).touch()
+    }
+
+    @Test
+    fun `M clear the entries of versions the device no longer runs W the first fetch`() {
+        whenever(call.execute()).thenReturn(response(200, body()))
+
+        runPendingFetch()
+
+        verify(store).sweepAbandoned()
+    }
+
+    @Test
+    fun `M go on fetching W housekeeping throws`() {
+        // Every later fetch is gated on the in-flight flag, so anything that escaped without
+        // clearing it would end remote configuration for the rest of the process — silently.
+        whenever(store.sweepAbandoned()).thenThrow(RuntimeException("preferences are having a day"))
+        whenever(call.execute()).thenReturn(response(200, body()))
+
+        testedController.start()
+        argumentCaptor<Runnable> {
+            verify(executor).execute(capture())
+            assertThatThrownBy { firstValue.run() }.isInstanceOf(RuntimeException::class.java)
+        }
+        testedController.onSessionStarted()
+
+        verify(executor, times(2)).execute(any())
+    }
+
+    @Test
+    fun `M sweep once a launch W several fetches`() {
+        // Walking the preferences file again at every session start would learn nothing new.
+        whenever(call.execute()).thenReturn(response(200, body()))
+
+        runPendingFetch()
+        testedController.onSessionStarted()
+        argumentCaptor<Runnable> {
+            verify(executor, times(2)).execute(capture())
+            allValues.last().run()
+        }
+
+        verify(store, times(1)).sweepAbandoned()
     }
 
     @Test
