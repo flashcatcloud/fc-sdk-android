@@ -992,7 +992,12 @@ internal class RumSessionScopeTest {
         // Given a live session the draw already kept. It has to be started by an interaction:
         // a session renewed with no interaction behind it expires on the very next event.
         initializeTestedScope(100f, withMockChildScope = false)
-        testedScope.handleEvent(RumRawEvent.StartView(key, emptyMap()), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        testedScope.handleEvent(
+            RumRawEvent.StartView(key, emptyMap()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
         val collectedSessionId = testedScope.getRumContext().sessionId
         assertThat(testedScope.getRumContext().sessionState).isEqualTo(RumSessionScope.State.TRACKED)
 
@@ -1969,7 +1974,10 @@ internal class RumSessionScopeTest {
         initializeTestedScope(
             sampleRate = 100f,
             remoteConfig = remoteConfig,
-            beforeSampling = { seen = it; null }
+            beforeSampling = {
+                seen = it
+                null
+            }
         )
 
         // When

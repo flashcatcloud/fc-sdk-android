@@ -950,6 +950,7 @@ internal class RumFeature(
             "Slow frames monitoring enabled."
         internal const val SLOW_FRAMES_MONITORING_DISABLED_MESSAGE =
             "Slow frames monitoring disabled."
+
         // FLASHCAT FORK - where the RUM intake lives under a site host; the configuration endpoint
         // sits beside it, which is also how the private-deployment nginx template is laid out.
         internal const val RUM_INTAKE_PATH = "/api/v2/rum"
