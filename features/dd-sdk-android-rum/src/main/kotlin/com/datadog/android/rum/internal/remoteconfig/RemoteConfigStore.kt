@@ -192,7 +192,6 @@ internal class RemoteConfigStore(
 
     private fun writeTimeKey() = "$storeKey$SUFFIX_WRITE_TIME"
 
-
     companion object {
         private const val PREFERENCES_NAME = "flashcat-rum-remote-config"
 
