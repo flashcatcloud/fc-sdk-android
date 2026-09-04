@@ -1,3 +1,15 @@
+# 0.7.0 / Unreleased
+
+* [FEATURE] RUM: take the session sample rate from the application's settings in the Flashcat console instead of only from the value passed to `RumConfiguration.Builder.setSessionSampleRate()`, so it can be changed without shipping a new release of the app. Off by default — enable it with `RumConfiguration.Builder.setRemoteConfigurationEnabled(true)`. Left off, the SDK makes no extra request, opens no extra storage, starts no extra thread, and behaves exactly as it did before. A change applies to sessions started after it arrives, so a session already under way is never redrawn; the console can ask for a change to take effect at once, in which case the running session ends and a new one starts under the new rate. The values passed to init keep applying until the first settings arrive and whenever the endpoint cannot be reached — a failed, timed-out or unreadable response never moves a rate. Events report the rate the session was actually drawn under, together with the settings version it came from, so server-side extrapolation and audits line up with the draw.
+
+* [FEATURE] RUM: add `RumConfiguration.Builder.setBeforeSampling()`, a callback consulted at each session draw with the rate that would apply and the console's custom values. Return a rate to override it, or `null` to leave it alone. It is the last step of the draw, after the console's rate, so an allow-list can keep collecting a user the console's rate would drop. A callback that throws, or returns a rate outside 0..100, is ignored and the incoming rate applies.
+
+* [FEATURE] RUM: add `RumMonitor.setForcedSession()` and `RumMonitor.getRemoteConfig()`. `setForcedSession()` collects the user's sessions with Session Replay regardless of the configured rates; the state lasts for the process lifetime and survives `stopSession()`. Events from a forced session report a sample rate of 100 and no settings version, because the session was kept whatever the rates said. `getRemoteConfig()` returns the application-defined values published in the console, delivered verbatim and never interpreted by the SDK. **Breaking:** `RumMonitor` is a public interface and gained two methods with no default implementation, so any class that implements it directly — a test double or a wrapper, most likely — must add them to compile. Code that only calls `GlobalRumMonitor.get()` is unaffected.
+
+* [IMPROVEMENT] RUM: `ViewEvent.Configuration` carries a new optional `rcVersion` field, so its constructor and `copy()` take one more argument. Kotlin callers that use named or default arguments are unaffected once recompiled; Java callers that construct it directly must pass the extra argument.
+
+---
+
 # 0.5.0 / 2026-07-28
 
 * [IMPROVEMENT] Stop reading SIM carrier info (`TelephonyManager.simCarrierIdName` / `simCarrierId`) in `BroadcastReceiverNetworkInfoProvider`. This call path was already unreachable at runtime (the provider is only used below API 24, while the carrier branch required API 28+), so removing it has no functional impact but eliminates the telephony-API reference from the bytecode that privacy-compliance static scanners flag.
