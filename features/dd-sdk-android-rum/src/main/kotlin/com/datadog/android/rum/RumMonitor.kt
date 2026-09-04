@@ -303,11 +303,18 @@ interface RumMonitor {
     fun stopSession()
 
     /**
-     * Forces the session to be collected, with Session Replay, regardless of the configured sample
+     * Forces sessions to be collected, with Session Replay, regardless of the configured sample
      * rates. Call it when your own code decides a user needs debugging (an allow-list, a support
-     * flow). The current session is restarted so collection starts from a clean session; calling
-     * again while the forced session is running does nothing. The forced state lasts for the
-     * process lifetime, so decide on each app start whether to call again.
+     * flow).
+     *
+     * A session already being collected keeps running: RUM cannot recover what a session already
+     * dropped, so cutting it in two would gain nothing. One that was not being collected is
+     * restarted straight away, so that a collected session takes its place.
+     *
+     * The forced state lasts for the process lifetime and survives [stopSession], so every session
+     * that follows is collected too; decide on each app start whether to call again. Events from a
+     * forced session report a sample rate of 100 and no configuration version, because the session
+     * was kept whatever the rates said.
      */
     fun setForcedSession()
 

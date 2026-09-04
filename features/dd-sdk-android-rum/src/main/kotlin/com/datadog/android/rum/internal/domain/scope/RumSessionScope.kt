@@ -76,12 +76,19 @@ internal class RumSessionScope(
     private val onSessionDrawn: () -> Unit = {},
     // FLASHCAT FORK - the host application's last word on the draw, consulted after the console's
     // rate. Null unless the app set one.
-    private val beforeSampling: BeforeSamplingCallback? = null
+    private val beforeSampling: BeforeSamplingCallback? = null,
+    // FLASHCAT FORK - whether the host application has asked for this user's sessions to be
+    // collected regardless of the rates. Passed in rather than owned here because it outlives any
+    // one session: the application asked for the user, not for whichever session happened to be
+    // running when it asked. [RumApplicationScope] holds it and hands it to every session it makes.
+    internal var forcedSession: Boolean = false
 ) : RumScope {
 
-    // FLASHCAT FORK - the rate the current session was actually drawn at. It is what events report
-    // as their configured sample rate, so it has to be the effective one rather than whatever the
-    // app passed to init.
+    // FLASHCAT FORK - the rate the current session's events report as their configured sample
+    // rate. It is the rate the draw actually used - the console's where it set one, the app's hook
+    // where that had the last word - rather than whatever was passed to init, so that anything
+    // extrapolating from it lands on the population the session was drawn from. A forced session is
+    // the one case where the two part company: see `renewSession`.
     internal var effectiveSampleRate: Float = sampleRate
 
     // FLASHCAT FORK - the configuration the current session was drawn under, so its events can
@@ -94,10 +101,6 @@ internal class RumSessionScope(
     internal var sessionId = RumContext.NULL_UUID
     internal var sessionState: State = State.NOT_TRACKED
 
-    // FLASHCAT FORK - set through `setForcedSession()`, read at draw time. Once set it stays set
-    // for the process lifetime, so every session renewed after the call is collected with replay;
-    // the host application decides on each app start whether to call again.
-    internal var forcedSession = false
     private var startReason: StartReason = StartReason.USER_APP_LAUNCH
     internal var isActive: Boolean = true
     private val sessionStartNs = AtomicLong(sdkCore.timeProvider.getDeviceElapsedTimeNanos())
@@ -180,11 +183,19 @@ internal class RumSessionScope(
         writer: DataWriter<Any>
     ): RumScope? {
         if (event is RumRawEvent.ResetSession) {
-            renewSession(event.eventTime, StartReason.EXPLICIT_STOP)
-        } else if (event is RumRawEvent.SetForcedSession) {
+            // FLASHCAT FORK - two kinds of session must not be renewed here. A stopped one is
+            // draining: renewing it would mint a session id under a scope whose own context already
+            // reports the session as inactive, and would announce that session to the host
+            // application's listener. A forced one would only ever be replaced by an identical
+            // forced session, so the renewal buys nothing and costs the view the user is on.
+            if (isActive && !forcedSession) {
+                renewSession(event.eventTime, StartReason.EXPLICIT_STOP)
+            }
+        } else if (event is RumRawEvent.SetForcedSession && isActive) {
             // FLASHCAT FORK - the escape hatch for "collect this user NOW": the application knows
             // who needs debugging, the SDK only provides the switch. From here on every draw keeps
-            // the session, for the lifetime of the process.
+            // the session. [RumApplicationScope] remembers the same thing for the sessions that
+            // come after this one, including the ones that follow a `stopSession()`.
             forcedSession = true
             // A session already being collected keeps running: RUM cannot retro-collect what a
             // running session already dropped, so cutting it in two would gain nothing. One that
@@ -334,17 +345,29 @@ internal class RumSessionScope(
         // Order matters: the console's rate first, then the app's own hook. The hook is the last
         // word precisely so an allow-list can keep collecting a visitor the console's rate would
         // drop.
-        effectiveSampleRate = askBeforeSampling(remoteConfig?.sessionSampleRate() ?: sampleRate)
+        val drawRate = askBeforeSampling(remoteConfig?.sessionSampleRate() ?: sampleRate)
+        val keepSession = forcedSession || random.nextFloat() < drawRate.percent()
+        // FLASHCAT FORK - a forced session was not drawn, so it does not report a rate it was drawn
+        // at. It reports the rate that describes it: every session like it is kept. Reporting the
+        // rate it would have been drawn at instead would have the intake weight one deliberately
+        // kept session as the whole population that rate implies - a session forced at a rate of 1
+        // would count as a hundred - and would leave nothing to tell it from a lucky draw.
+        effectiveSampleRate = if (forcedSession) FORCED_SAMPLE_RATE else drawRate
         childScope?.sampleRate = effectiveSampleRate
-        val keepSession = forcedSession || random.nextFloat() < effectiveSampleRate.percent()
         startReason = reason
         sessionState = if (keepSession) State.TRACKED else State.NOT_TRACKED
         sessionId = UUID.randomUUID().toString()
         // FLASHCAT FORK - remember which console configuration this session was drawn under: its
         // events report that version for as long as it lives, so an auditor can recover the exact
-        // settings from the console's history.
-        drawnConfiguration = remoteConfig?.let { config ->
-            DrawnConfiguration(version = config.appliedVersion() ?: 0)
+        // settings from the console's history. A forced session reports none: it was kept whatever
+        // the console said, so naming a version would credit that version with a session it did not
+        // decide. This is the reporting the other SDKs use.
+        drawnConfiguration = if (forcedSession) {
+            null
+        } else {
+            remoteConfig?.let { config ->
+                DrawnConfiguration(version = config.appliedVersion() ?: 0)
+            }
         }
         childScope?.drawnConfiguration = drawnConfiguration
         sessionStartNs.set(time.nanoTime)
@@ -416,6 +439,10 @@ internal class RumSessionScope(
         internal const val RUM_SESSION_ID_BUS_MESSAGE_KEY = "sessionId"
 
         private const val MAX_SAMPLE_RATE = 100f
+
+        // FLASHCAT FORK - what a forced session reports as its rate: it is kept unconditionally,
+        // which is what a rate of a hundred means.
+        internal const val FORCED_SAMPLE_RATE = 100f
 
         internal const val BEFORE_SAMPLING_THREW_MESSAGE =
             "The beforeSampling callback failed; drawing this session at %s instead."

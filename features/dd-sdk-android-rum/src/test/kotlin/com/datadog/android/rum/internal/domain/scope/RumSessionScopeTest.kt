@@ -1026,8 +1026,11 @@ internal class RumSessionScopeTest {
     }
 
     @Test
-    fun `M keep drawing tracked sessions W handleEvent(SetForcedSession) { later renewal }`() {
-        // Given
+    fun `M leave the forced session alone W handleEvent(ResetSession)`() {
+        // A reset would only replace a forced session with an identical forced session, so the
+        // renewal buys nothing and costs the view the user is on. This is the path a console
+        // publishing "apply immediately" takes, and it must not cut a session the host application
+        // deliberately asked to keep.
         initializeTestedScope(0f)
         testedScope.handleEvent(RumRawEvent.SetForcedSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
         val forcedSessionId = testedScope.getRumContext().sessionId
@@ -1037,8 +1040,58 @@ internal class RumSessionScopeTest {
         val context = testedScope.getRumContext()
 
         // Then
-        assertThat(context.sessionId).isNotEqualTo(forcedSessionId)
+        assertThat(context.sessionId).isEqualTo(forcedSessionId)
         assertThat(context.sessionState).isEqualTo(RumSessionScope.State.TRACKED)
+    }
+
+    @Test
+    fun `M renew on a reset W handleEvent(ResetSession) { session is not forced }`() {
+        // The negative control for the test above: an ordinary session is still renewed, so the
+        // guard is about forcing and not about resets in general.
+        initializeTestedScope(100f)
+        val firstSessionId = testedScope.getRumContext().sessionId
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        assertThat(testedScope.getRumContext().sessionId).isNotEqualTo(firstSessionId)
+    }
+
+    @Test
+    fun `M report a full rate and no configuration version W a forced session is drawn`() {
+        // A forced session was not drawn, so it does not report a rate it was drawn at: it reports
+        // the rate that describes it, which is that every session like it is kept. Reporting the
+        // rate it would have been drawn at would have the intake weight one deliberately kept
+        // session as the whole population that rate implies, and leave nothing to tell it from a
+        // lucky draw. This is the reporting the other SDKs use.
+        val mockRemoteConfig: RemoteConfigStore = mock()
+        whenever(mockRemoteConfig.sessionSampleRate()).thenReturn(1f)
+        whenever(mockRemoteConfig.appliedVersion()).thenReturn(7)
+        initializeTestedScope(1f, remoteConfig = mockRemoteConfig)
+
+        // When
+        testedScope.handleEvent(RumRawEvent.SetForcedSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(100f)
+        assertThat(testedScope.drawnConfiguration).isNull()
+    }
+
+    @Test
+    fun `M report the drawn rate and its version W a session is drawn without forcing`() {
+        // The negative control: the same store, the same rates, no forcing.
+        val mockRemoteConfig: RemoteConfigStore = mock()
+        whenever(mockRemoteConfig.sessionSampleRate()).thenReturn(1f)
+        whenever(mockRemoteConfig.appliedVersion()).thenReturn(7)
+        initializeTestedScope(1f, remoteConfig = mockRemoteConfig)
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(1f)
+        assertThat(testedScope.drawnConfiguration).isEqualTo(DrawnConfiguration(version = 7))
     }
 
     @Test

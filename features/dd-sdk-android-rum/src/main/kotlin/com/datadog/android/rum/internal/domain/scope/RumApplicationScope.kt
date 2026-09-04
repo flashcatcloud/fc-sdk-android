@@ -116,6 +116,13 @@ internal class RumApplicationScope(
     private var lastActiveViewInfo: RumViewInfo? = null
     private var isAppStartedEventSent = false
 
+    // FLASHCAT FORK - whether the host application has called `setForcedSession()`. It lives here
+    // rather than on the session scope because it has to outlive one: `stopSession()` leaves the
+    // session scope behind, and the next interaction builds a fresh one, which would otherwise be
+    // drawn as if the application had never asked. Set once and never cleared - the application
+    // decides on each launch whether to ask again.
+    private var forcedSession = false
+
     // region RumScope
 
     @WorkerThread
@@ -130,6 +137,12 @@ internal class RumApplicationScope(
                 syntheticsTestId = event.testId,
                 syntheticsResultId = event.resultId
             )
+        }
+
+        // FLASHCAT FORK - recorded before the event reaches the sessions, so that a session created
+        // by this very event is already drawn as forced.
+        if (event is RumRawEvent.SetForcedSession) {
+            forcedSession = true
         }
 
         val isInteraction = (event is RumRawEvent.StartView) || (event is RumRawEvent.StartAction)
@@ -221,7 +234,8 @@ internal class RumApplicationScope(
             insightsCollector = insightsCollector,
             remoteConfig = remoteConfig,
             onSessionDrawn = onSessionDrawn,
-            beforeSampling = beforeSampling
+            beforeSampling = beforeSampling,
+            forcedSession = forcedSession
         )
         childScopes.add(newSession)
         if (event !is RumRawEvent.StartView) {
