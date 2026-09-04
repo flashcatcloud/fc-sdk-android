@@ -69,10 +69,12 @@ data class RumConfiguration internal constructor(
          * of this app.
          *
          * A change applies to sessions started after it arrives; a session already under way keeps
-         * the decision it was created with, unless the console asks for immediate activation, in
-         * which case the running session ends and a new one starts under the new rates. The values
-         * set here stay in use until the first settings arrive, and whenever they cannot be
-         * reached.
+         * the decision it was created with. Two changes do not wait: one the console marks for
+         * immediate activation, and a rate crossing zero in either direction — switching collection
+         * off is an emergency stop, and switching it back on has nothing to preserve, since while
+         * the rate was zero nothing was being collected. In both cases the running session ends and
+         * a new one starts under the new rates. The values set here stay in use until the first
+         * settings arrive, and whenever they cannot be reached.
          *
          * Disabled by default: left off, the SDK makes no extra request and behaves exactly as it
          * did before this existed.

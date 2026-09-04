@@ -61,13 +61,17 @@ internal class RemoteConfigControllerTest {
         callFactory = mock()
         call = mock()
         whenever(callFactory.newCall(any())).thenReturn(call)
+        testedController = controllerWithInitialRate(INIT_SESSION_RATE)
+    }
+
+    private fun controllerWithInitialRate(initialSessionSampleRate: Float): RemoteConfigController {
         val sdkCore = mock<FeatureSdkCore>()
         whenever(sdkCore.internalLogger).thenReturn(mock())
-        testedController = RemoteConfigController(
+        return RemoteConfigController(
             sdkCore = sdkCore,
             configUrl = "https://example.com/api/v2/rum/config",
             store = store,
-            initialSessionSampleRate = INIT_SESSION_RATE,
+            initialSessionSampleRate = initialSessionSampleRate,
             callFactory = callFactory,
             executor = executor,
             restartSession = { restarts++ },
@@ -163,6 +167,73 @@ internal class RemoteConfigControllerTest {
         testedController.apply(body(activation = "immediate", enabled = false))
 
         assertThat(restarts).isOne()
+    }
+
+    @Test
+    fun `M restart the session W apply() { next_session but the rate leaves zero }`() {
+        // Nothing was being collected while the rate was zero, so there is no session worth
+        // preserving and no winner to spare by re-drawing everyone at the new rate. Waiting here
+        // would show an operator who has just switched collection on nothing at all.
+        whenever(store.sessionSampleRate()).thenReturn(0f)
+
+        testedController.apply(body(activation = "next_session", rum = """"sessionSampleRate":100"""))
+
+        assertThat(restarts).isOne()
+    }
+
+    @Test
+    fun `M restart the session W apply() { next_session but the rate reaches zero }`() {
+        // The emergency stop. One that took until the session happened to rotate would not be one.
+        whenever(store.sessionSampleRate()).thenReturn(100f)
+
+        testedController.apply(body(activation = "next_session", rum = """"sessionSampleRate":0"""))
+
+        assertThat(restarts).isOne()
+    }
+
+    @Test
+    fun `M restart the session W apply() { next_session and init never collected }`() {
+        // The application whose rate only ever comes from the console: nothing is stored yet, so
+        // the rate leaving zero is the init value being replaced rather than a stored one.
+        whenever(store.sessionSampleRate()).thenReturn(null)
+        testedController = controllerWithInitialRate(0f)
+
+        testedController.apply(body(activation = "next_session", rum = """"sessionSampleRate":100"""))
+
+        assertThat(restarts).isOne()
+    }
+
+    @Test
+    fun `M restart the session W apply() { next_session and the kill switch hands zero back to init }`() {
+        // Switching remote configuration off returns the decision to the value the app was built
+        // with, and that is a rate leaving zero like any other.
+        whenever(store.sessionSampleRate()).thenReturn(0f)
+
+        testedController.apply(body(activation = "next_session", enabled = false))
+
+        assertThat(restarts).isOne()
+    }
+
+    @Test
+    fun `M leave the running session alone W apply() { next_session and the rate stays at zero }`() {
+        // Otherwise every announcement would cut one empty session after another in two for as long
+        // as collection stayed switched off.
+        whenever(store.sessionSampleRate()).thenReturn(0f)
+
+        testedController.apply(body(activation = "next_session", rum = """"sessionSampleRate":0"""))
+
+        assertThat(restarts).isZero()
+    }
+
+    @Test
+    fun `M leave the running session alone W apply() { next_session and neither rate is zero }`() {
+        // No rate but zero says anything about whether THIS session should have been kept: only a
+        // second draw could, and drawing twice turns a rate p into p squared.
+        whenever(store.sessionSampleRate()).thenReturn(30f)
+
+        testedController.apply(body(activation = "next_session", rum = """"sessionSampleRate":80"""))
+
+        assertThat(restarts).isZero()
     }
 
     // endregion

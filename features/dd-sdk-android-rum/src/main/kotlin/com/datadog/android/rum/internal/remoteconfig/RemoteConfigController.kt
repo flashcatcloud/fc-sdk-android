@@ -322,7 +322,7 @@ internal class RemoteConfigController(
         currentTtlSeconds = after.ttlSeconds ?: DEFAULT_TTL_SECONDS
         refreshOnForeground = after.refreshOnForeground
 
-        if (activation == ACTIVATION_IMMEDIATE && changesThisClient(before, after)) {
+        if (appliesToRunningSession(activation, before, after)) {
             restartSession()
         }
 
@@ -347,9 +347,44 @@ internal class RemoteConfigController(
         return if (rate.isNaN() || rate < 0.0 || rate > MAX_RATE) null else rate.toFloat()
     }
 
-    private fun changesThisClient(before: RemoteConfigValues, after: RemoteConfigValues): Boolean =
-        (before.sessionSampleRate ?: initialSessionSampleRate) !=
-            (after.sessionSampleRate ?: initialSessionSampleRate)
+    /**
+     * Whether a change lands on the session that is running rather than on the next one.
+     *
+     * The console can ask for that outright, and `immediate` is exactly that request: it carries no
+     * claim about what the new rate decides, only that the operator does not want to wait, so any
+     * real change is enough.
+     *
+     * Zero needs no such instruction, because it is the one rate that answers the question on its
+     * own — in both directions. Moving TO zero says nothing is to be collected any more, and an
+     * emergency stop that took until the session happened to rotate would not be one. Moving AWAY
+     * from zero says nobody was in the draw at all and now could be: without this, an application
+     * whose rate only ever comes from the console shows an operator who has just switched
+     * collection on precisely nothing until its sessions rotate, and nothing at all is
+     * indistinguishable from broken.
+     *
+     * Every other rate is silent about the running session. Whether it "should" still have been
+     * kept can only be answered by drawing again, and drawing twice turns a rate p into p². Zero is
+     * the one value with no winners to spare — while it was in force nothing was collected, so
+     * re-drawing everyone at the new rate lands exactly on it rather than above it.
+     *
+     * The rate that counts is the one that decides a draw made now: the console's where it
+     * published one, the value the app was initialised with where it did not, since clearing a knob
+     * hands the decision back to init.
+     *
+     * A forced session is left alone, and that is settled where the reset is handled rather than
+     * here — see `RumSessionScope`: it is collected whatever the rates say, so ending it would only
+     * buy an identical forced session.
+     */
+    private fun appliesToRunningSession(
+        activation: String,
+        before: RemoteConfigValues,
+        after: RemoteConfigValues
+    ): Boolean {
+        val previousRate = before.sessionSampleRate ?: initialSessionSampleRate
+        val nextRate = after.sessionSampleRate ?: initialSessionSampleRate
+        if (previousRate == nextRate) return false
+        return activation == ACTIVATION_IMMEDIATE || (previousRate == 0f) != (nextRate == 0f)
+    }
 
     // Every one of these goes to telemetry as well as to logcat. A device that quietly stops
     // taking the console's values runs on the ones it was built with for the rest of its life, and
