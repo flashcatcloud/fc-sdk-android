@@ -38,15 +38,20 @@ internal class RemoteConfigStore(
     private val currentTimeMs: () -> Long = System::currentTimeMillis
 ) {
 
+    /**
+     * Null when the preferences file cannot be opened. Two failures are reachable and neither is
+     * worth failing an initialisation over: a [SecurityException] where the process may not open
+     * the file at all, and an [IllegalStateException] from a direct-boot-aware component that
+     * reaches credential-encrypted storage before the user has unlocked the device. Either way the
+     * values passed to init keep applying.
+     */
     private val preferences: SharedPreferences? = try {
         appContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
     } catch (e: SecurityException) {
-        internalLogger.log(
-            InternalLogger.Level.WARN,
-            InternalLogger.Target.MAINTAINER,
-            { STORAGE_UNAVAILABLE_MESSAGE },
-            e
-        )
+        logStorageUnavailable(internalLogger, e)
+        null
+    } catch (e: IllegalStateException) {
+        logStorageUnavailable(internalLogger, e)
         null
     }
 
@@ -64,6 +69,25 @@ internal class RemoteConfigStore(
      * specifically: the answer varies per caller, so it cannot be shared or guessed.
      */
     fun etag(): String? = preferences?.getString(etagKey(), null)
+
+    /**
+     * How long the server asked this client to treat the stored configuration as fresh, or null
+     * when nothing has ever been stored.
+     *
+     * Kept on disk rather than in memory for the same reason the rates are: an unchanged answer
+     * comes back as a 304 with no body, which is the steady state the validator exists to produce.
+     * A memory-only copy would be back at its default on every launch after the first.
+     */
+    fun ttlSeconds(): Long? {
+        val stored = preferences?.getLong(ttlKey(), ABSENT_TTL) ?: ABSENT_TTL
+        return if (stored == ABSENT_TTL) null else stored
+    }
+
+    /**
+     * Whether the server allows this client to ask again when the app returns to the foreground.
+     * Absent reads as not allowed, which is also the server's own default.
+     */
+    fun refreshOnForeground(): Boolean = preferences?.getBoolean(refreshOnForegroundKey(), false) ?: false
 
     /**
      * Which version of the settings the stored rates came from, or null before the first answer.
@@ -102,6 +126,15 @@ internal class RemoteConfigStore(
         } else {
             editor.putString(etagKey(), values.etag)
         }
+        // Written whether or not the configuration is enabled: the server keeps describing when to
+        // ask again while the feature is switched off, and a client that stopped honouring that the
+        // moment it was switched off would never learn it had been switched back on.
+        if (values.ttlSeconds == null) {
+            editor.remove(ttlKey())
+        } else {
+            editor.putLong(ttlKey(), values.ttlSeconds)
+        }
+        editor.putBoolean(refreshOnForegroundKey(), values.refreshOnForeground)
         editor.putLong(writeTimeKey(), currentTimeMs())
         editor.apply()
     }
@@ -190,9 +223,27 @@ internal class RemoteConfigStore(
 
     private fun etagKey() = "$storeKey$SUFFIX_ETAG"
 
+    private fun ttlKey() = "$storeKey$SUFFIX_TTL"
+
+    private fun refreshOnForegroundKey() = "$storeKey$SUFFIX_REFRESH_ON_FOREGROUND"
+
     private fun writeTimeKey() = "$storeKey$SUFFIX_WRITE_TIME"
 
     companion object {
+
+        /**
+         * Reported to telemetry as well as to logcat: a client whose store will not open runs on
+         * the values it was built with for its whole life, and nothing else would ever say so.
+         */
+        private fun logStorageUnavailable(internalLogger: InternalLogger, e: Throwable) {
+            internalLogger.log(
+                InternalLogger.Level.WARN,
+                listOf(InternalLogger.Target.MAINTAINER, InternalLogger.Target.TELEMETRY),
+                { STORAGE_UNAVAILABLE_MESSAGE },
+                e
+            )
+        }
+
         private const val PREFERENCES_NAME = "flashcat-rum-remote-config"
 
         /**
@@ -208,6 +259,10 @@ internal class RemoteConfigStore(
         private const val ABSENT = -1f
         private const val ABSENT_VERSION = -1
 
+        // A ttl is a positive number of seconds, so a non-positive sentinel cannot collide with a
+        // stored value.
+        private const val ABSENT_TTL = -1L
+
         // One entry is spread over several keys, all of them derived from the store key by these
         // suffixes. Named here once because two things read them: the accessors that build a key,
         // and the sweep that has to take an entry apart again.
@@ -215,6 +270,8 @@ internal class RemoteConfigStore(
         private const val SUFFIX_VERSION = ".version"
         private const val SUFFIX_CUSTOM = ".custom"
         private const val SUFFIX_ETAG = ".etag"
+        private const val SUFFIX_TTL = ".ttl"
+        private const val SUFFIX_REFRESH_ON_FOREGROUND = ".refreshOnForeground"
         private const val SUFFIX_WRITE_TIME = ".writtenAt"
 
         private val FIELD_SUFFIXES = listOf(
@@ -222,6 +279,8 @@ internal class RemoteConfigStore(
             SUFFIX_VERSION,
             SUFFIX_CUSTOM,
             SUFFIX_ETAG,
+            SUFFIX_TTL,
+            SUFFIX_REFRESH_ON_FOREGROUND,
             SUFFIX_WRITE_TIME
         )
 
@@ -287,5 +346,9 @@ internal data class RemoteConfigValues(
     /** Raw JSON object string of the console's custom pass-through values, delivered verbatim. */
     val custom: String? = null,
     /** The validator to echo back as If-None-Match on the next request, quoted as the server sent it. */
-    val etag: String? = null
+    val etag: String? = null,
+    /** How long the server asked this client to treat these values as fresh, or null when it did not say. */
+    val ttlSeconds: Long? = null,
+    /** Whether the server allows a refresh when the app returns to the foreground. */
+    val refreshOnForeground: Boolean = false
 )

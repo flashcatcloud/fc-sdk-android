@@ -10,13 +10,14 @@ import android.os.SystemClock
 import androidx.annotation.WorkerThread
 import com.datadog.android.api.InternalLogger
 import com.datadog.android.api.feature.FeatureSdkCore
+import com.datadog.android.core.internal.utils.executeSafe
+import com.datadog.android.core.internal.utils.scheduleSafe
 import okhttp3.Call
 import okhttp3.Request
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
 import java.net.URLEncoder
-import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -52,6 +53,12 @@ internal class RemoteConfigController(
     @Volatile
     private var lastFetchAtMs: Long = 0
 
+    /**
+     * The refresh rhythm the server last asked for, mirrored from the store so that
+     * [refreshIfStale] can answer without touching the disk on the main thread it is called from.
+     * Re-read from the store before every request rather than only when a body arrives - see
+     * [fetchAndApply].
+     */
     @Volatile
     private var currentTtlSeconds: Long = DEFAULT_TTL_SECONDS
 
@@ -109,13 +116,10 @@ internal class RemoteConfigController(
             failedAttempts = 0
         }
         if (!inFlight.compareAndSet(false, true)) return
-        try {
-            executor.execute { fetchOnce() }
-        } catch (e: RejectedExecutionException) {
-            // The SDK is shutting down. Nothing to keep fresh.
-            inFlight.set(false)
-            logScheduleRejected(e)
-        }
+        // A submission the executor refuses is one made after `stop()`, and this controller does
+        // not outlive that: the feature drops it in the same breath, so there is nothing left for
+        // the flag to gate.
+        executor.executeSafe(FETCH_TASK_NAME, sdkCore.internalLogger) { fetchOnce() }
     }
 
     @WorkerThread
@@ -141,14 +145,25 @@ internal class RemoteConfigController(
             store.sweepAbandoned()
         }
 
+        // The rhythm the console asked for lives on disk, so it survives the process that fetched
+        // it. Read here, before the request, because neither of the other two outcomes carries it:
+        // a 304 has no body to apply, and a failed request has nothing at all. A client that only
+        // ever sees those - the steady state, since the validator exists to produce it - would
+        // otherwise spend every launch after the first on the defaults, with the console's
+        // permission to refresh on foreground silently forgotten.
+        currentTtlSeconds = store.ttlSeconds() ?: DEFAULT_TTL_SECONDS
+        refreshOnForeground = store.refreshOnForeground()
+
         // Stamped before the request goes out, so a request that never comes back still counts as
         // an attempt for the staleness gate instead of leaving the app on whatever it last knew.
         lastFetchAtMs = elapsedTimeMs()
 
         val succeeded = try {
-            // Telling the server which version this app is running is what lets the console answer
-            // "has my change reached everyone yet". It goes on the request every client makes,
-            // whether or not its session was kept.
+            // Which version this client is running, reported on every request whether or not its
+            // session was kept. Nothing reads it today - how far a change has reached is measured
+            // from the version stamped on the sessions themselves - but it is part of the request
+            // every SDK on this contract makes, and taking a parameter off the wire is a protocol
+            // change of its own.
             val url = store.appliedVersion()?.let { "$configUrl&applied_version=$it" } ?: configUrl
             val requestBuilder = Request.Builder().url(url).get()
             // The answer varies per caller, so the validator only means something paired with the
@@ -202,16 +217,12 @@ internal class RemoteConfigController(
             if (failedAttempts >= RETRY_DELAYS_SECONDS.size) return
             val delaySeconds = jittered(RETRY_DELAYS_SECONDS[failedAttempts], jitter())
             failedAttempts++
-            try {
-                pendingRetry = executor.schedule(
-                    { if (inFlight.compareAndSet(false, true)) fetchOnce() },
-                    delaySeconds,
-                    TimeUnit.SECONDS
-                )
-            } catch (e: RejectedExecutionException) {
-                // The SDK is shutting down. Nothing to keep fresh.
-                logScheduleRejected(e)
-            }
+            pendingRetry = executor.scheduleSafe(
+                RETRY_TASK_NAME,
+                delaySeconds,
+                TimeUnit.SECONDS,
+                sdkCore.internalLogger
+            ) { if (inFlight.compareAndSet(false, true)) fetchOnce() }
         }
     }
 
@@ -260,51 +271,61 @@ internal class RemoteConfigController(
         // prevent — which is why it has to be honoured by the first SDK that ships, not by a
         // later one: only code already on the device can refuse.
         //
-        // No stamp at all is not a refusal. A body without one is, by construction, the shape that
-        // existed before the stamp did, which is the shape this reader was written against;
-        // refusing it would switch remote configuration silently off against a server that merely
-        // predates the field. Only a stamp we can see and do not recognise is a reason to refuse.
+        // The stamp is required, and it is the whole of what tells a configuration apart from any
+        // other JSON. Every other field in the envelope is read with a default, so an unrelated
+        // body - a proxy's block page, a reverse proxy answering /config with something else -
+        // comes out as "enabled: false, no rates", which is a legitimate configuration meaning
+        // "stop using the console's values". Storing that empties the entry and drops the client
+        // back to the rates it was built with. So an unstamped body is treated as a request that
+        // did not arrive: nothing is stored, and it is asked again for.
+        //
         // A stamp that is not a number is not a stamp: optInt would quietly turn the string "1"
         // into 1 and accept a body the other SDKs refuse, and the point of this field is that
         // every reader agrees about the same response.
-        val stamped = json.has(FIELD_SCHEMA_VERSION) && !json.isNull(FIELD_SCHEMA_VERSION)
-        if (stamped &&
-            (
-                json.opt(FIELD_SCHEMA_VERSION) !is Number ||
-                    json.optInt(FIELD_SCHEMA_VERSION, SCHEMA_VERSION_ABSENT) != SUPPORTED_SCHEMA_VERSION
-                )
+        val stamp = json.opt(FIELD_SCHEMA_VERSION)
+        if (stamp == null || stamp == JSONObject.NULL) {
+            logUnstampedBody()
+            return Outcome.UNREADABLE
+        }
+        if (stamp !is Number ||
+            json.optInt(FIELD_SCHEMA_VERSION, SCHEMA_VERSION_ABSENT) != SUPPORTED_SCHEMA_VERSION
         ) {
             logUnsupportedSchema(json.optInt(FIELD_SCHEMA_VERSION, SCHEMA_VERSION_ABSENT))
             return Outcome.UNSUPPORTED_SCHEMA
         }
 
-        val ttl = json.optLong(FIELD_TTL, DEFAULT_TTL_SECONDS)
         val enabled = json.optBoolean(FIELD_ENABLED, false)
         val activation = json.optString(FIELD_ACTIVATION, ACTIVATION_NEXT_SESSION)
-        refreshOnForeground = json.optBoolean(FIELD_REFRESH_ON_FOREGROUND, false)
 
         val before = RemoteConfigValues(store.sessionSampleRate())
         val version = json.optInt(FIELD_VERSION, 0).takeIf { it > 0 }
-        val after = if (enabled) {
+        val delivered = if (enabled) {
             readValues(json.optJSONObject(FIELD_RUM)).copy(
                 version = version,
                 // Stored as the raw string: the platform's job is delivery, the meaning belongs to
                 // the host application.
-                custom = json.optJSONObject(FIELD_CUSTOM)?.toString(),
-                etag = etag
+                custom = json.optJSONObject(FIELD_CUSTOM)?.toString()
             )
         } else {
-            EMPTY_VALUES.copy(version = version, etag = etag)
+            EMPTY_VALUES.copy(version = version)
         }
+        // The rhythm rides with the values instead of staying in memory, and it is stored whether
+        // or not the configuration is enabled: the server goes on describing when to ask again
+        // while the feature is switched off, and a client that stopped honouring that the moment it
+        // was switched off would never learn it had been switched back on.
+        val after = delivered.copy(
+            etag = etag,
+            ttlSeconds = json.optLong(FIELD_TTL, 0L).takeIf { it > 0 },
+            refreshOnForeground = json.optBoolean(FIELD_REFRESH_ON_FOREGROUND, false)
+        )
         store.store(after)
+        currentTtlSeconds = after.ttlSeconds ?: DEFAULT_TTL_SECONDS
+        refreshOnForeground = after.refreshOnForeground
 
         if (activation == ACTIVATION_IMMEDIATE && changesThisClient(before, after)) {
             restartSession()
         }
 
-        // Remembered here rather than around the request, so a fetch that fails keeps the ttl the
-        // server last asked for instead of falling back to ours.
-        currentTtlSeconds = if (ttl > 0) ttl else DEFAULT_TTL_SECONDS
         return Outcome.APPLIED
     }
 
@@ -330,19 +351,31 @@ internal class RemoteConfigController(
         (before.sessionSampleRate ?: initialSessionSampleRate) !=
             (after.sessionSampleRate ?: initialSessionSampleRate)
 
+    // Every one of these goes to telemetry as well as to logcat. A device that quietly stops
+    // taking the console's values runs on the ones it was built with for the rest of its life, and
+    // a logcat line only a debug build of the SDK prints is not something anyone will ever see.
+
     private fun logUnreadableBody(e: JSONException) {
         sdkCore.internalLogger.log(
             InternalLogger.Level.DEBUG,
-            InternalLogger.Target.MAINTAINER,
+            MAINTAINER_AND_TELEMETRY,
             { UNREADABLE_BODY_MESSAGE },
             e
+        )
+    }
+
+    private fun logUnstampedBody() {
+        sdkCore.internalLogger.log(
+            InternalLogger.Level.WARN,
+            MAINTAINER_AND_TELEMETRY,
+            { UNSTAMPED_BODY_MESSAGE }
         )
     }
 
     private fun logUnsupportedSchema(received: Int) {
         sdkCore.internalLogger.log(
             InternalLogger.Level.WARN,
-            InternalLogger.Target.MAINTAINER,
+            MAINTAINER_AND_TELEMETRY,
             { UNSUPPORTED_SCHEMA_MESSAGE.format(received, SUPPORTED_SCHEMA_VERSION) }
         )
     }
@@ -350,17 +383,8 @@ internal class RemoteConfigController(
     private fun logFetchFailure(e: Throwable) {
         sdkCore.internalLogger.log(
             InternalLogger.Level.DEBUG,
-            InternalLogger.Target.MAINTAINER,
+            MAINTAINER_AND_TELEMETRY,
             { FETCH_FAILED_MESSAGE },
-            e
-        )
-    }
-
-    private fun logScheduleRejected(e: RejectedExecutionException) {
-        sdkCore.internalLogger.log(
-            InternalLogger.Level.DEBUG,
-            InternalLogger.Target.MAINTAINER,
-            { "Remote configuration refresh not scheduled: executor is shutting down." },
             e
         )
     }
@@ -371,6 +395,12 @@ internal class RemoteConfigController(
         internal const val ACTIVATION_IMMEDIATE = "immediate"
 
         private val RETRY_DELAYS_SECONDS = longArrayOf(5L, 60L)
+
+        private val MAINTAINER_AND_TELEMETRY =
+            listOf(InternalLogger.Target.MAINTAINER, InternalLogger.Target.TELEMETRY)
+
+        private const val FETCH_TASK_NAME = "RUM remote configuration fetch"
+        private const val RETRY_TASK_NAME = "RUM remote configuration retry"
 
         private const val MAX_RATE = 100.0
         private const val MILLIS_PER_SECOND = 1_000L
@@ -401,6 +431,10 @@ internal class RemoteConfigController(
 
         internal const val UNREADABLE_BODY_MESSAGE =
             "The remote configuration response was not readable; keeping the values already in use."
+
+        internal const val UNSTAMPED_BODY_MESSAGE =
+            "The remote configuration response carried no schema version, so it did not come from" +
+                " the configuration endpoint; keeping the values already in use."
 
         internal const val UNSUPPORTED_SCHEMA_MESSAGE =
             "Ignoring a remote configuration written to schema version %d; this SDK reads version" +

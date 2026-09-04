@@ -23,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -81,14 +82,14 @@ internal class RemoteConfigControllerTest {
     fun `M store the rate the response carries W apply()`() {
         testedController.apply(body(rum = """"sessionSampleRate":42"""))
 
-        verify(store).store(RemoteConfigValues(42f, 3))
+        verify(store).store(RemoteConfigValues(42f, 3, ttlSeconds = 300L))
     }
 
     @Test
     fun `M store a zero rate W apply() { zero is a setting, not a missing value }`() {
         testedController.apply(body(rum = """"sessionSampleRate":0"""))
 
-        verify(store).store(RemoteConfigValues(0f, 3))
+        verify(store).store(RemoteConfigValues(0f, 3, ttlSeconds = 300L))
     }
 
     @Test
@@ -97,21 +98,21 @@ internal class RemoteConfigControllerTest {
         // would silently stop collection nobody asked to stop.
         testedController.apply(body(rum = ""))
 
-        verify(store).store(RemoteConfigValues(null, 3))
+        verify(store).store(RemoteConfigValues(null, 3, ttlSeconds = 300L))
     }
 
     @Test
     fun `M ignore a rate outside 0-100 W apply()`() {
         testedController.apply(body(rum = """"sessionSampleRate":420"""))
 
-        verify(store).store(RemoteConfigValues(null, 3))
+        verify(store).store(RemoteConfigValues(null, 3, ttlSeconds = 300L))
     }
 
     @Test
     fun `M forget the rates W apply() { remote configuration switched off }`() {
         testedController.apply(body(enabled = false, rum = """"sessionSampleRate":42"""))
 
-        verify(store).store(RemoteConfigValues(null, 3))
+        verify(store).store(RemoteConfigValues(null, 3, ttlSeconds = 300L))
     }
 
     // endregion
@@ -172,7 +173,7 @@ internal class RemoteConfigControllerTest {
         // the change that turned them off.
         testedController.apply(body(enabled = false))
 
-        verify(store).store(RemoteConfigValues(null, 3))
+        verify(store).store(RemoteConfigValues(null, 3, ttlSeconds = 300L))
     }
 
     // region fetching
@@ -195,12 +196,25 @@ internal class RemoteConfigControllerTest {
     }
 
     @Test
+    fun `M keep the stored values and ask again W fetch() { server answers with an error }`() {
+        // Neither a 200 nor a 304 is an answer about the configuration. Nothing may be stored, and
+        // the ask is owed a retry - an endpoint having a bad minute must not move anybody's rates.
+        whenever(call.execute()).thenReturn(response(500, ""))
+
+        runPendingFetch()
+
+        verify(store, never()).store(any())
+        verify(store, never()).touch()
+        verify(executor).schedule(any(), any(), any())
+    }
+
+    @Test
     fun `M store what the server answered W fetch succeeds`() {
         whenever(call.execute()).thenReturn(response(200, body(rum = """"sessionSampleRate":42""")))
 
         runPendingFetch()
 
-        verify(store).store(RemoteConfigValues(42f, 3))
+        verify(store).store(RemoteConfigValues(42f, 3, ttlSeconds = 300L))
     }
 
     @Test
@@ -240,6 +254,28 @@ internal class RemoteConfigControllerTest {
             verify(callFactory).newCall(capture())
             assertThat(firstValue.header("If-None-Match")).isNull()
         }
+    }
+
+    @Test
+    fun `M store the refresh rhythm alongside the values W apply()`() {
+        // Kept on disk rather than in memory because an unchanged answer is a 304 with no body:
+        // a memory-only copy is back at its default on every launch after the first.
+        testedController.apply(body(ttl = 60, refreshOnForeground = true, rum = """"sessionSampleRate":42"""))
+
+        verify(store).store(
+            RemoteConfigValues(42f, 3, ttlSeconds = 60L, refreshOnForeground = true)
+        )
+    }
+
+    @Test
+    fun `M store the refresh rhythm W apply() { remote configuration switched off }`() {
+        // The server goes on saying when to ask again while the feature is off; a client that
+        // stopped honouring that would never learn it had been switched back on.
+        testedController.apply(body(enabled = false, ttl = 60, refreshOnForeground = true))
+
+        verify(store).store(
+            RemoteConfigValues(null, 3, ttlSeconds = 60L, refreshOnForeground = true)
+        )
     }
 
     @Test
@@ -454,6 +490,38 @@ internal class RemoteConfigControllerTest {
     }
 
     @Test
+    fun `M honour the stored rhythm W refreshIfStale() { fresh process, first answer is 304 }`() {
+        // The case a settled fleet lives in. The console's permission was granted in some earlier
+        // process and is on disk; this process asks, the validator matches, and a 304 comes back
+        // with no body to read it from. A controller that only ever learned the rhythm from a body
+        // would spend this whole process on the defaults and never refresh on foreground again.
+        whenever(store.refreshOnForeground()).thenReturn(true)
+        whenever(store.ttlSeconds()).thenReturn(60L)
+        whenever(call.execute()).thenReturn(response(304, ""))
+
+        runPendingFetch()
+        clearInvocations(executor)
+        elapsedMs = 61_000L
+        testedController.refreshIfStale()
+
+        verify(executor).execute(any())
+    }
+
+    @Test
+    fun `M ask nothing W refreshIfStale() { fresh process, nothing was ever stored }`() {
+        // The negative control for the test above: with nothing on disk the permission is not
+        // assumed, so the very first launch of an app still makes no foreground request.
+        whenever(call.execute()).thenReturn(response(304, ""))
+
+        runPendingFetch()
+        clearInvocations(executor)
+        elapsedMs = 61_000L
+        testedController.refreshIfStale()
+
+        verify(executor, never()).execute(any())
+    }
+
+    @Test
     fun `M fall back to the default ttl for staleness W refreshIfStale() { server sent none }`() {
         testedController.apply(body(ttl = 0, refreshOnForeground = true))
 
@@ -582,29 +650,40 @@ internal class RemoteConfigControllerTest {
     }
 
     @Test
-    fun `M read the configuration W apply() { schema is an explicit null }`() {
+    fun `M refuse the body W apply() { schema is an explicit null }`() {
         // Absent and null say the same thing: nothing was stamped.
         val outcome = testedController.apply(
             """{"schema_version":null,"version":3,"enabled":true,"rum":{"sessionSampleRate":42}}"""
         )
 
-        assertThat(outcome).isEqualTo(RemoteConfigController.Outcome.APPLIED)
+        assertThat(outcome).isEqualTo(RemoteConfigController.Outcome.UNREADABLE)
+        verify(store, never()).store(any())
     }
 
     @Test
-    fun `M read the configuration W apply() { no schema at all }`() {
-        // A body with no stamp is, by construction, the shape that existed before the stamp did —
-        // the shape this reader was written against. Refusing it would switch remote configuration
-        // silently off against a server that merely predates the field, with nothing to say so.
+    fun `M refuse the body W apply() { no schema at all }`() {
+        // The stamp is the whole of what tells a configuration from any other JSON: every other
+        // field is read with a default, so an unrelated body would come out as "switched off, no
+        // rates" and empty the entry. Nothing is stored, and the request is asked again for.
         val outcome = testedController.apply(
             body(rum = """"sessionSampleRate":42""", schemaVersion = null)
         )
 
-        assertThat(outcome).isEqualTo(RemoteConfigController.Outcome.APPLIED)
-        argumentCaptor<RemoteConfigValues> {
-            verify(store).store(capture())
-            assertThat(firstValue.sessionSampleRate).isEqualTo(42f)
-        }
+        assertThat(outcome).isEqualTo(RemoteConfigController.Outcome.UNREADABLE)
+        verify(store, never()).store(any())
+    }
+
+    @Test
+    fun `M keep the stored values and ask again W fetch() { body carries no schema }`() {
+        // The negative control for the refusal above: a body this SDK will not read must leave the
+        // rates that are working in place and be retried, exactly as an unreachable endpoint is.
+        whenever(call.execute())
+            .thenReturn(response(200, body(rum = """"sessionSampleRate":42""", schemaVersion = null)))
+
+        runPendingFetch()
+
+        verify(store, never()).store(any())
+        verify(executor).schedule(any(), any(), any())
     }
 
     @Test

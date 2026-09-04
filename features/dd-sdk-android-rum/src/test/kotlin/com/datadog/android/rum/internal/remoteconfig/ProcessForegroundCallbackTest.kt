@@ -55,4 +55,21 @@ internal class ProcessForegroundCallbackTest {
 
         assertThat(foregroundCount).isEqualTo(2)
     }
+
+    @Test
+    fun `M report a foreground W the SDK was registered while an activity was already started`() {
+        // An app that initialises the SDK from an activity - the usual shape when initialisation
+        // waits on a consent prompt - has one running before this callback exists, so the first
+        // stop it sees has no matching start. Without a floor the count would go negative and could
+        // never reach the one that means "the app is in the foreground again", leaving the callback
+        // dead for the rest of the process.
+        val activity = mock<Activity>()
+        testedCallback.onActivityStopped(activity)
+
+        // When the user leaves and comes back
+        testedCallback.onActivityStarted(activity)
+
+        // Then
+        assertThat(foregroundCount).isOne()
+    }
 }
