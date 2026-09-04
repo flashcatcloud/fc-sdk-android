@@ -161,7 +161,10 @@ internal class RumViewManagerScope(
 
     internal fun renewViewScopes(eventTime: Time) {
         val newChildScope = childrenScopes.map { rumViewScope ->
-            rumViewScope.renew(eventTime)
+            // FLASHCAT FORK - the session scope has just written this scope's `sampleRate` and
+            // `drawnConfiguration` with the draw the renewed views belong to; handing them down is
+            // what makes the surviving view report the new session rather than the one that ended.
+            rumViewScope.renew(eventTime, sampleRate, drawnConfiguration)
         }
         childrenScopes.clear()
         childrenScopes.addAll(newChildScope)

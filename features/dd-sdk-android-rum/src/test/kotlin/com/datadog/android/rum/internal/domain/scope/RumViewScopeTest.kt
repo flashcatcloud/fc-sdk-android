@@ -8486,9 +8486,15 @@ internal class RumViewScopeTest {
     fun `M return a new RumViewScope W renew the current one`() {
         // Given
         val expectedTime = Time(nanoTime = fakeEventTime.nanoTime)
+        // FLASHCAT FORK - both deliberately differ from what this scope holds. A renewal carries a
+        // view into the session that has just been drawn, so it must take the draw it is handed
+        // rather than copy the one that ended - and this scope's own values are exactly what it
+        // would copy if that regressed.
+        val expectedSampleRate = testedScope.sampleRate + 1f
+        val expectedDrawnConfiguration = DrawnConfiguration(version = 11)
 
         // When
-        val newScope = testedScope.renew(expectedTime)
+        val newScope = testedScope.renew(expectedTime, expectedSampleRate, expectedDrawnConfiguration)
 
         assertThat(newScope.key).isEqualTo(testedScope.key)
         assertThat(newScope.firstPartyHostHeaderTypeResolver).isEqualTo(testedScope.firstPartyHostHeaderTypeResolver)
@@ -8496,7 +8502,10 @@ internal class RumViewScopeTest {
         assertThat(newScope.memoryVitalMonitor).isEqualTo(testedScope.memoryVitalMonitor)
         assertThat(newScope.frameRateVitalMonitor).isEqualTo(testedScope.frameRateVitalMonitor)
         assertThat(newScope.type).isEqualTo(testedScope.type)
-        assertThat(newScope.sampleRate).isEqualTo(testedScope.sampleRate)
+        assertThat(newScope.sampleRate).isEqualTo(expectedSampleRate)
+        assertThat(newScope.sampleRate).isNotEqualTo(testedScope.sampleRate)
+        assertThat(newScope.drawnConfiguration).isEqualTo(expectedDrawnConfiguration)
+        assertThat(newScope.drawnConfiguration).isNotEqualTo(testedScope.drawnConfiguration)
         assertThat(newScope.url).isEqualTo(testedScope.url)
         assertThat(newScope.viewAttributes).isEqualTo(testedScope.viewAttributes)
         assertThat(newScope.stoppedNanos).isEqualTo(expectedTime.nanoTime)

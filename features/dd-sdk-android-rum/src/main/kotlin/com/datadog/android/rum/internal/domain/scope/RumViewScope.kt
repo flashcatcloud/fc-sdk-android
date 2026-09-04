@@ -449,7 +449,19 @@ internal open class RumViewScope(
         return !stopped
     }
 
-    internal fun renew(newEventTime: Time): RumViewScope {
+    /**
+     * FLASHCAT FORK - [sampleRate] and [drawnConfiguration] are passed in rather than copied from
+     * this scope, because a renewal is where a new session's draw takes effect: the view that
+     * survives it belongs to the session that has just been drawn, not to the one that ended. It is
+     * also that session's FIRST view, which is the one the intake reads the session's rate and
+     * configuration version from, so carrying this scope's own values across would misreport the
+     * whole session.
+     */
+    internal fun renew(
+        newEventTime: Time,
+        sampleRate: Float,
+        drawnConfiguration: DrawnConfiguration?
+    ): RumViewScope {
         return RumViewScope(
             parentScope = this,
             sdkCore = sdkCore,
@@ -466,6 +478,7 @@ internal open class RumViewScope(
             type = type,
             trackFrustrations = trackFrustrations,
             sampleRate = sampleRate,
+            drawnConfiguration = drawnConfiguration,
             interactionToNextViewMetricResolver = interactionToNextViewMetricResolver,
             networkSettledMetricResolver = networkSettledMetricResolver,
             viewEndedMetricDispatcher = viewEndedMetricDispatcher,
