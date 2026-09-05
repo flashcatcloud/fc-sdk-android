@@ -62,7 +62,6 @@ import com.datadog.android.core.internal.thread.DatadogThreadFactory
 import com.datadog.android.core.internal.thread.LoggingScheduledThreadPoolExecutor
 import com.datadog.android.core.internal.thread.ScheduledExecutorServiceFactory
 import com.datadog.android.core.internal.time.AppStartTimeProvider
-import com.datadog.android.core.internal.time.DatadogNtpEndpoint
 import com.datadog.android.core.internal.time.KronosTimeProvider
 import com.datadog.android.core.internal.time.LoggingSyncListener
 import com.datadog.android.core.internal.user.DatadogUserInfoProvider
@@ -199,6 +198,7 @@ internal class CoreFeature(
     @Volatile
     internal var appBuildId: String? = null
     internal var customUploadSchedulerStrategy: UploadSchedulerStrategy? = null
+    internal var ntpHosts: List<String> = Configuration.DEFAULT_NTP_HOSTS
 
     internal lateinit var uploadExecutorService: ScheduledThreadPoolExecutor
     internal lateinit var persistenceExecutorService: FlushableExecutorService
@@ -260,9 +260,11 @@ internal class CoreFeature(
         readApplicationInformation(appContext, configuration)
         resolveProcessInfo(appContext)
         setupExecutors()
-        persistenceExecutorService.executeSafe("NTP Sync initialization", unboundInternalLogger) {
-            // Kronos performs I/O operation on startup, it needs to run in background
-            initializeClockSync(appContext)
+        if (ntpHosts.isNotEmpty()) {
+            persistenceExecutorService.executeSafe("NTP Sync initialization", unboundInternalLogger) {
+                // Kronos performs I/O operation on startup, it needs to run in background
+                initializeClockSync(appContext)
+            }
         }
         setupOkHttpClient(configuration.coreConfig)
         firstPartyHostHeaderTypeResolver
@@ -469,12 +471,7 @@ internal class CoreFeature(
         }
         kronosClock = AndroidClockFactory.createKronosClock(
             safeContext,
-            ntpHosts = listOf(
-                DatadogNtpEndpoint.NTP_0,
-                DatadogNtpEndpoint.NTP_1,
-                DatadogNtpEndpoint.NTP_2,
-                DatadogNtpEndpoint.NTP_3
-            ).map { it.host },
+            ntpHosts = ntpHosts,
             cacheExpirationMs = TimeUnit.MINUTES.toMillis(NTP_CACHE_EXPIRATION_MINUTES),
             minWaitTimeBetweenSyncMs = TimeUnit.MINUTES.toMillis(NTP_DELAY_BETWEEN_SYNCS_MINUTES),
             syncListener = LoggingSyncListener(internalLogger)
@@ -583,6 +580,7 @@ internal class CoreFeature(
         site = configuration.site
         backpressureStrategy = configuration.backpressureStrategy
         customUploadSchedulerStrategy = configuration.uploadSchedulerStrategy
+        ntpHosts = configuration.ntpHosts
     }
 
     private fun setupInfoProviders(

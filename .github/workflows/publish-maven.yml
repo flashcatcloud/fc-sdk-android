@@ -112,8 +112,24 @@ jobs:
       - name: Notify deployment success
         uses: zcong1993/actions-ding@master
         with:
+          ignoreError: "true"
           dingToken: ${{ secrets.DING_TALK_TOKEN }}
           secret: ${{ secrets.DING_TALK_SECRET }}
+          body: |
+            {
+              "msgtype": "markdown",
+              "markdown": {
+                "title": "fc-sdk-android 发布通知",
+                "text": "### ✅ fc-sdk-android 发布成功\n\n---\n\n 🔖 版本: ${{ steps.version.outputs.version }}\n\n 📦 类型: ${{ steps.version.outputs.type }}\n\n 👨‍💻 发布者: ${{ github.actor }}\n\n 🚀 [查看详情](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+              }
+            }
+
+      - name: Notify secondary DingTalk group on success
+        uses: zcong1993/actions-ding@master
+        with:
+          ignoreError: "true"
+          dingToken: ${{ secrets.DING_TALK_TOKEN_2 }}
+          secret: ${{ secrets.DING_TALK_SECRET_2 }}
           body: |
             {
               "msgtype": "markdown",
@@ -145,6 +161,7 @@ jobs:
       - name: Notify deployment failure
         uses: zcong1993/actions-ding@master
         with:
+          ignoreError: "true"
           dingToken: ${{ secrets.DING_TALK_TOKEN }}
           secret: ${{ secrets.DING_TALK_SECRET }}
           body: |

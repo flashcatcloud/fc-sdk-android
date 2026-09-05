@@ -201,6 +201,27 @@ internal class CoreFeatureTest {
     }
 
     @Test
+    fun `M skip time sync W initialize { no ntp hosts }`() {
+        // Given
+        val config = fakeConfig.copy(
+            coreConfig = fakeConfig.coreConfig.copy(ntpHosts = emptyList())
+        )
+
+        // When
+        testedFeature.initialize(
+            appContext.mockInstance,
+            fakeSdkInstanceId,
+            config,
+            fakeConsent
+        )
+
+        // Then
+        assertThat(testedFeature.kronosClock).isNull()
+        assertThat(testedFeature.timeProvider)
+            .isInstanceOf(DefaultTimeProvider::class.java)
+    }
+
+    @Test
     fun `M initialize system info provider W initialize`() {
         // When
         testedFeature.initialize(
@@ -337,6 +358,7 @@ internal class CoreFeatureTest {
         assertThat(testedFeature.contextRef.get()).isEqualTo(appContext.mockInstance)
         assertThat(testedFeature.batchSize).isEqualTo(fakeConfig.coreConfig.batchSize)
         assertThat(testedFeature.uploadFrequency).isEqualTo(fakeConfig.coreConfig.uploadFrequency)
+        assertThat(testedFeature.ntpHosts).isEqualTo(fakeConfig.coreConfig.ntpHosts)
     }
 
     @Test
