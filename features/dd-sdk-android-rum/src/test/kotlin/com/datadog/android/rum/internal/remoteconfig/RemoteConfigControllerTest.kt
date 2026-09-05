@@ -83,6 +83,39 @@ internal class RemoteConfigControllerTest {
     // region storing
 
     @Test
+    fun `M discard an older response without retrying W fetch succeeds`() {
+        whenever(store.sessionSampleRate()).thenReturn(1f)
+        whenever(store.appliedVersion()).thenReturn(5)
+        whenever(call.execute()).thenReturn(
+            response(200, body(version = 3, activation = "immediate", rum = "\"sessionSampleRate\":100"), "\"v3\"")
+        )
+
+        runPendingFetch()
+
+        verify(store, never()).store(any())
+        verify(executor, never()).schedule(any<Runnable>(), any(), any())
+        assertThat(restarts).isZero()
+    }
+
+    @Test
+    fun `M accept the same version W apply()`() {
+        whenever(store.appliedVersion()).thenReturn(5)
+
+        testedController.apply(body(version = 5, rum = "\"sessionSampleRate\":42"))
+
+        verify(store).store(RemoteConfigValues(42f, 5, ttlSeconds = 300L))
+    }
+
+    @Test
+    fun `M accept a rollback published as a newer version W apply()`() {
+        whenever(store.appliedVersion()).thenReturn(5)
+
+        testedController.apply(body(version = 6, rum = "\"sessionSampleRate\":100"))
+
+        verify(store).store(RemoteConfigValues(100f, 6, ttlSeconds = 300L))
+    }
+
+    @Test
     fun `M store the rate the response carries W apply()`() {
         testedController.apply(body(rum = """"sessionSampleRate":42"""))
 
@@ -819,10 +852,11 @@ internal class RemoteConfigControllerTest {
         refreshOnForeground: Boolean = false,
         rum: String = "",
         custom: String? = null,
-        schemaVersion: Int? = RemoteConfigController.SUPPORTED_SCHEMA_VERSION
+        schemaVersion: Int? = RemoteConfigController.SUPPORTED_SCHEMA_VERSION,
+        version: Int = 3
     ): String =
         "{" + (if (schemaVersion == null) "" else """"schema_version":$schemaVersion,""") +
-            """"version":3,"ttl":$ttl,"enabled":$enabled,"activation":"$activation",""" +
+            """"version":$version,"ttl":$ttl,"enabled":$enabled,"activation":"$activation",""" +
             """"refresh_on_foreground":$refreshOnForeground,"rum":{$rum}""" +
             (if (custom == null) "" else ""","custom":$custom""") + "}"
 

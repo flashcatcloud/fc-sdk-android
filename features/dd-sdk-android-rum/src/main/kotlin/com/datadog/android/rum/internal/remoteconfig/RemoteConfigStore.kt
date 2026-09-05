@@ -58,6 +58,24 @@ internal class RemoteConfigStore(
     fun sessionSampleRate(): Float? = read(sessionKey())
 
     /**
+     * Reads one committed preferences snapshot. A session must use the same response for its
+     * sampling rate, custom values and reported version, even if another response arrives during
+     * its draw. getAll() copies the preferences under their lock, paired with Editor.apply()'s
+     * atomic in-memory update; separate getters would each acquire that lock independently.
+     */
+    fun snapshot(): RemoteConfigValues {
+        val stored = preferences?.all.orEmpty()
+        return RemoteConfigValues(
+            sessionSampleRate = (stored[sessionKey()] as? Float)?.takeUnless { it == ABSENT },
+            version = (stored[versionKey()] as? Int)?.takeUnless { it == ABSENT_VERSION },
+            custom = stored[customKey()] as? String,
+            etag = stored[etagKey()] as? String,
+            ttlSeconds = (stored[ttlKey()] as? Long)?.takeUnless { it == ABSENT_TTL },
+            refreshOnForeground = stored[refreshOnForegroundKey()] as? Boolean ?: false
+        )
+    }
+
+    /**
      * The application-defined bag the console last published, as the raw JSON object string, or
      * null when none is published. The platform never interprets it — see [RumMonitor.getRemoteConfig].
      */

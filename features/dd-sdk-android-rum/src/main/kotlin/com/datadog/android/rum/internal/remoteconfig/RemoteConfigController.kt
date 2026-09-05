@@ -228,11 +228,14 @@ internal class RemoteConfigController(
 
     /**
      * What reading one response body came to. Only [UNREADABLE] is worth asking again for: the
-     * other two are answers, whether or not this SDK can act on them.
+     * others are answers, whether or not this SDK can act on them.
      */
     internal enum class Outcome {
         /** The body was read and its values are now stored. */
         APPLIED,
+
+        /** An older response was ignored because the stored configuration is already newer. */
+        STALE_VERSION,
 
         /**
          * The body was not a configuration at all — not JSON, or truncated. A captive portal
@@ -297,8 +300,13 @@ internal class RemoteConfigController(
         val enabled = json.optBoolean(FIELD_ENABLED, false)
         val activation = json.optString(FIELD_ACTIVATION, ACTIVATION_NEXT_SESSION)
 
-        val before = RemoteConfigValues(store.sessionSampleRate())
         val version = json.optInt(FIELD_VERSION, 0).takeIf { it > 0 }
+        // Rollbacks are published under a new version. An older response must not replace the
+        // stored values or their validator, nor restart a session under superseded settings.
+        if ((version ?: 0) < (store.appliedVersion() ?: 0)) {
+            return Outcome.STALE_VERSION
+        }
+        val before = RemoteConfigValues(store.sessionSampleRate())
         val delivered = if (enabled) {
             readValues(json.optJSONObject(FIELD_RUM)).copy(
                 version = version,

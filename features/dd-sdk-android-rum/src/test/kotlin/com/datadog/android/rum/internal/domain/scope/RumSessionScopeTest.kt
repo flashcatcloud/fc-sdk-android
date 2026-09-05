@@ -35,6 +35,7 @@ import com.datadog.android.rum.internal.metric.SessionMetricDispatcher
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
 import com.datadog.android.rum.internal.remoteconfig.DrawnConfiguration
 import com.datadog.android.rum.internal.remoteconfig.RemoteConfigStore
+import com.datadog.android.rum.internal.remoteconfig.RemoteConfigValues
 import com.datadog.android.rum.internal.startup.RumAppStartupTelemetryReporter
 import com.datadog.android.rum.internal.startup.RumSessionScopeStartupManager
 import com.datadog.android.rum.internal.startup.RumStartupScenario
@@ -83,6 +84,7 @@ import org.mockito.kotlin.whenever
 import org.mockito.quality.Strictness
 import java.lang.ref.WeakReference
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
 @Extensions(
     ExtendWith(MockitoExtension::class),
@@ -1066,8 +1068,7 @@ internal class RumSessionScopeTest {
         // session as the whole population that rate implies, and leave nothing to tell it from a
         // lucky draw. This is the reporting the other SDKs use.
         val mockRemoteConfig: RemoteConfigStore = mock()
-        whenever(mockRemoteConfig.sessionSampleRate()).thenReturn(1f)
-        whenever(mockRemoteConfig.appliedVersion()).thenReturn(7)
+        whenever(mockRemoteConfig.snapshot()).thenReturn(RemoteConfigValues(1f, 7))
         initializeTestedScope(1f, remoteConfig = mockRemoteConfig)
 
         // When
@@ -1082,8 +1083,7 @@ internal class RumSessionScopeTest {
     fun `M report the drawn rate and its version W a session is drawn without forcing`() {
         // The negative control: the same store, the same rates, no forcing.
         val mockRemoteConfig: RemoteConfigStore = mock()
-        whenever(mockRemoteConfig.sessionSampleRate()).thenReturn(1f)
-        whenever(mockRemoteConfig.appliedVersion()).thenReturn(7)
+        whenever(mockRemoteConfig.snapshot()).thenReturn(RemoteConfigValues(1f, 7))
         initializeTestedScope(1f, remoteConfig = mockRemoteConfig)
 
         // When
@@ -1122,11 +1122,43 @@ internal class RumSessionScopeTest {
     // region Remote Configuration
 
     @Test
+    fun `M keep one snapshot per draw W a response arrives during beforeSampling`() {
+        val first = RemoteConfigValues(100f, 1, custom = """{"cohort":"first"}""")
+        val second = RemoteConfigValues(0f, 2, custom = """{"cohort":"second"}""")
+        val published = AtomicReference(first)
+        val remoteConfig = mock<RemoteConfigStore>()
+        whenever(remoteConfig.snapshot()).thenAnswer { published.get() }
+        val seen = mutableListOf<BeforeSamplingContext>()
+        initializeTestedScope(remoteConfig = remoteConfig, beforeSampling = {
+            seen.add(it)
+            val responseThread = Thread { published.set(second) }
+            responseThread.start()
+            responseThread.join(5_000)
+            check(!responseThread.isAlive)
+            null
+        })
+
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        assertThat(published.get()).isEqualTo(second)
+        assertThat(seen.single().sessionSampleRate).isEqualTo(100f)
+        assertThat(seen.single().custom).isEqualTo(mapOf("cohort" to "first"))
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(100f)
+        assertThat(testedScope.drawnConfiguration?.version).isEqualTo(1)
+
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        assertThat(seen.last().sessionSampleRate).isEqualTo(0f)
+        assertThat(seen.last().custom).isEqualTo(mapOf("cohort" to "second"))
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(0f)
+        assertThat(testedScope.drawnConfiguration?.version).isEqualTo(2)
+    }
+
+    @Test
     fun `M draw the session with the console's rates W handleEvent { remote configuration stored }`() {
         // Given
         val remoteConfig = mock<RemoteConfigStore>()
-        whenever(remoteConfig.sessionSampleRate()) doReturn 42f
-        whenever(remoteConfig.appliedVersion()) doReturn 7
+        whenever(remoteConfig.snapshot()) doReturn RemoteConfigValues(42f, 7)
         initializeTestedScope(sampleRate = 100f, remoteConfig = remoteConfig)
 
         // When
@@ -1144,8 +1176,7 @@ internal class RumSessionScopeTest {
     fun `M fall back to the init values W handleEvent { console set nothing }`() {
         // Given
         val remoteConfig = mock<RemoteConfigStore>()
-        whenever(remoteConfig.sessionSampleRate()) doReturn null
-        whenever(remoteConfig.appliedVersion()) doReturn null
+        whenever(remoteConfig.snapshot()) doReturn RemoteConfigValues(null)
         initializeTestedScope(sampleRate = 80f, remoteConfig = remoteConfig)
 
         // When
@@ -1160,8 +1191,7 @@ internal class RumSessionScopeTest {
     fun `M remember the draw for the session's events W handleEvent { remote configuration on }`() {
         // Given
         val remoteConfig = mock<RemoteConfigStore>()
-        whenever(remoteConfig.sessionSampleRate()) doReturn 42f
-        whenever(remoteConfig.appliedVersion()) doReturn 9
+        whenever(remoteConfig.snapshot()) doReturn RemoteConfigValues(42f, 9)
         initializeTestedScope(remoteConfig = remoteConfig)
 
         // When
@@ -1204,7 +1234,7 @@ internal class RumSessionScopeTest {
     ) {
         // Given
         val remoteConfig = mock<RemoteConfigStore>()
-        whenever(remoteConfig.sessionSampleRate()) doReturn 100f
+        whenever(remoteConfig.snapshot()) doReturn RemoteConfigValues(100f)
         initializeTestedScope(withMockChildScope = false, remoteConfig = remoteConfig)
 
         // When
@@ -2007,7 +2037,7 @@ internal class RumSessionScopeTest {
     fun `M draw with the hook's rate W handleEvent { beforeSampling overrides }`() {
         // Given
         val remoteConfig = mock<RemoteConfigStore>()
-        whenever(remoteConfig.sessionSampleRate()) doReturn 1f
+        whenever(remoteConfig.snapshot()) doReturn RemoteConfigValues(1f)
         initializeTestedScope(sampleRate = 100f, remoteConfig = remoteConfig, beforeSampling = { 100f })
 
         // When
@@ -2021,8 +2051,7 @@ internal class RumSessionScopeTest {
     fun `M see the console's rate W handleEvent { beforeSampling reads its context }`() {
         // Given
         val remoteConfig = mock<RemoteConfigStore>()
-        whenever(remoteConfig.sessionSampleRate()) doReturn 42f
-        whenever(remoteConfig.custom()) doReturn """{"vip":["a"]}"""
+        whenever(remoteConfig.snapshot()) doReturn RemoteConfigValues(42f, custom = """{"vip":["a"]}""")
         var seen: BeforeSamplingContext? = null
         initializeTestedScope(
             sampleRate = 100f,

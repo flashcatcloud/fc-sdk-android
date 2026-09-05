@@ -345,7 +345,8 @@ internal class RumSessionScope(
         // Order matters: the console's rate first, then the app's own hook. The hook is the last
         // word precisely so an allow-list can keep collecting a visitor the console's rate would
         // drop.
-        val drawRate = askBeforeSampling(remoteConfig?.sessionSampleRate() ?: sampleRate)
+        val remoteValues = remoteConfig?.snapshot()
+        val drawRate = askBeforeSampling(remoteValues?.sessionSampleRate ?: sampleRate, remoteValues?.custom)
         val keepSession = forcedSession || random.nextFloat() < drawRate.percent()
         // FLASHCAT FORK - a forced session was not drawn, so it does not report a rate it was drawn
         // at. It reports the rate that describes it: every session like it is kept. Reporting the
@@ -365,8 +366,8 @@ internal class RumSessionScope(
         drawnConfiguration = if (forcedSession) {
             null
         } else {
-            remoteConfig?.let { config ->
-                DrawnConfiguration(version = config.appliedVersion() ?: 0)
+            remoteValues?.let { config ->
+                DrawnConfiguration(version = config.version ?: 0)
             }
         }
         childScope?.drawnConfiguration = drawnConfiguration
@@ -393,10 +394,10 @@ internal class RumSessionScope(
      * unusable — a throw, a null, a rate outside 0..100 — leaves the incoming rate alone: a mistake
      * in the host application must never take a customer's collection down with it.
      */
-    private fun askBeforeSampling(rate: Float): Float {
+    private fun askBeforeSampling(rate: Float, customJson: String?): Float {
         val hook = beforeSampling ?: return rate
         val override = try {
-            val custom = decodeCustomValues(remoteConfig?.custom())
+            val custom = decodeCustomValues(customJson)
             hook.sampleRate(BeforeSamplingContext(sessionSampleRate = rate, custom = custom))
         } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
             sdkCore.internalLogger.log(

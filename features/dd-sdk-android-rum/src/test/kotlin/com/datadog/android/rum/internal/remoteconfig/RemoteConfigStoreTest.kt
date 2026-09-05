@@ -81,6 +81,25 @@ internal class RemoteConfigStoreTest {
     // region persistence
 
     @Test
+    fun `M retain a snapshot after a later response is stored`() {
+        val store = testedStore()
+        val first = RemoteConfigValues(100f, 1, """{"cohort":"first"}""", "\"v1\"", 300L, true)
+        val second = RemoteConfigValues(0f, 2, """{"cohort":"second"}""", "\"v2\"", 600L, false)
+        store.store(first)
+        val snapshot = testedStore().snapshot()
+
+        store.store(second)
+
+        assertThat(snapshot).isEqualTo(first)
+        assertThat(store.snapshot()).isEqualTo(second)
+    }
+
+    @Test
+    fun `M return absent values W snapshot before the first response`() {
+        assertThat(testedStore().snapshot()).isEqualTo(RemoteConfigValues(null))
+    }
+
+    @Test
     fun `M read back on the next launch what a response stored W store()`() {
         testedStore().store(
             RemoteConfigValues(
