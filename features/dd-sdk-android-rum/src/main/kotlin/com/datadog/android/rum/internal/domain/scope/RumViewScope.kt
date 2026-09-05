@@ -43,6 +43,7 @@ import com.datadog.android.rum.internal.metric.networksettled.InternalResourceCo
 import com.datadog.android.rum.internal.metric.networksettled.NetworkSettledMetricResolver
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
 import com.datadog.android.rum.internal.monitor.StorageEvent
+import com.datadog.android.rum.internal.remoteconfig.DrawnConfiguration
 import com.datadog.android.rum.internal.toError
 import com.datadog.android.rum.internal.toLongTask
 import com.datadog.android.rum.internal.toView
@@ -81,6 +82,9 @@ internal open class RumViewScope(
     internal val type: RumViewType = RumViewType.FOREGROUND,
     private val trackFrustrations: Boolean,
     internal val sampleRate: Float,
+    // FLASHCAT FORK - the configuration the session was drawn under, reported on this view's
+    // events instead of the init values. Null when the app did not opt in to remote configuration.
+    internal val drawnConfiguration: DrawnConfiguration? = null,
     private val interactionToNextViewMetricResolver: InteractionToNextViewMetricResolver,
     private val networkSettledMetricResolver: NetworkSettledMetricResolver,
     private val slowFramesListener: SlowFramesListener?,
@@ -445,7 +449,19 @@ internal open class RumViewScope(
         return !stopped
     }
 
-    internal fun renew(newEventTime: Time): RumViewScope {
+    /**
+     * FLASHCAT FORK - [sampleRate] and [drawnConfiguration] are passed in rather than copied from
+     * this scope, because a renewal is where a new session's draw takes effect: the view that
+     * survives it belongs to the session that has just been drawn, not to the one that ended. It is
+     * also that session's FIRST view, which is the one the intake reads the session's rate and
+     * configuration version from, so carrying this scope's own values across would misreport the
+     * whole session.
+     */
+    internal fun renew(
+        newEventTime: Time,
+        sampleRate: Float,
+        drawnConfiguration: DrawnConfiguration?
+    ): RumViewScope {
         return RumViewScope(
             parentScope = this,
             sdkCore = sdkCore,
@@ -462,6 +478,7 @@ internal open class RumViewScope(
             type = type,
             trackFrustrations = trackFrustrations,
             sampleRate = sampleRate,
+            drawnConfiguration = drawnConfiguration,
             interactionToNextViewMetricResolver = interactionToNextViewMetricResolver,
             networkSettledMetricResolver = networkSettledMetricResolver,
             viewEndedMetricDispatcher = viewEndedMetricDispatcher,
@@ -1346,7 +1363,17 @@ internal open class RumViewScope(
                         sessionPrecondition = rumContext.sessionStartReason.toViewSessionPrecondition()
                     ),
                     replayStats = replayStats,
-                    configuration = ViewEvent.Configuration(sessionSampleRate = sampleRate)
+                    // FLASHCAT FORK - the rates this session was actually drawn under (the
+                    // console's where it set them) and the settings version they came from, so
+                    // server-side extrapolation and audits line up with the draw. rc_version is a
+                    // FlashCat addition on top of the shared schema; our intake reads it, others
+                    // ignore it.
+                    configuration = ViewEvent.Configuration(
+                        sessionSampleRate = sampleRate,
+                        // Omitted rather than sent as 0 before the first configuration arrives —
+                        // the same shape iOS and HarmonyOS send, so one wire form means one thing.
+                        rcVersion = drawnConfiguration?.version?.takeIf { it > 0 }?.toLong()
+                    )
                 ),
                 connectivity = datadogContext.networkInfo.toViewConnectivity(),
                 service = datadogContext.service,
@@ -1647,6 +1674,7 @@ internal open class RumViewScope(
             frameRateVitalMonitor: VitalMonitor,
             trackFrustrations: Boolean,
             sampleRate: Float,
+            drawnConfiguration: DrawnConfiguration? = null,
             interactionToNextViewMetricResolver: InteractionToNextViewMetricResolver,
             networkSettledResourceIdentifier: InitialResourceIdentifier,
             slowFramesListener: SlowFramesListener?,
@@ -1683,6 +1711,7 @@ internal open class RumViewScope(
                 type = viewType,
                 trackFrustrations = trackFrustrations,
                 sampleRate = sampleRate,
+                drawnConfiguration = drawnConfiguration,
                 interactionToNextViewMetricResolver = interactionToNextViewMetricResolver,
                 networkSettledMetricResolver = networkSettledMetricResolver,
                 viewEndedMetricDispatcher = viewEndedMetricDispatcher,

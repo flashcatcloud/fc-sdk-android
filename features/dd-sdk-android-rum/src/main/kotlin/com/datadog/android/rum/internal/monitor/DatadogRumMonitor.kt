@@ -26,6 +26,7 @@ import com.datadog.android.core.metrics.MethodCallSamplingRate
 import com.datadog.android.internal.telemetry.InternalTelemetryEvent
 import com.datadog.android.internal.telemetry.InternalTelemetryEvent.ApiUsage.AddOperationStepVital.ActionType
 import com.datadog.android.internal.thread.NamedCallable
+import com.datadog.android.rum.BeforeSamplingCallback
 import com.datadog.android.rum.DdRumContentProvider
 import com.datadog.android.rum.ExperimentalRumApi
 import com.datadog.android.rum.RumActionType
@@ -58,6 +59,8 @@ import com.datadog.android.rum.internal.domain.scope.RumSessionScope
 import com.datadog.android.rum.internal.instrumentation.insights.InsightsCollector
 import com.datadog.android.rum.internal.metric.SessionMetricDispatcher
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
+import com.datadog.android.rum.internal.remoteconfig.RemoteConfigStore
+import com.datadog.android.rum.internal.remoteconfig.decodeCustomValues
 import com.datadog.android.rum.internal.startup.RumSessionScopeStartupManager
 import com.datadog.android.rum.internal.startup.RumStartupScenario
 import com.datadog.android.rum.internal.startup.RumTTIDInfo
@@ -99,7 +102,14 @@ internal class DatadogRumMonitor(
     batteryInfoProvider: InfoProvider<BatteryInfo>,
     displayInfoProvider: InfoProvider<DisplayInfo>,
     private val rumSessionScopeStartupManagerFactory: () -> RumSessionScopeStartupManager,
-    insightsCollector: InsightsCollector
+    insightsCollector: InsightsCollector,
+    // FLASHCAT FORK - the console's sampling rates, or null when the app did not opt in.
+    private val remoteConfig: RemoteConfigStore? = null,
+    // FLASHCAT FORK - fired after each session draw, so the stored configuration is re-fetched on
+    // the only rhythm that can matter. No-op when the app did not opt in.
+    private val onSessionDrawn: () -> Unit = {},
+    // FLASHCAT FORK - the host application's last word on the draw. Null unless the app set one.
+    private val beforeSampling: BeforeSamplingCallback? = null
 ) : RumMonitor, AdvancedRumMonitor {
 
     internal var rootScope = RumApplicationScope(
@@ -122,7 +132,10 @@ internal class DatadogRumMonitor(
         batteryInfoProvider = batteryInfoProvider,
         displayInfoProvider = displayInfoProvider,
         rumSessionScopeStartupManagerFactory = rumSessionScopeStartupManagerFactory,
-        insightsCollector = insightsCollector
+        insightsCollector = insightsCollector,
+        remoteConfig = remoteConfig,
+        onSessionDrawn = onSessionDrawn,
+        beforeSampling = beforeSampling
     )
 
     internal val keepAliveRunnable = Runnable {
@@ -443,6 +456,16 @@ internal class DatadogRumMonitor(
         handleEvent(
             RumRawEvent.StopSession()
         )
+    }
+
+    override fun setForcedSession() {
+        handleEvent(
+            RumRawEvent.SetForcedSession()
+        )
+    }
+
+    override fun getRemoteConfig(): Map<String, Any?>? {
+        return decodeCustomValues(remoteConfig?.custom())
     }
 
     @ExperimentalRumApi

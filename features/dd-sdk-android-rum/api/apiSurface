@@ -1,3 +1,7 @@
+data class com.datadog.android.rum.BeforeSamplingContext
+  constructor(Float, Map<String, Any?>?)
+interface com.datadog.android.rum.BeforeSamplingCallback
+  fun sampleRate(BeforeSamplingContext): Float?
 fun <T: java.io.Closeable, R> T.useMonitored(com.datadog.android.api.SdkCore = Datadog.getInstance(), (T) -> R): R
 annotation com.datadog.android.rum.ExperimentalRumApi
 object com.datadog.android.rum.GlobalRumMonitor
@@ -62,6 +66,8 @@ data class com.datadog.android.rum.RumConfiguration
   class Builder
     constructor(String)
     fun setSessionSampleRate(Float): Builder
+    fun setRemoteConfigurationEnabled(Boolean): Builder
+    fun setBeforeSampling(BeforeSamplingCallback): Builder
     fun collectAccessibility(Boolean): Builder
     fun setTelemetrySampleRate(Float): Builder
     fun trackUserInteractions(Array<com.datadog.android.rum.tracking.ViewAttributesProvider> = emptyArray(), com.datadog.android.rum.tracking.InteractionPredicate = NoOpInteractionPredicate()): Builder
@@ -116,6 +122,8 @@ interface com.datadog.android.rum.RumMonitor
   fun getAttributes(): Map<String, Any?>
   fun clearAttributes()
   fun stopSession()
+  fun setForcedSession()
+  fun getRemoteConfig(): Map<String, Any?>?
   fun addViewLoadingTime(Boolean)
   fun addViewAttributes(Map<String, Any?>)
   fun removeViewAttributes(Collection<String>)
@@ -1838,7 +1846,7 @@ data class com.datadog.android.rum.model.ViewEvent
       fun fromJson(kotlin.String): DdSession
       fun fromJsonObject(com.google.gson.JsonObject): DdSession
   data class Configuration
-    constructor(kotlin.Number, kotlin.Number? = null, kotlin.Number? = null, kotlin.Boolean? = null)
+    constructor(kotlin.Number, kotlin.Number? = null, kotlin.Number? = null, kotlin.Boolean? = null, kotlin.Long? = null)
     fun toJson(): com.google.gson.JsonElement
     companion object 
       fun fromJson(kotlin.String): Configuration

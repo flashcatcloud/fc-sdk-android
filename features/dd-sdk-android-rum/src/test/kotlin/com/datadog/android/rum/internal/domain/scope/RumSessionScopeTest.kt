@@ -20,6 +20,8 @@ import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.core.internal.net.FirstPartyHostHeaderTypeResolver
 import com.datadog.android.internal.profiling.ProfilerStopEvent
 import com.datadog.android.internal.tests.stub.StubTimeProvider
+import com.datadog.android.rum.BeforeSamplingCallback
+import com.datadog.android.rum.BeforeSamplingContext
 import com.datadog.android.rum.RumSessionListener
 import com.datadog.android.rum.RumSessionType
 import com.datadog.android.rum.internal.domain.InfoProvider
@@ -31,6 +33,9 @@ import com.datadog.android.rum.internal.domain.display.DisplayInfo
 import com.datadog.android.rum.internal.instrumentation.insights.InsightsCollector
 import com.datadog.android.rum.internal.metric.SessionMetricDispatcher
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
+import com.datadog.android.rum.internal.remoteconfig.DrawnConfiguration
+import com.datadog.android.rum.internal.remoteconfig.RemoteConfigStore
+import com.datadog.android.rum.internal.remoteconfig.RemoteConfigValues
 import com.datadog.android.rum.internal.startup.RumAppStartupTelemetryReporter
 import com.datadog.android.rum.internal.startup.RumSessionScopeStartupManager
 import com.datadog.android.rum.internal.startup.RumStartupScenario
@@ -63,6 +68,7 @@ import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
@@ -78,6 +84,7 @@ import org.mockito.kotlin.whenever
 import org.mockito.quality.Strictness
 import java.lang.ref.WeakReference
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
 @Extensions(
     ExtendWith(MockitoExtension::class),
@@ -963,6 +970,298 @@ internal class RumSessionScopeTest {
 
     // endregion
 
+    // region Forced Session
+
+    @Test
+    fun `M start a tracked session W handleEvent(SetForcedSession) { zero sample rate }`() {
+        // Given
+        initializeTestedScope(0f)
+
+        // When
+        testedScope.handleEvent(RumRawEvent.SetForcedSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        val context = testedScope.getRumContext()
+
+        // Then
+        assertThat(context.sessionId).isNotEqualTo(RumContext.NULL_UUID)
+        assertThat(context.sessionState).isEqualTo(RumSessionScope.State.TRACKED)
+        assertThat(context.sessionStartReason).isEqualTo(RumSessionScope.StartReason.EXPLICIT_STOP)
+    }
+
+    @Test
+    fun `M keep the running session W handleEvent(SetForcedSession) { already collected }`(
+        @Forgery key: RumScopeKey
+    ) {
+        // Given a live session the draw already kept. It has to be started by an interaction:
+        // a session renewed with no interaction behind it expires on the very next event.
+        initializeTestedScope(100f, withMockChildScope = false)
+        testedScope.handleEvent(
+            RumRawEvent.StartView(key, emptyMap()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        val collectedSessionId = testedScope.getRumContext().sessionId
+        assertThat(testedScope.getRumContext().sessionState).isEqualTo(RumSessionScope.State.TRACKED)
+
+        // When
+        testedScope.handleEvent(RumRawEvent.SetForcedSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        // RUM cannot retro-collect what a running session already dropped, so cutting a session
+        // that is already collected in two would gain nothing. Same behaviour as iOS and HarmonyOS.
+        assertThat(testedScope.getRumContext().sessionId).isEqualTo(collectedSessionId)
+        assertThat(testedScope.forcedSession).isTrue()
+    }
+
+    @Test
+    fun `M keep the running forced session W handleEvent(SetForcedSession) { called again }`() {
+        // Given
+        initializeTestedScope(0f)
+        testedScope.handleEvent(RumRawEvent.SetForcedSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        val forcedSessionId = testedScope.getRumContext().sessionId
+
+        // When
+        testedScope.handleEvent(RumRawEvent.SetForcedSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        assertThat(testedScope.getRumContext().sessionId).isEqualTo(forcedSessionId)
+    }
+
+    @Test
+    fun `M leave the forced session alone W handleEvent(ResetSession)`() {
+        // A reset would only replace a forced session with an identical forced session, so the
+        // renewal buys nothing and costs the view the user is on. This is the path a console
+        // publishing "apply immediately" takes, and it must not cut a session the host application
+        // deliberately asked to keep.
+        initializeTestedScope(0f)
+        testedScope.handleEvent(RumRawEvent.SetForcedSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        val forcedSessionId = testedScope.getRumContext().sessionId
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        val context = testedScope.getRumContext()
+
+        // Then
+        assertThat(context.sessionId).isEqualTo(forcedSessionId)
+        assertThat(context.sessionState).isEqualTo(RumSessionScope.State.TRACKED)
+    }
+
+    @Test
+    fun `M renew on a reset W handleEvent(ResetSession) { session is not forced }`() {
+        // The negative control for the test above: an ordinary session is still renewed, so the
+        // guard is about forcing and not about resets in general.
+        initializeTestedScope(100f)
+        val firstSessionId = testedScope.getRumContext().sessionId
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        assertThat(testedScope.getRumContext().sessionId).isNotEqualTo(firstSessionId)
+    }
+
+    @Test
+    fun `M report a full rate and no configuration version W a forced session is drawn`() {
+        // A forced session was not drawn, so it does not report a rate it was drawn at: it reports
+        // the rate that describes it, which is that every session like it is kept. Reporting the
+        // rate it would have been drawn at would have the intake weight one deliberately kept
+        // session as the whole population that rate implies, and leave nothing to tell it from a
+        // lucky draw. This is the reporting the other SDKs use.
+        val mockRemoteConfig: RemoteConfigStore = mock()
+        whenever(mockRemoteConfig.snapshot()).thenReturn(RemoteConfigValues(1f, 7))
+        initializeTestedScope(1f, remoteConfig = mockRemoteConfig)
+
+        // When
+        testedScope.handleEvent(RumRawEvent.SetForcedSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(100f)
+        assertThat(testedScope.drawnConfiguration).isNull()
+    }
+
+    @Test
+    fun `M report the drawn rate and its version W a session is drawn without forcing`() {
+        // The negative control: the same store, the same rates, no forcing.
+        val mockRemoteConfig: RemoteConfigStore = mock()
+        whenever(mockRemoteConfig.snapshot()).thenReturn(RemoteConfigValues(1f, 7))
+        initializeTestedScope(1f, remoteConfig = mockRemoteConfig)
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(1f)
+        assertThat(testedScope.drawnConfiguration).isEqualTo(DrawnConfiguration(version = 7))
+    }
+
+    @Test
+    fun `M tell Session Replay the session is forced W handleEvent(SetForcedSession)`() {
+        // Given
+        initializeTestedScope(0f, withMockChildScope = false)
+
+        // When
+        testedScope.handleEvent(RumRawEvent.SetForcedSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        val argumentCaptor = argumentCaptor<Any>()
+        verify(mockSessionReplayFeatureScope, atLeastOnce()).sendEvent(argumentCaptor.capture())
+        assertThat(argumentCaptor.lastValue).isEqualTo(
+            mapOf(
+                RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
+                    RumSessionScope.RUM_SESSION_RENEWED_BUS_MESSAGE,
+                RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to true,
+                RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
+                    testedScope.getRumContext().sessionId
+            )
+        )
+    }
+
+    // endregion
+
+    // region Remote Configuration
+
+    @Test
+    fun `M keep one snapshot per draw W a response arrives during beforeSampling`() {
+        val first = RemoteConfigValues(100f, 1, custom = """{"cohort":"first"}""")
+        val second = RemoteConfigValues(0f, 2, custom = """{"cohort":"second"}""")
+        val published = AtomicReference(first)
+        val remoteConfig = mock<RemoteConfigStore>()
+        whenever(remoteConfig.snapshot()).thenAnswer { published.get() }
+        val seen = mutableListOf<BeforeSamplingContext>()
+        initializeTestedScope(remoteConfig = remoteConfig, beforeSampling = {
+            seen.add(it)
+            val responseThread = Thread { published.set(second) }
+            responseThread.start()
+            responseThread.join(5_000)
+            check(!responseThread.isAlive)
+            null
+        })
+
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        assertThat(published.get()).isEqualTo(second)
+        assertThat(seen.single().sessionSampleRate).isEqualTo(100f)
+        assertThat(seen.single().custom).isEqualTo(mapOf("cohort" to "first"))
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(100f)
+        assertThat(testedScope.drawnConfiguration?.version).isEqualTo(1)
+
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        assertThat(seen.last().sessionSampleRate).isEqualTo(0f)
+        assertThat(seen.last().custom).isEqualTo(mapOf("cohort" to "second"))
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(0f)
+        assertThat(testedScope.drawnConfiguration?.version).isEqualTo(2)
+    }
+
+    @Test
+    fun `M draw the session with the console's rates W handleEvent { remote configuration stored }`() {
+        // Given
+        val remoteConfig = mock<RemoteConfigStore>()
+        whenever(remoteConfig.snapshot()) doReturn RemoteConfigValues(42f, 7)
+        initializeTestedScope(sampleRate = 100f, remoteConfig = remoteConfig)
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        val context = testedScope.getRumContext()
+
+        // Then
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(42f)
+        assertThat(testedScope.drawnConfiguration).isEqualTo(
+            DrawnConfiguration(version = 7)
+        )
+    }
+
+    @Test
+    fun `M fall back to the init values W handleEvent { console set nothing }`() {
+        // Given
+        val remoteConfig = mock<RemoteConfigStore>()
+        whenever(remoteConfig.snapshot()) doReturn RemoteConfigValues(null)
+        initializeTestedScope(sampleRate = 80f, remoteConfig = remoteConfig)
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then - the draw used the init values, and version 0 says no configuration was ever fetched
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(80f)
+        assertThat(testedScope.drawnConfiguration?.version).isZero()
+    }
+
+    @Test
+    fun `M remember the draw for the session's events W handleEvent { remote configuration on }`() {
+        // Given
+        val remoteConfig = mock<RemoteConfigStore>()
+        whenever(remoteConfig.snapshot()) doReturn RemoteConfigValues(42f, 9)
+        initializeTestedScope(remoteConfig = remoteConfig)
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then - the version in force at the draw travels to the view scopes, which report it
+        val record = testedScope.drawnConfiguration
+        assertThat(record?.version).isEqualTo(9)
+        verify(mockChildScope).drawnConfiguration = record
+    }
+
+    @Test
+    fun `M ask the console again W handleEvent { a session was just drawn }`() {
+        // Given
+        var fetches = 0
+        initializeTestedScope(onSessionDrawn = { fetches++ })
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        assertThat(fetches).isOne()
+    }
+
+    @Test
+    fun `M record no draw W handleEvent { the app did not opt in }`() {
+        // Given
+        initializeTestedScope()
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then - events keep reporting the init values, which are the values the draw used anyway
+        assertThat(testedScope.drawnConfiguration).isNull()
+    }
+
+    @Test
+    fun `M tell Session Replay the console's replay rate W handleEvent { remote rate stored }`(
+        @Forgery key: RumScopeKey
+    ) {
+        // Given
+        val remoteConfig = mock<RemoteConfigStore>()
+        whenever(remoteConfig.snapshot()) doReturn RemoteConfigValues(100f)
+        initializeTestedScope(withMockChildScope = false, remoteConfig = remoteConfig)
+
+        // When
+        testedScope.handleEvent(
+            RumRawEvent.StartView(key, emptyMap()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        // Then
+        val argumentCaptor = argumentCaptor<Any>()
+        verify(mockSessionReplayFeatureScope, atLeastOnce()).sendEvent(argumentCaptor.capture())
+        assertThat(argumentCaptor.lastValue).isEqualTo(
+            mapOf(
+                RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
+                    RumSessionScope.RUM_SESSION_RENEWED_BUS_MESSAGE,
+                RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
+                    testedScope.getRumContext().sessionId
+            )
+        )
+    }
+
+    // endregion
+
     // region Active View
 
     @Test
@@ -1199,6 +1498,9 @@ internal class RumSessionScopeTest {
                 RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
                     RumSessionScope.RUM_SESSION_RENEWED_BUS_MESSAGE,
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
+                // No remote sampling configured here, so Session Replay is told to keep using the
+                // rate the app was built with.
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     testedScope.getRumContext().sessionId
             )
@@ -1208,6 +1510,9 @@ internal class RumSessionScopeTest {
                 RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
                     RumSessionScope.RUM_SESSION_RENEWED_BUS_MESSAGE,
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
+                // No remote sampling configured here, so Session Replay is told to keep using the
+                // rate the app was built with.
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     testedScope.getRumContext().sessionId
             )
@@ -1244,6 +1549,9 @@ internal class RumSessionScopeTest {
                 RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
                     RumSessionScope.RUM_SESSION_RENEWED_BUS_MESSAGE,
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to false,
+                // No remote sampling configured here, so Session Replay is told to keep using the
+                // rate the app was built with.
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     testedScope.getRumContext().sessionId
             )
@@ -1253,6 +1561,9 @@ internal class RumSessionScopeTest {
                 RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
                     RumSessionScope.RUM_SESSION_RENEWED_BUS_MESSAGE,
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to false,
+                // No remote sampling configured here, so Session Replay is told to keep using the
+                // rate the app was built with.
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     testedScope.getRumContext().sessionId
             )
@@ -1283,6 +1594,9 @@ internal class RumSessionScopeTest {
                 RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
                     RumSessionScope.RUM_SESSION_RENEWED_BUS_MESSAGE,
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
+                // No remote sampling configured here, so Session Replay is told to keep using the
+                // rate the app was built with.
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to firstSessionId
             )
         )
@@ -1291,6 +1605,9 @@ internal class RumSessionScopeTest {
                 RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
                     RumSessionScope.RUM_SESSION_RENEWED_BUS_MESSAGE,
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
+                // No remote sampling configured here, so Session Replay is told to keep using the
+                // rate the app was built with.
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId
             )
         )
@@ -1320,6 +1637,9 @@ internal class RumSessionScopeTest {
                 RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
                     RumSessionScope.RUM_SESSION_RENEWED_BUS_MESSAGE,
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
+                // No remote sampling configured here, so Session Replay is told to keep using the
+                // rate the app was built with.
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     firstSessionId
             )
@@ -1329,6 +1649,9 @@ internal class RumSessionScopeTest {
                 RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
                     RumSessionScope.RUM_SESSION_RENEWED_BUS_MESSAGE,
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
+                // No remote sampling configured here, so Session Replay is told to keep using the
+                // rate the app was built with.
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     secondSessionId
             )
@@ -1360,6 +1683,9 @@ internal class RumSessionScopeTest {
                 RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
                     RumSessionScope.RUM_SESSION_RENEWED_BUS_MESSAGE,
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
+                // No remote sampling configured here, so Session Replay is told to keep using the
+                // rate the app was built with.
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     firstSessionId
             )
@@ -1369,6 +1695,9 @@ internal class RumSessionScopeTest {
                 RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
                     RumSessionScope.RUM_SESSION_RENEWED_BUS_MESSAGE,
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
+                // No remote sampling configured here, so Session Replay is told to keep using the
+                // rate the app was built with.
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     secondSessionId
             )
@@ -1378,6 +1707,9 @@ internal class RumSessionScopeTest {
                 RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
                     RumSessionScope.RUM_SESSION_RENEWED_BUS_MESSAGE,
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
+                // No remote sampling configured here, so Session Replay is told to keep using the
+                // rate the app was built with.
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
                     secondSessionId
             )
@@ -1409,6 +1741,9 @@ internal class RumSessionScopeTest {
                 RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
                     RumSessionScope.RUM_SESSION_RENEWED_BUS_MESSAGE,
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to false,
+                // No remote sampling configured here, so Session Replay is told to keep using the
+                // rate the app was built with.
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to firstSessionId
             )
         )
@@ -1417,6 +1752,9 @@ internal class RumSessionScopeTest {
                 RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
                     RumSessionScope.RUM_SESSION_RENEWED_BUS_MESSAGE,
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to false,
+                // No remote sampling configured here, so Session Replay is told to keep using the
+                // rate the app was built with.
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId
 
             )
@@ -1448,6 +1786,9 @@ internal class RumSessionScopeTest {
                 RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
                     RumSessionScope.RUM_SESSION_RENEWED_BUS_MESSAGE,
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to false,
+                // No remote sampling configured here, so Session Replay is told to keep using the
+                // rate the app was built with.
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to firstSessionId
             )
         )
@@ -1456,6 +1797,9 @@ internal class RumSessionScopeTest {
                 RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
                     RumSessionScope.RUM_SESSION_RENEWED_BUS_MESSAGE,
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to false,
+                // No remote sampling configured here, so Session Replay is told to keep using the
+                // rate the app was built with.
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId
             )
         )
@@ -1487,6 +1831,9 @@ internal class RumSessionScopeTest {
                 RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
                     RumSessionScope.RUM_SESSION_RENEWED_BUS_MESSAGE,
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to false,
+                // No remote sampling configured here, so Session Replay is told to keep using the
+                // rate the app was built with.
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to firstSessionId
             )
         )
@@ -1495,6 +1842,9 @@ internal class RumSessionScopeTest {
                 RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
                     RumSessionScope.RUM_SESSION_RENEWED_BUS_MESSAGE,
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to false,
+                // No remote sampling configured here, so Session Replay is told to keep using the
+                // rate the app was built with.
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId
             )
         )
@@ -1503,6 +1853,9 @@ internal class RumSessionScopeTest {
                 RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
                     RumSessionScope.RUM_SESSION_RENEWED_BUS_MESSAGE,
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to false,
+                // No remote sampling configured here, so Session Replay is told to keep using the
+                // rate the app was built with.
+                RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId
             )
         )
@@ -1678,10 +2031,83 @@ internal class RumSessionScopeTest {
         )
     }
 
+    // region beforeSampling
+
+    @Test
+    fun `M draw with the hook's rate W handleEvent { beforeSampling overrides }`() {
+        // Given
+        val remoteConfig = mock<RemoteConfigStore>()
+        whenever(remoteConfig.snapshot()) doReturn RemoteConfigValues(1f)
+        initializeTestedScope(sampleRate = 100f, remoteConfig = remoteConfig, beforeSampling = { 100f })
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(100f)
+    }
+
+    @Test
+    fun `M see the console's rate W handleEvent { beforeSampling reads its context }`() {
+        // Given
+        val remoteConfig = mock<RemoteConfigStore>()
+        whenever(remoteConfig.snapshot()) doReturn RemoteConfigValues(42f, custom = """{"vip":["a"]}""")
+        var seen: BeforeSamplingContext? = null
+        initializeTestedScope(
+            sampleRate = 100f,
+            remoteConfig = remoteConfig,
+            beforeSampling = {
+                seen = it
+                null
+            }
+        )
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        // The hook is consulted AFTER the console, so what it sees is the rate that would apply.
+        assertThat(seen?.sessionSampleRate).isEqualTo(42f)
+        assertThat(seen?.custom).isEqualTo(mapOf("vip" to listOf("a")))
+    }
+
+    @Test
+    fun `M keep the incoming rate W handleEvent { beforeSampling returns nothing }`() {
+        initializeTestedScope(sampleRate = 30f, beforeSampling = { null })
+
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(30f)
+    }
+
+    @Test
+    fun `M keep the incoming rate W handleEvent { beforeSampling returns an impossible rate }`() {
+        initializeTestedScope(sampleRate = 30f, beforeSampling = { 150f })
+
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(30f)
+    }
+
+    @Test
+    fun `M keep collecting W handleEvent { beforeSampling throws }`() {
+        // A mistake in the host application must never take a customer's collection down with it.
+        initializeTestedScope(sampleRate = 30f, beforeSampling = { throw IllegalStateException("boom") })
+
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(30f)
+    }
+
+    // endregion
+
     private fun initializeTestedScope(
         sampleRate: Float = 100f,
         withMockChildScope: Boolean = true,
-        backgroundTrackingEnabled: Boolean? = null
+        backgroundTrackingEnabled: Boolean? = null,
+        remoteConfig: RemoteConfigStore? = null,
+        onSessionDrawn: () -> Unit = {},
+        beforeSampling: BeforeSamplingCallback? = null
     ) {
         testedScope = RumSessionScope(
             parentScope = mockParentScope,
@@ -1707,7 +2133,10 @@ internal class RumSessionScopeTest {
             batteryInfoProvider = mockBatteryInfoProvider,
             displayInfoProvider = mockDisplayInfoProvider,
             rumSessionScopeStartupManagerFactory = { mockRumSessionScopeStartupManager },
-            insightsCollector = mockInsightsCollector
+            insightsCollector = mockInsightsCollector,
+            remoteConfig = remoteConfig,
+            onSessionDrawn = onSessionDrawn,
+            beforeSampling = beforeSampling
         )
 
         if (withMockChildScope) {

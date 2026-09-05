@@ -32,6 +32,7 @@ import com.datadog.android.rum.internal.metric.ViewEndedMetricDispatcher
 import com.datadog.android.rum.internal.metric.interactiontonextview.InteractionToNextViewMetricResolver
 import com.datadog.android.rum.internal.metric.networksettled.NetworkSettledMetricResolver
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
+import com.datadog.android.rum.internal.remoteconfig.DrawnConfiguration
 import com.datadog.android.rum.internal.vitals.NoOpVitalMonitor
 import com.datadog.android.rum.internal.vitals.VitalMonitor
 import com.datadog.android.rum.metric.interactiontonextview.LastInteractionIdentifier
@@ -52,7 +53,12 @@ internal class RumViewManagerScope(
     private val memoryVitalMonitor: VitalMonitor,
     private val frameRateVitalMonitor: VitalMonitor,
     internal var applicationDisplayed: Boolean,
-    internal val sampleRate: Float,
+    // FLASHCAT FORK - var rather than val: the session scope sets this to the rate it actually
+    // drew with, which the console can change between sessions.
+    internal var sampleRate: Float,
+    // FLASHCAT FORK - the configuration the session was drawn under, handed to each view scope so
+    // its events report the draw rather than the init values. Null when the app did not opt in.
+    internal var drawnConfiguration: DrawnConfiguration? = null,
     internal val initialResourceIdentifier: InitialResourceIdentifier,
     private val slowFramesListener: SlowFramesListener?,
     lastInteractionIdentifier: LastInteractionIdentifier?,
@@ -155,7 +161,10 @@ internal class RumViewManagerScope(
 
     internal fun renewViewScopes(eventTime: Time) {
         val newChildScope = childrenScopes.map { rumViewScope ->
-            rumViewScope.renew(eventTime)
+            // FLASHCAT FORK - the session scope has just written this scope's `sampleRate` and
+            // `drawnConfiguration` with the draw the renewed views belong to; handing them down is
+            // what makes the surviving view report the new session rather than the one that ended.
+            rumViewScope.renew(eventTime, sampleRate, drawnConfiguration)
         }
         childrenScopes.clear()
         childrenScopes.addAll(newChildScope)
@@ -281,6 +290,7 @@ internal class RumViewManagerScope(
             frameRateVitalMonitor = frameRateVitalMonitor,
             trackFrustrations = trackFrustrations,
             sampleRate = sampleRate,
+            drawnConfiguration = drawnConfiguration,
             interactionToNextViewMetricResolver = interactionToNextViewMetricResolver,
             networkSettledResourceIdentifier = initialResourceIdentifier,
             slowFramesListener = slowFramesListener,
@@ -364,6 +374,7 @@ internal class RumViewManagerScope(
             type = viewType,
             trackFrustrations = trackFrustrations,
             sampleRate = sampleRate,
+            drawnConfiguration = drawnConfiguration,
             interactionToNextViewMetricResolver = interactionToNextViewMetricResolver,
             networkSettledMetricResolver = networkSettledMetricResolver,
             viewEndedMetricDispatcher = viewEndedMetricDispatcher,
@@ -407,6 +418,7 @@ internal class RumViewManagerScope(
             type = viewType,
             trackFrustrations = trackFrustrations,
             sampleRate = sampleRate,
+            drawnConfiguration = drawnConfiguration,
             interactionToNextViewMetricResolver = interactionToNextViewMetricResolver,
             networkSettledMetricResolver = networkSettledMetricResolver,
             viewEndedMetricDispatcher = viewEndedMetricDispatcher,

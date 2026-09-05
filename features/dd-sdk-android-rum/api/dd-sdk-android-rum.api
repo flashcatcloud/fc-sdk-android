@@ -1,3 +1,20 @@
+public abstract interface class com/datadog/android/rum/BeforeSamplingCallback {
+	public abstract fun sampleRate (Lcom/datadog/android/rum/BeforeSamplingContext;)Ljava/lang/Float;
+}
+
+public final class com/datadog/android/rum/BeforeSamplingContext {
+	public fun <init> (FLjava/util/Map;)V
+	public final fun component1 ()F
+	public final fun component2 ()Ljava/util/Map;
+	public final fun copy (FLjava/util/Map;)Lcom/datadog/android/rum/BeforeSamplingContext;
+	public static synthetic fun copy$default (Lcom/datadog/android/rum/BeforeSamplingContext;FLjava/util/Map;ILjava/lang/Object;)Lcom/datadog/android/rum/BeforeSamplingContext;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCustom ()Ljava/util/Map;
+	public final fun getSessionSampleRate ()F
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class com/datadog/android/rum/CloseableExtKt {
 	public static final fun useMonitored (Ljava/io/Closeable;Lcom/datadog/android/api/SdkCore;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 	public static synthetic fun useMonitored$default (Ljava/io/Closeable;Lcom/datadog/android/api/SdkCore;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
@@ -103,10 +120,12 @@ public final class com/datadog/android/rum/RumConfiguration$Builder {
 	public final fun collectAccessibility (Z)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun disableUserInteractionTracking ()Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun setActionEventMapper (Lcom/datadog/android/event/EventMapper;)Lcom/datadog/android/rum/RumConfiguration$Builder;
+	public final fun setBeforeSampling (Lcom/datadog/android/rum/BeforeSamplingCallback;)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun setErrorEventMapper (Lcom/datadog/android/event/EventMapper;)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun setInitialResourceIdentifier (Lcom/datadog/android/rum/metric/networksettled/InitialResourceIdentifier;)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun setLastInteractionIdentifier (Lcom/datadog/android/rum/metric/interactiontonextview/LastInteractionIdentifier;)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun setLongTaskEventMapper (Lcom/datadog/android/event/EventMapper;)Lcom/datadog/android/rum/RumConfiguration$Builder;
+	public final fun setRemoteConfigurationEnabled (Z)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun setResourceEventMapper (Lcom/datadog/android/event/EventMapper;)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun setSessionListener (Lcom/datadog/android/rum/RumSessionListener;)Lcom/datadog/android/rum/RumConfiguration$Builder;
 	public final fun setSessionSampleRate (F)Lcom/datadog/android/rum/RumConfiguration$Builder;
@@ -161,10 +180,12 @@ public abstract interface class com/datadog/android/rum/RumMonitor {
 	public abstract fun getAttributes ()Ljava/util/Map;
 	public abstract fun getCurrentSessionId (Lkotlin/jvm/functions/Function1;)V
 	public abstract fun getDebug ()Z
+	public abstract fun getRemoteConfig ()Ljava/util/Map;
 	public abstract fun removeAttribute (Ljava/lang/String;)V
 	public abstract fun removeViewAttributes (Ljava/util/Collection;)V
 	public abstract fun reportAppFullyDisplayed ()V
 	public abstract fun setDebug (Z)V
+	public abstract fun setForcedSession ()V
 	public abstract fun startAction (Lcom/datadog/android/rum/RumActionType;Ljava/lang/String;Ljava/util/Map;)V
 	public abstract fun startFeatureOperation (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)V
 	public abstract fun startResource (Ljava/lang/String;Lcom/datadog/android/rum/RumResourceMethod;Ljava/lang/String;Ljava/util/Map;)V
@@ -4942,18 +4963,20 @@ public final class com/datadog/android/rum/model/ViewEvent$Companion {
 
 public final class com/datadog/android/rum/model/ViewEvent$Configuration {
 	public static final field Companion Lcom/datadog/android/rum/model/ViewEvent$Configuration$Companion;
-	public fun <init> (Ljava/lang/Number;Ljava/lang/Number;Ljava/lang/Number;Ljava/lang/Boolean;)V
-	public synthetic fun <init> (Ljava/lang/Number;Ljava/lang/Number;Ljava/lang/Number;Ljava/lang/Boolean;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/Number;Ljava/lang/Number;Ljava/lang/Number;Ljava/lang/Boolean;Ljava/lang/Long;)V
+	public synthetic fun <init> (Ljava/lang/Number;Ljava/lang/Number;Ljava/lang/Number;Ljava/lang/Boolean;Ljava/lang/Long;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/Number;
 	public final fun component2 ()Ljava/lang/Number;
 	public final fun component3 ()Ljava/lang/Number;
 	public final fun component4 ()Ljava/lang/Boolean;
-	public final fun copy (Ljava/lang/Number;Ljava/lang/Number;Ljava/lang/Number;Ljava/lang/Boolean;)Lcom/datadog/android/rum/model/ViewEvent$Configuration;
-	public static synthetic fun copy$default (Lcom/datadog/android/rum/model/ViewEvent$Configuration;Ljava/lang/Number;Ljava/lang/Number;Ljava/lang/Number;Ljava/lang/Boolean;ILjava/lang/Object;)Lcom/datadog/android/rum/model/ViewEvent$Configuration;
+	public final fun component5 ()Ljava/lang/Long;
+	public final fun copy (Ljava/lang/Number;Ljava/lang/Number;Ljava/lang/Number;Ljava/lang/Boolean;Ljava/lang/Long;)Lcom/datadog/android/rum/model/ViewEvent$Configuration;
+	public static synthetic fun copy$default (Lcom/datadog/android/rum/model/ViewEvent$Configuration;Ljava/lang/Number;Ljava/lang/Number;Ljava/lang/Number;Ljava/lang/Boolean;Ljava/lang/Long;ILjava/lang/Object;)Lcom/datadog/android/rum/model/ViewEvent$Configuration;
 	public fun equals (Ljava/lang/Object;)Z
 	public static final fun fromJson (Ljava/lang/String;)Lcom/datadog/android/rum/model/ViewEvent$Configuration;
 	public static final fun fromJsonObject (Lcom/google/gson/JsonObject;)Lcom/datadog/android/rum/model/ViewEvent$Configuration;
 	public final fun getProfilingSampleRate ()Ljava/lang/Number;
+	public final fun getRcVersion ()Ljava/lang/Long;
 	public final fun getSessionReplaySampleRate ()Ljava/lang/Number;
 	public final fun getSessionSampleRate ()Ljava/lang/Number;
 	public final fun getStartSessionReplayRecordingManually ()Ljava/lang/Boolean;

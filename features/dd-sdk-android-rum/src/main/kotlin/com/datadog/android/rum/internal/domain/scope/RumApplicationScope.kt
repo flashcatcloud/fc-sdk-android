@@ -14,6 +14,7 @@ import com.datadog.android.api.feature.EventWriteScope
 import com.datadog.android.api.storage.DataWriter
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.core.internal.net.FirstPartyHostHeaderTypeResolver
+import com.datadog.android.rum.BeforeSamplingCallback
 import com.datadog.android.rum.DdRumContentProvider
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.RumSessionListener
@@ -27,6 +28,7 @@ import com.datadog.android.rum.internal.domain.display.DisplayInfo
 import com.datadog.android.rum.internal.instrumentation.insights.InsightsCollector
 import com.datadog.android.rum.internal.metric.SessionMetricDispatcher
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
+import com.datadog.android.rum.internal.remoteconfig.RemoteConfigStore
 import com.datadog.android.rum.internal.startup.RumSessionScopeStartupManager
 import com.datadog.android.rum.internal.vitals.VitalMonitor
 import com.datadog.android.rum.metric.interactiontonextview.LastInteractionIdentifier
@@ -54,7 +56,14 @@ internal class RumApplicationScope(
     private val batteryInfoProvider: InfoProvider<BatteryInfo>,
     private val displayInfoProvider: InfoProvider<DisplayInfo>,
     private val rumSessionScopeStartupManagerFactory: () -> RumSessionScopeStartupManager,
-    private val insightsCollector: InsightsCollector
+    private val insightsCollector: InsightsCollector,
+    // FLASHCAT FORK - the console's sampling rates, or null when the app did not opt in.
+    private val remoteConfig: RemoteConfigStore? = null,
+    // FLASHCAT FORK - fired after each session draw, so the stored configuration is re-fetched on
+    // the only rhythm that can matter. No-op when the app did not opt in.
+    private val onSessionDrawn: () -> Unit = {},
+    // FLASHCAT FORK - the host application's last word on the draw. Null unless the app set one.
+    private val beforeSampling: BeforeSamplingCallback? = null
 ) : RumScope, RumViewChangedListener {
 
     override val parentScope: RumScope? = null
@@ -67,6 +76,9 @@ internal class RumApplicationScope(
             sdkCore = sdkCore,
             sessionEndedMetricDispatcher = sessionEndedMetricDispatcher,
             sampleRate = sampleRate,
+            remoteConfig = remoteConfig,
+            onSessionDrawn = onSessionDrawn,
+            beforeSampling = beforeSampling,
             backgroundTrackingEnabled = backgroundTrackingEnabled,
             trackFrustrations = trackFrustrations,
             viewChangedListener = this,
@@ -104,6 +116,13 @@ internal class RumApplicationScope(
     private var lastActiveViewInfo: RumViewInfo? = null
     private var isAppStartedEventSent = false
 
+    // FLASHCAT FORK - whether the host application has called `setForcedSession()`. It lives here
+    // rather than on the session scope because it has to outlive one: `stopSession()` leaves the
+    // session scope behind, and the next interaction builds a fresh one, which would otherwise be
+    // drawn as if the application had never asked. Set once and never cleared - the application
+    // decides on each launch whether to ask again.
+    private var forcedSession = false
+
     // region RumScope
 
     @WorkerThread
@@ -118,6 +137,12 @@ internal class RumApplicationScope(
                 syntheticsTestId = event.testId,
                 syntheticsResultId = event.resultId
             )
+        }
+
+        // FLASHCAT FORK - recorded before the event reaches the sessions, so that a session created
+        // by this very event is already drawn as forced.
+        if (event is RumRawEvent.SetForcedSession) {
+            forcedSession = true
         }
 
         val isInteraction = (event is RumRawEvent.StartView) || (event is RumRawEvent.StartAction)
@@ -206,7 +231,11 @@ internal class RumApplicationScope(
             batteryInfoProvider = batteryInfoProvider,
             displayInfoProvider = displayInfoProvider,
             rumSessionScopeStartupManagerFactory = rumSessionScopeStartupManagerFactory,
-            insightsCollector = insightsCollector
+            insightsCollector = insightsCollector,
+            remoteConfig = remoteConfig,
+            onSessionDrawn = onSessionDrawn,
+            beforeSampling = beforeSampling,
+            forcedSession = forcedSession
         )
         childScopes.add(newSession)
         if (event !is RumRawEvent.StartView) {

@@ -347,6 +347,62 @@ internal class RumApplicationScopeTest {
     }
 
     @Test
+    fun `M carry the forced state into a new session W handleEvent { session was stopped }`(
+        @StringForgery viewKey: String,
+        @StringForgery viewName: String
+    ) {
+        // The host application asked for this user's sessions to be collected, not for whichever
+        // session happened to be running when it asked. A `stopSession()` - the ordinary thing to
+        // do on logout - leaves the session scope behind, and the session that replaces it must
+        // still be forced, or the promise breaks exactly when support needs it.
+        testedScope.handleEvent(
+            RumRawEvent.SetForcedSession(),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        testedScope.handleEvent(RumRawEvent.StopSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // When
+        testedScope.handleEvent(
+            RumRawEvent.StartView(
+                key = RumScopeKey.from(viewKey, viewName),
+                attributes = mapOf()
+            ),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        // Then
+        assertThat(testedScope.childScopes).hasSize(1)
+        assertThat(testedScope.childScopes.first().forcedSession).isTrue()
+    }
+
+    @Test
+    fun `M leave a new session unforced W handleEvent { nothing ever forced }`(
+        @StringForgery viewKey: String,
+        @StringForgery viewName: String
+    ) {
+        // The negative control for the test above.
+        testedScope.handleEvent(RumRawEvent.StopSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // When
+        testedScope.handleEvent(
+            RumRawEvent.StartView(
+                key = RumScopeKey.from(viewKey, viewName),
+                attributes = mapOf()
+            ),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        // Then
+        assertThat(testedScope.childScopes.first().forcedSession).isFalse()
+    }
+
+    @Test
     fun `M create a new session W handleEvent { no active sessions, start view } `(
         @StringForgery viewKey: String,
         @StringForgery viewName: String
