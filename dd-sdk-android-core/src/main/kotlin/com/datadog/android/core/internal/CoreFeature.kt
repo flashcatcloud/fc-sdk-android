@@ -341,7 +341,14 @@ internal class CoreFeature(
     fun createOkHttpCallFactory(block: OkHttpClient.Builder.() -> Unit): Call.Factory {
         return object : Call.Factory {
             // Create a new client that shares pools with the base client
-            private val client = lazySharedOkHttpClient.newBuilder()
+            private val client = callFactory.okhttpClient.newBuilder()
+                // Feature requests inherit transport settings, not upload encoding or logging.
+                .apply {
+                    @Suppress("UnsafeThirdPartyFunctionCall") // Returns the builder's mutable list.
+                    interceptors().clear()
+                    @Suppress("UnsafeThirdPartyFunctionCall") // Returns the builder's mutable list.
+                    networkInterceptors().clear()
+                }
                 .apply(block)
                 .build()
 

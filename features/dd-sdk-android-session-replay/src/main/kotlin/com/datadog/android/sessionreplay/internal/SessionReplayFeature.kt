@@ -112,10 +112,6 @@ internal class SessionReplayFeature(
     // are we recording at the moment
     private val isRecording = AtomicBoolean(false)
 
-    // FLASHCAT FORK - true when RUM renewed this session under a forced draw; replay then skips
-    // its own draw, because a forced session must come out with replay.
-    internal var sessionForced: Boolean = false
-
     // is the current session sampled in
     private val isSessionSampledIn = AtomicBoolean(false)
 
@@ -235,8 +231,9 @@ internal class SessionReplayFeature(
             parseSessionMetadata(sessionMetadata)
                 ?.let { sessionData ->
                     val alreadySeenSession = currentRumSessionId.get() == sessionData.sessionId
-                    if (shouldHandleSession(alreadySeenSession)) {
-                        applySampling(alreadySeenSession)
+                    val forceSampling = sessionData.forced && !isSessionSampledIn.get()
+                    if (!alreadySeenSession || forceSampling || userIntentToRecordChanged.get()) {
+                        applySampling(alreadySeenSession, sessionData.forced)
                         modifyShouldRecordState(sessionData)
                         handleRecording(sessionData)
                     }
@@ -257,29 +254,28 @@ internal class SessionReplayFeature(
 
     private data class SessionData(
         val keepSession: Boolean,
-        val sessionId: String
+        val sessionId: String,
+        val forced: Boolean
     )
 
     private fun parseSessionMetadata(sessionMetadata: Map<*, *>): SessionData? {
         val keepSession = sessionMetadata[RUM_KEEP_SESSION_BUS_MESSAGE_KEY] as? Boolean
         val sessionId = sessionMetadata[RUM_SESSION_ID_BUS_MESSAGE_KEY] as? String
-        sessionForced = sessionMetadata[RUM_SESSION_FORCED_BUS_MESSAGE_KEY] as? Boolean ?: false
 
         if (keepSession == null || sessionId == null) {
             logEventMissingMandatoryFieldsError()
             return null
         }
 
-        return SessionData(keepSession, sessionId)
+        val forced = sessionMetadata[RUM_SESSION_FORCED_BUS_MESSAGE_KEY] as? Boolean ?: false
+        return SessionData(keepSession, sessionId, forced)
     }
 
-    private fun shouldHandleSession(alreadySeenSession: Boolean): Boolean {
-        return !alreadySeenSession || userIntentToRecordChanged.get()
-    }
-
-    private fun applySampling(alreadySeenSession: Boolean) {
-        if (!alreadySeenSession) {
-            isSessionSampledIn.set(sessionForced || rateBasedSampler.sample(Unit))
+    private fun applySampling(alreadySeenSession: Boolean, forced: Boolean) {
+        if (forced) {
+            isSessionSampledIn.set(true)
+        } else if (!alreadySeenSession) {
+            isSessionSampledIn.set(rateBasedSampler.sample(Unit))
         }
     }
 

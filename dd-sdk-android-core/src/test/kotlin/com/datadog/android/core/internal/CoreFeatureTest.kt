@@ -62,6 +62,8 @@ import okhttp3.CipherSuite
 import okhttp3.ConnectionSpec
 import okhttp3.Protocol
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.ResponseBody.Companion.toResponseBody
 import okhttp3.TlsVersion
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
@@ -1669,5 +1671,67 @@ internal class CoreFeatureTest {
         fun getTestConfigurations(): List<TestConfiguration> {
             return listOf(appContext)
         }
+    }
+
+    @Test
+    fun `M remote factory preserves configured proxy W configuration changes`() {
+        val proxy = java.net.Proxy(java.net.Proxy.Type.HTTP, java.net.InetSocketAddress("127.0.0.1", 18888))
+        val proxyAuth: Authenticator = mock()
+        testedFeature.initialize(
+            appContext.mockInstance,
+            fakeSdkInstanceId,
+            fakeConfig.copy(coreConfig = fakeConfig.coreConfig.copy(proxy = proxy, proxyAuth = proxyAuth)),
+            fakeConsent
+        )
+        assertThat(testedFeature.callFactory.okhttpClient.proxy).isSameAs(proxy)
+        val call = testedFeature.createOkHttpCallFactory {}.newCall(
+            Request.Builder().url("https://example.com").build()
+        )
+        val field = call.javaClass.getDeclaredField("client").apply { isAccessible = true }
+        val client = field.get(call) as okhttp3.OkHttpClient
+        assertThat(client.proxy).isSameAs(proxy)
+        assertThat(client.proxyAuthenticator).isSameAs(proxyAuth)
+    }
+
+    @Test
+    fun `M remote factory preserves explicitly allowed cleartext W configuration changes`() {
+        testedFeature.initialize(
+            appContext.mockInstance,
+            fakeSdkInstanceId,
+            fakeConfig.copy(coreConfig = fakeConfig.coreConfig.copy(needsClearTextHttp = true)),
+            fakeConsent
+        )
+        assertThat(testedFeature.callFactory.okhttpClient.connectionSpecs).contains(ConnectionSpec.CLEARTEXT)
+        val call = testedFeature.createOkHttpCallFactory {
+        }.newCall(Request.Builder().url("http://127.0.0.1:18889/config").build())
+        val field = call.javaClass.getDeclaredField("client").apply { isAccessible = true }
+        val client = field.get(call) as okhttp3.OkHttpClient
+        assertThat(client.connectionSpecs).contains(ConnectionSpec.CLEARTEXT)
+    }
+
+    @Test
+    fun `M preserve feature POST bodies W creating a configured client`() {
+        testedFeature.initialize(appContext.mockInstance, fakeSdkInstanceId, fakeConfig, fakeConsent)
+        val body = "plain feature payload".toByteArray()
+        val factory = testedFeature.createOkHttpCallFactory {
+            addInterceptor { chain ->
+                val request = chain.request()
+                val buffer = okio.Buffer()
+                request.body!!.writeTo(buffer)
+                assertThat(buffer.readByteArray()).isEqualTo(body)
+                assertThat(request.header("Content-Encoding")).isNull()
+                okhttp3.Response.Builder().request(request).protocol(Protocol.HTTP_1_1)
+                    .code(200).message("OK").body("".toResponseBody()).build()
+            }
+        }
+        val call = factory.newCall(
+            Request.Builder().url("https://example.com/flags")
+                .post(body.toRequestBody()).build()
+        )
+        val field = call.javaClass.getDeclaredField("client").apply { isAccessible = true }
+        val client = field.get(call) as okhttp3.OkHttpClient
+        assertThat(client.interceptors).hasSize(1)
+        assertThat(client.networkInterceptors).isEmpty()
+        assertThat(call.execute().code).isEqualTo(200)
     }
 }

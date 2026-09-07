@@ -182,13 +182,19 @@ internal class RumSessionScope(
         writeScope: EventWriteScope,
         writer: DataWriter<Any>
     ): RumScope? {
+        val now = sdkCore.timeProvider.getDeviceElapsedTimeNanos()
         if (event is RumRawEvent.ResetSession) {
             // FLASHCAT FORK - two kinds of session must not be renewed here. A stopped one is
             // draining: renewing it would mint a session id under a scope whose own context already
             // reports the session as inactive, and would announce that session to the host
             // application's listener. A forced one would only ever be replaced by an identical
             // forced session, so the renewal buys nothing and costs the view the user is on.
-            if (isActive && !forcedSession) {
+            // A configuration change cannot create activity. Expired sessions are renewed by
+            // the next interaction; maximum-duration renewal keeps its normal start reason.
+            if (isActive && !forcedSession && sessionId != RumContext.NULL_UUID &&
+                now - lastUserInteractionNs.get() < sessionInactivityNanos &&
+                now - sessionStartNs.get() < sessionMaxDurationNanos
+            ) {
                 renewSession(event.eventTime, StartReason.EXPLICIT_STOP)
             }
         } else if (event is RumRawEvent.SetForcedSession && isActive) {
@@ -204,13 +210,13 @@ internal class RumSessionScope(
                 renewSession(event.eventTime, StartReason.EXPLICIT_STOP)
                 // Forcing is a deliberate act of the host application; without this the renewal
                 // is immediately re-expired when no user interaction happened yet.
-                lastUserInteractionNs.set(sdkCore.timeProvider.getDeviceElapsedTimeNanos())
+                lastUserInteractionNs.set(now)
             }
         } else if (event is RumRawEvent.StopSession) {
             stopSession()
         }
 
-        updateSession(event)
+        updateSession(event, now)
 
         val actualWriter = if (sessionState == State.TRACKED) writer else noOpWriter
 
@@ -293,8 +299,7 @@ internal class RumSessionScope(
     }
 
     @Suppress("ComplexMethod")
-    private fun updateSession(event: RumRawEvent) {
-        val nanoTime = sdkCore.timeProvider.getDeviceElapsedTimeNanos()
+    private fun updateSession(event: RumRawEvent, nanoTime: Long) {
         val isNewSession = sessionId == RumContext.NULL_UUID
 
         val timeSinceLastInteractionNs = nanoTime - lastUserInteractionNs.get()

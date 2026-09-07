@@ -865,4 +865,172 @@ internal class RemoteConfigControllerTest {
     companion object {
         private const val INIT_SESSION_RATE = 20f
     }
+
+    @Test
+    fun `M rejects fractional schema instead of truncating W configuration changes`() {
+        val outcome = testedController.apply(body().replace("\"schema_version\":1", "\"schema_version\":1.5"))
+        assertThat(outcome).isEqualTo(RemoteConfigController.Outcome.UNSUPPORTED_SCHEMA)
+        verify(store, never()).store(any())
+    }
+
+    @Test
+    fun `M rejects incomplete stamped envelope without clearing rate W configuration changes`() {
+        whenever(store.sessionSampleRate()).thenReturn(0f)
+        whenever(store.appliedVersion()).thenReturn(3)
+        val outcome = testedController.apply("""{"schema_version":1,"version":4}""", "\"v4\"")
+        assertThat(outcome).isEqualTo(RemoteConfigController.Outcome.UNREADABLE)
+        verify(store, never()).store(any())
+    }
+
+    @Test
+    fun `M preserves valid disable response as negative control W configuration changes`() {
+        whenever(store.sessionSampleRate()).thenReturn(0f)
+        whenever(store.appliedVersion()).thenReturn(3)
+        assertThat(
+            testedController.apply(body(version = 4, enabled = false))
+        ).isEqualTo(RemoteConfigController.Outcome.APPLIED)
+        verify(store).store(RemoteConfigValues(null, 4, ttlSeconds = 300L))
+        assertThat(restarts).isEqualTo(1)
+    }
+
+    @Test
+    fun `M ignores an in flight response after stop W configuration changes`() {
+        whenever(call.execute()).thenAnswer {
+            testedController.stop()
+            response(200, body(rum = "\"sessionSampleRate\":0"))
+        }
+        runPendingFetch()
+        verify(store, never()).store(any())
+        assertThat(restarts).isZero()
+    }
+
+    @Test
+    fun `M applies response before stop as negative control W configuration changes`() {
+        whenever(call.execute()).thenReturn(response(200, body(rum = "\"sessionSampleRate\":0")))
+        runPendingFetch()
+        verify(store).store(RemoteConfigValues(0f, 3, ttlSeconds = 300L))
+        assertThat(restarts).isEqualTo(1)
+    }
+
+    @Test
+    fun `M real executor ignores late response after stop W configuration changes`() {
+        val entered = java.util.concurrent.CountDownLatch(1)
+        val release = java.util.concurrent.CountDownLatch(1)
+        val realExecutor = java.util.concurrent.Executors.newSingleThreadScheduledExecutor()
+        val sdkCore = mock<FeatureSdkCore>()
+        whenever(sdkCore.internalLogger).thenReturn(mock())
+        val controller = RemoteConfigController(
+            sdkCore,
+            "https://example.com/config?x=1",
+            store,
+            INIT_SESSION_RATE,
+            callFactory,
+            realExecutor,
+            { restarts++ }
+        )
+        whenever(call.execute()).thenAnswer {
+            entered.countDown()
+            while (release.count > 0) {
+                try { release.await(100, TimeUnit.MILLISECONDS) } catch (_: InterruptedException) { }
+            }
+            response(200, body(rum = "\"sessionSampleRate\":0"))
+        }
+        try {
+            controller.start()
+            assertThat(entered.await(5, TimeUnit.SECONDS)).isTrue()
+            controller.stop()
+            release.countDown()
+            assertThat(realExecutor.awaitTermination(5, TimeUnit.SECONDS)).isTrue()
+            verify(store, never()).store(any())
+            assertThat(restarts).isZero()
+        } finally {
+            release.countDown()
+            realExecutor.shutdownNow()
+        }
+    }
+
+    @Test
+    fun `M reject malformed mandatory fields W apply()`() {
+        val invalid = listOf(
+            """{"schema_version":1,"enabled":true,"rum":{}}""",
+            """{"schema_version":1,"version":-1,"enabled":true,"rum":{}}""",
+            """{"schema_version":1,"version":1.5,"enabled":true,"rum":{}}""",
+            """{"schema_version":1,"version":2147483648,"enabled":true,"rum":{}}""",
+            """{"schema_version":1,"version":"3","enabled":true,"rum":{}}""",
+            """{"schema_version":1,"version":3,"enabled":"false","rum":{}}""",
+            """{"schema_version":1,"version":3,"enabled":false,"rum":null}"""
+        )
+        invalid.forEach {
+            assertThat(testedController.apply(it)).isEqualTo(RemoteConfigController.Outcome.UNREADABLE)
+        }
+        verify(store, never()).store(any())
+        assertThat(restarts).isZero()
+    }
+
+    @Test
+    fun `M accept an unpublished configuration W apply()`() {
+        assertThat(testedController.apply(body(version = 0, enabled = false)))
+            .isEqualTo(RemoteConfigController.Outcome.APPLIED)
+        verify(store).store(RemoteConfigValues(null, ttlSeconds = 300L))
+    }
+
+    @Test
+    fun `M cancel the request without touching the cache W stop before a 304`() {
+        whenever(call.execute()).thenAnswer {
+            testedController.stop()
+            response(304, "")
+        }
+        runPendingFetch()
+        verify(call).cancel()
+        verify(store, never()).touch()
+        verify(executor, never()).schedule(any<Runnable>(), any(), any())
+    }
+
+    @Test
+    fun `M discard queued work W stop before fetch starts`() {
+        testedController.start()
+        val queued = argumentCaptor<Runnable>()
+        verify(executor).execute(queued.capture())
+        testedController.stop()
+        queued.firstValue.run()
+        testedController.start()
+        verify(store, never()).sweepAbandoned()
+        verify(callFactory, never()).newCall(any())
+        verify(executor).execute(any())
+    }
+
+    @Test
+    fun `M finish committing before stop returns W response already applying`() {
+        val storing = java.util.concurrent.CountDownLatch(1)
+        val releaseStore = java.util.concurrent.CountDownLatch(1)
+        val stopping = java.util.concurrent.CountDownLatch(1)
+        val workers = java.util.concurrent.Executors.newFixedThreadPool(2)
+        whenever(store.store(any())).thenAnswer {
+            storing.countDown()
+            check(releaseStore.await(5, TimeUnit.SECONDS))
+            Unit
+        }
+        try {
+            val applying = workers.submit<RemoteConfigController.Outcome> {
+                testedController.apply(body(rum = "\"sessionSampleRate\":0"))
+            }
+            assertThat(storing.await(5, TimeUnit.SECONDS)).isTrue()
+            val stopped = workers.submit {
+                stopping.countDown()
+                testedController.stop()
+                restarts
+            }
+            assertThat(stopping.await(5, TimeUnit.SECONDS)).isTrue()
+            assertThatThrownBy { stopped.get(100, TimeUnit.MILLISECONDS) }
+                .isInstanceOf(java.util.concurrent.TimeoutException::class.java)
+            releaseStore.countDown()
+            assertThat(applying.get(5, TimeUnit.SECONDS)).isEqualTo(RemoteConfigController.Outcome.APPLIED)
+            stopped.get(5, TimeUnit.SECONDS)
+            assertThat(restarts).isEqualTo(1)
+            assertThat(testedController.apply(body())).isEqualTo(RemoteConfigController.Outcome.STOPPED)
+        } finally {
+            releaseStore.countDown()
+            workers.shutdownNow()
+        }
+    }
 }

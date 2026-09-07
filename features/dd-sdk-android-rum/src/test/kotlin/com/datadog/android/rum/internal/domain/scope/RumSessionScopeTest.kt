@@ -1051,6 +1051,12 @@ internal class RumSessionScopeTest {
         // The negative control for the test above: an ordinary session is still renewed, so the
         // guard is about forcing and not about resets in general.
         initializeTestedScope(100f)
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
         val firstSessionId = testedScope.getRumContext().sessionId
 
         // When
@@ -1087,7 +1093,12 @@ internal class RumSessionScopeTest {
         initializeTestedScope(1f, remoteConfig = mockRemoteConfig)
 
         // When
-        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
 
         // Then
         assertThat(testedScope.effectiveSampleRate).isEqualTo(1f)
@@ -1138,7 +1149,12 @@ internal class RumSessionScopeTest {
             null
         })
 
-        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
 
         assertThat(published.get()).isEqualTo(second)
         assertThat(seen.single().sessionSampleRate).isEqualTo(100f)
@@ -1162,8 +1178,12 @@ internal class RumSessionScopeTest {
         initializeTestedScope(sampleRate = 100f, remoteConfig = remoteConfig)
 
         // When
-        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
-        val context = testedScope.getRumContext()
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
 
         // Then
         assertThat(testedScope.effectiveSampleRate).isEqualTo(42f)
@@ -1180,7 +1200,12 @@ internal class RumSessionScopeTest {
         initializeTestedScope(sampleRate = 80f, remoteConfig = remoteConfig)
 
         // When
-        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
 
         // Then - the draw used the init values, and version 0 says no configuration was ever fetched
         assertThat(testedScope.effectiveSampleRate).isEqualTo(80f)
@@ -1195,7 +1220,12 @@ internal class RumSessionScopeTest {
         initializeTestedScope(remoteConfig = remoteConfig)
 
         // When
-        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
 
         // Then - the version in force at the draw travels to the view scopes, which report it
         val record = testedScope.drawnConfiguration
@@ -1210,7 +1240,12 @@ internal class RumSessionScopeTest {
         initializeTestedScope(onSessionDrawn = { fetches++ })
 
         // When
-        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
 
         // Then
         assertThat(fetches).isOne()
@@ -1222,7 +1257,12 @@ internal class RumSessionScopeTest {
         initializeTestedScope()
 
         // When
-        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
 
         // Then - events keep reporting the init values, which are the values the draw used anyway
         assertThat(testedScope.drawnConfiguration).isNull()
@@ -2041,7 +2081,12 @@ internal class RumSessionScopeTest {
         initializeTestedScope(sampleRate = 100f, remoteConfig = remoteConfig, beforeSampling = { 100f })
 
         // When
-        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
 
         // Then
         assertThat(testedScope.effectiveSampleRate).isEqualTo(100f)
@@ -2063,7 +2108,12 @@ internal class RumSessionScopeTest {
         )
 
         // When
-        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
 
         // Then
         // The hook is consulted AFTER the console, so what it sees is the rate that would apply.
@@ -2075,7 +2125,12 @@ internal class RumSessionScopeTest {
     fun `M keep the incoming rate W handleEvent { beforeSampling returns nothing }`() {
         initializeTestedScope(sampleRate = 30f, beforeSampling = { null })
 
-        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
 
         assertThat(testedScope.effectiveSampleRate).isEqualTo(30f)
     }
@@ -2084,7 +2139,12 @@ internal class RumSessionScopeTest {
     fun `M keep the incoming rate W handleEvent { beforeSampling returns an impossible rate }`() {
         initializeTestedScope(sampleRate = 30f, beforeSampling = { 150f })
 
-        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
 
         assertThat(testedScope.effectiveSampleRate).isEqualTo(30f)
     }
@@ -2094,7 +2154,12 @@ internal class RumSessionScopeTest {
         // A mistake in the host application must never take a customer's collection down with it.
         initializeTestedScope(sampleRate = 30f, beforeSampling = { throw IllegalStateException("boom") })
 
-        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
 
         assertThat(testedScope.effectiveSampleRate).isEqualTo(30f)
     }
@@ -2165,5 +2230,118 @@ internal class RumSessionScopeTest {
 
             return forge.testRumStartupScenarios(weakActivity)
         }
+    }
+
+    @Test
+    fun `M idle reset must not announce an immediately expired session W configuration changes`() {
+        initializeTestedScope(100f)
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        val initial = testedScope.sessionId
+        org.mockito.kotlin.clearInvocations(mockSessionListener)
+        advanceTimeByMs(TEST_INACTIVITY_MS + 1)
+        testedScope.handleEvent(
+            RumRawEvent.ResetSession(currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.EXPIRED)
+        verifyNoInteractions(mockSessionListener)
+        assertThat(testedScope.sessionId).isEqualTo(initial)
+    }
+
+    @Test
+    fun `M active reset still renews as negative control W configuration changes`() {
+        initializeTestedScope(100f)
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        val initial = testedScope.sessionId
+        advanceTimeByMs(1)
+        testedScope.handleEvent(
+            RumRawEvent.ResetSession(currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.TRACKED)
+        assertThat(testedScope.sessionId).isNotEqualTo(initial)
+    }
+
+    @Test
+    fun `M not create a session W remote reset before any activity`() {
+        var draws = 0
+        initializeTestedScope(onSessionDrawn = { draws++ })
+        testedScope.handleEvent(
+            RumRawEvent.ResetSession(currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        assertThat(testedScope.sessionId).isEqualTo(RumContext.NULL_UUID)
+        assertThat(draws).isZero()
+        verifyNoInteractions(mockSessionListener)
+    }
+
+    @Test
+    fun `M preserve maximum duration renewal W remote reset at the duration limit`() {
+        initializeTestedScope(100f)
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        repeat(4) {
+            advanceTimeByMs(100)
+            testedScope.handleEvent(
+                RumRawEvent.SdkInit(true, currentFakeTime()),
+                fakeDatadogContext,
+                mockEventWriteScope,
+                mockWriter
+            )
+        }
+        org.mockito.kotlin.clearInvocations(mockSessionListener)
+        advanceTimeByMs(100)
+        testedScope.handleEvent(
+            RumRawEvent.ResetSession(currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        assertThat(testedScope.getRumContext().sessionStartReason).isEqualTo(RumSessionScope.StartReason.MAX_DURATION)
+        verify(mockSessionListener).onSessionStarted(testedScope.sessionId, false)
+    }
+
+    @Test
+    fun `M use one expiry decision W the sampling callback crosses the inactivity limit`() {
+        var advanceDuringDraw = false
+        initializeTestedScope(100f, beforeSampling = {
+            if (advanceDuringDraw) advanceTimeByMs(2)
+            null
+        })
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        advanceTimeByMs(TEST_INACTIVITY_MS - 1)
+        advanceDuringDraw = true
+        testedScope.handleEvent(
+            RumRawEvent.ResetSession(currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.TRACKED)
     }
 }

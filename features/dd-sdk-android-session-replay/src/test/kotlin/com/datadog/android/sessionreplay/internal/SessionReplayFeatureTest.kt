@@ -1497,4 +1497,87 @@ internal class SessionReplayFeatureTest {
             )
         }
     }
+
+    @Test
+    fun `M forcing an existing sampled out replay starts recording W configuration changes`() {
+        whenever(mockSampler.sample(any())).thenReturn(false)
+        testedFeature.onInitialize(appContext.mockInstance)
+        testedFeature.stopRecording()
+        val message = mapOf(
+            SessionReplayFeature.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
+                SessionReplayFeature.RUM_SESSION_RENEWED_BUS_MESSAGE,
+            SessionReplayFeature.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
+            SessionReplayFeature.RUM_SESSION_ID_BUS_MESSAGE_KEY to fakeSessionId
+        )
+        testedFeature.onReceive(message)
+        org.mockito.kotlin.clearInvocations(mockRecorder)
+        testedFeature.onReceive(message + (SessionReplayFeature.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to true))
+        verify(mockRecorder).resumeRecorders()
+    }
+
+    @Test
+    fun `M forcing a new session starts recording as negative control W configuration changes`() {
+        whenever(mockSampler.sample(any())).thenReturn(false)
+        testedFeature.onInitialize(appContext.mockInstance)
+        testedFeature.stopRecording()
+        val message = mapOf(
+            SessionReplayFeature.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
+                SessionReplayFeature.RUM_SESSION_RENEWED_BUS_MESSAGE,
+            SessionReplayFeature.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
+            SessionReplayFeature.RUM_SESSION_ID_BUS_MESSAGE_KEY to fakeSessionId
+        )
+        testedFeature.onReceive(message)
+        org.mockito.kotlin.clearInvocations(mockRecorder)
+        testedFeature.onReceive(
+            message + mapOf(
+                SessionReplayFeature.RUM_SESSION_ID_BUS_MESSAGE_KEY to java.util.UUID.randomUUID().toString(),
+                SessionReplayFeature.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to true
+            )
+        )
+        verify(mockRecorder).resumeRecorders()
+    }
+
+    @Test
+    fun `M respect manual stop W an existing session becomes forced`() {
+        whenever(mockSampler.sample(any())).thenReturn(false)
+        testedFeature.onInitialize(appContext.mockInstance)
+        testedFeature.stopRecording()
+        val message = mapOf(
+            SessionReplayFeature.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
+                SessionReplayFeature.RUM_SESSION_RENEWED_BUS_MESSAGE,
+            SessionReplayFeature.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
+            SessionReplayFeature.RUM_SESSION_ID_BUS_MESSAGE_KEY to fakeSessionId
+        )
+        testedFeature.onReceive(message)
+        testedFeature.manuallyStopRecording()
+        org.mockito.kotlin.clearInvocations(mockRecorder)
+        testedFeature.onReceive(message + (SessionReplayFeature.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to true))
+        verify(mockRecorder, never()).resumeRecorders()
+        testedFeature.manuallyStartRecording()
+        testedFeature.onReceive(message + (SessionReplayFeature.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to true))
+        verify(mockRecorder).resumeRecorders()
+        testedFeature.onReceive(message + (SessionReplayFeature.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to true))
+        verify(mockRecorder).resumeRecorders()
+    }
+
+    @Test
+    fun `M ignore malformed forced messages W the current replay is sampled out`() {
+        whenever(mockSampler.sample(any())).thenReturn(false)
+        testedFeature.onInitialize(appContext.mockInstance)
+        testedFeature.stopRecording()
+        val message = mapOf(
+            SessionReplayFeature.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
+                SessionReplayFeature.RUM_SESSION_RENEWED_BUS_MESSAGE,
+            SessionReplayFeature.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
+            SessionReplayFeature.RUM_SESSION_ID_BUS_MESSAGE_KEY to fakeSessionId
+        )
+        testedFeature.onReceive(message)
+        org.mockito.kotlin.clearInvocations(mockRecorder)
+        testedFeature.onReceive(
+            (message - SessionReplayFeature.RUM_KEEP_SESSION_BUS_MESSAGE_KEY) +
+                (SessionReplayFeature.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to true)
+        )
+        testedFeature.onReceive(message)
+        verifyNoInteractions(mockRecorder)
+    }
 }

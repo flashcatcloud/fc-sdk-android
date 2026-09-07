@@ -72,6 +72,10 @@ internal class RemoteConfigController(
     private var failedAttempts = 0
     private var pendingRetry: ScheduledFuture<*>? = null
 
+    // Guarded by this controller's monitor, together with response commits and stop().
+    private var stopped = false
+    private var activeCall: Call? = null
+
     fun start() = triggerFetch()
 
     /**
@@ -101,7 +105,11 @@ internal class RemoteConfigController(
         }
     }
 
+    @Synchronized
     fun stop() {
+        stopped = true
+        @Suppress("UnsafeThirdPartyFunctionCall") // OkHttp cancellation is idempotent and does not throw.
+        activeCall?.cancel()
         executor.shutdownNow()
     }
 
@@ -110,11 +118,11 @@ internal class RemoteConfigController(
      * backoff, so a session starting in the middle of an outage does not wait out the patient
      * retry before asking again.
      */
+    @Synchronized
     private fun triggerFetch() {
-        synchronized(this) {
-            pendingRetry?.cancel(false)
-            failedAttempts = 0
-        }
+        if (stopped) return
+        pendingRetry?.cancel(false)
+        failedAttempts = 0
         if (!inFlight.compareAndSet(false, true)) return
         // A submission the executor refuses is one made after `stop()`, and this controller does
         // not outlive that: the feature drops it in the same breath, so there is nothing left for
@@ -127,6 +135,7 @@ internal class RemoteConfigController(
         try {
             fetchAndApply()
         } finally {
+            synchronized(this) { activeCall = null }
             // Released whatever happened above, because every later fetch — a new session, a
             // return to the foreground, a retry — is gated on this flag. Anything that got out of
             // here without clearing it would end remote configuration for the rest of the
@@ -137,26 +146,29 @@ internal class RemoteConfigController(
 
     @WorkerThread
     private fun fetchAndApply() {
-        // Housekeeping, once per launch and here rather than at construction: this is the first
-        // place that is both off the main thread — nothing about remote configuration may hold up
-        // initialisation — and certain to run before anything is stored. Repeating it at every
-        // fetch would walk the preferences file again at every session start to learn nothing new.
-        if (swept.compareAndSet(false, true)) {
-            store.sweepAbandoned()
+        synchronized(this) {
+            if (stopped) return
+            // Housekeeping, once per launch and here rather than at construction: this is the first
+            // place that is both off the main thread — nothing about remote configuration may hold up
+            // initialisation — and certain to run before anything is stored. Repeating it at every
+            // fetch would walk the preferences file again at every session start to learn nothing new.
+            if (swept.compareAndSet(false, true)) {
+                store.sweepAbandoned()
+            }
+
+            // The rhythm the console asked for lives on disk, so it survives the process that fetched
+            // it. Read here, before the request, because neither of the other two outcomes carries it:
+            // a 304 has no body to apply, and a failed request has nothing at all. A client that only
+            // ever sees those - the steady state, since the validator exists to produce it - would
+            // otherwise spend every launch after the first on the defaults, with the console's
+            // permission to refresh on foreground silently forgotten.
+            currentTtlSeconds = store.ttlSeconds() ?: DEFAULT_TTL_SECONDS
+            refreshOnForeground = store.refreshOnForeground()
+
+            // Stamped before the request goes out, so a request that never comes back still counts as
+            // an attempt for the staleness gate instead of leaving the app on whatever it last knew.
+            lastFetchAtMs = elapsedTimeMs()
         }
-
-        // The rhythm the console asked for lives on disk, so it survives the process that fetched
-        // it. Read here, before the request, because neither of the other two outcomes carries it:
-        // a 304 has no body to apply, and a failed request has nothing at all. A client that only
-        // ever sees those - the steady state, since the validator exists to produce it - would
-        // otherwise spend every launch after the first on the defaults, with the console's
-        // permission to refresh on foreground silently forgotten.
-        currentTtlSeconds = store.ttlSeconds() ?: DEFAULT_TTL_SECONDS
-        refreshOnForeground = store.refreshOnForeground()
-
-        // Stamped before the request goes out, so a request that never comes back still counts as
-        // an attempt for the staleness gate instead of leaving the app on whatever it last knew.
-        lastFetchAtMs = elapsedTimeMs()
 
         val succeeded = try {
             // Which version this client is running, reported on every request whether or not its
@@ -169,14 +181,20 @@ internal class RemoteConfigController(
             // The answer varies per caller, so the validator only means something paired with the
             // configuration it validated: it is stored beside it and echoed back exactly as sent.
             store.etag()?.let { requestBuilder.header(HEADER_IF_NONE_MATCH, it) }
-            callFactory.newCall(requestBuilder.build()).execute().use { response ->
+            val call = synchronized(this) {
+                if (stopped) return
+                callFactory.newCall(requestBuilder.build()).also { activeCall = it }
+            }
+            call.execute().use { response ->
                 when {
                     // Unchanged: what is stored is still the answer, so there is nothing to apply —
                     // but the ask itself succeeded, and no retry is owed. The entry is still marked
                     // as in use, because this is the one answer that stores nothing and the sweep
                     // reads nothing but age.
                     response.code == HTTP_NOT_MODIFIED -> {
-                        store.touch()
+                        synchronized(this) {
+                            if (!stopped) store.touch()
+                        }
                         true
                     }
                     response.isSuccessful -> {
@@ -214,6 +232,7 @@ internal class RemoteConfigController(
      */
     private fun scheduleRetry() {
         synchronized(this) {
+            if (stopped) return
             if (failedAttempts >= RETRY_DELAYS_SECONDS.size) return
             val delaySeconds = jittered(RETRY_DELAYS_SECONDS[failedAttempts], jitter())
             failedAttempts++
@@ -231,6 +250,9 @@ internal class RemoteConfigController(
      * others are answers, whether or not this SDK can act on them.
      */
     internal enum class Outcome {
+        /** The controller stopped before this response could be committed. */
+        STOPPED,
+
         /** The body was read and its values are now stored. */
         APPLIED,
 
@@ -260,7 +282,9 @@ internal class RemoteConfigController(
      * Without that check, a console resending an unchanged configuration would cut every session in
      * two on every fetch.
      */
+    @Synchronized
     internal fun apply(payload: String, etag: String? = null): Outcome {
+        if (stopped) return Outcome.STOPPED
         val json = try {
             @Suppress("UnsafeThirdPartyFunctionCall") // caught right here
             JSONObject(payload)
@@ -274,13 +298,8 @@ internal class RemoteConfigController(
         // prevent — which is why it has to be honoured by the first SDK that ships, not by a
         // later one: only code already on the device can refuse.
         //
-        // The stamp is required, and it is the whole of what tells a configuration apart from any
-        // other JSON. Every other field in the envelope is read with a default, so an unrelated
-        // body - a proxy's block page, a reverse proxy answering /config with something else -
-        // comes out as "enabled: false, no rates", which is a legitimate configuration meaning
-        // "stop using the console's values". Storing that empties the entry and drops the client
-        // back to the rates it was built with. So an unstamped body is treated as a request that
-        // did not arrive: nothing is stored, and it is asked again for.
+        // A schema stamp and a complete envelope are required before touching the stored values.
+        // Missing fields must not be mistaken for an instruction to clear a configuration.
         //
         // A stamp that is not a number is not a stamp: optInt would quietly turn the string "1"
         // into 1 and accept a body the other SDKs refuse, and the point of this field is that
@@ -291,16 +310,28 @@ internal class RemoteConfigController(
             return Outcome.UNREADABLE
         }
         if (stamp !is Number ||
-            json.optInt(FIELD_SCHEMA_VERSION, SCHEMA_VERSION_ABSENT) != SUPPORTED_SCHEMA_VERSION
+            stamp.toDouble() != SUPPORTED_SCHEMA_VERSION.toDouble()
         ) {
             logUnsupportedSchema(json.optInt(FIELD_SCHEMA_VERSION, SCHEMA_VERSION_ABSENT))
             return Outcome.UNSUPPORTED_SCHEMA
         }
 
-        val enabled = json.optBoolean(FIELD_ENABLED, false)
+        val rawVersion = json.opt(FIELD_VERSION)
+        val enabled = json.opt(FIELD_ENABLED)
+        val rum = json.opt(FIELD_RUM)
+        @Suppress("UnsafeThirdPartyFunctionCall") // JSON numeric conversion and exception construction do not throw.
+        if (rawVersion !is Number ||
+            rawVersion.toDouble() !in 0.0..Int.MAX_VALUE.toDouble() ||
+            rawVersion.toDouble() != rawVersion.toInt().toDouble() ||
+            enabled !is Boolean || rum !is JSONObject
+        ) {
+            logUnreadableBody(JSONException("Invalid remote configuration envelope."))
+            return Outcome.UNREADABLE
+        }
         val activation = json.optString(FIELD_ACTIVATION, ACTIVATION_NEXT_SESSION)
 
-        val version = json.optInt(FIELD_VERSION, 0).takeIf { it > 0 }
+        @Suppress("UnsafeThirdPartyFunctionCall") // The parsed JSON number has been validated as an integer.
+        val version = rawVersion.toInt().takeIf { it > 0 }
         // Rollbacks are published under a new version. An older response must not replace the
         // stored values or their validator, nor restart a session under superseded settings.
         if ((version ?: 0) < (store.appliedVersion() ?: 0)) {
@@ -308,7 +339,7 @@ internal class RemoteConfigController(
         }
         val before = RemoteConfigValues(store.sessionSampleRate())
         val delivered = if (enabled) {
-            readValues(json.optJSONObject(FIELD_RUM)).copy(
+            readValues(rum).copy(
                 version = version,
                 // Stored as the raw string: the platform's job is delivery, the meaning belongs to
                 // the host application.
