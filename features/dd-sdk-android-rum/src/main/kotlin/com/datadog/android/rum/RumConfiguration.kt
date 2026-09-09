@@ -64,9 +64,9 @@ data class RumConfiguration internal constructor(
         }
 
         /**
-         * Take the sampling rates from the application's settings in the Flashcat console instead
-         * of only from the values set here, so they can be changed without shipping a new release
-         * of this app.
+         * Take the session sample rate from the application's settings in the Flashcat console
+         * instead of only from the value set with [setSessionSampleRate], so it can be changed
+         * without shipping a new release of this app.
          *
          * A change applies to sessions started after it arrives; a session already under way keeps
          * the decision it was created with. Two changes do not wait: one the console marks for
@@ -79,7 +79,7 @@ data class RumConfiguration internal constructor(
          * Disabled by default: left off, the SDK makes no extra request and behaves exactly as it
          * did before this existed.
          *
-         * @param enabled whether the console may set the sampling rates.
+         * @param enabled whether the console may set the session sample rate.
          */
         fun setRemoteConfigurationEnabled(enabled: Boolean): Builder {
             rumConfig = rumConfig.copy(remoteConfigurationEnabled = enabled)

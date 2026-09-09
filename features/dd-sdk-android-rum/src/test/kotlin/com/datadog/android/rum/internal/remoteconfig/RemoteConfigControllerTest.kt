@@ -958,13 +958,30 @@ internal class RemoteConfigControllerTest {
             """{"schema_version":1,"version":2147483648,"enabled":true,"rum":{}}""",
             """{"schema_version":1,"version":"3","enabled":true,"rum":{}}""",
             """{"schema_version":1,"version":3,"enabled":"false","rum":{}}""",
-            """{"schema_version":1,"version":3,"enabled":false,"rum":null}"""
+            """{"schema_version":1,"version":3,"enabled":true,"rum":[]}""",
+            """{"schema_version":1,"version":3,"enabled":true,"rum":"none"}"""
         )
         invalid.forEach {
             assertThat(testedController.apply(it)).isEqualTo(RemoteConfigController.Outcome.UNREADABLE)
         }
         verify(store, never()).store(any())
         assertThat(restarts).isZero()
+    }
+
+    @Test
+    fun `M read an absent or null rum bag as empty W apply() { like the other SDKs }`() {
+        // The web and iOS SDKs read a missing bag as "no knob set"; an envelope that carries the
+        // version and the switch is a configuration either way.
+        whenever(store.sessionSampleRate()).thenReturn(42f)
+        whenever(store.appliedVersion()).thenReturn(3)
+
+        listOf(
+            """{"schema_version":1,"version":4,"enabled":true}""",
+            """{"schema_version":1,"version":4,"enabled":true,"rum":null}"""
+        ).forEach {
+            assertThat(testedController.apply(it)).isEqualTo(RemoteConfigController.Outcome.APPLIED)
+        }
+        verify(store, times(2)).store(RemoteConfigValues(null, 4))
     }
 
     @Test
@@ -984,6 +1001,17 @@ internal class RemoteConfigControllerTest {
         verify(call).cancel()
         verify(store, never()).touch()
         verify(executor, never()).schedule(any<Runnable>(), any(), any())
+    }
+
+    @Test
+    fun `M not schedule a retry W stop happens while a fetch is failing`() {
+        whenever(call.execute()).thenAnswer {
+            testedController.stop()
+            throw IOException("no route to host")
+        }
+        runPendingFetch()
+        verify(executor, never()).schedule(any<Runnable>(), any(), any())
+        verify(store, never()).store(any())
     }
 
     @Test

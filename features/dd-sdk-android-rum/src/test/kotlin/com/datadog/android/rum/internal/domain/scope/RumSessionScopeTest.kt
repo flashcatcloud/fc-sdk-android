@@ -2233,6 +2233,73 @@ internal class RumSessionScopeTest {
     }
 
     @Test
+    fun `M revive an expired session as tracked W handleEvent(SetForcedSession) { idle past the limit }`() {
+        // Forcing is the host's deliberate act, so it counts as activity: the session it starts
+        // must survive the next event instead of expiring on the spot for want of an interaction.
+        initializeTestedScope(0f)
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        val initial = testedScope.sessionId
+        advanceTimeByMs(TEST_INACTIVITY_MS + 1)
+
+        testedScope.handleEvent(
+            RumRawEvent.SetForcedSession(currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.TRACKED)
+        assertThat(testedScope.sessionId).isNotEqualTo(initial)
+        val forced = testedScope.sessionId
+
+        advanceTimeByMs(1)
+        testedScope.handleEvent(
+            RumRawEvent.KeepAlive(currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.TRACKED)
+        assertThat(testedScope.sessionId).isEqualTo(forced)
+    }
+
+    @Test
+    fun `M draw the session again W handleEvent(ResetSession) { the console rate leaves zero }`() {
+        // The zero-crossing path end to end at the session: a session drawn under a console rate
+        // of zero is not collected; when the console switches collection on, the reset the
+        // controller asks for draws a new session under the new rate and reports that version.
+        val remoteConfig = mock<RemoteConfigStore>()
+        whenever(remoteConfig.snapshot()) doReturn RemoteConfigValues(0f, 1)
+        initializeTestedScope(100f, remoteConfig = remoteConfig)
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.NOT_TRACKED)
+        val initial = testedScope.sessionId
+
+        whenever(remoteConfig.snapshot()) doReturn RemoteConfigValues(100f, 2)
+        advanceTimeByMs(1)
+        testedScope.handleEvent(
+            RumRawEvent.ResetSession(currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.TRACKED)
+        assertThat(testedScope.sessionId).isNotEqualTo(initial)
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(100f)
+        assertThat(testedScope.drawnConfiguration).isEqualTo(DrawnConfiguration(version = 2))
+    }
+
+    @Test
     fun `M idle reset must not announce an immediately expired session W configuration changes`() {
         initializeTestedScope(100f)
         testedScope.handleEvent(

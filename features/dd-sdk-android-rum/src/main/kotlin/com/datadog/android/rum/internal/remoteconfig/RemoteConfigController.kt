@@ -299,7 +299,10 @@ internal class RemoteConfigController(
         // later one: only code already on the device can refuse.
         //
         // A schema stamp and a complete envelope are required before touching the stored values.
-        // Missing fields must not be mistaken for an instruction to clear a configuration.
+        // Missing fields must not be mistaken for an instruction to clear a configuration. The
+        // `rum` bag is the one field allowed to be absent or null: the other SDKs read it as an
+        // empty bag, and an envelope carrying the version and the switch is a configuration whether
+        // or not the console set a knob in it. A `rum` that is present but not an object is not.
         //
         // A stamp that is not a number is not a stamp: optInt would quietly turn the string "1"
         // into 1 and accept a body the other SDKs refuse, and the point of this field is that
@@ -323,7 +326,7 @@ internal class RemoteConfigController(
         if (rawVersion !is Number ||
             rawVersion.toDouble() !in 0.0..Int.MAX_VALUE.toDouble() ||
             rawVersion.toDouble() != rawVersion.toInt().toDouble() ||
-            enabled !is Boolean || rum !is JSONObject
+            enabled !is Boolean || !(rum == null || rum == JSONObject.NULL || rum is JSONObject)
         ) {
             logUnreadableBody(JSONException("Invalid remote configuration envelope."))
             return Outcome.UNREADABLE
@@ -339,7 +342,7 @@ internal class RemoteConfigController(
         }
         val before = RemoteConfigValues(store.sessionSampleRate())
         val delivered = if (enabled) {
-            readValues(rum).copy(
+            readValues(rum as? JSONObject).copy(
                 version = version,
                 // Stored as the raw string: the platform's job is delivery, the meaning belongs to
                 // the host application.
