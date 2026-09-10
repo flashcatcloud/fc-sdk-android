@@ -303,6 +303,33 @@ interface RumMonitor {
     fun stopSession()
 
     /**
+     * Forces sessions to be collected, with Session Replay, regardless of the configured sample
+     * rates. Call it when your own code decides a user needs debugging (an allow-list, a support
+     * flow).
+     *
+     * A session already being collected keeps running: RUM cannot recover what a session already
+     * dropped, so cutting it in two would gain nothing. One that was not being collected is
+     * restarted straight away, so that a collected session takes its place.
+     *
+     * The forced state lasts for the process lifetime and survives [stopSession], so every session
+     * that follows is collected too; decide on each app start whether to call again. Events from a
+     * forced session report a sample rate of 100 and no configuration version, because the session
+     * was kept whatever the rates said.
+     */
+    fun setForcedSession()
+
+    /**
+     * Returns the custom values published for this application in the console, or null when
+     * nothing is published or remote configuration is off. The SDK delivers them verbatim and
+     * never interprets them - what a value means is entirely up to your own code (a debug
+     * allow-list to pair with [setForcedSession], a feature toggle). Nested objects and arrays
+     * come back as [Map] and [List]. Values are cached locally, so what a previous launch fetched
+     * answers immediately on the next. The content is readable by anyone holding the public client
+     * token - it is public information.
+     */
+    fun getRemoteConfig(): Map<String, Any?>?
+
+    /**
      * Adds view loading time to the active view based on the time elapsed since the view was started.
      * The view loading time is automatically calculated as the difference between the current time
      * and the start time of the view.

@@ -59,6 +59,7 @@ import com.datadog.android.rum.internal.metric.networksettled.NetworkSettledMetr
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
 import com.datadog.android.rum.internal.monitor.AdvancedRumMonitor
 import com.datadog.android.rum.internal.monitor.StorageEvent
+import com.datadog.android.rum.internal.remoteconfig.DrawnConfiguration
 import com.datadog.android.rum.internal.toAction
 import com.datadog.android.rum.internal.toError
 import com.datadog.android.rum.internal.toLongTask
@@ -645,6 +646,53 @@ internal class RumViewScopeTest {
             }
         }
         verifyNoMoreInteractions(mockWriter)
+        assertThat(result).isNull()
+    }
+
+    @Test
+    fun `M report the draw the session was created under W handleEvent(StartView) { remote config on }`(
+        @Forgery key: RumScopeKey
+    ) {
+        // Given
+        val drawnConfiguration = DrawnConfiguration(version = 7)
+        testedScope = newRumViewScope(trackFrustrations = true, drawnConfiguration = drawnConfiguration)
+        mockSessionReplayContext(testedScope)
+
+        // When
+        val result = testedScope.handleEvent(
+            RumRawEvent.StartView(key, emptyMap()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        // Then - the rates the session was drawn with, and rc_version naming the settings version
+        argumentCaptor<ViewEvent> {
+            verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
+            assertThat(lastValue.dd.configuration?.sessionSampleRate).isEqualTo(fakeSampleRate)
+            assertThat(lastValue.dd.configuration?.rcVersion).isEqualTo(7L)
+        }
+        assertThat(result).isNull()
+    }
+
+    @Test
+    fun `M report no draw W handleEvent(StartView) { the app did not opt in }`(
+        @Forgery key: RumScopeKey
+    ) {
+        // When
+        val result = testedScope.handleEvent(
+            RumRawEvent.StartView(key, emptyMap()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        // Then - nothing new: the init values are the values the draw used anyway
+        argumentCaptor<ViewEvent> {
+            verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
+            assertThat(lastValue.dd.configuration?.sessionSampleRate).isEqualTo(fakeSampleRate)
+            assertThat(lastValue.dd.configuration?.rcVersion).isNull()
+        }
         assertThat(result).isNull()
     }
 
@@ -8438,9 +8486,15 @@ internal class RumViewScopeTest {
     fun `M return a new RumViewScope W renew the current one`() {
         // Given
         val expectedTime = Time(nanoTime = fakeEventTime.nanoTime)
+        // FLASHCAT FORK - both deliberately differ from what this scope holds. A renewal carries a
+        // view into the session that has just been drawn, so it must take the draw it is handed
+        // rather than copy the one that ended - and this scope's own values are exactly what it
+        // would copy if that regressed.
+        val expectedSampleRate = testedScope.sampleRate + 1f
+        val expectedDrawnConfiguration = DrawnConfiguration(version = 11)
 
         // When
-        val newScope = testedScope.renew(expectedTime)
+        val newScope = testedScope.renew(expectedTime, expectedSampleRate, expectedDrawnConfiguration)
 
         assertThat(newScope.key).isEqualTo(testedScope.key)
         assertThat(newScope.firstPartyHostHeaderTypeResolver).isEqualTo(testedScope.firstPartyHostHeaderTypeResolver)
@@ -8448,7 +8502,10 @@ internal class RumViewScopeTest {
         assertThat(newScope.memoryVitalMonitor).isEqualTo(testedScope.memoryVitalMonitor)
         assertThat(newScope.frameRateVitalMonitor).isEqualTo(testedScope.frameRateVitalMonitor)
         assertThat(newScope.type).isEqualTo(testedScope.type)
-        assertThat(newScope.sampleRate).isEqualTo(testedScope.sampleRate)
+        assertThat(newScope.sampleRate).isEqualTo(expectedSampleRate)
+        assertThat(newScope.sampleRate).isNotEqualTo(testedScope.sampleRate)
+        assertThat(newScope.drawnConfiguration).isEqualTo(expectedDrawnConfiguration)
+        assertThat(newScope.drawnConfiguration).isNotEqualTo(testedScope.drawnConfiguration)
         assertThat(newScope.url).isEqualTo(testedScope.url)
         assertThat(newScope.viewAttributes).isEqualTo(testedScope.viewAttributes)
         assertThat(newScope.stoppedNanos).isEqualTo(expectedTime.nanoTime)
@@ -9157,6 +9214,7 @@ internal class RumViewScopeTest {
         type: RumViewType = fakeViewType,
         trackFrustrations: Boolean = fakeTrackFrustrations,
         sampleRate: Float = fakeSampleRate,
+        drawnConfiguration: DrawnConfiguration? = null,
         interactionNextViewMetricResolver: InteractionToNextViewMetricResolver =
             mockInteractionToNextViewMetricResolver,
         networkSettledMetricResolver: NetworkSettledMetricResolver = mockNetworkSettledMetricResolver,
@@ -9178,6 +9236,7 @@ internal class RumViewScopeTest {
         type = type,
         trackFrustrations = trackFrustrations,
         sampleRate = sampleRate,
+        drawnConfiguration = drawnConfiguration,
         interactionToNextViewMetricResolver = interactionNextViewMetricResolver,
         networkSettledMetricResolver = networkSettledMetricResolver,
         slowFramesListener = slowFramesMetricListener,

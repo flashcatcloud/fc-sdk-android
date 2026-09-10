@@ -231,8 +231,9 @@ internal class SessionReplayFeature(
             parseSessionMetadata(sessionMetadata)
                 ?.let { sessionData ->
                     val alreadySeenSession = currentRumSessionId.get() == sessionData.sessionId
-                    if (shouldHandleSession(alreadySeenSession)) {
-                        applySampling(alreadySeenSession)
+                    val forceSampling = sessionData.forced && !isSessionSampledIn.get()
+                    if (!alreadySeenSession || forceSampling || userIntentToRecordChanged.get()) {
+                        applySampling(alreadySeenSession, sessionData.forced)
                         modifyShouldRecordState(sessionData)
                         handleRecording(sessionData)
                     }
@@ -253,7 +254,8 @@ internal class SessionReplayFeature(
 
     private data class SessionData(
         val keepSession: Boolean,
-        val sessionId: String
+        val sessionId: String,
+        val forced: Boolean
     )
 
     private fun parseSessionMetadata(sessionMetadata: Map<*, *>): SessionData? {
@@ -265,15 +267,14 @@ internal class SessionReplayFeature(
             return null
         }
 
-        return SessionData(keepSession, sessionId)
+        val forced = sessionMetadata[RUM_SESSION_FORCED_BUS_MESSAGE_KEY] as? Boolean ?: false
+        return SessionData(keepSession, sessionId, forced)
     }
 
-    private fun shouldHandleSession(alreadySeenSession: Boolean): Boolean {
-        return !alreadySeenSession || userIntentToRecordChanged.get()
-    }
-
-    private fun applySampling(alreadySeenSession: Boolean) {
-        if (!alreadySeenSession) {
+    private fun applySampling(alreadySeenSession: Boolean, forced: Boolean) {
+        if (forced) {
+            isSessionSampledIn.set(true)
+        } else if (!alreadySeenSession) {
             isSessionSampledIn.set(rateBasedSampler.sample(Unit))
         }
     }
@@ -431,6 +432,7 @@ internal class SessionReplayFeature(
         const val SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY = "type"
         const val RUM_SESSION_RENEWED_BUS_MESSAGE = "rum_session_renewed"
         const val RUM_KEEP_SESSION_BUS_MESSAGE_KEY = "keepSession"
+        const val RUM_SESSION_FORCED_BUS_MESSAGE_KEY = "sessionForced"
         const val RUM_SESSION_ID_BUS_MESSAGE_KEY = "sessionId"
         internal const val SESSION_REPLAY_SAMPLE_RATE_KEY = "session_replay_sample_rate"
         internal const val SESSION_REPLAY_TEXT_AND_INPUT_PRIVACY_KEY = "session_replay_text_and_input_privacy"

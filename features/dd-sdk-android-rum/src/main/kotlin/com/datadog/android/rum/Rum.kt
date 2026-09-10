@@ -132,6 +132,11 @@ object Rum {
             sdkCore = sdkCore,
             sessionEndedMetricDispatcher = sessionEndedMetricDispatcher,
             sampleRate = rumFeature.sampleRate,
+            remoteConfig = rumFeature.remoteConfigStore,
+            // FLASHCAT FORK - looked up when it fires rather than captured now: a session start
+            // simply asks again, and there is nothing to ask with when the app did not opt in.
+            onSessionDrawn = { rumFeature.remoteConfigController?.onSessionStarted() },
+            beforeSampling = rumFeature.configuration.beforeSampling,
             writer = rumFeature.dataWriter,
             handler = Handler(Looper.getMainLooper()),
             telemetryEventHandler = TelemetryEventHandler(
