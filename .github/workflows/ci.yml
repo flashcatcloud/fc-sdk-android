@@ -1,0 +1,134 @@
+name: CI
+
+# The gate that was missing: until now the only workflow running on a pull
+# request was CodeQL, so nothing ran the unit tests or the formatter before a
+# change reached `publish`. Everything here is deliberately reachable without
+# any credential, so a fork or a first-time contributor gets the same verdict.
+on:
+  pull_request:
+    branches: ["publish"]
+  push:
+    branches: ["publish"]
+
+# A run for a superseded commit tells nobody anything, and these jobs are not
+# cheap in wall-clock. Only the newest commit on a branch keeps its run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    # Generous on purpose: forty module test tasks on a cold Gradle cache take
+    # far longer than a warm local run, and killing a legitimately slow build
+    # teaches nothing. A hang only wastes minutes, which are free on this
+    # public repository.
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # `unitTestDebug` is the project's own aggregation task, and it covers
+      # exactly the modules named `dd-sdk-android-*` — the SDK libraries. The
+      # sample applications are not among them, which is what keeps this job
+      # from repeating the mistake the publish workflow documents: assembling
+      # the samples with their Us1-Us5 flavors once pushed that job past two
+      # hours.
+      #
+      # No `clean`. The runner is ephemeral, so there is nothing stale to
+      # remove, and cleaning in the same invocation races with Kover.
+      - name: Run the library unit tests
+        run: ./gradlew unitTestDebug --stacktrace
+
+      # Only on failure: the reports are what turns "some task failed" into a
+      # named test, and on a green run nobody opens them.
+      - name: Upload the test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-reports
+          path: "**/build/reports/tests/"
+          retention-days: 7
+
+  ktlint:
+    name: KtLint
+    runs-on: ubuntu-latest
+    # Only on a pull request, because it judges a change rather than a state:
+    # what reaches `publish` has already been judged on the way in.
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # The whole history, so the merge base with the target branch exists
+          # locally and the diff below can be taken against it.
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+
+      # Pinned to the version `local_ci.sh` installs, so the answer here is the
+      # answer a developer gets on their own machine. A floating version would
+      # let a release of the linter turn every open pull request red.
+      - name: Download KtLint
+        env:
+          KTLINT_VERSION: "0.50.0"
+        run: |
+          curl -sSLO "https://github.com/pinterest/ktlint/releases/download/${KTLINT_VERSION}/ktlint"
+          chmod +x ktlint
+          ./ktlint --version
+
+      # Only the files the pull request touched.
+      #
+      # This is a fork that tracks upstream, and the inherited tree carries
+      # around seventy findings — nearly all of them in upstream files (the
+      # sample applications, the no-op modules, some build scripts). Reformatting
+      # those would mean a conflict in every one of them at the next upstream
+      # merge, paid forever, to fix code we do not write. Judging the diff keeps
+      # what we do write clean without taking on that bill.
+      # The list reaches ktlint through its own `--patterns-from-stdin`, which
+      # is what that flag is for: no shell array, nothing that word-splits, and
+      # no argument-length ceiling for a large pull request.
+      - name: Lint the files this pull request changed
+        run: |
+          base="${{ github.event.pull_request.base.sha }}"
+          git diff --name-only --diff-filter=ACMR "$base...HEAD" -- '*.kt' '*.kts' \
+            | grep -v '/build/' > changed-kotlin-files.txt || true
+
+          if [ ! -s changed-kotlin-files.txt ]; then
+            echo "This pull request changes no Kotlin files."
+            exit 0
+          fi
+
+          echo "Linting:"
+          sed 's/^/  /' changed-kotlin-files.txt
+          ./ktlint --relative --patterns-from-stdin < changed-kotlin-files.txt
