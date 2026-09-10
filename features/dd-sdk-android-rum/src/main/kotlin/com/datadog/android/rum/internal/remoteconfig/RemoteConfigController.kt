@@ -527,17 +527,24 @@ internal class RemoteConfigController(
          *
          * The SDK version rides along purely as information: it keys nothing on this side (see the
          * store key), and the server may one day target a configuration at a range of them.
+         *
+         * `sdk` carries the source, not the literal "android": a cross-platform wrapper sets that
+         * field to its own name (react-native, flutter, ...) and only falls back to "android" for a
+         * native app, so a rule targeting the wrapper matches the runtime the app actually is. It
+         * also keeps the pair honest - the SDK version already reports the wrapper's version, so a
+         * literal here would describe one request as two different SDKs.
          */
         fun buildConfigUrl(
             intakeUrl: String,
             clientToken: String,
             env: String,
             appVersion: String,
-            sdkVersion: String
+            sdkVersion: String,
+            source: String
         ): String {
             val parameters = buildString {
                 append("?client_token=").append(encode(clientToken))
-                append("&sdk=android")
+                append("&sdk=").append(encode(source))
                 if (env.isNotEmpty()) append("&env=").append(encode(env))
                 if (appVersion.isNotEmpty()) append("&app_version=").append(encode(appVersion))
                 if (sdkVersion.isNotEmpty()) append("&sdk_version=").append(encode(sdkVersion))
