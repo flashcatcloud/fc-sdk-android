@@ -804,7 +804,8 @@ internal class RumFeature(
                 clientToken = context.clientToken,
                 env = context.env,
                 appVersion = context.version,
-                sdkVersion = context.sdkVersion
+                sdkVersion = context.sdkVersion,
+                source = context.source
             ),
             store = store,
             initialSessionSampleRate = sampleRate,

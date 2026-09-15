@@ -648,7 +648,8 @@ internal class RemoteConfigControllerTest {
             clientToken = "token",
             env = "staging",
             appVersion = "1.2.3",
-            sdkVersion = "2.26.0"
+            sdkVersion = "2.26.0",
+            source = "android"
         )
 
         assertThat(url).startsWith("https://rum.example.com/api/v2/rum/config?")
@@ -666,12 +667,33 @@ internal class RemoteConfigControllerTest {
             clientToken = "token",
             env = "",
             appVersion = "",
-            sdkVersion = ""
+            sdkVersion = "",
+            source = "android"
         )
 
         assertThat(url).doesNotContain("env=")
         assertThat(url).doesNotContain("app_version=")
         assertThat(url).doesNotContain("sdk_version=")
+    }
+
+    @Test
+    fun `M report the wrapper rather than the native SDK W buildConfigUrl()`() {
+        // A cross-platform wrapper sets the source to its own name, and the native SDK carries it
+        // on every event it sends. The configuration request has to agree, or a rule targeting the
+        // wrapper never matches the app that is actually running it.
+        val url = RemoteConfigController.buildConfigUrl(
+            intakeUrl = "https://rum.example.com/api/v2/rum",
+            clientToken = "token",
+            env = "staging",
+            appVersion = "1.2.3",
+            sdkVersion = "9.9.9",
+            source = "react-native"
+        )
+
+        assertThat(url).contains("sdk=react-native")
+        assertThat(url).doesNotContain("sdk=android")
+        // The version already describes the wrapper, so the name has to describe it too.
+        assertThat(url).contains("sdk_version=9.9.9")
     }
 
     @Test
