@@ -1,4 +1,4 @@
-# Unreleased
+# 0.7.1 / 2026-09-14
 
 * [FIX] RUM: send the running SDK's name in the remote configuration request instead of the literal `android`. A cross-platform wrapper sets the source to its own name (`react-native`, `flutter`, ...) and the native SDK already stamps that value on every event it sends; the configuration request was the one place that disagreed, so a configuration rule targeting the wrapper never matched the app running it. The same request already reported the wrapper's SDK version, which made a single request describe itself as two different SDKs. A native app is unaffected — the source falls back to `android` when no wrapper sets it. **Rollout note:** an app embedding a wrapper now sends the wrapper's name, so a rule written against `sdk=android` to reach such an app stops matching and has to be retargeted.
 
