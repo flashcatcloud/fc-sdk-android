@@ -209,6 +209,41 @@ internal class WithheldEventWriterTest {
 
     // endregion
 
+    // region Replay-only sessions
+
+    @Test
+    fun `M write through and mark the error W write() {watched session}`() {
+        // Given
+        testedWriter.watchForError(sessionId)
+
+        // When
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        val before = testedWriter.isReleased(sessionId)
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+
+        // Then
+        assertThat(before).isFalse
+        assertThat(testedWriter.isReleased(sessionId)).isTrue
+        assertThat(written).containsExactly("v1", "e1")
+        assertThat(scheduled).isEmpty()
+    }
+
+    @Test
+    fun `M not mark W write() {watched session, error dropped by a mapper}`() {
+        // Given
+        testedWriter.watchForError(sessionId)
+        val dropped = error("e1", "v1")
+        payloads[dropped] = null
+
+        // When
+        testedWriter.write(batchWriter, dropped, EventType.DEFAULT)
+
+        // Then
+        assertThat(testedWriter.isReleased(sessionId)).isFalse
+    }
+
+    // endregion
+
     // region Release
 
     @Test

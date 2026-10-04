@@ -88,8 +88,10 @@ internal class RumSessionScope(
     // FLASHCAT FORK - where a session kept only on error holds its events until it reports one.
     // Null where there is nothing to buffer with, and then no session is drawn on error.
     private val withheldEvents: WithheldEventWriter? = null,
-    // FLASHCAT FORK - the init value of `sessionOnError`; the console's value wins over it.
-    private val sessionOnError: Boolean = false
+    // FLASHCAT FORK - the init values of `sessionOnError` and `sessionReplayOnError`; the console's
+    // values win over them.
+    private val sessionOnError: Boolean = false,
+    private val sessionReplayOnError: Boolean = false
 ) : RumScope {
 
     // FLASHCAT FORK - the rate the current session's events report as their configured sample
@@ -114,6 +116,10 @@ internal class RumSessionScope(
     // be told apart from a plainly sampled session - its detail only starts where the buffer reached.
     internal var sampledForError: Boolean = false
         private set
+
+    // FLASHCAT FORK - the replay switch the current session was drawn under. Session Replay draws
+    // the replay itself and decides from this whether a replay it did not keep is kept on error.
+    private var replayOnError: Boolean = false
 
     private var startReason: StartReason = StartReason.USER_APP_LAUNCH
     internal var isActive: Boolean = true
@@ -456,9 +462,14 @@ internal class RumSessionScope(
             else -> State.NOT_TRACKED
         }
         sessionId = UUID.randomUUID().toString()
+        replayOnError = withheldEvents != null && (remoteValues?.sessionReplayOnError ?: sessionReplayOnError)
+        val drawnSessionId = sessionId
         if (sampledForError) {
-            val withheldSessionId = sessionId
-            writeScope { withheldEvents?.startWithholding(withheldSessionId, it) }
+            writeScope { withheldEvents?.startWithholding(drawnSessionId, it) }
+        } else if (keepSession && replayOnError) {
+            // The replay may be kept on error only, and the error that releases it is judged
+            // after the mappers like the events' own.
+            writeScope { withheldEvents?.watchForError(drawnSessionId) }
         }
         // FLASHCAT FORK - remember which console configuration this session was drawn under: its
         // events report that version for as long as it lives, so an auditor can recover the exact
@@ -549,7 +560,13 @@ internal class RumSessionScope(
                 // FLASHCAT FORK - a forced session must come out with replay, so Session Replay
                 // skips its own draw when this is set.
                 RUM_SESSION_FORCED_BUS_MESSAGE_KEY to forcedSession,
-                RUM_SESSION_ID_BUS_MESSAGE_KEY to sessionId
+                RUM_SESSION_ID_BUS_MESSAGE_KEY to sessionId,
+                // FLASHCAT FORK - what Session Replay needs to keep a replay on error: whether the
+                // session's events are kept on error (its replay then waits with them), the replay
+                // switch it was drawn under, and whether it has reported its error.
+                RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY to sampledForError,
+                RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY to replayOnError,
+                RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to (withheldEvents?.isReleased(sessionId) == true)
             )
         )
     }
@@ -563,6 +580,9 @@ internal class RumSessionScope(
         internal const val RUM_KEEP_SESSION_BUS_MESSAGE_KEY = "keepSession"
         internal const val RUM_SESSION_FORCED_BUS_MESSAGE_KEY = "sessionForced"
         internal const val RUM_SESSION_ID_BUS_MESSAGE_KEY = "sessionId"
+        internal const val RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY = "sessionOnError"
+        internal const val RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY = "sessionReplayOnError"
+        internal const val RUM_SESSION_RELEASED_BUS_MESSAGE_KEY = "sessionReleased"
 
         private const val MAX_SAMPLE_RATE = 100f
 

@@ -115,6 +115,11 @@ internal class SessionReplayFeature(
     // is the current session sampled in
     private val isSessionSampledIn = AtomicBoolean(false)
 
+    // FLASHCAT FORK - the session whose replay is kept only in case it reports an error, for as long
+    // as it lives (it stays set once the replay is released), and whether its records are still held.
+    private val onErrorReplaySessionId = AtomicReference<String?>()
+    private val isReplayWithheld = AtomicBoolean(false)
+
     internal var sessionReplayRecorder: Recorder = NoOpRecorder()
     internal var dataWriter: RecordWriter = NoOpRecordWriter()
     internal val initialized = AtomicBoolean(false)
@@ -232,9 +237,13 @@ internal class SessionReplayFeature(
                 ?.let { sessionData ->
                     val alreadySeenSession = currentRumSessionId.get() == sessionData.sessionId
                     val forceSampling = sessionData.forced && !isSessionSampledIn.get()
-                    if (!alreadySeenSession || forceSampling || userIntentToRecordChanged.get()) {
+                    // FLASHCAT FORK - a held replay is released by the session's error (or by forcing).
+                    val released = isReplayWithheld.get() && (sessionData.released || sessionData.forced)
+                    if (!alreadySeenSession || forceSampling || released || userIntentToRecordChanged.get()) {
                         applySampling(alreadySeenSession, sessionData.forced)
-                        modifyShouldRecordState(sessionData)
+                        val withhold = shouldWithhold(sessionData)
+                        modifyShouldRecordState(sessionData, withhold)
+                        updateWithholding(sessionData.sessionId, withhold)
                         handleRecording(sessionData)
                     }
                 }
@@ -255,7 +264,11 @@ internal class SessionReplayFeature(
     private data class SessionData(
         val keepSession: Boolean,
         val sessionId: String,
-        val forced: Boolean
+        val forced: Boolean,
+        // FLASHCAT FORK - see `RumSessionScope.updateSessionStateForSessionReplay`.
+        val eventsOnError: Boolean,
+        val replayOnError: Boolean,
+        val released: Boolean
     )
 
     private fun parseSessionMetadata(sessionMetadata: Map<*, *>): SessionData? {
@@ -268,7 +281,14 @@ internal class SessionReplayFeature(
         }
 
         val forced = sessionMetadata[RUM_SESSION_FORCED_BUS_MESSAGE_KEY] as? Boolean ?: false
-        return SessionData(keepSession, sessionId, forced)
+        return SessionData(
+            keepSession = keepSession,
+            sessionId = sessionId,
+            forced = forced,
+            eventsOnError = sessionMetadata[RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY] as? Boolean ?: false,
+            replayOnError = sessionMetadata[RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY] as? Boolean ?: false,
+            released = sessionMetadata[RUM_SESSION_RELEASED_BUS_MESSAGE_KEY] as? Boolean ?: false
+        )
     }
 
     private fun applySampling(alreadySeenSession: Boolean, forced: Boolean) {
@@ -279,8 +299,44 @@ internal class SessionReplayFeature(
         }
     }
 
-    private fun modifyShouldRecordState(sessionData: SessionData) {
-        val isSessionEligible = sessionData.keepSession && isSessionSampledIn.get()
+    /**
+     * FLASHCAT FORK - whether this session's records are held until it reports an error. Two
+     * sessions are: a collected one whose replay the rate missed while the replay switch is on, and
+     * one whose events are themselves held - its replay waits with them whichever way the replay
+     * draw went, because until the events are released the session does not exist at the intake and
+     * a replay uploaded before then would have nothing to attach to.
+     */
+    private fun shouldWithhold(sessionData: SessionData): Boolean {
+        if (sessionData.released || sessionData.forced) return false
+        return if (sessionData.eventsOnError) {
+            isSessionSampledIn.get() || sessionData.replayOnError
+        } else {
+            sessionData.keepSession && !isSessionSampledIn.get() && sessionData.replayOnError
+        }
+    }
+
+    private fun updateWithholding(sessionId: String, withhold: Boolean) {
+        if (withhold) {
+            onErrorReplaySessionId.set(sessionId)
+            dataWriter.withhold(sessionId)
+        } else {
+            // Releases what this session held, if it held anything; throws away what any other
+            // session still held.
+            dataWriter.stopWithholding(sessionId)
+        }
+        isReplayWithheld.set(withhold)
+        val onErrorSessionId = onErrorReplaySessionId.get()
+        sdkCore.updateFeatureContext(Feature.SESSION_REPLAY_FEATURE_NAME) {
+            it[SESSION_REPLAY_ON_ERROR_SESSION_KEY] = onErrorSessionId?.takeIf { id -> id == sessionId }
+            it[SESSION_REPLAY_WITHHELD_KEY] = withhold
+        }
+    }
+
+    private fun modifyShouldRecordState(sessionData: SessionData, withhold: Boolean) {
+        // A replay kept on error stays eligible once released, whether or not the rate drew it.
+        val keptOnError = onErrorReplaySessionId.get() == sessionData.sessionId
+        val isSessionEligible = withhold ||
+            (sessionData.keepSession && (isSessionSampledIn.get() || keptOnError))
         if (isSessionEligible) {
             shouldRecord.set(userIntentToRecord.get())
         } else {
@@ -434,6 +490,14 @@ internal class SessionReplayFeature(
         const val RUM_KEEP_SESSION_BUS_MESSAGE_KEY = "keepSession"
         const val RUM_SESSION_FORCED_BUS_MESSAGE_KEY = "sessionForced"
         const val RUM_SESSION_ID_BUS_MESSAGE_KEY = "sessionId"
+        const val RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY = "sessionOnError"
+        const val RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY = "sessionReplayOnError"
+        const val RUM_SESSION_RELEASED_BUS_MESSAGE_KEY = "sessionReleased"
+
+        // FLASHCAT FORK - read by RUM to mark view events: the current session when its replay is
+        // kept only on error, and whether its records are still held.
+        internal const val SESSION_REPLAY_ON_ERROR_SESSION_KEY = "session_replay_on_error_session_id"
+        internal const val SESSION_REPLAY_WITHHELD_KEY = "session_replay_withheld"
         internal const val SESSION_REPLAY_SAMPLE_RATE_KEY = "session_replay_sample_rate"
         internal const val SESSION_REPLAY_TEXT_AND_INPUT_PRIVACY_KEY = "session_replay_text_and_input_privacy"
         internal const val SESSION_REPLAY_IMAGE_PRIVACY_KEY = "session_replay_image_privacy"

@@ -69,6 +69,7 @@ data class com.datadog.android.rum.RumConfiguration
     fun setRemoteConfigurationEnabled(Boolean): Builder
     fun setBeforeSampling(BeforeSamplingCallback): Builder
     fun setSessionOnError(Boolean): Builder
+    fun setSessionReplayOnError(Boolean): Builder
     fun collectAccessibility(Boolean): Builder
     fun setTelemetrySampleRate(Float): Builder
     fun trackUserInteractions(Array<com.datadog.android.rum.tracking.ViewAttributesProvider> = emptyArray(), com.datadog.android.rum.tracking.InteractionPredicate = NoOpInteractionPredicate()): Builder

@@ -130,6 +130,26 @@ data class RumConfiguration internal constructor(
         }
 
         /**
+         * Also keep the replays the Session Replay sample rate does not keep, but only those of
+         * sessions that report an error.
+         *
+         * Such a replay is recorded in memory without uploading anything, keeping only its last
+         * minute; it is uploaded if the session reports an error, and thrown away if it ends
+         * without one. A session kept only through [setSessionOnError] holds its replay until its
+         * events are released, whether or not the replay rate kept it. View events of a session
+         * whose replay is kept this way carry `session.sampled_for_error_replay`.
+         *
+         * Needs the Session Replay feature. Disabled by default. With
+         * [setRemoteConfigurationEnabled], the console's value wins over this one.
+         *
+         * @param enabled whether to keep the replays of sessions that report an error.
+         */
+        fun setSessionReplayOnError(enabled: Boolean): Builder {
+            rumConfig = rumConfig.copy(sessionReplayOnError = enabled)
+            return this
+        }
+
+        /**
          * Whether to collect accessibility attributes - this is disabled by default.
          *
          * @param enabled whether collecting accessibility attributes is enabled or not.

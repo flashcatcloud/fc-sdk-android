@@ -114,7 +114,8 @@ internal class DatadogRumMonitor(
     // FLASHCAT FORK - see `RumConfiguration.Builder.setSessionOnError`. The buffer is also
     // [writer]; null where there is nothing to buffer with, and then no session is drawn on error.
     private val withheldEvents: WithheldEventWriter? = null,
-    private val sessionOnError: Boolean = false
+    private val sessionOnError: Boolean = false,
+    private val sessionReplayOnError: Boolean = false
 ) : RumMonitor, AdvancedRumMonitor {
 
     internal var rootScope = RumApplicationScope(
@@ -142,7 +143,8 @@ internal class DatadogRumMonitor(
         onSessionDrawn = onSessionDrawn,
         beforeSampling = beforeSampling,
         withheldEvents = withheldEvents,
-        sessionOnError = sessionOnError
+        sessionOnError = sessionOnError,
+        sessionReplayOnError = sessionReplayOnError
     )
 
     internal val keepAliveRunnable = Runnable {

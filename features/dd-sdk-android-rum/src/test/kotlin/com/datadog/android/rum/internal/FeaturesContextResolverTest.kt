@@ -265,4 +265,35 @@ internal class FeaturesContextResolverTest {
         // Then
         assertThat(viewRecordsCount).isEqualTo(0L)
     }
+
+    // region Replay on error
+
+    private fun contextWith(forge: Forge, sessionReplay: Map<String, Any?>?): DatadogContext =
+        forge.getForgery<DatadogContext>().copy(
+            featuresContext = sessionReplay?.let { mapOf(Feature.SESSION_REPLAY_FEATURE_NAME to it) } ?: emptyMap()
+        )
+
+    @Test
+    fun `M tell the replay kept on error W resolveSampledForErrorReplay()`(forge: Forge) {
+        val context = contextWith(forge, mapOf(FeaturesContextResolver.REPLAY_ON_ERROR_SESSION_KEY to "s1"))
+
+        assertThat(testedFeaturesContextResolver.resolveSampledForErrorReplay(context, "s1")).isTrue
+        assertThat(testedFeaturesContextResolver.resolveSampledForErrorReplay(context, "s2")).isFalse
+        assertThat(testedFeaturesContextResolver.resolveSampledForErrorReplay(contextWith(forge, null), "s1")).isNull()
+    }
+
+    @Test
+    fun `M count a held replay as sampled only with held events W resolveSampledForReplay()`(forge: Forge) {
+        val recording = mapOf(FeaturesContextResolver.REPLAY_ENABLED_KEY to true)
+        val withheld = recording + (FeaturesContextResolver.REPLAY_WITHHELD_KEY to true)
+        val stopped = mapOf(FeaturesContextResolver.REPLAY_ENABLED_KEY to false)
+
+        assertThat(testedFeaturesContextResolver.resolveSampledForReplay(contextWith(forge, recording), false)).isTrue
+        assertThat(testedFeaturesContextResolver.resolveSampledForReplay(contextWith(forge, withheld), false)).isFalse
+        assertThat(testedFeaturesContextResolver.resolveSampledForReplay(contextWith(forge, withheld), true)).isTrue
+        assertThat(testedFeaturesContextResolver.resolveSampledForReplay(contextWith(forge, stopped), true)).isFalse
+        assertThat(testedFeaturesContextResolver.resolveSampledForReplay(contextWith(forge, null), true)).isNull()
+    }
+
+    // endregion
 }

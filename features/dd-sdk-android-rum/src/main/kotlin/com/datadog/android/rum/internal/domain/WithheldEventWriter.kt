@@ -81,6 +81,12 @@ internal class WithheldEventWriter(
     private var withheldForSessionId: String? = null
 
     /**
+     * A collected session whose replay only is kept on error: nothing of it is held, but its first
+     * error still has to be told apart, after the mappers, like a withheld session's.
+     */
+    private var watchedSessionId: String? = null
+
+    /**
      * The session that earned its release, by an error or by being forced. Marked the moment the
      * error is seen, ahead of the release itself, so a session that ends while its release still
      * waits for the jitter is released rather than thrown away.
@@ -119,6 +125,11 @@ internal class WithheldEventWriter(
                 // collected.
                 return true
             }
+            if (sessionId == watchedSessionId && element is ErrorEvent) {
+                val written = delegate.write(writer, element, eventType)
+                if (written) releasedSessionId = sessionId
+                return written
+            }
             if (sessionId != withheldForSessionId) {
                 return delegate.write(writer, element, eventType)
             }
@@ -154,6 +165,12 @@ internal class WithheldEventWriter(
 
     /** Whether the given session earned its release. Read by the session scope to stop withholding. */
     fun isReleased(sessionId: String): Boolean = synchronized(this) { releasedSessionId == sessionId }
+
+    /** Watches a collected session whose replay only is kept on error for its first error. */
+    @WorkerThread
+    fun watchForError(sessionId: String) {
+        synchronized(this) { watchedSessionId = sessionId }
+    }
 
     /** Starts withholding the events of a session just drawn as one kept only on error. */
     @WorkerThread

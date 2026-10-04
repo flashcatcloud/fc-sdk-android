@@ -701,6 +701,32 @@ internal class RumViewScopeTest {
     }
 
     @Test
+    fun `M report the replay markers Session Replay resolves W handleEvent(StartView)`(
+        @Forgery key: RumScopeKey
+    ) {
+        // Given
+        testedScope = newRumViewScope(trackFrustrations = true)
+        whenever(mockFeaturesContextResolver.resolveSampledForReplay(any(), any())) doReturn true
+        whenever(mockFeaturesContextResolver.resolveSampledForErrorReplay(any(), eq(fakeParentContext.sessionId)))
+            .doReturn(true)
+
+        // When
+        testedScope.handleEvent(
+            RumRawEvent.StartView(key, emptyMap()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        // Then
+        argumentCaptor<ViewEvent> {
+            verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
+            assertThat(lastValue.session.sampledForReplay).isTrue
+            assertThat(lastValue.session.sampledForErrorReplay).isTrue
+        }
+    }
+
+    @Test
     fun `M not mark the session W handleEvent(StartView) { plainly sampled session }`(
         @Forgery key: RumScopeKey
     ) {
@@ -722,6 +748,7 @@ internal class RumViewScopeTest {
         argumentCaptor<ViewEvent> {
             verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
             assertThat(lastValue.session.sampledForError).isNull()
+            assertThat(lastValue.session.sampledForErrorReplay).isNull()
             assertThat(lastValue.toJson().asJsonObject.getAsJsonObject("session").has("sampled_for_error")).isFalse
         }
     }

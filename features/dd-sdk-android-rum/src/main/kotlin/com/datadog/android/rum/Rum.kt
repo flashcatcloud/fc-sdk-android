@@ -164,6 +164,7 @@ object Rum {
             writer = withheldEvents ?: rumFeature.dataWriter,
             withheldEvents = withheldEvents,
             sessionOnError = rumFeature.configuration.sessionOnError,
+            sessionReplayOnError = rumFeature.configuration.sessionReplayOnError,
             handler = handler,
             telemetryEventHandler = TelemetryEventHandler(
                 sdkCore = sdkCore,

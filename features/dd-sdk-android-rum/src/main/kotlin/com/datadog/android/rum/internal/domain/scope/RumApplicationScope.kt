@@ -68,7 +68,8 @@ internal class RumApplicationScope(
     // FLASHCAT FORK - see `RumConfiguration.Builder.setSessionOnError`. One buffer for all the
     // sessions this scope makes, so it remembers the sessions it threw away across them.
     private val withheldEvents: WithheldEventWriter? = null,
-    private val sessionOnError: Boolean = false
+    private val sessionOnError: Boolean = false,
+    private val sessionReplayOnError: Boolean = false
 ) : RumScope, RumViewChangedListener {
 
     override val parentScope: RumScope? = null
@@ -86,6 +87,7 @@ internal class RumApplicationScope(
             beforeSampling = beforeSampling,
             withheldEvents = withheldEvents,
             sessionOnError = sessionOnError,
+            sessionReplayOnError = sessionReplayOnError,
             backgroundTrackingEnabled = backgroundTrackingEnabled,
             trackFrustrations = trackFrustrations,
             viewChangedListener = this,
@@ -244,7 +246,8 @@ internal class RumApplicationScope(
             beforeSampling = beforeSampling,
             forcedSession = forcedSession,
             withheldEvents = withheldEvents,
-            sessionOnError = sessionOnError
+            sessionOnError = sessionOnError,
+            sessionReplayOnError = sessionReplayOnError
         )
         childScopes.add(newSession)
         if (event !is RumRawEvent.StartView) {

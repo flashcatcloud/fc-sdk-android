@@ -1129,7 +1129,10 @@ internal class RumSessionScopeTest {
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to true,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
-                    testedScope.getRumContext().sessionId
+                    testedScope.getRumContext().sessionId,
+                RumSessionScope.RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to false
             )
         )
     }
@@ -1301,7 +1304,10 @@ internal class RumSessionScopeTest {
                 RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to true,
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
-                    testedScope.getRumContext().sessionId
+                    testedScope.getRumContext().sessionId,
+                RumSessionScope.RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to false
             )
         )
     }
@@ -1548,7 +1554,10 @@ internal class RumSessionScopeTest {
                 // rate the app was built with.
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
-                    testedScope.getRumContext().sessionId
+                    testedScope.getRumContext().sessionId,
+                RumSessionScope.RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to false
             )
         )
         assertThat(argumentCaptor.secondValue).isEqualTo(
@@ -1560,7 +1569,10 @@ internal class RumSessionScopeTest {
                 // rate the app was built with.
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
-                    testedScope.getRumContext().sessionId
+                    testedScope.getRumContext().sessionId,
+                RumSessionScope.RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to false
             )
         )
     }
@@ -1599,7 +1611,10 @@ internal class RumSessionScopeTest {
                 // rate the app was built with.
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
-                    testedScope.getRumContext().sessionId
+                    testedScope.getRumContext().sessionId,
+                RumSessionScope.RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to false
             )
         )
         assertThat(argumentCaptor.secondValue).isEqualTo(
@@ -1611,7 +1626,10 @@ internal class RumSessionScopeTest {
                 // rate the app was built with.
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
-                    testedScope.getRumContext().sessionId
+                    testedScope.getRumContext().sessionId,
+                RumSessionScope.RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to false
             )
         )
     }
@@ -1643,7 +1661,10 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
-                RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to firstSessionId
+                RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to firstSessionId,
+                RumSessionScope.RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to false
             )
         )
         assertThat(argumentCaptor.secondValue).isEqualTo(
@@ -1654,7 +1675,10 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
-                RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId
+                RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId,
+                RumSessionScope.RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to false
             )
         )
     }
@@ -1687,7 +1711,10 @@ internal class RumSessionScopeTest {
                 // rate the app was built with.
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
-                    firstSessionId
+                    firstSessionId,
+                RumSessionScope.RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to false
             )
         )
         assertThat(argumentCaptor.secondValue).isEqualTo(
@@ -1699,7 +1726,10 @@ internal class RumSessionScopeTest {
                 // rate the app was built with.
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
-                    secondSessionId
+                    secondSessionId,
+                RumSessionScope.RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to false
             )
         )
     }
@@ -1733,7 +1763,10 @@ internal class RumSessionScopeTest {
                 // rate the app was built with.
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
-                    firstSessionId
+                    firstSessionId,
+                RumSessionScope.RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to false
             )
         )
         assertThat(argumentCaptor.secondValue).isEqualTo(
@@ -1745,7 +1778,10 @@ internal class RumSessionScopeTest {
                 // rate the app was built with.
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
-                    secondSessionId
+                    secondSessionId,
+                RumSessionScope.RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to false
             )
         )
         assertThat(argumentCaptor.thirdValue).isEqualTo(
@@ -1757,7 +1793,10 @@ internal class RumSessionScopeTest {
                 // rate the app was built with.
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
                 RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to
-                    secondSessionId
+                    secondSessionId,
+                RumSessionScope.RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to false
             )
         )
     }
@@ -1790,7 +1829,10 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
-                RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to firstSessionId
+                RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to firstSessionId,
+                RumSessionScope.RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to false
             )
         )
         assertThat(argumentCaptor.secondValue).isEqualTo(
@@ -1801,7 +1843,13 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
-                RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId
+                RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId,
+
+                RumSessionScope.RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY to false,
+
+                RumSessionScope.RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY to false,
+
+                RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to false
 
             )
         )
@@ -1835,7 +1883,10 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
-                RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to firstSessionId
+                RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to firstSessionId,
+                RumSessionScope.RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to false
             )
         )
         assertThat(argumentCaptor.secondValue).isEqualTo(
@@ -1846,7 +1897,10 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
-                RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId
+                RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId,
+                RumSessionScope.RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to false
             )
         )
     }
@@ -1880,7 +1934,10 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
-                RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to firstSessionId
+                RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to firstSessionId,
+                RumSessionScope.RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to false
             )
         )
         assertThat(argumentCaptor.secondValue).isEqualTo(
@@ -1891,7 +1948,10 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
-                RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId
+                RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId,
+                RumSessionScope.RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to false
             )
         )
         assertThat(argumentCaptor.thirdValue).isEqualTo(
@@ -1902,7 +1962,10 @@ internal class RumSessionScopeTest {
                 // No remote sampling configured here, so Session Replay is told to keep using the
                 // rate the app was built with.
                 RumSessionScope.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to false,
-                RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId
+                RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to secondSessionId,
+                RumSessionScope.RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY to false,
+                RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to false
             )
         )
     }
@@ -2377,6 +2440,49 @@ internal class RumSessionScopeTest {
         assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.WITHHELD)
     }
 
+    @Test
+    fun `M watch a collected session and tell Session Replay W draw { replay switch on }`() {
+        // Given
+        val withheldEvents = mock<WithheldEventWriter>()
+        fakeDatadogContext = fakeDatadogContext.copy(trackingConsent = TrackingConsent.GRANTED)
+        initializeTestedScope(sampleRate = 100f, withheldEvents = withheldEvents, sessionReplayOnError = true)
+
+        // When
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        whenever(withheldEvents.isReleased(testedScope.sessionId)) doReturn true
+        testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        verify(withheldEvents).watchForError(testedScope.sessionId)
+        val captor = argumentCaptor<Any>()
+        verify(mockSessionReplayFeatureScope, atLeastOnce()).sendEvent(captor.capture())
+        val first = captor.firstValue as Map<*, *>
+        val last = captor.lastValue as Map<*, *>
+        assertThat(first[RumSessionScope.RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY]).isEqualTo(true)
+        assertThat(first[RumSessionScope.RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY]).isEqualTo(false)
+        assertThat(first[RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE_KEY]).isEqualTo(false)
+        assertThat(last[RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE_KEY]).isEqualTo(true)
+    }
+
+    @Test
+    fun `M tell Session Replay the events are withheld W draw { rate missed, sessionOnError on }`() {
+        // When
+        startWithheldSession()
+
+        // Then
+        val captor = argumentCaptor<Any>()
+        verify(mockSessionReplayFeatureScope, atLeastOnce()).sendEvent(captor.capture())
+        val last = captor.lastValue as Map<*, *>
+        assertThat(last[RumSessionScope.RUM_KEEP_SESSION_BUS_MESSAGE_KEY]).isEqualTo(false)
+        assertThat(last[RumSessionScope.RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY]).isEqualTo(true)
+        assertThat(last[RumSessionScope.RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY]).isEqualTo(false)
+    }
+
     // endregion
 
     // region beforeSampling
@@ -2482,7 +2588,8 @@ internal class RumSessionScopeTest {
         onSessionDrawn: () -> Unit = {},
         beforeSampling: BeforeSamplingCallback? = null,
         withheldEvents: WithheldEventWriter? = null,
-        sessionOnError: Boolean = false
+        sessionOnError: Boolean = false,
+        sessionReplayOnError: Boolean = false
     ) {
         testedScope = RumSessionScope(
             parentScope = mockParentScope,
@@ -2513,7 +2620,8 @@ internal class RumSessionScopeTest {
             onSessionDrawn = onSessionDrawn,
             beforeSampling = beforeSampling,
             withheldEvents = withheldEvents,
-            sessionOnError = sessionOnError
+            sessionOnError = sessionOnError,
+            sessionReplayOnError = sessionReplayOnError
         )
 
         if (withMockChildScope) {

@@ -1339,7 +1339,14 @@ internal open class RumViewScope(
                     isActive = rumContext.isSessionActive,
                     // FLASHCAT FORK - tells the intake this session's detail only starts where the
                     // withheld buffer reached. Absent, rather than false, for every other session.
-                    sampledForError = rumContext.sampledForError.takeIf { it }
+                    sampledForError = rumContext.sampledForError.takeIf { it },
+                    sampledForReplay = featuresContextResolver.resolveSampledForReplay(
+                        datadogContext,
+                        rumContext.sampledForError
+                    ),
+                    sampledForErrorReplay = featuresContextResolver
+                        .resolveSampledForErrorReplay(datadogContext, rumContext.sessionId)
+                        ?.takeIf { it }
                 ),
                 synthetics = syntheticsAttribute,
                 source = ViewEvent.ViewEventSource.tryFromSource(

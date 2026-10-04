@@ -12,4 +12,12 @@ internal class NoOpRecordWriter : RecordWriter {
     override fun write(record: EnrichedRecord) {
         // no-op
     }
+
+    override fun withhold(sessionId: String) {
+        // no-op
+    }
+
+    override fun stopWithholding(releasedSessionId: String?) {
+        // no-op
+    }
 }
