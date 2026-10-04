@@ -2454,7 +2454,7 @@ internal class RumSessionScopeTest {
             mockEventWriteScope,
             mockWriter
         )
-        whenever(withheldEvents.isReleased(testedScope.sessionId)) doReturn true
+        whenever(withheldEvents.isReplayReleased(testedScope.sessionId)) doReturn true
         testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
 
         // Then

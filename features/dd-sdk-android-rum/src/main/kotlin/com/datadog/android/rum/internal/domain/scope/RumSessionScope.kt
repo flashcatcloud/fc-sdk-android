@@ -234,7 +234,7 @@ internal class RumSessionScope(
             // only on error has collected everything, so it is simply released now, without waiting
             // for an error or for the jitter. One that was NOT collected restarts now, so a
             // collected one takes its place.
-            if (sampledForError && isCollected()) {
+            if (sampledForError && (sessionState == State.TRACKED || sessionState == State.WITHHELD)) {
                 val releasedSessionId = sessionId
                 writeScope { withheldEvents?.forceRelease(releasedSessionId, it) }
                 if (sessionState == State.WITHHELD) sessionState = State.TRACKED
@@ -348,10 +348,6 @@ internal class RumSessionScope(
         sessionEndedMetricDispatcher.onSessionStopped(sessionId)
         endWithheldSession(writeScope)
     }
-
-    // FLASHCAT FORK - TRACKED or WITHHELD: the session's events are assembled, whether or not they
-    // are uploaded yet.
-    private fun isCollected(): Boolean = sessionState == State.TRACKED || sessionState == State.WITHHELD
 
     /**
      * FLASHCAT FORK - the current session ends: what it withheld is released if it reported an
@@ -563,10 +559,10 @@ internal class RumSessionScope(
                 RUM_SESSION_ID_BUS_MESSAGE_KEY to sessionId,
                 // FLASHCAT FORK - what Session Replay needs to keep a replay on error: whether the
                 // session's events are kept on error (its replay then waits with them), the replay
-                // switch it was drawn under, and whether it has reported its error.
+                // switch it was drawn under, and whether its replay may go out.
                 RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY to sampledForError,
                 RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY to replayOnError,
-                RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to (withheldEvents?.isReleased(sessionId) == true)
+                RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to (withheldEvents?.isReplayReleased(sessionId) == true)
             )
         )
     }
@@ -583,6 +579,7 @@ internal class RumSessionScope(
         internal const val RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY = "sessionOnError"
         internal const val RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY = "sessionReplayOnError"
         internal const val RUM_SESSION_RELEASED_BUS_MESSAGE_KEY = "sessionReleased"
+        internal const val RUM_SESSION_RELEASED_BUS_MESSAGE = "rum_session_released"
 
         private const val MAX_SAMPLE_RATE = 100f
 

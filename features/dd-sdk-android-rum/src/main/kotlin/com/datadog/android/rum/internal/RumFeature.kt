@@ -24,6 +24,7 @@ import com.datadog.android.api.feature.FeatureSdkCore
 import com.datadog.android.api.feature.StorageBackedFeature
 import com.datadog.android.api.net.RequestFactory
 import com.datadog.android.api.storage.DataWriter
+import com.datadog.android.api.storage.EventBatchWriter
 import com.datadog.android.api.storage.FeatureStorageConfiguration
 import com.datadog.android.api.storage.NoOpDataWriter
 import com.datadog.android.core.InternalSdkCore
@@ -47,6 +48,7 @@ import com.datadog.android.rum.internal.anr.ANRDetectorRunnable
 import com.datadog.android.rum.internal.debug.UiRumDebugListener
 import com.datadog.android.rum.internal.domain.InfoProvider
 import com.datadog.android.rum.internal.domain.RumDataWriter
+import com.datadog.android.rum.internal.domain.WithheldEventWriter
 import com.datadog.android.rum.internal.domain.accessibility.AccessibilityInfo
 import com.datadog.android.rum.internal.domain.accessibility.AccessibilitySnapshotManager
 import com.datadog.android.rum.internal.domain.accessibility.DefaultAccessibilityReader
@@ -64,6 +66,7 @@ import com.datadog.android.rum.internal.domain.event.RumEventMetaDeserializer
 import com.datadog.android.rum.internal.domain.event.RumEventMetaSerializer
 import com.datadog.android.rum.internal.domain.event.RumEventSerializer
 import com.datadog.android.rum.internal.domain.event.RumViewEventFilter
+import com.datadog.android.rum.internal.domain.scope.RumSessionScope
 import com.datadog.android.rum.internal.instrumentation.MainLooperLongTaskStrategy
 import com.datadog.android.rum.internal.instrumentation.UserActionTrackingStrategyApi29
 import com.datadog.android.rum.internal.instrumentation.UserActionTrackingStrategyLegacy
@@ -179,6 +182,14 @@ internal class RumFeature(
     internal var remoteConfigStore: RemoteConfigStore? = null
     internal var remoteConfigController: RemoteConfigController? = null
     private var remoteConfigForegroundCallback: ProcessForegroundCallback? = null
+
+    /**
+     * FLASHCAT FORK - where the sessions kept only on error hold their events, see
+     * `RumConfiguration.Builder.setSessionOnError`. Every RUM event of a collected session passes
+     * through it.
+     */
+    internal var withheldEvents: WithheldEventWriter? = null
+    private var withheldEventsBackgroundCallback: ProcessForegroundCallback? = null
     internal var initialResourceIdentifier: InitialResourceIdentifier = NoOpInitialResourceIdentifier()
     internal var lastInteractionIdentifier: LastInteractionIdentifier? = NoOpLastInteractionIdentifier()
     internal var slowFramesListener: SlowFramesListener? = null
@@ -218,10 +229,12 @@ internal class RumFeature(
         lastInteractionIdentifier = configuration.lastInteractionIdentifier
         insightsCollector = configuration.insightsCollector
 
-        dataWriter = createDataWriter(
+        val rumDataWriter = createDataWriter(
             configuration,
             sdkCore as InternalSdkCore
         )
+        dataWriter = rumDataWriter
+        withheldEvents = createWithheldEventWriter(rumDataWriter, appContext)
 
         sampleRate = if (sdkCore.isDeveloperModeEnabled) {
             sdkCore.internalLogger.log(
@@ -355,6 +368,10 @@ internal class RumFeature(
         remoteConfigController = null
         remoteConfigStore = null
 
+        withheldEventsBackgroundCallback?.let { (appContext as? Application)?.unregisterActivityLifecycleCallbacks(it) }
+        withheldEventsBackgroundCallback = null
+        withheldEvents = null
+
         rumContextUpdateReceivers.forEach {
             sdkCore.removeContextUpdateReceiver(it)
         }
@@ -402,10 +419,58 @@ internal class RumFeature(
         displayInfoProvider = NoOpDisplayInfoProvider()
     }
 
+    /**
+     * FLASHCAT FORK - the buffer the sessions kept only on error hold their events in. Its release
+     * timer only hands the release back to the storage thread, so the main looper is enough to carry
+     * it; and a release still waiting for the timer goes at once when the app leaves the foreground,
+     * since the process may not live to see the timer fire.
+     */
+    private fun createWithheldEventWriter(rumDataWriter: RumDataWriter, appContext: Context): WithheldEventWriter {
+        val handler = Handler(Looper.getMainLooper())
+        val withRumWriteScope: ((EventBatchWriter) -> Unit) -> Unit = { block ->
+            sdkCore.getFeature(Feature.RUM_FEATURE_NAME)?.withWriteContext { _, writeScope -> writeScope(block) }
+        }
+        val writer = WithheldEventWriter(
+            delegate = rumDataWriter,
+            internalLogger = sdkCore.internalLogger,
+            elapsedTimeNs = { sdkCore.timeProvider.getDeviceElapsedTimeNanos() },
+            scheduleRelease = { delayMs, release -> handler.postDelayed({ withRumWriteScope(release) }, delayMs) },
+            replayRecordsCount = ::resolveReplayRecordsCount,
+            releaseReplay = { sessionId ->
+                sdkCore.getFeature(Feature.SESSION_REPLAY_FEATURE_NAME)?.sendEvent(
+                    mapOf(
+                        RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
+                            RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE,
+                        RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to sessionId
+                    )
+                )
+            }
+        )
+        (appContext as? Application)?.let { application ->
+            val callback = ProcessForegroundCallback(
+                onForeground = {},
+                onBackground = { withRumWriteScope(writer::flushScheduledRelease) }
+            )
+            application.registerActivityLifecycleCallbacks(callback)
+            withheldEventsBackgroundCallback = callback
+        }
+        return writer
+    }
+
+    /** FLASHCAT FORK - the replay records a view has, sent or still held by Session Replay. */
+    private fun resolveReplayRecordsCount(viewId: String): Long {
+        val sessionReplayContext =
+            sdkCore.getFeatureContext(Feature.SESSION_REPLAY_FEATURE_NAME, useContextThread = false)
+        val viewMetadata = sessionReplayContext[viewId] as? Map<*, *> ?: return 0L
+        val sent = viewMetadata[FeaturesContextResolver.VIEW_RECORDS_COUNT_KEY] as? Long ?: 0L
+        val held = viewMetadata[FeaturesContextResolver.VIEW_WITHHELD_RECORDS_COUNT_KEY] as? Long ?: 0L
+        return sent + held
+    }
+
     private fun createDataWriter(
         configuration: Configuration,
         sdkCore: InternalSdkCore
-    ): DataWriter<Any> {
+    ): RumDataWriter {
         return RumDataWriter(
             eventSerializer = MapperSerializer(
                 RumEventMapper(
@@ -826,7 +891,7 @@ internal class RumFeature(
             // console's change land soon after someone reopens the app, and it costs the app no
             // code of its own.
             (appContext as? Application)?.let { application ->
-                val callback = ProcessForegroundCallback { controller.refreshIfStale() }
+                val callback = ProcessForegroundCallback(onForeground = { controller.refreshIfStale() })
                 application.registerActivityLifecycleCallbacks(callback)
                 remoteConfigForegroundCallback = callback
             }

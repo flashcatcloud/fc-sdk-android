@@ -21,11 +21,14 @@ import org.junit.jupiter.api.extension.Extensions
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.whenever
 import org.mockito.quality.Strictness
 
 @Extensions(
@@ -164,5 +167,33 @@ internal class SessionReplayRecordCallbackTest {
 
     private fun Forge.forgeEmptyValidEnrichedRecord(): EnrichedRecord {
         return getForgery<EnrichedRecord>().copy(records = emptyList())
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    @Test
+    fun `M count held records apart from sent ones W onRecordForViewWithheld then cleared`() {
+        // Given
+        val featureContext = mutableMapOf<String, Any?>()
+        whenever(mockDatadogCore.updateFeatureContext(eq(Feature.SESSION_REPLAY_FEATURE_NAME), eq(false), any()))
+            .doAnswer { it.getArgument<(MutableMap<String, Any?>) -> Unit>(2).invoke(featureContext) }
+        val size = fakeEnrichedRecord.records.size.toLong()
+
+        // When
+        testedRecordCallback.onRecordForViewWithheld(fakeEnrichedRecord)
+        testedRecordCallback.onRecordForViewWithheld(fakeEnrichedRecord)
+        val viewMetadata = featureContext[fakeEnrichedRecord.viewId] as Map<String, Any?>
+        val heldCount = viewMetadata[SessionReplayRecordCallback.VIEW_WITHHELD_RECORDS_COUNT_KEY]
+        testedRecordCallback.onWithheldRecordsCleared(listOf(fakeEnrichedRecord))
+        val afterOneCleared = viewMetadata[SessionReplayRecordCallback.VIEW_WITHHELD_RECORDS_COUNT_KEY]
+        testedRecordCallback.onWithheldRecordsCleared(listOf(fakeEnrichedRecord))
+
+        // Then - nothing claimed as sent, and the held count goes back to nothing
+        assertThat(heldCount).isEqualTo(2 * size)
+        assertThat(afterOneCleared).isEqualTo(size)
+        assertThat(viewMetadata).doesNotContainKeys(
+            SessionReplayRecordCallback.VIEW_WITHHELD_RECORDS_COUNT_KEY,
+            SessionReplayRecordCallback.HAS_REPLAY_KEY,
+            SessionReplayRecordCallback.VIEW_RECORDS_COUNT_KEY
+        )
     }
 }

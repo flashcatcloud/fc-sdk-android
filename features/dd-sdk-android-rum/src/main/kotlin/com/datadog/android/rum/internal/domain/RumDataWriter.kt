@@ -28,14 +28,11 @@ internal class RumDataWriter(
     @WorkerThread
     override fun write(writer: EventBatchWriter, element: Any, eventType: EventType): Boolean {
         val batchEvent = serialize(element) ?: return false
-
-        synchronized(this) {
-            val result = writer.write(batchEvent, null, eventType)
-            if (result) {
-                onDataWritten(element, batchEvent.data)
-            }
-            return result
+        val result = writeSerialized(writer, batchEvent, eventType)
+        if (result) {
+            onDataWritten(element, batchEvent.data)
         }
+        return result
     }
 
     // endregion

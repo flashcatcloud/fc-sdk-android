@@ -18,6 +18,7 @@ import com.datadog.android.api.storage.RawBatchEvent
 import com.datadog.android.sessionreplay.forge.ForgeConfigurator
 import com.datadog.android.sessionreplay.internal.RecordCallback
 import com.datadog.android.sessionreplay.internal.processor.EnrichedRecord
+import com.datadog.android.sessionreplay.internal.processor.EnrichedResource
 import com.datadog.android.sessionreplay.model.MobileSegment
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.Forgery
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.extension.Extensions
 import org.mockito.Mock
+import org.mockito.Mockito.mockingDetails
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
@@ -36,6 +38,8 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.inOrder
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
@@ -78,7 +82,7 @@ internal class SessionReplayRecordWriterTest {
         whenever(mockSdkCore.getFeature(Feature.SESSION_REPLAY_FEATURE_NAME))
             .thenReturn(mockSessionReplayFeature)
 
-        testedWriter = SessionReplayRecordWriter(mockSdkCore, mockRecordCallback)
+        testedWriter = SessionReplayRecordWriter(mockSdkCore, mockRecordCallback, mockResourcesWriter)
     }
 
     @Test
@@ -193,6 +197,149 @@ internal class SessionReplayRecordWriterTest {
 
     @Mock
     lateinit var mockInternalLogger: InternalLogger
+
+    @Mock
+    lateinit var mockResourcesWriter: ResourcesWriter
+
+    private fun resource(hash: String, size: Int = 10) = EnrichedResource(ByteArray(size), hash)
+
+    @Test
+    fun `M write a resource through W write(resource) { session not withheld }`() {
+        // Given
+        recordWrites()
+        val onWritten = {}
+
+        // When
+        testedWriter.write(resource("img"), "s1", onWritten)
+
+        // Then
+        verify(mockResourcesWriter).write(any(), eq("s1"), eq(onWritten))
+    }
+
+    @Test
+    fun `M hold resources and write them on release W write(resource) { session withheld }`() {
+        // Given
+        recordWrites()
+        testedWriter.withhold("s1")
+        testedWriter.write(record("r1", "s1", fullSnapshotAt = 1_000))
+        testedWriter.write(resource("img"), "s1") {}
+        testedWriter.write(resource("img"), "s1") {}
+
+        // When
+        val beforeRelease = mockingDetails(mockResourcesWriter).invocations.size
+        testedWriter.stopWithholding("s1")
+
+        // Then
+        assertThat(beforeRelease).isZero()
+        verify(mockResourcesWriter, times(1)).write(any(), eq("s1"), any())
+    }
+
+    @Test
+    fun `M drop held resources W stopWithholding { another session }`() {
+        // Given
+        recordWrites()
+        testedWriter.withhold("s1")
+        testedWriter.write(resource("img"), "s1") {}
+
+        // When
+        testedWriter.stopWithholding("s2")
+        testedWriter.write(resource("late"), "s1") {}
+
+        // Then
+        verify(mockResourcesWriter, never()).write(any(), any(), any())
+    }
+
+    @Test
+    fun `M count held records apart and clear them W hold then release`() {
+        // Given
+        recordWrites()
+        testedWriter.withhold("s1")
+        val held = record("r1", "s1", fullSnapshotAt = 1_000)
+
+        // When
+        testedWriter.write(held)
+        testedWriter.stopWithholding("s1")
+
+        // Then
+        inOrder(mockRecordCallback) {
+            verify(mockRecordCallback).onRecordForViewWithheld(held)
+            verify(mockRecordCallback).onRecordForViewSent(held)
+            verify(mockRecordCallback).onWithheldRecordsCleared(listOf(held))
+        }
+    }
+
+    @Test
+    fun `M start the release with the view's meta and focus W release { cut at a periodic full snapshot }`() {
+        // Given
+        recordWrites()
+        testedWriter.withhold("s1")
+        val meta = MobileSegment.MobileRecord.MetaRecord(0, data = MobileSegment.Data1(100, 200))
+        val focus = MobileSegment.MobileRecord.FocusRecord(0, data = MobileSegment.Data2(true))
+        val full0 = MobileSegment.MobileRecord.MobileFullSnapshotRecord(0, MobileSegment.Data(emptyList()))
+        testedWriter.write(EnrichedRecord("app", "s1", "view", listOf(meta, focus, full0)))
+        testedWriter.write(record("view", "s1", fullSnapshotAt = 30_000))
+        testedWriter.write(record("view", "s1", fullSnapshotAt = 95_000))
+        val released = mutableListOf<String>()
+        whenever(mockEventBatchWriter.write(anyOrNull(), anyOrNull(), any())) doAnswer {
+            released.add(String(it.getArgument<RawBatchEvent>(0).data))
+            true
+        }
+
+        // When
+        testedWriter.stopWithholding("s1")
+
+        // Then - cut at the full snapshot of 30s, which now carries the meta and focus first
+        assertThat(released).hasSize(2)
+        val first = com.google.gson.JsonParser.parseString(released[0]).asJsonObject.getAsJsonArray("records")
+        assertThat(first.map { it.asJsonObject.get("type").asInt }).containsExactly(4, 6, 10)
+        assertThat(first.map { it.asJsonObject.get("timestamp").asLong }).containsOnly(30_000L)
+    }
+
+    @Test
+    fun `M drop the oldest span but keep a full snapshot W hold { over the byte limit }`() {
+        // Given
+        recordWrites()
+        testedWriter.withhold("s1")
+        val big = SessionReplayRecordWriter.BYTES_LIMIT.toInt() / 3
+        testedWriter.write(bigRecord("old", "s1", 1_000, big))
+        testedWriter.write(bigRecord("mid", "s1", 2_000, big))
+        testedWriter.write(bigRecord("new", "s1", 3_000, big))
+
+        // When
+        testedWriter.stopWithholding("s1")
+
+        // Then
+        assertThat(written).containsExactly("mid", "new")
+    }
+
+    @Test
+    fun `M keep the only full snapshot W hold { a single span over the byte limit }`() {
+        // Given
+        recordWrites()
+        testedWriter.withhold("s1")
+        testedWriter.write(bigRecord("only", "s1", 1_000, SessionReplayRecordWriter.BYTES_LIMIT.toInt() + 1))
+        testedWriter.write(record("inc", "s1"))
+
+        // When
+        testedWriter.stopWithholding("s1")
+
+        // Then
+        assertThat(written).containsExactly("only", "inc")
+    }
+
+    private fun bigRecord(tag: String, sessionId: String, timestamp: Long, size: Int): EnrichedRecord {
+        val text = MobileSegment.Wireframe.TextWireframe(
+            id = 1,
+            x = 0,
+            y = 0,
+            width = 1,
+            height = 1,
+            text = "x".repeat(size),
+            textStyle = MobileSegment.TextStyle("f", 1, "#000000")
+        )
+        val full = MobileSegment.MobileRecord.MobileFullSnapshotRecord(timestamp, MobileSegment.Data(listOf(text)))
+        return EnrichedRecord("app", sessionId, tag, listOf(full))
+    }
 
     @Test
     fun `M hold the records W write { session withheld }`() {

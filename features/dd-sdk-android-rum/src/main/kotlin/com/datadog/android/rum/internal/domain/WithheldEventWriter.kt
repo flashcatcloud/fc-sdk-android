@@ -19,6 +19,7 @@ import com.datadog.android.rum.model.ResourceEvent
 import com.datadog.android.rum.model.ViewEvent
 import com.datadog.android.rum.model.VitalAppLaunchEvent
 import com.datadog.android.rum.model.VitalOperationStepEvent
+import com.google.gson.JsonParser
 import java.util.concurrent.TimeUnit
 import kotlin.math.absoluteValue
 
@@ -49,18 +50,27 @@ internal class WithheldEventWriter(
      * Runs the release after the given delay, on the storage thread, with a writer for whatever
      * the tracking consent is by then.
      */
-    private val scheduleRelease: (delayMs: Long, release: (EventBatchWriter) -> Unit) -> Unit
+    private val scheduleRelease: (delayMs: Long, release: (EventBatchWriter) -> Unit) -> Unit,
+    /**
+     * How many replay records a view holds or has sent, so released events can claim the replay
+     * that goes out with them.
+     */
+    private val replayRecordsCount: (viewId: String) -> Long,
+    /**
+     * Tells Session Replay the session's events are released, so the replay it holds for that
+     * session goes out too - never ahead of the events it attaches to.
+     */
+    private val releaseReplay: (sessionId: String) -> Unit
 ) : DataWriter<Any> {
 
-    private class HeldView(val date: Long, val event: RawBatchEvent, val eventType: EventType)
+    private class HeldView(val viewId: String, val date: Long, val event: RawBatchEvent, val eventType: EventType)
 
     private class HeldEvent(
         val viewId: String?,
         val event: RawBatchEvent,
         val eventType: EventType,
         val heldAtNs: Long,
-        val tier: EvictionTier,
-        val isError: Boolean
+        val tier: EvictionTier
     )
 
     /** What goes first when the buffer is over budget. */
@@ -92,6 +102,9 @@ internal class WithheldEventWriter(
      * waits for the jitter is released rather than thrown away.
      */
     private var releasedSessionId: String? = null
+
+    /** The session whose replay was told to go out: its events have actually been released. */
+    private var replayReleasedSessionId: String? = null
 
     /** Latest event per view, least recently updated first. */
     private val views = LinkedHashMap<String, HeldView>()
@@ -126,8 +139,17 @@ internal class WithheldEventWriter(
                 return true
             }
             if (sessionId == watchedSessionId && element is ErrorEvent) {
-                val written = delegate.write(writer, element, eventType)
-                if (written) releasedSessionId = sessionId
+                // The error the console opens the replay from claims it, if its view has records.
+                val claimed = if (replayRecordsCount(element.view.id) > 0) {
+                    element.copy(session = element.session.copy(hasReplay = true))
+                } else {
+                    element
+                }
+                val written = delegate.write(writer, claimed, eventType)
+                if (written && releasedSessionId != sessionId) {
+                    releasedSessionId = sessionId
+                    notifyReplayReleased(sessionId)
+                }
                 return written
             }
             if (sessionId != withheldForSessionId) {
@@ -139,9 +161,10 @@ internal class WithheldEventWriter(
                 if (batchEvent.data.size > BYTES_LIMIT) {
                     // The session has earned its release. An error larger than the whole budget
                     // could only be held by evicting the history it explains, so it goes to the
-                    // batch on its own; the history still leaves behind the jitter.
-                    delegate.writeSerialized(writer, batchEvent, eventType)
-                    scheduleReleaseOnce(sessionId)
+                    // batch on its own; the history still leaves behind the jitter - unless this
+                    // is a crash, after which no timer would ever fire.
+                    delegate.writeSerialized(writer, claimReplay(batchEvent, element.view.id), eventType)
+                    if (element.error.isCrash == true) release(writer) else scheduleReleaseOnce(sessionId)
                     return true
                 }
             }
@@ -165,6 +188,24 @@ internal class WithheldEventWriter(
 
     /** Whether the given session earned its release. Read by the session scope to stop withholding. */
     fun isReleased(sessionId: String): Boolean = synchronized(this) { releasedSessionId == sessionId }
+
+    /**
+     * Whether the replay of the given session may go out: its events have actually left - after the
+     * jitter for a withheld session, at its first error for a session whose replay only is withheld.
+     */
+    fun isReplayReleased(sessionId: String): Boolean = synchronized(this) { replayReleasedSessionId == sessionId }
+
+    /**
+     * The app went to the background: a release waiting for the jitter goes now, since the process
+     * may not live to see the timer. A buffer that has not earned its release stays held - the app
+     * often comes straight back, and an error then needs the history before it.
+     */
+    @WorkerThread
+    fun flushScheduledRelease(writer: EventBatchWriter) {
+        synchronized(this) {
+            if (releaseScheduledAtNs != null) release(writer)
+        }
+    }
 
     /** Watches a collected session whose replay only is kept on error for its first error. */
     @WorkerThread
@@ -248,8 +289,7 @@ internal class WithheldEventWriter(
                 event = batchEvent,
                 eventType = eventType,
                 heldAtNs = elapsedTimeNs(),
-                tier = evictionTierOf(element),
-                isError = element is ErrorEvent
+                tier = evictionTierOf(element)
             )
         )
         bytes += size
@@ -265,7 +305,7 @@ internal class WithheldEventWriter(
         // A view event is cumulative, so the latest supersedes the ones before. Removed first so the
         // map orders views by their last update.
         views.remove(viewId)
-        views[viewId] = HeldView(element.date, batchEvent, eventType)
+        views[viewId] = HeldView(viewId, element.date, batchEvent, eventType)
         // Written locally like any view the batch takes, and only locally: a native crash is
         // reported at the next launch from this file, and is exactly the error such a session is
         // kept for.
@@ -304,7 +344,7 @@ internal class WithheldEventWriter(
     }
 
     private fun evictOne(): Boolean {
-        for (tier in listOf(EvictionTier.FIRST, EvictionTier.LAST)) {
+        for (tier in EVICTED_BEFORE_ERRORS) {
             val index = details.indexOfFirst { it.tier == tier }
             if (index != -1) {
                 evictAt(index)
@@ -338,17 +378,18 @@ internal class WithheldEventWriter(
 
     @WorkerThread
     private fun release(writer: EventBatchWriter) {
+        val sessionId = withheldForSessionId
         prune()
-        // A detail whose view is gone has nothing to hang from at the other end. One that never had
-        // a view (an app launch vital measured before the first one) hangs from the session alone.
-        val releasable = details.filter { it.viewId == null || views.containsKey(it.viewId) }
-
-        // The session is built out of whichever of its views arrives first, so that one has to be
-        // the earliest. Then the errors - a release at exit leaves in as many requests as the
-        // process still gets to send, and the error is what the session is kept for - then the rest.
-        views.values.sortedBy { it.date }.forEach { delegate.writeSerialized(writer, it.event, it.eventType) }
-        releasable.filter { it.isError }.forEach { delegate.writeSerialized(writer, it.event, it.eventType) }
-        releasable.filterNot { it.isError }.forEach { delegate.writeSerialized(writer, it.event, it.eventType) }
+        // Views only set the order: the session is built out of whichever of its views arrives
+        // first, so that one has to be the earliest. Every detail goes, whether or not its view is
+        // still held - an error raised before the first view, or whose view was evicted, is still
+        // the error the session is kept for. Then the errors - a release at exit leaves in as many
+        // requests as the process still gets to send, and the error is what the session is kept
+        // for - then the rest.
+        views.values.sortedBy { it.date }.forEach { write(writer, it.event, it.eventType, it.viewId) }
+        val (errors, others) = details.partition { it.tier == EvictionTier.LAST_RESORT }
+        errors.forEach { write(writer, it.event, it.eventType, it.viewId) }
+        others.forEach { write(writer, it.event, it.eventType, it.viewId) }
 
         // Without this the promise of a minute of history before the error could not be checked.
         internalLogger.log(
@@ -359,7 +400,7 @@ internal class WithheldEventWriter(
             onlyOnce = false,
             additionalProperties = mapOf(
                 "buffer.views_count" to views.size,
-                "buffer.events_count" to releasable.size,
+                "buffer.events_count" to details.size,
                 "buffer.dropped_count" to droppedCount,
                 "buffer.bytes" to bytes
             )
@@ -367,6 +408,36 @@ internal class WithheldEventWriter(
 
         clear()
         withheldForSessionId = null
+        // After the events, so the replay never reaches the intake ahead of the session it belongs
+        // to. After a JVM crash this is as far as it gets: the replay is still held in memory and
+        // goes down with the process - only the events, written in the crash's own write, survive.
+        sessionId?.let(::notifyReplayReleased)
+    }
+
+    private fun notifyReplayReleased(sessionId: String) {
+        replayReleasedSessionId = sessionId
+        releaseReplay(sessionId)
+    }
+
+    private fun write(writer: EventBatchWriter, event: RawBatchEvent, eventType: EventType, viewId: String?) {
+        delegate.writeSerialized(writer, viewId?.let { claimReplay(event, it) } ?: event, eventType)
+    }
+
+    /**
+     * An event assembled while the replay was withheld could not claim it then, since the replay
+     * might have been dropped. It goes out now alongside its records, so it claims it if its view
+     * has any.
+     */
+    private fun claimReplay(event: RawBatchEvent, viewId: String): RawBatchEvent {
+        if (replayRecordsCount(viewId) <= 0) return event
+        val json = try {
+            JsonParser.parseString(String(event.data, Charsets.UTF_8)).asJsonObject
+        } catch (@Suppress("TooGenericExceptionCaught") e: RuntimeException) {
+            return event
+        }
+        val session = json.getAsJsonObject(SESSION_KEY) ?: return event
+        session.addProperty(HAS_REPLAY_KEY, true)
+        return event.copy(data = json.toString().toByteArray(Charsets.UTF_8))
     }
 
     private fun clear() {
@@ -406,6 +477,11 @@ internal class WithheldEventWriter(
         private const val DISCARDED_SESSIONS_REMEMBERED = 4
 
         private const val HTTP_ERROR_STATUS = 400L
+
+        private val EVICTED_BEFORE_ERRORS = listOf(EvictionTier.FIRST, EvictionTier.LAST)
+
+        private const val SESSION_KEY = "session"
+        private const val HAS_REPLAY_KEY = "has_replay"
 
         internal const val RELEASED_MESSAGE = "Error session event buffer released"
 

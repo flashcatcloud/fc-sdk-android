@@ -84,8 +84,17 @@ internal class WithheldEventWriterTest {
         this.forge = forge
         whenever(mockSdkCore.internalLogger) doReturn mockInternalLogger
         val serializer = object : Serializer<Any> {
-            override fun serialize(model: Any): String? =
-                if (payloads.containsKey(model)) payloads[model] else "untracked"
+            override fun serialize(model: Any): String? {
+                if (model is ErrorEvent) claimedErrors.add(model)
+                // A copy claiming the replay serializes like the event it was copied from.
+                val key = payloads.keys.firstOrNull { it === model }
+                    ?: (model as? ErrorEvent)?.let { error ->
+                        payloads.keys.firstOrNull {
+                            it == error.copy(session = error.session.copy(hasReplay = null))
+                        }
+                    }
+                return if (key != null) payloads[key] else "untracked"
+            }
         }
         val metaSerializer = object : Serializer<RumEventMeta> {
             override fun serialize(model: RumEventMeta): String = "meta"
@@ -94,9 +103,15 @@ internal class WithheldEventWriterTest {
             delegate = RumDataWriter(serializer, metaSerializer, mockSdkCore),
             internalLogger = mockInternalLogger,
             elapsedTimeNs = { nowNs },
-            scheduleRelease = { delayMs, release -> scheduled.add(delayMs to release) }
+            scheduleRelease = { delayMs, release -> scheduled.add(delayMs to release) },
+            replayRecordsCount = { viewId -> replayRecords[viewId] ?: 0L },
+            releaseReplay = { releasedReplays.add(it) }
         )
     }
+
+    private val replayRecords = mutableMapOf<String, Long>()
+    private val claimedErrors = mutableListOf<ErrorEvent>()
+    private val releasedReplays = mutableListOf<String>()
 
     // region Withholding
 
@@ -205,6 +220,140 @@ internal class WithheldEventWriterTest {
         // Then
         verify(mockSdkCore).writeLastViewEvent("v1".toByteArray())
         assertThat(written).isEmpty()
+    }
+
+    // endregion
+
+    // region Replay
+
+    @Test
+    fun `M release the replay only once the events are W write() {error, then jitter}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+
+        // When
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+        val beforeJitter = releasedReplays.toList()
+        scheduled.single().second(batchWriter)
+
+        // Then
+        assertThat(beforeJitter).isEmpty()
+        assertThat(releasedReplays).containsExactly(sessionId)
+        assertThat(testedWriter.isReplayReleased(sessionId)).isTrue
+    }
+
+    @Test
+    fun `M claim the replay of released events W release() {view has replay records}`() {
+        // Given
+        replayRecords["v1"] = 3L
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1", payload = jsonPayload("v1")), EventType.DEFAULT)
+        testedWriter.write(batchWriter, action("a1", "v1", payload = jsonPayload("a1")), EventType.DEFAULT)
+        testedWriter.write(batchWriter, view("v2", payload = jsonPayload("v2")), EventType.DEFAULT)
+        testedWriter.write(batchWriter, action("a2", "v2", payload = jsonPayload("a2")), EventType.DEFAULT)
+
+        // When
+        testedWriter.write(batchWriter, error("e1", "v1", payload = jsonPayload("e1")), EventType.DEFAULT)
+        scheduled.single().second(batchWriter)
+
+        // Then
+        val hasReplay = written.associate {
+            val json = com.google.gson.JsonParser.parseString(it).asJsonObject
+            json.get("tag").asString to json.getAsJsonObject("session").get("has_replay")?.asBoolean
+        }
+        assertThat(hasReplay).containsEntry("v1", true).containsEntry("e1", true).containsEntry("a1", true)
+        assertThat(hasReplay).containsEntry("v2", null).containsEntry("a2", null)
+    }
+
+    @Test
+    fun `M claim the replay for the releasing error W write() {watched session, view has records}`() {
+        // Given
+        replayRecords["v1"] = 2L
+        testedWriter.watchForError(sessionId)
+        val releasing = error("e1", "v1")
+
+        // When
+        testedWriter.write(batchWriter, releasing, EventType.DEFAULT)
+
+        // Then
+        assertThat(claimedErrors.single().session.hasReplay).isTrue
+        assertThat(releasedReplays).containsExactly(sessionId)
+    }
+
+    private fun jsonPayload(tag: String) = "{\"tag\":\"$tag\",\"session\":{\"id\":\"$sessionId\"}}"
+
+    // endregion
+
+    // region Background
+
+    @Test
+    fun `M release at once W flushScheduledRelease() {release waiting for the jitter}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+
+        // When
+        testedWriter.flushScheduledRelease(batchWriter)
+        scheduled.single().second(batchWriter)
+
+        // Then
+        assertThat(written).containsExactly("v1", "e1")
+    }
+
+    @Test
+    fun `M keep holding W flushScheduledRelease() {no error yet}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+
+        // When
+        testedWriter.flushScheduledRelease(batchWriter)
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+        scheduled.single().second(batchWriter)
+
+        // Then - still held after the background, so the error that follows has its history
+        assertThat(written).containsExactly("v1", "e1")
+    }
+
+    // endregion
+
+    // region Details without a held view
+
+    @Test
+    fun `M release the error W release() {no view was ever held}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, action("a1", "unknown-view"), EventType.DEFAULT)
+
+        // When
+        testedWriter.write(batchWriter, error("e1", "unknown-view"), EventType.DEFAULT)
+        scheduled.single().second(batchWriter)
+
+        // Then
+        assertThat(written).containsExactly("e1", "a1")
+    }
+
+    @Test
+    fun `M release a detail whose view was evicted W release()`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, action("a0", "evicted"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, view("evicted", date = 0), EventType.DEFAULT)
+        testedWriter.write(batchWriter, view("current", date = Long.MAX_VALUE / 2), EventType.DEFAULT)
+        repeat(WithheldEventWriter.VIEWS_LIMIT) {
+            testedWriter.write(batchWriter, action("x$it", "old$it"), EventType.DEFAULT)
+            testedWriter.write(batchWriter, view("old$it", date = it + 1L), EventType.DEFAULT)
+        }
+
+        // When
+        testedWriter.write(batchWriter, error("e1", "evicted"), EventType.DEFAULT)
+        scheduled.single().second(batchWriter)
+
+        // Then
+        assertThat(written).doesNotContain("evicted")
+        assertThat(written).contains("e1", "a0")
     }
 
     // endregion
@@ -401,6 +550,22 @@ internal class WithheldEventWriterTest {
     }
 
     @Test
+    fun `M release the history at once W write() {oversized crash}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, action("a1", "v1"), EventType.DEFAULT)
+        val hugeCrash = error("c1", "v1", isCrash = true, payload = "C".repeat(WithheldEventWriter.BYTES_LIMIT + 1))
+
+        // When
+        testedWriter.write(batchWriter, hugeCrash, EventType.CRASH)
+
+        // Then
+        assertThat(scheduled).isEmpty()
+        assertThat(written.drop(1)).containsExactly("v1", "a1")
+    }
+
+    @Test
     fun `M send an oversized error on its own W write() {error over the budget}`() {
         // Given
         testedWriter.startWithholding(sessionId, batchWriter)
@@ -580,7 +745,9 @@ internal class WithheldEventWriterTest {
         assertThat(views).hasSize(WithheldEventWriter.VIEWS_LIMIT)
         assertThat(views.last()).isEqualTo("current")
         assertThat(written).contains("e1", "a0")
-        assertThat(written).doesNotContain("old0", "a1")
+        // the evicted view is gone; its detail still goes, views only order the release
+        assertThat(written).doesNotContain("old0")
+        assertThat(written).contains("a1")
     }
 
     // endregion

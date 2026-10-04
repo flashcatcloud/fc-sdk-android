@@ -1342,6 +1342,7 @@ internal open class RumViewScope(
                     sampledForError = rumContext.sampledForError.takeIf { it },
                     sampledForReplay = featuresContextResolver.resolveSampledForReplay(
                         datadogContext,
+                        rumContext.sessionId,
                         rumContext.sampledForError
                     ),
                     sampledForErrorReplay = featuresContextResolver

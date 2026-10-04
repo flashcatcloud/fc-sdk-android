@@ -706,7 +706,7 @@ internal class RumViewScopeTest {
     ) {
         // Given
         testedScope = newRumViewScope(trackFrustrations = true)
-        whenever(mockFeaturesContextResolver.resolveSampledForReplay(any(), any())) doReturn true
+        whenever(mockFeaturesContextResolver.resolveSampledForReplay(any(), any(), any())) doReturn true
         whenever(mockFeaturesContextResolver.resolveSampledForErrorReplay(any(), eq(fakeParentContext.sessionId)))
             .doReturn(true)
 
@@ -733,7 +733,12 @@ internal class RumViewScopeTest {
         // Given
         fakeParentContext = fakeParentContext.copy(sampledForError = false)
         whenever(mockParentScope.getRumContext()) doReturn fakeParentContext
-        testedScope = newRumViewScope(trackFrustrations = true)
+        testedScope = newRumViewScope(trackFrustrations = true, featuresContextResolver = FeaturesContextResolver())
+        fakeDatadogContext = fakeDatadogContext.copy(
+            featuresContext = mapOf(
+                Feature.SESSION_REPLAY_FEATURE_NAME to mapOf(FeaturesContextResolver.REPLAY_ENABLED_KEY to true)
+            )
+        )
         mockSessionReplayContext(testedScope)
 
         // When
@@ -749,7 +754,9 @@ internal class RumViewScopeTest {
             verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
             assertThat(lastValue.session.sampledForError).isNull()
             assertThat(lastValue.session.sampledForErrorReplay).isNull()
-            assertThat(lastValue.toJson().asJsonObject.getAsJsonObject("session").has("sampled_for_error")).isFalse
+            // the view a Session Replay customer who did not opt in sends is unchanged
+            assertThat(lastValue.toJson().asJsonObject.getAsJsonObject("session").keySet())
+                .containsExactlyInAnyOrder("id", "type", "has_replay", "is_active")
         }
     }
 

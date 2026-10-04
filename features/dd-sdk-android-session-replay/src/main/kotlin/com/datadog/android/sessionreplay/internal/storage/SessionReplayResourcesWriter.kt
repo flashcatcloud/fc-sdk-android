@@ -17,7 +17,7 @@ import com.datadog.android.sessionreplay.internal.processor.asBinaryMetadata
 internal class SessionReplayResourcesWriter(
     private val sdkCore: FeatureSdkCore
 ) : ResourcesWriter {
-    override fun write(enrichedResource: EnrichedResource) {
+    override fun write(enrichedResource: EnrichedResource, sessionId: String, onWritten: () -> Unit) {
         sdkCore.getFeature(Feature.SESSION_REPLAY_RESOURCES_FEATURE_NAME)
             ?.withWriteContext(
                 withFeatureContexts = setOf(Feature.RUM_FEATURE_NAME)
@@ -25,7 +25,7 @@ internal class SessionReplayResourcesWriter(
                 writeScope {
                     synchronized(this@SessionReplayResourcesWriter) {
                         val serializedMetadata = enrichedResource.asBinaryMetadata(datadogContext.rumApplicationId)
-                        it.write(
+                        val written = it.write(
                             event = RawBatchEvent(
                                 data = enrichedResource.resource,
                                 metadata = serializedMetadata
@@ -33,6 +33,8 @@ internal class SessionReplayResourcesWriter(
                             batchMetadata = null,
                             eventType = EventType.DEFAULT
                         )
+                        // FLASHCAT FORK - a resource counts as sent only once it is in storage.
+                        if (written) onWritten()
                     }
                 }
             }

@@ -20,6 +20,7 @@ import com.datadog.android.sessionreplay.internal.processor.asBinaryMetadata
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
 import fr.xgouchet.elmyr.junit5.ForgeExtension
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -30,6 +31,7 @@ import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -97,8 +99,11 @@ internal class SessionReplayResourcesWriterTest {
                 }
         )
 
+        whenever(mockEventBatchWriter.write(any(), anyOrNull(), any())) doReturn true
+        var written = 0
+
         // When
-        testedWriter.write(fakeEnrichedResource)
+        testedWriter.write(fakeEnrichedResource, "session") { written++ }
 
         // Then
         val metadataBytearray = fakeEnrichedResource.asBinaryMetadata(fakeRumApplicationId.toString())
@@ -107,5 +112,6 @@ internal class SessionReplayResourcesWriterTest {
             batchMetadata = null,
             eventType = EventType.DEFAULT
         )
+        assertThat(written).isEqualTo(1)
     }
 }

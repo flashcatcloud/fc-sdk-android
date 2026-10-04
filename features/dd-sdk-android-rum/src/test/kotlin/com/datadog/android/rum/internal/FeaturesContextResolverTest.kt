@@ -284,15 +284,33 @@ internal class FeaturesContextResolverTest {
 
     @Test
     fun `M count a held replay as sampled only with held events W resolveSampledForReplay()`(forge: Forge) {
-        val recording = mapOf(FeaturesContextResolver.REPLAY_ENABLED_KEY to true)
+        val onError = FeaturesContextResolver.REPLAY_ON_ERROR_SESSION_KEY to "s1"
+        val recording = mapOf(FeaturesContextResolver.REPLAY_ENABLED_KEY to true, onError)
         val withheld = recording + (FeaturesContextResolver.REPLAY_WITHHELD_KEY to true)
         val stopped = mapOf(FeaturesContextResolver.REPLAY_ENABLED_KEY to false)
 
-        assertThat(testedFeaturesContextResolver.resolveSampledForReplay(contextWith(forge, recording), false)).isTrue
-        assertThat(testedFeaturesContextResolver.resolveSampledForReplay(contextWith(forge, withheld), false)).isFalse
-        assertThat(testedFeaturesContextResolver.resolveSampledForReplay(contextWith(forge, withheld), true)).isTrue
-        assertThat(testedFeaturesContextResolver.resolveSampledForReplay(contextWith(forge, stopped), true)).isFalse
-        assertThat(testedFeaturesContextResolver.resolveSampledForReplay(contextWith(forge, null), true)).isNull()
+        assertThat(testedFeaturesContextResolver.resolveSampledForReplay(contextWith(forge, recording), "s1", false))
+            .isTrue
+        assertThat(testedFeaturesContextResolver.resolveSampledForReplay(contextWith(forge, withheld), "s1", false))
+            .isFalse
+        assertThat(testedFeaturesContextResolver.resolveSampledForReplay(contextWith(forge, withheld), "s1", true))
+            .isTrue
+        assertThat(testedFeaturesContextResolver.resolveSampledForReplay(contextWith(forge, stopped), "s1", true))
+            .isFalse
+        assertThat(testedFeaturesContextResolver.resolveSampledForReplay(contextWith(forge, null), "s1", true))
+            .isNull()
+    }
+
+    @Test
+    fun `M report nothing W resolveSampledForReplay() { no on-error mode for this session }`(forge: Forge) {
+        // A Session Replay customer who did not opt in: views keep the exact shape they had.
+        val recording = mapOf(FeaturesContextResolver.REPLAY_ENABLED_KEY to true)
+        val otherSession = recording + (FeaturesContextResolver.REPLAY_ON_ERROR_SESSION_KEY to "s0")
+
+        assertThat(testedFeaturesContextResolver.resolveSampledForReplay(contextWith(forge, recording), "s1", false))
+            .isNull()
+        assertThat(testedFeaturesContextResolver.resolveSampledForReplay(contextWith(forge, otherSession), "s1", false))
+            .isNull()
     }
 
     // endregion

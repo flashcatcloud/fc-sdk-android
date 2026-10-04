@@ -42,6 +42,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.Mock
+import org.mockito.Mockito.mockingDetails
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
@@ -661,6 +662,57 @@ internal class SessionReplayFeatureTest {
         }
         verify(mockRecorder).resumeRecorders()
         verify(mockRecorder, never()).stopRecorders()
+    }
+
+    @Test
+    fun `M release W rum session released { events released }`() {
+        // Given
+        val mockWriter = initializeWithWriter(sampledIn = false)
+        testedFeature.onReceive(onErrorMessage(keep = false, eventsOnError = true, replayOnError = true))
+
+        // When
+        testedFeature.onReceive(
+            mapOf(
+                SessionReplayFeature.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
+                    SessionReplayFeature.RUM_SESSION_RELEASED_BUS_MESSAGE,
+                SessionReplayFeature.RUM_SESSION_ID_BUS_MESSAGE_KEY to fakeSessionId
+            )
+        )
+
+        // Then
+        inOrder(mockWriter) {
+            verify(mockWriter).withhold(fakeSessionId)
+            verify(mockWriter).stopWithholding(fakeSessionId)
+        }
+        verify(mockRecorder, never()).stopRecorders()
+    }
+
+    @Test
+    fun `M not release W rum session updated { error seen, events not released yet }`() {
+        // Given - the message keeps saying the replay may not go out until the events have
+        val mockWriter = initializeWithWriter(sampledIn = false)
+        testedFeature.onReceive(onErrorMessage(keep = false, eventsOnError = true, replayOnError = true))
+
+        // When
+        testedFeature.onReceive(onErrorMessage(keep = true, eventsOnError = true, replayOnError = true))
+
+        // Then
+        verify(mockWriter, never()).stopWithholding(any())
+    }
+
+    @Test
+    fun `M leave the feature context alone W rum session updated { no on-error mode }`() {
+        // Given
+        whenever(mockSampler.sample(any())).thenReturn(true)
+        testedFeature.onInitialize(appContext.mockInstance)
+        val updatesBefore = mockingDetails(mockSdkCore).invocations.count { it.method.name == "updateFeatureContext" }
+
+        // When
+        testedFeature.onReceive(onErrorMessage(keep = true, eventsOnError = false, replayOnError = false))
+
+        // Then - only the recording flag, as before this existed
+        val updates = mockingDetails(mockSdkCore).invocations.count { it.method.name == "updateFeatureContext" }
+        assertThat(updates - updatesBefore).isEqualTo(1)
     }
 
     @Test
