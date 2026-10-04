@@ -20,6 +20,7 @@ import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.core.internal.net.FirstPartyHostHeaderTypeResolver
 import com.datadog.android.internal.profiling.ProfilerStopEvent
 import com.datadog.android.internal.tests.stub.StubTimeProvider
+import com.datadog.android.privacy.TrackingConsent
 import com.datadog.android.rum.BeforeSamplingCallback
 import com.datadog.android.rum.BeforeSamplingContext
 import com.datadog.android.rum.RumSessionListener
@@ -27,6 +28,7 @@ import com.datadog.android.rum.RumSessionType
 import com.datadog.android.rum.internal.domain.InfoProvider
 import com.datadog.android.rum.internal.domain.RumContext
 import com.datadog.android.rum.internal.domain.Time
+import com.datadog.android.rum.internal.domain.WithheldEventWriter
 import com.datadog.android.rum.internal.domain.accessibility.AccessibilitySnapshotManager
 import com.datadog.android.rum.internal.domain.battery.BatteryInfo
 import com.datadog.android.rum.internal.domain.display.DisplayInfo
@@ -199,8 +201,11 @@ internal class RumSessionScopeTest {
 
     private lateinit var stubTimeProvider: StubTimeProvider
 
+    private lateinit var forge: Forge
+
     @BeforeEach
     fun `set up`(forge: Forge) {
+        this.forge = forge
         stubTimeProvider = StubTimeProvider(elapsedTimeNs = TEST_INACTIVITY_NS + 1)
         fakeInitialViewEvent = forge.startViewEvent()
 
@@ -498,7 +503,8 @@ internal class RumSessionScopeTest {
             when (context.sessionState) {
                 RumSessionScope.State.NOT_TRACKED -> untracked++
                 RumSessionScope.State.TRACKED -> tracked++
-                RumSessionScope.State.EXPIRED -> other++
+                RumSessionScope.State.EXPIRED,
+                RumSessionScope.State.WITHHELD -> other++
             }
         }
 
@@ -2071,6 +2077,308 @@ internal class RumSessionScopeTest {
         )
     }
 
+    // region Session on error
+
+    private fun startWithheldSession(
+        sampleRate: Float = 0f,
+        sessionOnError: Boolean = true,
+        remoteConfig: RemoteConfigStore? = null,
+        beforeSampling: BeforeSamplingCallback? = null
+    ): WithheldEventWriter {
+        val withheldEvents = mock<WithheldEventWriter>()
+        fakeDatadogContext = fakeDatadogContext.copy(trackingConsent = TrackingConsent.GRANTED)
+        initializeTestedScope(
+            sampleRate = sampleRate,
+            remoteConfig = remoteConfig,
+            beforeSampling = beforeSampling,
+            withheldEvents = withheldEvents,
+            sessionOnError = sessionOnError
+        )
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        return withheldEvents
+    }
+
+    @Test
+    fun `M withhold the session W draw { rate missed, sessionOnError on }`() {
+        // When
+        val withheldEvents = startWithheldSession()
+
+        // Then
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.WITHHELD)
+        assertThat(testedScope.sampledForError).isTrue
+        assertThat(testedScope.getRumContext().sampledForError).isTrue
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(0f)
+        verify(mockChildScope).sampleRate = 0f
+        verify(withheldEvents).startWithholding(testedScope.sessionId, mockEventBatchWriter)
+        verify(mockSessionListener).onSessionStarted(testedScope.sessionId, true)
+        verify(mockSessionEndedMetricDispatcher, never()).startMetric(any(), any(), any(), any())
+    }
+
+    @Test
+    fun `M not withhold W draw { rate kept the session, sessionOnError on }`() {
+        // When
+        val withheldEvents = startWithheldSession(sampleRate = 100f)
+
+        // Then
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.TRACKED)
+        assertThat(testedScope.sampledForError).isFalse
+        assertThat(testedScope.getRumContext().sampledForError).isFalse
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(100f)
+        verify(withheldEvents, never()).startWithholding(any(), any())
+    }
+
+    @Test
+    fun `M not track W draw { rate missed, sessionOnError off }`() {
+        // When
+        startWithheldSession(sessionOnError = false)
+
+        // Then
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.NOT_TRACKED)
+        assertThat(testedScope.sampledForError).isFalse
+    }
+
+    @Test
+    fun `M not withhold W draw { nothing to buffer with }`() {
+        // Given
+        fakeDatadogContext = fakeDatadogContext.copy(trackingConsent = TrackingConsent.GRANTED)
+        initializeTestedScope(sampleRate = 0f, sessionOnError = true)
+
+        // When
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        // Then
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.NOT_TRACKED)
+    }
+
+    @Test
+    fun `M take the console's switch over init W draw { remote sessionOnError }`() {
+        // Given
+        val remoteOn = mock<RemoteConfigStore>()
+        whenever(remoteOn.snapshot()) doReturn RemoteConfigValues(0f, 1, sessionOnError = true)
+        val remoteOff = mock<RemoteConfigStore>()
+        whenever(remoteOff.snapshot()) doReturn RemoteConfigValues(0f, 1, sessionOnError = false)
+
+        // When
+        startWithheldSession(sessionOnError = false, remoteConfig = remoteOn)
+        val switchedOn = testedScope.sessionState
+        startWithheldSession(sessionOnError = true, remoteConfig = remoteOff)
+        val switchedOff = testedScope.sessionState
+
+        // Then
+        assertThat(switchedOn).isEqualTo(RumSessionScope.State.WITHHELD)
+        assertThat(switchedOff).isEqualTo(RumSessionScope.State.NOT_TRACKED)
+    }
+
+    @Test
+    fun `M turn the switch off W draw { beforeSampling sets the rate to 0 }`() {
+        // When
+        startWithheldSession(sampleRate = 50f, beforeSampling = { 0f })
+
+        // Then
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.NOT_TRACKED)
+    }
+
+    @Test
+    fun `M keep the switch W draw { beforeSampling leaves the rate alone }`() {
+        // When
+        startWithheldSession(beforeSampling = { null })
+
+        // Then
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.WITHHELD)
+    }
+
+    @Test
+    fun `M hand the buffer to the views W handleEvent { withheld session }`() {
+        // Given
+        val withheldEvents = startWithheldSession()
+        val event = forge.startViewEvent()
+
+        // When
+        testedScope.handleEvent(event, fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        verify(mockChildScope).handleEvent(event, fakeDatadogContext, mockEventWriteScope, withheldEvents)
+    }
+
+    @Test
+    fun `M hold nothing and drop what was held W handleEvent { consent withdrawn }`() {
+        // Given
+        val withheldEvents = startWithheldSession()
+        val event = forge.startViewEvent()
+        val notGranted = fakeDatadogContext.copy(trackingConsent = TrackingConsent.NOT_GRANTED)
+
+        // When
+        testedScope.handleEvent(event, notGranted, mockEventWriteScope, mockWriter)
+
+        // Then
+        verify(withheldEvents).dropHeld(testedScope.sessionId)
+        verify(
+            mockChildScope
+        ).handleEvent(eq(event), eq(notGranted), eq(mockEventWriteScope), isA<NoOpDataWriter<Any>>())
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.WITHHELD)
+    }
+
+    @Test
+    fun `M become a collected session W handleEvent { the session reported its error }`() {
+        // Given
+        val withheldEvents = startWithheldSession()
+        val sessionId = testedScope.sessionId
+        whenever(withheldEvents.isReleased(sessionId)) doReturn true
+        val event = forge.startViewEvent()
+
+        // When
+        testedScope.handleEvent(event, fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        assertThat(testedScope.sessionId).isEqualTo(sessionId)
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.TRACKED)
+        assertThat(testedScope.sampledForError).isTrue
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(0f)
+        verify(mockChildScope).handleEvent(event, fakeDatadogContext, mockEventWriteScope, mockWriter)
+    }
+
+    @Test
+    fun `M release at once and keep the session W handleEvent(SetForcedSession) { withheld session }`() {
+        // Given
+        val withheldEvents = startWithheldSession()
+        val sessionId = testedScope.sessionId
+
+        // When
+        testedScope.handleEvent(RumRawEvent.SetForcedSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        verify(withheldEvents).forceRelease(sessionId, mockEventBatchWriter)
+        assertThat(testedScope.sessionId).isEqualTo(sessionId)
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.TRACKED)
+        assertThat(testedScope.effectiveSampleRate).isEqualTo(0f)
+    }
+
+    @Test
+    fun `M end the withheld session W handleEvent { session expires }`() {
+        // Given
+        val withheldEvents = startWithheldSession()
+        val sessionId = testedScope.sessionId
+        advanceTimeByMs(TEST_INACTIVITY_MS + 1)
+
+        // When
+        testedScope.handleEvent(
+            RumRawEvent.KeepAlive(currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        // Then
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.EXPIRED)
+        verify(withheldEvents).endSession(sessionId, mockEventBatchWriter)
+    }
+
+    @Test
+    fun `M end the withheld session W handleEvent { session renewed }`() {
+        // Given
+        val withheldEvents = startWithheldSession()
+        val sessionId = testedScope.sessionId
+        advanceTimeByMs(TEST_MAX_DURATION_MS + 1)
+
+        // When
+        testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        assertThat(testedScope.sessionId).isNotEqualTo(sessionId)
+        verify(withheldEvents).endSession(sessionId, mockEventBatchWriter)
+        verify(withheldEvents).startWithholding(testedScope.sessionId, mockEventBatchWriter)
+    }
+
+    @Test
+    fun `M end the withheld session W handleEvent(StopSession)`() {
+        // Given
+        val withheldEvents = startWithheldSession()
+        val sessionId = testedScope.sessionId
+
+        // When
+        testedScope.handleEvent(RumRawEvent.StopSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        verify(withheldEvents).endSession(sessionId, mockEventBatchWriter)
+    }
+
+    @Test
+    fun `M keep the session W handleEvent(ResetSession) { zero rate with the switch on }`() {
+        // Given
+        val remoteConfig = mock<RemoteConfigStore>()
+        whenever(remoteConfig.snapshot()) doReturn RemoteConfigValues(20f, 1, sessionOnError = true)
+        val withheldEvents = mock<WithheldEventWriter>()
+        fakeDatadogContext = fakeDatadogContext.copy(trackingConsent = TrackingConsent.GRANTED)
+        initializeTestedScope(
+            sampleRate = 100f,
+            remoteConfig = remoteConfig,
+            withheldEvents = withheldEvents,
+            sessionOnError = false
+        )
+        // a session that lost a draw at 20 with the switch on
+        do {
+            testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+            testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        } while (testedScope.sessionState != RumSessionScope.State.WITHHELD)
+        val sessionId = testedScope.sessionId
+
+        // When
+        whenever(remoteConfig.snapshot()) doReturn RemoteConfigValues(0f, 2, sessionOnError = true)
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        assertThat(testedScope.sessionId).isEqualTo(sessionId)
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.WITHHELD)
+    }
+
+    @Test
+    fun `M end the session W handleEvent(ResetSession) { zero rate with the switch off }`() {
+        // Given
+        val remoteConfig = mock<RemoteConfigStore>()
+        whenever(remoteConfig.snapshot()) doReturn RemoteConfigValues(0f, 1, sessionOnError = true)
+        val withheldEvents = startWithheldSession(remoteConfig = remoteConfig)
+        val sessionId = testedScope.sessionId
+
+        // When
+        whenever(remoteConfig.snapshot()) doReturn RemoteConfigValues(0f, 2, sessionOnError = false)
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        assertThat(testedScope.sessionId).isNotEqualTo(sessionId)
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.NOT_TRACKED)
+        verify(withheldEvents).endSession(sessionId, mockEventBatchWriter)
+    }
+
+    @Test
+    fun `M end a fully collected session W handleEvent(ResetSession) { zero rate with the switch on }`() {
+        // Given
+        val remoteConfig = mock<RemoteConfigStore>()
+        whenever(remoteConfig.snapshot()) doReturn RemoteConfigValues(100f, 1, sessionOnError = true)
+        startWithheldSession(remoteConfig = remoteConfig)
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.TRACKED)
+        val sessionId = testedScope.sessionId
+
+        // When
+        whenever(remoteConfig.snapshot()) doReturn RemoteConfigValues(0f, 2, sessionOnError = true)
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        assertThat(testedScope.sessionId).isNotEqualTo(sessionId)
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.WITHHELD)
+    }
+
+    // endregion
+
     // region beforeSampling
 
     @Test
@@ -2172,7 +2480,9 @@ internal class RumSessionScopeTest {
         backgroundTrackingEnabled: Boolean? = null,
         remoteConfig: RemoteConfigStore? = null,
         onSessionDrawn: () -> Unit = {},
-        beforeSampling: BeforeSamplingCallback? = null
+        beforeSampling: BeforeSamplingCallback? = null,
+        withheldEvents: WithheldEventWriter? = null,
+        sessionOnError: Boolean = false
     ) {
         testedScope = RumSessionScope(
             parentScope = mockParentScope,
@@ -2201,7 +2511,9 @@ internal class RumSessionScopeTest {
             insightsCollector = mockInsightsCollector,
             remoteConfig = remoteConfig,
             onSessionDrawn = onSessionDrawn,
-            beforeSampling = beforeSampling
+            beforeSampling = beforeSampling,
+            withheldEvents = withheldEvents,
+            sessionOnError = sessionOnError
         )
 
         if (withMockChildScope) {

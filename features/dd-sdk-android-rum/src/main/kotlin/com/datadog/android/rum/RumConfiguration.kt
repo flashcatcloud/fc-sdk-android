@@ -105,6 +105,31 @@ data class RumConfiguration internal constructor(
         }
 
         /**
+         * Also keep the sessions the session sample rate does not keep, but only those that
+         * report an error.
+         *
+         * Such a session is collected in memory without uploading anything, keeping only its last
+         * minute. If it reports an error, that minute is uploaded and the session carries on like
+         * any collected one; if it ends without one, what it held is thrown away and nothing of it
+         * is ever sent. Its events report a session sample rate of 0 - it stands for itself rather
+         * than for the population a rate would imply - and its view events carry
+         * `session.sampled_for_error`. An error dropped by an event mapper does not count, and
+         * neither does a session whose rate [setBeforeSampling] set to 0.
+         *
+         * A native crash is reported at the next launch with the last view, like for any collected
+         * session, but without the minute leading up to it.
+         *
+         * Disabled by default. With [setRemoteConfigurationEnabled], the console's value wins over
+         * this one.
+         *
+         * @param enabled whether to keep the sessions that report an error.
+         */
+        fun setSessionOnError(enabled: Boolean): Builder {
+            rumConfig = rumConfig.copy(sessionOnError = enabled)
+            return this
+        }
+
+        /**
          * Whether to collect accessibility attributes - this is disabled by default.
          *
          * @param enabled whether collecting accessibility attributes is enabled or not.

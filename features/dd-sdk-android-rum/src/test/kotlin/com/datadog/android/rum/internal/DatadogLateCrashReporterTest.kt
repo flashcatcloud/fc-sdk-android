@@ -236,6 +236,46 @@ internal class DatadogLateCrashReporterTest {
     }
 
     @Test
+    fun `M report the crash of a session kept on error W handleNdkCrashEvent()`(
+        @StringForgery crashMessage: String,
+        @LongForgery(min = 1) fakeTimestamp: Long,
+        @StringForgery fakeSignalName: String,
+        @StringForgery fakeStacktrace: String,
+        @Forgery viewEvent: ViewEvent
+    ) {
+        // Given - the last view a withheld session wrote locally: rate 0 and the marker
+        val fakeViewEvent = viewEvent.copy(
+            date = fakeCurrentTimeMs - 1000,
+            session = viewEvent.session.copy(sampledForError = true),
+            dd = viewEvent.dd.copy(configuration = ViewEvent.Configuration(sessionSampleRate = 0f))
+        )
+        val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
+        whenever(mockRumEventDeserializer.deserialize(fakeViewEventJson)) doReturn fakeViewEvent
+        val fakeEvent = mapOf(
+            "timestamp" to fakeTimestamp,
+            "signalName" to fakeSignalName,
+            "stacktrace" to fakeStacktrace,
+            "message" to crashMessage,
+            "lastViewEvent" to fakeViewEventJson
+        )
+
+        // When
+        testedHandler.handleNdkCrashEvent(fakeEvent, mockRumWriter)
+
+        // Then - the crash is reported, standing for itself, and the view keeps the marker
+        argumentCaptor<Any> {
+            verify(mockRumWriter, times(2)).write(eq(mockEventBatchWriter), capture(), eq(EventType.CRASH))
+            val error = firstValue as ErrorEvent
+            assertThat(error.session.id).isEqualTo(fakeViewEvent.session.id)
+            assertThat(error.dd.configuration?.sessionSampleRate).isEqualTo(0f)
+            val view = secondValue as ViewEvent
+            assertThat(view.session.sampledForError).isTrue
+            assertThat(view.dd.configuration?.sessionSampleRate).isEqualTo(0f)
+            assertThat(view.view.crash?.count).isEqualTo((fakeViewEvent.view.crash?.count ?: 0) + 1)
+        }
+    }
+
+    @Test
     fun `M send RUM view+error W handleNdkCrashEvent() {source_type set}`(
         @StringForgery crashMessage: String,
         @LongForgery(min = 1) fakeTimestamp: Long,

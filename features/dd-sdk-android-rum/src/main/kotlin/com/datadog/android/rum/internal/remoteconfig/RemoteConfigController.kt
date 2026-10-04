@@ -47,7 +47,10 @@ internal class RemoteConfigController(
     private val executor: ScheduledExecutorService,
     private val restartSession: () -> Unit,
     private val elapsedTimeMs: () -> Long = SystemClock::elapsedRealtime,
-    private val jitter: () -> Double = { Random.nextDouble() }
+    private val jitter: () -> Double = { Random.nextDouble() },
+    // The init values of the on-error switches, which a cleared knob hands back to.
+    private val initialSessionOnError: Boolean = false,
+    private val initialSessionReplayOnError: Boolean = false
 ) {
 
     @Volatile
@@ -340,7 +343,11 @@ internal class RemoteConfigController(
         if ((version ?: 0) < (store.appliedVersion() ?: 0)) {
             return Outcome.STALE_VERSION
         }
-        val before = RemoteConfigValues(store.sessionSampleRate())
+        val before = RemoteConfigValues(
+            sessionSampleRate = store.sessionSampleRate(),
+            sessionOnError = store.sessionOnError(),
+            sessionReplayOnError = store.sessionReplayOnError()
+        )
         val delivered = if (enabled) {
             readValues(rum as? JSONObject).copy(
                 version = version,
@@ -374,9 +381,17 @@ internal class RemoteConfigController(
     private fun readValues(rum: JSONObject?): RemoteConfigValues {
         if (rum == null) return EMPTY_VALUES
         return RemoteConfigValues(
-            sessionSampleRate = readRate(rum)
+            sessionSampleRate = readRate(rum),
+            sessionOnError = readSwitch(rum, FIELD_SESSION_ON_ERROR),
+            sessionReplayOnError = readSwitch(rum, FIELD_SESSION_REPLAY_ON_ERROR)
         )
     }
+
+    /**
+     * Like a rate, a switch the response did not send stays absent, and so does one that is not a
+     * boolean: a value we cannot read is not one to decide a customer's collection with.
+     */
+    private fun readSwitch(rum: JSONObject, field: String): Boolean? = rum.opt(field) as? Boolean
 
     /**
      * A value the response did not send stays absent, so the value passed to init keeps applying.
@@ -413,9 +428,15 @@ internal class RemoteConfigController(
      * published one, the value the app was initialised with where it did not, since clearing a knob
      * hands the decision back to init.
      *
+     * The on-error switch counts the same way where the rate is zero, because there it is what
+     * decides whether anything is collected at all. Switched on, nobody was in a draw - a session
+     * drawn at zero was not kept - and now could be, exactly like a rate leaving zero. Switched off,
+     * the sessions kept only because of it are what an operator is stopping.
+     *
      * A forced session is left alone, and that is settled where the reset is handled rather than
      * here — see `RumSessionScope`: it is collected whatever the rates say, so ending it would only
-     * buy an identical forced session.
+     * buy an identical forced session. So is a session kept on error when the settings arriving
+     * are a zero rate with the switch on: that is the switch's ordinary configuration, not a stop.
      */
     private fun appliesToRunningSession(
         activation: String,
@@ -424,8 +445,14 @@ internal class RemoteConfigController(
     ): Boolean {
         val previousRate = before.sessionSampleRate ?: initialSessionSampleRate
         val nextRate = after.sessionSampleRate ?: initialSessionSampleRate
-        if (previousRate == nextRate) return false
-        return activation == ACTIVATION_IMMEDIATE || (previousRate == 0f) != (nextRate == 0f)
+        val switchChanged =
+            (before.sessionOnError ?: initialSessionOnError) != (after.sessionOnError ?: initialSessionOnError)
+        val replaySwitchChanged = (before.sessionReplayOnError ?: initialSessionReplayOnError) !=
+            (after.sessionReplayOnError ?: initialSessionReplayOnError)
+        if (previousRate == nextRate && !switchChanged && !replaySwitchChanged) return false
+        return activation == ACTIVATION_IMMEDIATE ||
+            (previousRate == 0f) != (nextRate == 0f) ||
+            (nextRate == 0f && switchChanged)
     }
 
     // Every one of these goes to telemetry as well as to logcat. A device that quietly stops
@@ -491,6 +518,8 @@ internal class RemoteConfigController(
         private const val FIELD_CUSTOM = "custom"
         private const val FIELD_RUM = "rum"
         private const val FIELD_SESSION_SAMPLE_RATE = "sessionSampleRate"
+        private const val FIELD_SESSION_ON_ERROR = "sessionOnError"
+        private const val FIELD_SESSION_REPLAY_ON_ERROR = "sessionReplayOnError"
 
         private val EMPTY_VALUES = RemoteConfigValues(null)
 

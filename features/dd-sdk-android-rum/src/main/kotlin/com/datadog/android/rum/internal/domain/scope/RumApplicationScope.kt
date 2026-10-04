@@ -22,6 +22,7 @@ import com.datadog.android.rum.RumSessionType
 import com.datadog.android.rum.internal.domain.InfoProvider
 import com.datadog.android.rum.internal.domain.RumContext
 import com.datadog.android.rum.internal.domain.Time
+import com.datadog.android.rum.internal.domain.WithheldEventWriter
 import com.datadog.android.rum.internal.domain.accessibility.AccessibilitySnapshotManager
 import com.datadog.android.rum.internal.domain.battery.BatteryInfo
 import com.datadog.android.rum.internal.domain.display.DisplayInfo
@@ -63,7 +64,11 @@ internal class RumApplicationScope(
     // the only rhythm that can matter. No-op when the app did not opt in.
     private val onSessionDrawn: () -> Unit = {},
     // FLASHCAT FORK - the host application's last word on the draw. Null unless the app set one.
-    private val beforeSampling: BeforeSamplingCallback? = null
+    private val beforeSampling: BeforeSamplingCallback? = null,
+    // FLASHCAT FORK - see `RumConfiguration.Builder.setSessionOnError`. One buffer for all the
+    // sessions this scope makes, so it remembers the sessions it threw away across them.
+    private val withheldEvents: WithheldEventWriter? = null,
+    private val sessionOnError: Boolean = false
 ) : RumScope, RumViewChangedListener {
 
     override val parentScope: RumScope? = null
@@ -79,6 +84,8 @@ internal class RumApplicationScope(
             remoteConfig = remoteConfig,
             onSessionDrawn = onSessionDrawn,
             beforeSampling = beforeSampling,
+            withheldEvents = withheldEvents,
+            sessionOnError = sessionOnError,
             backgroundTrackingEnabled = backgroundTrackingEnabled,
             trackFrustrations = trackFrustrations,
             viewChangedListener = this,
@@ -235,7 +242,9 @@ internal class RumApplicationScope(
             remoteConfig = remoteConfig,
             onSessionDrawn = onSessionDrawn,
             beforeSampling = beforeSampling,
-            forcedSession = forcedSession
+            forcedSession = forcedSession,
+            withheldEvents = withheldEvents,
+            sessionOnError = sessionOnError
         )
         childScopes.add(newSession)
         if (event !is RumRawEvent.StartView) {

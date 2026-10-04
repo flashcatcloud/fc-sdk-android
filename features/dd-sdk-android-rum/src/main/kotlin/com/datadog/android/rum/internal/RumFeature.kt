@@ -809,6 +809,8 @@ internal class RumFeature(
             ),
             store = store,
             initialSessionSampleRate = sampleRate,
+            initialSessionOnError = configuration.sessionOnError,
+            initialSessionReplayOnError = configuration.sessionReplayOnError,
             callFactory = sdkCore.createOkHttpCallFactory(),
             executor = sdkCore.createScheduledExecutorService("rum-remote-config"),
             // Looked up when it fires rather than captured now: the monitor is registered after
@@ -870,7 +872,13 @@ internal class RumFeature(
         val remoteConfigurationEnabled: Boolean = false,
         // FLASHCAT FORK - the host application's last word on the session draw, consulted after
         // the console's rate. Null unless the app set one.
-        val beforeSampling: BeforeSamplingCallback? = null
+        val beforeSampling: BeforeSamplingCallback? = null,
+        // FLASHCAT FORK - keep, withheld until they report an error, the sessions the session
+        // sample rate does not keep.
+        val sessionOnError: Boolean = false,
+        // FLASHCAT FORK - the same for the replay of a collected session the replay rate does not
+        // keep.
+        val sessionReplayOnError: Boolean = false
     )
 
     internal companion object {

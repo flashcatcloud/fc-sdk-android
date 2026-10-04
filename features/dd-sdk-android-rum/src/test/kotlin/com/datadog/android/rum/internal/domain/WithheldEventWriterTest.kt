@@ -1,0 +1,641 @@
+/*
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache License Version 2.0.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/).
+ * Copyright 2016-Present Datadog, Inc.
+ */
+
+package com.datadog.android.rum.internal.domain
+
+import com.datadog.android.api.InternalLogger
+import com.datadog.android.api.storage.EventBatchWriter
+import com.datadog.android.api.storage.EventType
+import com.datadog.android.api.storage.RawBatchEvent
+import com.datadog.android.core.InternalSdkCore
+import com.datadog.android.core.persistence.Serializer
+import com.datadog.android.rum.internal.domain.event.RumEventMeta
+import com.datadog.android.rum.model.ActionEvent
+import com.datadog.android.rum.model.ErrorEvent
+import com.datadog.android.rum.model.LongTaskEvent
+import com.datadog.android.rum.model.ResourceEvent
+import com.datadog.android.rum.model.ViewEvent
+import com.datadog.android.rum.utils.forge.Configurator
+import fr.xgouchet.elmyr.Forge
+import fr.xgouchet.elmyr.junit5.ForgeConfiguration
+import fr.xgouchet.elmyr.junit5.ForgeExtension
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.api.extension.Extensions
+import org.mockito.Mock
+import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.junit.jupiter.MockitoSettings
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
+import org.mockito.quality.Strictness
+import java.util.IdentityHashMap
+import java.util.UUID
+import java.util.concurrent.TimeUnit
+
+@Extensions(
+    ExtendWith(MockitoExtension::class),
+    ExtendWith(ForgeExtension::class)
+)
+@MockitoSettings(strictness = Strictness.LENIENT)
+@ForgeConfiguration(Configurator::class)
+internal class WithheldEventWriterTest {
+
+    private lateinit var testedWriter: WithheldEventWriter
+
+    @Mock
+    lateinit var mockSdkCore: InternalSdkCore
+
+    @Mock
+    lateinit var mockInternalLogger: InternalLogger
+
+    private lateinit var forge: Forge
+
+    /** What each event serializes to; an event mapped to null is one a mapper dropped. */
+    private val payloads = IdentityHashMap<Any, String?>()
+
+    private val written = mutableListOf<String>()
+    private val batchWriter = object : EventBatchWriter {
+        override fun currentMetadata(): ByteArray? = null
+        override fun write(event: RawBatchEvent, batchMetadata: ByteArray?, eventType: EventType): Boolean {
+            written.add(String(event.data, Charsets.UTF_8))
+            return true
+        }
+    }
+
+    private var nowNs = TimeUnit.HOURS.toNanos(1)
+    private val scheduled = mutableListOf<Pair<Long, (EventBatchWriter) -> Unit>>()
+
+    private val sessionId = UUID.randomUUID().toString()
+    private var nextDate = 1_000L
+
+    @BeforeEach
+    fun `set up`(forge: Forge) {
+        this.forge = forge
+        whenever(mockSdkCore.internalLogger) doReturn mockInternalLogger
+        val serializer = object : Serializer<Any> {
+            override fun serialize(model: Any): String? =
+                if (payloads.containsKey(model)) payloads[model] else "untracked"
+        }
+        val metaSerializer = object : Serializer<RumEventMeta> {
+            override fun serialize(model: RumEventMeta): String = "meta"
+        }
+        testedWriter = WithheldEventWriter(
+            delegate = RumDataWriter(serializer, metaSerializer, mockSdkCore),
+            internalLogger = mockInternalLogger,
+            elapsedTimeNs = { nowNs },
+            scheduleRelease = { delayMs, release -> scheduled.add(delayMs to release) }
+        )
+    }
+
+    // region Withholding
+
+    @Test
+    fun `M write straight through W write() {session not withheld}`() {
+        // Given
+        val view = view("v1", session = UUID.randomUUID().toString())
+
+        // When
+        val result = testedWriter.write(batchWriter, view, EventType.DEFAULT)
+
+        // Then
+        assertThat(result).isTrue
+        assertThat(written).containsExactly("v1")
+    }
+
+    @Test
+    fun `M write nothing W write() {withheld session, no error}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+
+        // When
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, action("a1", "v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, resource("r1", "v1", 200), EventType.DEFAULT)
+
+        // Then
+        assertThat(written).isEmpty()
+        assertThat(scheduled).isEmpty()
+        assertThat(testedWriter.isReleased(sessionId)).isFalse
+    }
+
+    @Test
+    fun `M discard and drop stragglers W endSession() {no error}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+
+        // When
+        testedWriter.endSession(sessionId, batchWriter)
+        val straggler = resource("late", "v1", 200)
+        val result = testedWriter.write(batchWriter, straggler, EventType.DEFAULT)
+
+        // Then
+        assertThat(result).isTrue
+        assertThat(written).isEmpty()
+    }
+
+    @Test
+    fun `M write stragglers W endSession() {session had errored}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+
+        // When
+        testedWriter.endSession(sessionId, batchWriter)
+        testedWriter.write(batchWriter, resource("late", "v1", 200), EventType.DEFAULT)
+
+        // Then
+        assertThat(written).containsExactly("v1", "e1", "late")
+    }
+
+    @Test
+    fun `M remember only the last four discarded sessions W endSession()`() {
+        // Given
+        val sessions = List(5) { UUID.randomUUID().toString() }
+        sessions.forEach {
+            testedWriter.startWithholding(it, batchWriter)
+            testedWriter.endSession(it, batchWriter)
+        }
+
+        // When
+        testedWriter.write(batchWriter, view("first", session = sessions[0]), EventType.DEFAULT)
+        testedWriter.write(batchWriter, view("second", session = sessions[1]), EventType.DEFAULT)
+
+        // Then
+        assertThat(written).containsExactly("first")
+    }
+
+    @Test
+    fun `M keep the session withholding W dropHeld()`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, action("a1", "v1"), EventType.DEFAULT)
+
+        // When
+        testedWriter.dropHeld(sessionId)
+        testedWriter.write(batchWriter, view("v2"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, error("e1", "v2"), EventType.DEFAULT)
+        scheduled.single().second(batchWriter)
+
+        // Then
+        assertThat(written).containsExactly("v2", "e1")
+    }
+
+    @Test
+    fun `M write the held view locally W write() {view}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+
+        // When
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+
+        // Then
+        verify(mockSdkCore).writeLastViewEvent("v1".toByteArray())
+        assertThat(written).isEmpty()
+    }
+
+    // endregion
+
+    // region Release
+
+    @Test
+    fun `M release in order after the jitter W write() {error}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1", date = 10), EventType.DEFAULT)
+        testedWriter.write(batchWriter, action("a1", "v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, view("v2", date = 20), EventType.DEFAULT)
+        testedWriter.write(batchWriter, resource("r1", "v2", 200), EventType.DEFAULT)
+        // a late update of the first view, which must not become current nor go first
+        testedWriter.write(batchWriter, view("v1", date = 10, payload = "v1-late"), EventType.DEFAULT)
+
+        // When
+        testedWriter.write(batchWriter, error("e1", "v2"), EventType.DEFAULT)
+
+        // Then
+        assertThat(written).isEmpty()
+        assertThat(testedWriter.isReleased(sessionId)).isTrue
+        assertThat(scheduled).hasSize(1)
+        assertThat(scheduled.single().first).isEqualTo(WithheldEventWriter.computeReleaseDelayMs(sessionId))
+
+        // When
+        testedWriter.write(batchWriter, action("a2", "v2"), EventType.DEFAULT)
+        scheduled.single().second(batchWriter)
+        testedWriter.write(batchWriter, action("a3", "v2"), EventType.DEFAULT)
+
+        // Then
+        assertThat(written).containsExactly("v1-late", "v2", "e1", "a1", "r1", "a2", "a3")
+        verify(mockInternalLogger).log(
+            eq(InternalLogger.Level.INFO),
+            eq(InternalLogger.Target.TELEMETRY),
+            any(),
+            anyOrNull(),
+            eq(false),
+            eq(
+                mapOf<String, Any>(
+                    "buffer.views_count" to 2,
+                    "buffer.events_count" to 4,
+                    "buffer.dropped_count" to 0,
+                    "buffer.bytes" to 8L
+                )
+            )
+        )
+    }
+
+    @Test
+    fun `M release nothing W write() {error dropped by a mapper}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        val dropped = error("e1", "v1")
+        payloads[dropped] = null
+
+        // When
+        val result = testedWriter.write(batchWriter, dropped, EventType.DEFAULT)
+
+        // Then
+        assertThat(result).isFalse
+        assertThat(scheduled).isEmpty()
+        assertThat(testedWriter.isReleased(sessionId)).isFalse
+        assertThat(written).isEmpty()
+    }
+
+    @Test
+    fun `M release nothing W write() {error of another session}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+
+        // When
+        testedWriter.write(batchWriter, error("e1", "v1", session = UUID.randomUUID().toString()), EventType.DEFAULT)
+
+        // Then
+        assertThat(scheduled).isEmpty()
+        assertThat(written).containsExactly("e1")
+    }
+
+    @Test
+    fun `M release at once without jitter W write() {crash}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, action("a1", "v1"), EventType.DEFAULT)
+
+        // When
+        testedWriter.write(batchWriter, error("crash", "v1", isCrash = true), EventType.CRASH)
+
+        // Then
+        assertThat(scheduled).isEmpty()
+        assertThat(written).containsExactly("v1", "crash", "a1")
+    }
+
+    @Test
+    fun `M release at once W write() {crash while a release waits for the jitter}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+
+        // When
+        testedWriter.write(batchWriter, error("crash", "v1", isCrash = true), EventType.CRASH)
+        scheduled.single().second(batchWriter)
+
+        // Then
+        assertThat(written).containsExactly("v1", "e1", "crash")
+    }
+
+    @Test
+    fun `M release at once W endSession() {release waiting for the jitter}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+
+        // When
+        testedWriter.endSession(sessionId, batchWriter)
+        scheduled.single().second(batchWriter)
+
+        // Then
+        assertThat(written).containsExactly("v1", "e1")
+    }
+
+    @Test
+    fun `M release at once W forceRelease()`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, action("a1", "v1"), EventType.DEFAULT)
+
+        // When
+        testedWriter.forceRelease(sessionId, batchWriter)
+        testedWriter.write(batchWriter, action("a2", "v1"), EventType.DEFAULT)
+
+        // Then
+        assertThat(scheduled).isEmpty()
+        assertThat(testedWriter.isReleased(sessionId)).isTrue
+        assertThat(written).containsExactly("v1", "a1", "a2")
+    }
+
+    @Test
+    fun `M release the previous session W startWithholding() {previous one errored}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+
+        // When
+        val nextSessionId = UUID.randomUUID().toString()
+        testedWriter.startWithholding(nextSessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v2", session = nextSessionId), EventType.DEFAULT)
+
+        // Then
+        assertThat(written).containsExactly("v1", "e1")
+    }
+
+    @Test
+    fun `M send an oversized error on its own W write() {error over the budget}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, action("a1", "v1"), EventType.DEFAULT)
+        val hugeError = error("e1", "v1", payload = "E".repeat(WithheldEventWriter.BYTES_LIMIT + 1))
+
+        // When
+        testedWriter.write(batchWriter, hugeError, EventType.DEFAULT)
+
+        // Then
+        assertThat(written).hasSize(1)
+        assertThat(written.single()).startsWith("EEE")
+        assertThat(scheduled).hasSize(1)
+
+        // When
+        scheduled.single().second(batchWriter)
+
+        // Then
+        assertThat(written.drop(1)).containsExactly("v1", "a1")
+    }
+
+    @Test
+    fun `M drop an oversized event and keep the history W write() {non-error over the budget}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, action("a1", "v1"), EventType.DEFAULT)
+
+        // When
+        testedWriter.write(
+            batchWriter,
+            action("huge", "v1", payload = "A".repeat(WithheldEventWriter.BYTES_LIMIT + 1)),
+            EventType.DEFAULT
+        )
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+        scheduled.single().second(batchWriter)
+
+        // Then
+        assertThat(written).containsExactly("v1", "e1", "a1")
+    }
+
+    // endregion
+
+    // region Window and budget
+
+    @Test
+    fun `M keep only the last minute W release()`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, action("old", "v1"), EventType.DEFAULT)
+        nowNs += TimeUnit.SECONDS.toNanos(30)
+        testedWriter.write(batchWriter, action("recent", "v1"), EventType.DEFAULT)
+        nowNs += TimeUnit.SECONDS.toNanos(31)
+
+        // When
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+        scheduled.single().second(batchWriter)
+
+        // Then
+        assertThat(written).containsExactly("v1", "e1", "recent")
+    }
+
+    @Test
+    fun `M freeze the window when the release is scheduled W release() {timer late}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, action("a1", "v1"), EventType.DEFAULT)
+        nowNs += TimeUnit.SECONDS.toNanos(50)
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+
+        // When
+        nowNs += TimeUnit.MINUTES.toNanos(2)
+        scheduled.single().second(batchWriter)
+
+        // Then
+        assertThat(written).containsExactly("v1", "e1", "a1")
+    }
+
+    @Test
+    fun `M drop views left with nothing in the window W release()`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1", date = 1), EventType.DEFAULT)
+        testedWriter.write(batchWriter, action("a1", "v1"), EventType.DEFAULT)
+        nowNs += TimeUnit.SECONDS.toNanos(61)
+        testedWriter.write(batchWriter, view("v2", date = 2), EventType.DEFAULT)
+
+        // When
+        testedWriter.write(batchWriter, error("e1", "v2"), EventType.DEFAULT)
+        scheduled.single().second(batchWriter)
+
+        // Then
+        assertThat(written).containsExactly("v2", "e1")
+    }
+
+    @Test
+    fun `M evict successful requests and long tasks first W write() {over the event count}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, resource("ok", "v1", 200), EventType.DEFAULT)
+        testedWriter.write(batchWriter, longTask("lt", "v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, resource("failed", "v1", 500), EventType.DEFAULT)
+        repeat(WithheldEventWriter.EVENTS_LIMIT - 3) {
+            testedWriter.write(batchWriter, action("a$it", "v1"), EventType.DEFAULT)
+        }
+
+        // When
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, action("last", "v1"), EventType.DEFAULT)
+        scheduled.single().second(batchWriter)
+
+        // Then
+        assertThat(written).doesNotContain("ok", "lt")
+        assertThat(written).contains("failed", "last")
+        assertThat(written.take(2)).containsExactly("v1", "e1")
+        assertThat(written).hasSize(1 + WithheldEventWriter.EVENTS_LIMIT)
+    }
+
+    @Test
+    fun `M evict by bytes keeping errors W write() {over the byte budget}`() {
+        // Given
+        val chunk = WithheldEventWriter.BYTES_LIMIT / 4 + 1
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, resource("ok", "v1", 204, payload = "R".repeat(chunk)), EventType.DEFAULT)
+        testedWriter.write(batchWriter, error("e1", "v1", payload = "1".repeat(chunk)), EventType.DEFAULT)
+        testedWriter.write(batchWriter, action("act", "v1", payload = "A".repeat(chunk)), EventType.DEFAULT)
+
+        // When
+        testedWriter.write(batchWriter, error("e2", "v1", payload = "2".repeat(chunk)), EventType.DEFAULT)
+        scheduled.single().second(batchWriter)
+
+        // Then
+        assertThat(written.map { it.first() }).containsExactly('v', '1', '2', 'A')
+    }
+
+    @Test
+    fun `M evict the newest error first W write() {only errors left}`() {
+        // Given
+        val chunk = WithheldEventWriter.BYTES_LIMIT / 3
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, error("e1", "v1", payload = "1".repeat(chunk)), EventType.DEFAULT)
+        testedWriter.write(batchWriter, error("e2", "v1", payload = "2".repeat(chunk)), EventType.DEFAULT)
+        testedWriter.write(batchWriter, error("e3", "v1", payload = "3".repeat(chunk)), EventType.DEFAULT)
+
+        // When
+        testedWriter.write(batchWriter, error("e4", "v1", payload = "4".repeat(chunk)), EventType.DEFAULT)
+        scheduled.single().second(batchWriter)
+
+        // Then
+        assertThat(written.map { it.first() }).containsExactly('v', '1', '2', '3')
+    }
+
+    @Test
+    fun `M never evict the current view W write() {over the view count}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("current", date = Long.MAX_VALUE / 2), EventType.DEFAULT)
+        testedWriter.write(batchWriter, action("a0", "current"), EventType.DEFAULT)
+        repeat(WithheldEventWriter.VIEWS_LIMIT + 5) {
+            // ended views updated late, each with something in the window
+            testedWriter.write(batchWriter, action("a${it + 1}", "old$it"), EventType.DEFAULT)
+            testedWriter.write(batchWriter, view("old$it", date = it.toLong()), EventType.DEFAULT)
+        }
+
+        // When
+        testedWriter.write(batchWriter, error("e1", "current"), EventType.DEFAULT)
+        scheduled.single().second(batchWriter)
+
+        // Then
+        val views = written.filter { it == "current" || it.startsWith("old") }
+        assertThat(views).hasSize(WithheldEventWriter.VIEWS_LIMIT)
+        assertThat(views.last()).isEqualTo("current")
+        assertThat(written).contains("e1", "a0")
+        assertThat(written).doesNotContain("old0", "a1")
+    }
+
+    // endregion
+
+    @Test
+    fun `M spread releases over the whole window W computeReleaseDelayMs()`() {
+        // When
+        val delays = List(2_000) { WithheldEventWriter.computeReleaseDelayMs(UUID.randomUUID().toString()) }
+
+        // Then
+        assertThat(delays).allMatch { it in 0 until WithheldEventWriter.RELEASE_MAX_DELAY_MS }
+        val buckets = delays.groupBy { it / 300 }
+        assertThat(buckets.keys).containsExactlyInAnyOrder(0L, 1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L)
+        assertThat(buckets.values.map { it.size }).allMatch { it in 100..300 }
+        assertThat(WithheldEventWriter.computeReleaseDelayMs(sessionId))
+            .isEqualTo(WithheldEventWriter.computeReleaseDelayMs(sessionId))
+    }
+
+    @Test
+    fun `M not write the last view W release()`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+
+        // When
+        scheduled.single().second(batchWriter)
+
+        // Then
+        val captor = argumentCaptor<ByteArray>()
+        verify(mockSdkCore).writeLastViewEvent(captor.capture())
+        assertThat(captor.allValues).hasSize(1)
+        verify(mockSdkCore, never()).writeLastViewEvent(eq("e1".toByteArray()))
+    }
+
+    // region Helpers
+
+    private fun view(
+        id: String,
+        session: String = sessionId,
+        date: Long = nextDate++,
+        payload: String = id
+    ): ViewEvent {
+        val base = forge.getForgery(ViewEvent::class.java)
+        return base.copy(
+            date = date,
+            session = base.session.copy(id = session),
+            view = base.view.copy(id = id)
+        ).also { payloads[it] = payload }
+    }
+
+    private fun action(name: String, viewId: String, payload: String = name): ActionEvent {
+        val base = forge.getForgery(ActionEvent::class.java)
+        return base.copy(
+            session = base.session.copy(id = sessionId),
+            view = base.view.copy(id = viewId)
+        ).also { payloads[it] = payload }
+    }
+
+    private fun resource(name: String, viewId: String, status: Long, payload: String = name): ResourceEvent {
+        val base = forge.getForgery(ResourceEvent::class.java)
+        return base.copy(
+            session = base.session.copy(id = sessionId),
+            view = base.view.copy(id = viewId),
+            resource = base.resource.copy(statusCode = status)
+        ).also { payloads[it] = payload }
+    }
+
+    private fun longTask(name: String, viewId: String): LongTaskEvent {
+        val base = forge.getForgery(LongTaskEvent::class.java)
+        return base.copy(
+            session = base.session.copy(id = sessionId),
+            view = base.view.copy(id = viewId)
+        ).also { payloads[it] = name }
+    }
+
+    private fun error(
+        name: String,
+        viewId: String,
+        session: String = sessionId,
+        isCrash: Boolean = false,
+        payload: String = name
+    ): ErrorEvent {
+        val base = forge.getForgery(ErrorEvent::class.java)
+        return base.copy(
+            session = base.session.copy(id = session),
+            view = base.view.copy(id = viewId),
+            error = base.error.copy(isCrash = isCrash)
+        ).also { payloads[it] = payload }
+    }
+
+    // endregion
+}

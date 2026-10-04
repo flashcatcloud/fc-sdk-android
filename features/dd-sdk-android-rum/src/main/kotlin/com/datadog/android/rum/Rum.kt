@@ -18,6 +18,8 @@ import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.core.sampling.RateBasedSampler
 import com.datadog.android.rum.internal.RumAnonymousIdentifierManager
 import com.datadog.android.rum.internal.RumFeature
+import com.datadog.android.rum.internal.domain.RumDataWriter
+import com.datadog.android.rum.internal.domain.WithheldEventWriter
 import com.datadog.android.rum.internal.domain.scope.RumVitalAppLaunchEventHelper
 import com.datadog.android.rum.internal.metric.SessionEndedMetricDispatcher
 import com.datadog.android.rum.internal.monitor.DatadogRumMonitor
@@ -127,6 +129,28 @@ object Rum {
 
         val rumAppStartupTelemetryReporter = RumAppStartupTelemetryReporter.create(sdkCore = sdkCore)
 
+        val handler = Handler(Looper.getMainLooper())
+
+        // FLASHCAT FORK - every RUM event of a collected session passes through it, see
+        // `RumConfiguration.Builder.setSessionOnError`. The release timer only hands the release
+        // back to the storage thread, so the main looper is enough to carry it.
+        val withheldEvents = (rumFeature.dataWriter as? RumDataWriter)?.let { rumDataWriter ->
+            WithheldEventWriter(
+                delegate = rumDataWriter,
+                internalLogger = sdkCore.internalLogger,
+                elapsedTimeNs = { sdkCore.timeProvider.getDeviceElapsedTimeNanos() },
+                scheduleRelease = { delayMs, release ->
+                    handler.postDelayed(
+                        {
+                            sdkCore.getFeature(Feature.RUM_FEATURE_NAME)
+                                ?.withWriteContext { _, writeScope -> writeScope(release) }
+                        },
+                        delayMs
+                    )
+                }
+            )
+        }
+
         return DatadogRumMonitor(
             applicationId = rumFeature.applicationId,
             sdkCore = sdkCore,
@@ -137,8 +161,10 @@ object Rum {
             // simply asks again, and there is nothing to ask with when the app did not opt in.
             onSessionDrawn = { rumFeature.remoteConfigController?.onSessionStarted() },
             beforeSampling = rumFeature.configuration.beforeSampling,
-            writer = rumFeature.dataWriter,
-            handler = Handler(Looper.getMainLooper()),
+            writer = withheldEvents ?: rumFeature.dataWriter,
+            withheldEvents = withheldEvents,
+            sessionOnError = rumFeature.configuration.sessionOnError,
+            handler = handler,
             telemetryEventHandler = TelemetryEventHandler(
                 sdkCore = sdkCore,
                 eventSampler = RateBasedSampler(rumFeature.telemetrySampleRate),

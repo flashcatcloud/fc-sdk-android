@@ -95,6 +95,23 @@ internal class RemoteConfigStoreTest {
     }
 
     @Test
+    fun `M keep the on-error switches W store() then snapshot()`() {
+        val store = testedStore()
+        store.store(RemoteConfigValues(0f, 1, sessionOnError = true, sessionReplayOnError = false))
+
+        assertThat(testedStore().snapshot().sessionOnError).isTrue
+        assertThat(testedStore().snapshot().sessionReplayOnError).isFalse
+        assertThat(testedStore().sessionOnError()).isTrue
+        assertThat(testedStore().sessionReplayOnError()).isFalse
+
+        // A later response that omits them hands them back to the init values.
+        store.store(RemoteConfigValues(0f, 2))
+
+        assertThat(testedStore().snapshot().sessionOnError).isNull()
+        assertThat(testedStore().sessionReplayOnError()).isNull()
+    }
+
+    @Test
     fun `M return absent values W snapshot before the first response`() {
         assertThat(testedStore().snapshot()).isEqualTo(RemoteConfigValues(null))
     }

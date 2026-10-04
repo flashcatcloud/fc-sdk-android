@@ -1206,7 +1206,11 @@ internal open class RumViewScope(
         val slowFramesRate = if (viewComplete) uiSlownessReport?.slowFramesRate(stoppedNanos) else null
         insightsCollector.onSlowFrameRate(uiSlownessReport?.slowFramesRate(stoppedNanos))
 
-        if (viewComplete && getRumContext().sessionState != RumSessionScope.State.NOT_TRACKED) {
+        val sessionState = getRumContext().sessionState
+        // FLASHCAT FORK - a withheld session is not collected yet, and may never be.
+        if (viewComplete && sessionState != RumSessionScope.State.NOT_TRACKED &&
+            sessionState != RumSessionScope.State.WITHHELD
+        ) {
             viewEndedMetricDispatcher.sendViewEnded(
                 interactionToNextViewMetricResolver.getState(viewId),
                 networkSettledMetricResolver.getState()
@@ -1332,7 +1336,10 @@ internal open class RumViewScope(
                     id = rumContext.sessionId,
                     type = sessionType,
                     hasReplay = hasReplay,
-                    isActive = rumContext.isSessionActive
+                    isActive = rumContext.isSessionActive,
+                    // FLASHCAT FORK - tells the intake this session's detail only starts where the
+                    // withheld buffer reached. Absent, rather than false, for every other session.
+                    sampledForError = rumContext.sampledForError.takeIf { it }
                 ),
                 synthetics = syntheticsAttribute,
                 source = ViewEvent.ViewEventSource.tryFromSource(

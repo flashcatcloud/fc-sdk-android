@@ -676,6 +676,57 @@ internal class RumViewScopeTest {
     }
 
     @Test
+    fun `M mark the session sampled for error W handleEvent(StartView) { session kept on error }`(
+        @Forgery key: RumScopeKey
+    ) {
+        // Given
+        fakeParentContext = fakeParentContext.copy(sampledForError = true)
+        whenever(mockParentScope.getRumContext()) doReturn fakeParentContext
+        testedScope = newRumViewScope(trackFrustrations = true)
+        mockSessionReplayContext(testedScope)
+
+        // When
+        testedScope.handleEvent(
+            RumRawEvent.StartView(key, emptyMap()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        // Then
+        argumentCaptor<ViewEvent> {
+            verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
+            assertThat(lastValue.session.sampledForError).isTrue
+        }
+    }
+
+    @Test
+    fun `M not mark the session W handleEvent(StartView) { plainly sampled session }`(
+        @Forgery key: RumScopeKey
+    ) {
+        // Given
+        fakeParentContext = fakeParentContext.copy(sampledForError = false)
+        whenever(mockParentScope.getRumContext()) doReturn fakeParentContext
+        testedScope = newRumViewScope(trackFrustrations = true)
+        mockSessionReplayContext(testedScope)
+
+        // When
+        testedScope.handleEvent(
+            RumRawEvent.StartView(key, emptyMap()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        // Then - absent rather than false
+        argumentCaptor<ViewEvent> {
+            verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
+            assertThat(lastValue.session.sampledForError).isNull()
+            assertThat(lastValue.toJson().asJsonObject.getAsJsonObject("session").has("sampled_for_error")).isFalse
+        }
+    }
+
+    @Test
     fun `M report no draw W handleEvent(StartView) { the app did not opt in }`(
         @Forgery key: RumScopeKey
     ) {
