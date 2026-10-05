@@ -13,11 +13,19 @@ internal class NoOpRecordWriter : RecordWriter {
         // no-op
     }
 
-    override fun withhold(sessionId: String) {
+    override fun withhold(sessionId: String, eventsWithheld: Boolean) {
         // no-op
     }
 
-    override fun stopWithholding(releasedSessionId: String?) {
+    override fun stopWithholding(sessionId: String) {
+        // no-op
+    }
+
+    override fun release(sessionId: String) {
+        // no-op
+    }
+
+    override fun discard(sessionId: String) {
         // no-op
     }
 }

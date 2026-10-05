@@ -2405,6 +2405,50 @@ internal class RumSessionScopeTest {
     }
 
     @Test
+    fun `M keep the session W handleEvent(ResetSession) { withheld session, the console rate leaves zero }`() {
+        // Given - a collected session is never redrawn under a new rate, and a withheld one is collected
+        val remoteConfig = mock<RemoteConfigStore>()
+        whenever(remoteConfig.snapshot()) doReturn RemoteConfigValues(0f, 1, sessionOnError = true)
+        val withheldEvents = startWithheldSession(remoteConfig = remoteConfig)
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.WITHHELD)
+        val sessionId = testedScope.sessionId
+
+        // When
+        whenever(remoteConfig.snapshot()) doReturn RemoteConfigValues(100f, 2, sessionOnError = true)
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        assertThat(testedScope.sessionId).isEqualTo(sessionId)
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.WITHHELD)
+        verify(withheldEvents, never()).endSession(any(), any())
+    }
+
+    @Test
+    fun `M not announce a stopped session to Session Replay W handleEvent { after StopSession }`() {
+        // Given - the stopped session keeps draining its views while the next session runs
+        initializeTestedScope(100f)
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        testedScope.handleEvent(RumRawEvent.StopSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        Mockito.clearInvocations(mockSessionReplayFeatureScope)
+
+        // When
+        testedScope.handleEvent(
+            RumRawEvent.KeepAlive(currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        // Then
+        verify(mockSessionReplayFeatureScope, never()).sendEvent(any())
+    }
+
+    @Test
     fun `M end the session W handleEvent(ResetSession) { zero rate with the switch off }`() {
         // Given
         val remoteConfig = mock<RemoteConfigStore>()

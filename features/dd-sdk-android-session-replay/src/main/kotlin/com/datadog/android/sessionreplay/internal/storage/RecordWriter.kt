@@ -9,26 +9,42 @@ package com.datadog.android.sessionreplay.internal.storage
 import com.datadog.android.sessionreplay.internal.processor.EnrichedRecord
 
 /**
- * Will persists the serialized EnrichedRecord in the allocated Session Replay caching location.
+ * Writes the records into the storage.
  */
 internal interface RecordWriter {
     /**
-     * Writes the record to disk.
+     * Writes the record into the storage.
      * @param record to write
      */
     fun write(record: EnrichedRecord)
 
     /**
      * FLASHCAT FORK - holds the records of this session in memory instead of writing them, until
-     * [stopWithholding] releases them.
+     * [release] or [stopWithholding] lets them go.
      * @param sessionId the RUM session whose replay is kept only if it reports an error
+     * @param eventsWithheld whether the session's events are withheld too, in which case RUM alone
+     * decides, with [release] or [discard], what becomes of the replay once the session has ended
      */
-    fun withhold(sessionId: String)
+    fun withhold(sessionId: String, eventsWithheld: Boolean)
 
     /**
-     * FLASHCAT FORK - stops holding records.
-     * @param releasedSessionId the session whose held records are written now; held records of
-     * any other session are thrown away. Null throws away whatever is held.
+     * FLASHCAT FORK - the session now current is not held. If it is the session whose records are
+     * held, they are written now: it has been released. Otherwise what another session still holds
+     * is kept aside for RUM's word if its events were withheld, and thrown away if not.
+     * @param sessionId the RUM session now current
      */
-    fun stopWithholding(releasedSessionId: String?)
+    fun stopWithholding(sessionId: String)
+
+    /**
+     * FLASHCAT FORK - writes what is held for this session, whether it is still current or has
+     * ended since. Nothing happens if nothing is held for it.
+     * @param sessionId the RUM session whose events were released
+     */
+    fun release(sessionId: String)
+
+    /**
+     * FLASHCAT FORK - throws away what is held for this session, and whatever of it arrives later.
+     * @param sessionId the RUM session that ended without reporting an error
+     */
+    fun discard(sessionId: String)
 }

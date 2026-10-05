@@ -248,17 +248,23 @@ internal class SessionReplayFeature(
                         applySampling(alreadySeenSession, sessionData.forced)
                         val withhold = shouldWithhold(sessionData)
                         modifyShouldRecordState(sessionData, withhold)
-                        updateWithholding(sessionData.sessionId, withhold)
+                        updateWithholding(sessionData.sessionId, withhold, sessionData.eventsOnError)
                         handleRecording(sessionData)
                     }
                 }
         } else if (sessionMetadata[SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY] == RUM_SESSION_RELEASED_BUS_MESSAGE) {
             // FLASHCAT FORK - the session's events have just been released: the replay held for it
-            // goes out now, and recording carries on as for any collected session.
-            val sessionId = sessionMetadata[RUM_SESSION_ID_BUS_MESSAGE_KEY] as? String
-            if (sessionId != null && isReplayWithheld.get() && currentRumSessionId.get() == sessionId) {
-                updateWithholding(sessionId, withhold = false)
+            // goes out now. For the session still current, recording carries on as for any collected
+            // session; a session that ended before its word arrived only has what it held to send.
+            val sessionId = sessionMetadata[RUM_SESSION_ID_BUS_MESSAGE_KEY] as? String ?: return
+            if (isReplayWithheld.get() && currentRumSessionId.get() == sessionId) {
+                updateWithholding(sessionId, withhold = false, eventsOnError = false)
+            } else {
+                dataWriter.release(sessionId)
             }
+        } else if (sessionMetadata[SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY] == RUM_SESSION_DISCARDED_BUS_MESSAGE) {
+            // FLASHCAT FORK - the session ended without an error: what was held for it goes.
+            (sessionMetadata[RUM_SESSION_ID_BUS_MESSAGE_KEY] as? String)?.let { dataWriter.discard(it) }
         } else {
             sdkCore.internalLogger.log(
                 InternalLogger.Level.WARN,
@@ -327,13 +333,13 @@ internal class SessionReplayFeature(
         }
     }
 
-    private fun updateWithholding(sessionId: String, withhold: Boolean) {
+    private fun updateWithholding(sessionId: String, withhold: Boolean, eventsOnError: Boolean) {
         if (withhold) {
             onErrorReplaySessionId.set(sessionId)
-            dataWriter.withhold(sessionId)
+            dataWriter.withhold(sessionId, eventsWithheld = eventsOnError)
         } else {
-            // Releases what this session held, if it held anything; throws away what any other
-            // session still held.
+            // Releases what this session held, if it held anything; what another session still
+            // holds is kept for RUM's word or thrown away, see the writer.
             dataWriter.stopWithholding(sessionId)
         }
         val wasWithheld = isReplayWithheld.getAndSet(withhold)
@@ -508,6 +514,7 @@ internal class SessionReplayFeature(
         const val RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY = "sessionReplayOnError"
         const val RUM_SESSION_RELEASED_BUS_MESSAGE_KEY = "sessionReleased"
         const val RUM_SESSION_RELEASED_BUS_MESSAGE = "rum_session_released"
+        const val RUM_SESSION_DISCARDED_BUS_MESSAGE = "rum_session_discarded"
 
         // FLASHCAT FORK - read by RUM to mark view events: the current session when its replay is
         // kept only on error, and whether its records are still held.

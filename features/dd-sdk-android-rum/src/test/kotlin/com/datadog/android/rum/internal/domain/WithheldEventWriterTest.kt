@@ -105,13 +105,15 @@ internal class WithheldEventWriterTest {
             elapsedTimeNs = { nowNs },
             scheduleRelease = { delayMs, release -> scheduled.add(delayMs to release) },
             replayRecordsCount = { viewId -> replayRecords[viewId] ?: 0L },
-            releaseReplay = { releasedReplays.add(it) }
+            releaseReplay = { releasedReplays.add(it) },
+            discardReplay = { discardedReplays.add(it) }
         )
     }
 
     private val replayRecords = mutableMapOf<String, Long>()
     private val claimedErrors = mutableListOf<ErrorEvent>()
     private val releasedReplays = mutableListOf<String>()
+    private val discardedReplays = mutableListOf<String>()
 
     // region Withholding
 
@@ -158,6 +160,35 @@ internal class WithheldEventWriterTest {
         // Then
         assertThat(result).isTrue
         assertThat(written).isEmpty()
+    }
+
+    @Test
+    fun `M tell Session Replay the session is discarded W endSession() {no error}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+
+        // When
+        testedWriter.endSession(sessionId, batchWriter)
+
+        // Then
+        assertThat(discardedReplays).containsExactly(sessionId)
+        assertThat(releasedReplays).isEmpty()
+    }
+
+    @Test
+    fun `M tell Session Replay the session is released W endSession() {session had errored}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+
+        // When
+        testedWriter.endSession(sessionId, batchWriter)
+
+        // Then
+        assertThat(releasedReplays).containsExactly(sessionId)
+        assertThat(discardedReplays).isEmpty()
     }
 
     @Test
@@ -547,6 +578,25 @@ internal class WithheldEventWriterTest {
 
         // Then
         assertThat(written).containsExactly("v1", "e1")
+    }
+
+    @Test
+    fun `M never evict the crash W write() {crash and an earlier error over the budget together}`() {
+        // Given - each fits the budget on its own, both do not
+        val chunk = WithheldEventWriter.BYTES_LIMIT * 2 / 3
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, error("e1", "v1", payload = "1".repeat(chunk)), EventType.DEFAULT)
+
+        // When
+        testedWriter.write(
+            batchWriter,
+            error("c1", "v1", isCrash = true, payload = "C".repeat(chunk)),
+            EventType.CRASH
+        )
+
+        // Then - the earlier error made room for the crash, not the other way round
+        assertThat(written.map { it.first() }).containsExactly('v', 'C')
     }
 
     @Test

@@ -361,16 +361,17 @@ internal class RumSessionScope(
     }
 
     /**
-     * FLASHCAT FORK - whether the settings now in force keep this session exactly as it is, so a
-     * reset asked for by the console must not end it: a session kept on error, under a zero rate
-     * with the switch on. That is the ordinary configuration for "only the sessions that error",
-     * not an emergency stop - ending the session would throw away what the switch exists to keep,
-     * on every first fetch and every release of the app.
+     * FLASHCAT FORK - whether a reset asked for by the console must leave this session alone: a
+     * session kept on error, under anything but the emergency stop. It is a collected session,
+     * and redrawing it under a new rate would throw away what the switch exists to keep - on every
+     * first fetch and every release of the app, when the console says a zero rate with the switch
+     * on, which is the ordinary configuration for "only the sessions that error". Only the stop -
+     * a zero rate with the switch off - ends it, as it ends every collected session.
      */
     private fun isKeptOnErrorUnderCurrentSettings(): Boolean {
         if (!sampledForError) return false
         val sampling = resolveSampling(remoteConfig?.snapshot())
-        return sampling.rate == 0f && sampling.onError
+        return !(sampling.rate == 0f && !sampling.onError)
     }
 
     private fun isSessionComplete(): Boolean {
@@ -548,6 +549,10 @@ internal class RumSessionScope(
     }
 
     private fun updateSessionStateForSessionReplay(state: State, sessionId: String) {
+        // FLASHCAT FORK - a stopped session drains alongside the one that replaced it, and has
+        // no business announcing itself as current: Session Replay would take each turn as a new
+        // session, and throw away what it holds for the one actually running.
+        if (!isActive) return
         val keepSession = (state == State.TRACKED)
         sdkCore.getFeature(Feature.SESSION_REPLAY_FEATURE_NAME)?.sendEvent(
             mapOf(
@@ -580,6 +585,7 @@ internal class RumSessionScope(
         internal const val RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY = "sessionReplayOnError"
         internal const val RUM_SESSION_RELEASED_BUS_MESSAGE_KEY = "sessionReleased"
         internal const val RUM_SESSION_RELEASED_BUS_MESSAGE = "rum_session_released"
+        internal const val RUM_SESSION_DISCARDED_BUS_MESSAGE = "rum_session_discarded"
 
         private const val MAX_SAMPLE_RATE = 100f
 

@@ -437,12 +437,15 @@ internal class RumFeature(
             scheduleRelease = { delayMs, release -> handler.postDelayed({ withRumWriteScope(release) }, delayMs) },
             replayRecordsCount = ::resolveReplayRecordsCount,
             releaseReplay = { sessionId ->
-                sdkCore.getFeature(Feature.SESSION_REPLAY_FEATURE_NAME)?.sendEvent(
-                    mapOf(
-                        RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
-                            RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE,
-                        RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to sessionId
-                    )
+                tellSessionReplay(
+                    RumSessionScope.RUM_SESSION_RELEASED_BUS_MESSAGE,
+                    sessionId
+                )
+            },
+            discardReplay = { sessionId ->
+                tellSessionReplay(
+                    RumSessionScope.RUM_SESSION_DISCARDED_BUS_MESSAGE,
+                    sessionId
                 )
             }
         )
@@ -455,6 +458,16 @@ internal class RumFeature(
             withheldEventsBackgroundCallback = callback
         }
         return writer
+    }
+
+    /** FLASHCAT FORK - what became of a withheld session's events, for the replay held with them. */
+    private fun tellSessionReplay(message: String, sessionId: String) {
+        sdkCore.getFeature(Feature.SESSION_REPLAY_FEATURE_NAME)?.sendEvent(
+            mapOf(
+                RumSessionScope.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to message,
+                RumSessionScope.RUM_SESSION_ID_BUS_MESSAGE_KEY to sessionId
+            )
+        )
     }
 
     /** FLASHCAT FORK - the replay records a view has, sent or still held by Session Replay. */

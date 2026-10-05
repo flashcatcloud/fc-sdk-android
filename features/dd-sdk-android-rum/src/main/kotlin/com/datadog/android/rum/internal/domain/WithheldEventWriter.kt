@@ -60,7 +60,13 @@ internal class WithheldEventWriter(
      * Tells Session Replay the session's events are released, so the replay it holds for that
      * session goes out too - never ahead of the events it attaches to.
      */
-    private val releaseReplay: (sessionId: String) -> Unit
+    private val releaseReplay: (sessionId: String) -> Unit,
+    /**
+     * Tells Session Replay the session ended without an error, so the replay it holds for that
+     * session goes too. Session Replay keeps a replay whose events are withheld until it hears one
+     * or the other: the next session can announce itself before this one's fate is settled here.
+     */
+    private val discardReplay: (sessionId: String) -> Unit
 ) : DataWriter<Any> {
 
     private class HeldView(val viewId: String, val date: Long, val event: RawBatchEvent, val eventType: EventType)
@@ -85,7 +91,13 @@ internal class WithheldEventWriter(
          * Errors are the reason the session is kept at all, so they go only once nothing else is
          * left - newest first, because the earliest error is the one the session is about.
          */
-        LAST_RESORT
+        LAST_RESORT,
+
+        /**
+         * A crash is never evicted: the process is going down, the history is released with it at
+         * once, and it is what that release exists to deliver.
+         */
+        CRASH
     }
 
     private var withheldForSessionId: String? = null
@@ -240,6 +252,7 @@ internal class WithheldEventWriter(
                 }
                 clear()
                 withheldForSessionId = null
+                discardReplay(sessionId)
             }
         }
     }
@@ -387,7 +400,7 @@ internal class WithheldEventWriter(
         // requests as the process still gets to send, and the error is what the session is kept
         // for - then the rest.
         views.values.sortedBy { it.date }.forEach { write(writer, it.event, it.eventType, it.viewId) }
-        val (errors, others) = details.partition { it.tier == EvictionTier.LAST_RESORT }
+        val (errors, others) = details.partition { it.tier >= EvictionTier.LAST_RESORT }
         errors.forEach { write(writer, it.event, it.eventType, it.viewId) }
         others.forEach { write(writer, it.event, it.eventType, it.viewId) }
 
@@ -515,7 +528,7 @@ internal class WithheldEventWriter(
         }
 
         private fun evictionTierOf(element: Any): EvictionTier = when (element) {
-            is ErrorEvent -> EvictionTier.LAST_RESORT
+            is ErrorEvent -> if (element.error.isCrash == true) EvictionTier.CRASH else EvictionTier.LAST_RESORT
             is LongTaskEvent -> EvictionTier.FIRST
             is ResourceEvent -> {
                 // A request that failed is part of how the error happened; one that succeeded

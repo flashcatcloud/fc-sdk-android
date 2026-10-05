@@ -15,6 +15,7 @@ import com.datadog.android.api.feature.FeatureSdkCore
 import com.datadog.android.api.storage.EventBatchWriter
 import com.datadog.android.api.storage.EventType
 import com.datadog.android.api.storage.RawBatchEvent
+import com.datadog.android.privacy.TrackingConsent
 import com.datadog.android.sessionreplay.forge.ForgeConfigurator
 import com.datadog.android.sessionreplay.internal.RecordCallback
 import com.datadog.android.sessionreplay.internal.processor.EnrichedRecord
@@ -35,6 +36,7 @@ import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
@@ -162,7 +164,8 @@ internal class SessionReplayRecordWriterTest {
 
     private val written = mutableListOf<String>()
 
-    private fun recordWrites() {
+    private fun recordWrites(consent: TrackingConsent = TrackingConsent.GRANTED) {
+        fakeDatadogContext = fakeDatadogContext.copy(trackingConsent = consent)
         whenever(mockSdkCore.internalLogger) doReturn mockInternalLogger
         whenever(mockEventBatchWriter.write(anyOrNull(), anyOrNull(), any())) doAnswer {
             written.add(EnrichedRecordTag.of(it.getArgument<RawBatchEvent>(0)))
@@ -220,8 +223,8 @@ internal class SessionReplayRecordWriterTest {
     fun `M hold resources and write them on release W write(resource) { session withheld }`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1")
-        testedWriter.write(record("r1", "s1", fullSnapshotAt = 1_000))
+        testedWriter.withhold("s1", eventsWithheld = false)
+        testedWriter.write(imageRecord("r1", "s1", 1_000, "img"))
         testedWriter.write(resource("img"), "s1") {}
         testedWriter.write(resource("img"), "s1") {}
 
@@ -238,7 +241,7 @@ internal class SessionReplayRecordWriterTest {
     fun `M drop held resources W stopWithholding { another session }`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1")
+        testedWriter.withhold("s1", eventsWithheld = false)
         testedWriter.write(resource("img"), "s1") {}
 
         // When
@@ -253,7 +256,7 @@ internal class SessionReplayRecordWriterTest {
     fun `M count held records apart and clear them W hold then release`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1")
+        testedWriter.withhold("s1", eventsWithheld = false)
         val held = record("r1", "s1", fullSnapshotAt = 1_000)
 
         // When
@@ -272,7 +275,7 @@ internal class SessionReplayRecordWriterTest {
     fun `M start the release with the view's meta and focus W release { cut at a periodic full snapshot }`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1")
+        testedWriter.withhold("s1", eventsWithheld = false)
         val meta = MobileSegment.MobileRecord.MetaRecord(0, data = MobileSegment.Data1(100, 200))
         val focus = MobileSegment.MobileRecord.FocusRecord(0, data = MobileSegment.Data2(true))
         val full0 = MobileSegment.MobileRecord.MobileFullSnapshotRecord(0, MobileSegment.Data(emptyList()))
@@ -299,7 +302,7 @@ internal class SessionReplayRecordWriterTest {
     fun `M drop the oldest span but keep a full snapshot W hold { over the byte limit }`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1")
+        testedWriter.withhold("s1", eventsWithheld = false)
         val big = SessionReplayRecordWriter.BYTES_LIMIT.toInt() / 3
         testedWriter.write(bigRecord("old", "s1", 1_000, big))
         testedWriter.write(bigRecord("mid", "s1", 2_000, big))
@@ -316,7 +319,7 @@ internal class SessionReplayRecordWriterTest {
     fun `M keep the only full snapshot W hold { a single span over the byte limit }`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1")
+        testedWriter.withhold("s1", eventsWithheld = false)
         testedWriter.write(bigRecord("only", "s1", 1_000, SessionReplayRecordWriter.BYTES_LIMIT.toInt() + 1))
         testedWriter.write(record("inc", "s1"))
 
@@ -345,7 +348,7 @@ internal class SessionReplayRecordWriterTest {
     fun `M hold the records W write { session withheld }`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1")
+        testedWriter.withhold("s1", eventsWithheld = false)
 
         // When
         testedWriter.write(record("r1", "s1", fullSnapshotAt = 1_000))
@@ -361,7 +364,7 @@ internal class SessionReplayRecordWriterTest {
     fun `M write what was held in order W stopWithholding { session released }`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1")
+        testedWriter.withhold("s1", eventsWithheld = false)
         testedWriter.write(record("r1", "s1", fullSnapshotAt = 1_000))
         testedWriter.write(record("r2", "s1"))
 
@@ -386,7 +389,7 @@ internal class SessionReplayRecordWriterTest {
     fun `M throw away what was held and its stragglers W stopWithholding { another session }`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1")
+        testedWriter.withhold("s1", eventsWithheld = false)
         testedWriter.write(record("r1", "s1", fullSnapshotAt = 1_000))
 
         // When
@@ -403,11 +406,11 @@ internal class SessionReplayRecordWriterTest {
     fun `M throw away the previous session W withhold { new session }`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1")
+        testedWriter.withhold("s1", eventsWithheld = false)
         testedWriter.write(record("r1", "s1", fullSnapshotAt = 1_000))
 
         // When
-        testedWriter.withhold("s2")
+        testedWriter.withhold("s2", eventsWithheld = false)
         testedWriter.write(record("r2", "s2", fullSnapshotAt = 2_000))
         testedWriter.stopWithholding("s2")
 
@@ -419,7 +422,7 @@ internal class SessionReplayRecordWriterTest {
     fun `M keep a playable minute W write { more than a minute held }`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1")
+        testedWriter.withhold("s1", eventsWithheld = false)
         testedWriter.write(record("full0", "s1", fullSnapshotAt = 0))
         testedWriter.write(record("inc0", "s1"))
         testedWriter.write(record("full30", "s1", fullSnapshotAt = 30_000))
@@ -432,6 +435,176 @@ internal class SessionReplayRecordWriterTest {
 
         // Then - cut at the newest full snapshot at least a minute older than the latest one
         assertThat(written).containsExactly("full30", "inc30", "full61", "full95")
+    }
+
+    @Test
+    fun `M keep a session aside W withhold { new session, previous one's events withheld }`() {
+        // Given - RUM has yet to say whether the previous session is released or thrown away
+        recordWrites()
+        testedWriter.withhold("s1", eventsWithheld = true)
+        testedWriter.write(record("r1", "s1", fullSnapshotAt = 1_000))
+
+        // When
+        testedWriter.withhold("s2", eventsWithheld = true)
+        testedWriter.write(record("r2", "s2", fullSnapshotAt = 2_000))
+        testedWriter.write(record("r1b", "s1"))
+
+        // Then - a late record of the session kept aside is kept with it
+        assertThat(written).isEmpty()
+
+        // When - the previous session's word arrives
+        testedWriter.release("s1")
+
+        // Then - what it held goes, what the current one holds stays
+        assertThat(written).containsExactly("r1", "r1b")
+
+        // When
+        testedWriter.release("s2")
+
+        // Then
+        assertThat(written).containsExactly("r1", "r1b", "r2")
+    }
+
+    @Test
+    fun `M throw away a session kept aside W discard`() {
+        // Given
+        recordWrites()
+        testedWriter.withhold("s1", eventsWithheld = true)
+        testedWriter.write(record("r1", "s1", fullSnapshotAt = 1_000))
+        testedWriter.stopWithholding("s2")
+
+        // When
+        testedWriter.discard("s1")
+        testedWriter.write(record("late", "s1"))
+        testedWriter.write(record("next", "s2"))
+
+        // Then
+        assertThat(written).containsExactly("next")
+        verify(mockRecordCallback).onWithheldRecordsCleared(any())
+    }
+
+    @Test
+    fun `M ignore a word about a session already thrown away W withhold`() {
+        // Given - a stopped session may announce itself once more after the next one has
+        recordWrites()
+        testedWriter.withhold("s1", eventsWithheld = true)
+        testedWriter.discard("s1")
+        testedWriter.withhold("s2", eventsWithheld = true)
+        testedWriter.write(record("r2", "s2", fullSnapshotAt = 2_000))
+
+        // When
+        testedWriter.withhold("s1", eventsWithheld = true)
+        testedWriter.write(record("r2b", "s2"))
+        testedWriter.release("s2")
+
+        // Then
+        assertThat(written).containsExactly("r2", "r2b")
+    }
+
+    @Test
+    fun `M hold nothing and drop what was held W write { consent not granted }`() {
+        // Given
+        recordWrites()
+        testedWriter.withhold("s1", eventsWithheld = true)
+        testedWriter.write(record("r1", "s1", fullSnapshotAt = 1_000))
+        testedWriter.write(resource("img"), "s1") {}
+
+        // When
+        recordWrites(consent = TrackingConsent.NOT_GRANTED)
+        testedWriter.write(record("r2", "s1", fullSnapshotAt = 2_000))
+        testedWriter.write(resource("img2"), "s1") {}
+        recordWrites(consent = TrackingConsent.GRANTED)
+        testedWriter.write(record("inc", "s1"))
+        testedWriter.write(record("r3", "s1", fullSnapshotAt = 3_000))
+        testedWriter.release("s1")
+
+        // Then - holding starts over at the first full snapshot under consent
+        assertThat(written).containsExactly("r3")
+        verify(mockResourcesWriter, never()).write(any(), any(), any())
+    }
+
+    @Test
+    fun `M drop the oldest span W hold { an incremental record takes the buffer over the byte limit }`() {
+        // Given
+        recordWrites()
+        testedWriter.withhold("s1", eventsWithheld = true)
+        val half = SessionReplayRecordWriter.BYTES_LIMIT.toInt() / 2
+        testedWriter.write(bigRecord("old", "s1", 1_000, half))
+        testedWriter.write(bigRecord("new", "s1", 2_000, half / 2))
+
+        // When
+        val inc = bigRecord("inc", "s1", 2_500, half)
+        testedWriter.write(inc.copy(records = inc.records.map { incrementalOf(it) }))
+        testedWriter.release("s1")
+
+        // Then
+        assertThat(written).containsExactly("new", "inc")
+    }
+
+    @Test
+    fun `M send only the images the released records show W release`() {
+        // Given - an image of a session that never errored, and one of the session released
+        recordWrites()
+        testedWriter.withhold("s1", eventsWithheld = false)
+        testedWriter.write(resource("unseen"), "s1") {}
+        testedWriter.write(imageRecord("r1", "s1", 1_000, "shared"))
+        testedWriter.write(resource("shared"), "s1") {}
+        testedWriter.withhold("s2", eventsWithheld = true)
+        testedWriter.write(imageRecord("r2", "s2", 2_000, "shared"))
+        testedWriter.write(resource("own"), "s2") {}
+        testedWriter.write(imageRecord("r2b", "s2", 3_000, "own"))
+
+        // When
+        testedWriter.release("s2")
+
+        // Then - the image captured under the discarded session goes with the records that show it
+        val sent = argumentCaptor<EnrichedResource>()
+        verify(mockResourcesWriter, times(2)).write(sent.capture(), eq("s2"), any())
+        assertThat(sent.allValues.map { it.filename }).containsExactlyInAnyOrder("shared", "own")
+    }
+
+    @Test
+    fun `M not hold an image over the budget W write(resource)`() {
+        // Given
+        recordWrites()
+        testedWriter.withhold("s1", eventsWithheld = true)
+        testedWriter.write(imageRecord("r1", "s1", 1_000, "huge"))
+
+        // When
+        testedWriter.write(resource("huge", size = SessionReplayRecordWriter.BYTES_LIMIT.toInt() + 1), "s1") {}
+        testedWriter.release("s1")
+
+        // Then
+        verify(mockResourcesWriter, never()).write(any(), any(), any())
+    }
+
+    private fun imageRecord(tag: String, sessionId: String, fullSnapshotAt: Long, resourceId: String): EnrichedRecord {
+        val image = MobileSegment.Wireframe.ImageWireframe(
+            id = 1,
+            x = 0,
+            y = 0,
+            width = 1,
+            height = 1,
+            resourceId = resourceId
+        )
+        val full = MobileSegment.MobileRecord.MobileFullSnapshotRecord(
+            fullSnapshotAt,
+            MobileSegment.Data(listOf(image))
+        )
+        return EnrichedRecord("app", sessionId, tag, listOf(full))
+    }
+
+    /** The same wireframes as an incremental record: an addition of each. */
+    private fun incrementalOf(record: MobileSegment.MobileRecord): MobileSegment.MobileRecord {
+        val full = record as MobileSegment.MobileRecord.MobileFullSnapshotRecord
+        return MobileSegment.MobileRecord.MobileIncrementalSnapshotRecord(
+            full.timestamp,
+            MobileSegment.MobileIncrementalData.MobileMutationData(
+                adds = full.data.wireframes.map { MobileSegment.Add(wireframe = it) },
+                removes = emptyList(),
+                updates = emptyList()
+            )
+        )
     }
 
     // endregion

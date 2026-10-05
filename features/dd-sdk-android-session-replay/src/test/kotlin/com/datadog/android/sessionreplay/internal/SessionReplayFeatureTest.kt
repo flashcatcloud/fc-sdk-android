@@ -575,7 +575,7 @@ internal class SessionReplayFeatureTest {
 
         // Then
         verify(mockRecorder).resumeRecorders()
-        verify(mockWriter).withhold(fakeSessionId)
+        verify(mockWriter).withhold(fakeSessionId, eventsWithheld = false)
     }
 
     @Test
@@ -588,7 +588,7 @@ internal class SessionReplayFeatureTest {
 
         // Then
         verify(mockRecorder, never()).resumeRecorders()
-        verify(mockWriter, never()).withhold(any())
+        verify(mockWriter, never()).withhold(any(), any())
     }
 
     @Test
@@ -601,7 +601,7 @@ internal class SessionReplayFeatureTest {
 
         // Then
         verify(mockRecorder).resumeRecorders()
-        verify(mockWriter, never()).withhold(any())
+        verify(mockWriter, never()).withhold(any(), any())
         verify(mockWriter).stopWithholding(fakeSessionId)
     }
 
@@ -615,7 +615,7 @@ internal class SessionReplayFeatureTest {
 
         // Then
         verify(mockRecorder).resumeRecorders()
-        verify(mockWriter).withhold(fakeSessionId)
+        verify(mockWriter).withhold(fakeSessionId, eventsWithheld = true)
     }
 
     @Test
@@ -628,7 +628,7 @@ internal class SessionReplayFeatureTest {
 
         // Then
         verify(mockRecorder).resumeRecorders()
-        verify(mockWriter).withhold(fakeSessionId)
+        verify(mockWriter).withhold(fakeSessionId, eventsWithheld = true)
     }
 
     @Test
@@ -641,7 +641,7 @@ internal class SessionReplayFeatureTest {
 
         // Then
         verify(mockRecorder, never()).resumeRecorders()
-        verify(mockWriter, never()).withhold(any())
+        verify(mockWriter, never()).withhold(any(), any())
     }
 
     @Test
@@ -657,7 +657,7 @@ internal class SessionReplayFeatureTest {
 
         // Then
         inOrder(mockWriter) {
-            verify(mockWriter).withhold(fakeSessionId)
+            verify(mockWriter).withhold(fakeSessionId, eventsWithheld = true)
             verify(mockWriter).stopWithholding(fakeSessionId)
         }
         verify(mockRecorder).resumeRecorders()
@@ -681,10 +681,50 @@ internal class SessionReplayFeatureTest {
 
         // Then
         inOrder(mockWriter) {
-            verify(mockWriter).withhold(fakeSessionId)
+            verify(mockWriter).withhold(fakeSessionId, eventsWithheld = true)
             verify(mockWriter).stopWithholding(fakeSessionId)
         }
         verify(mockRecorder, never()).stopRecorders()
+    }
+
+    @Test
+    fun `M release what a past session held W rum session released { another session is current }`() {
+        // Given - the past session's word lands after the next one announced itself
+        val mockWriter = initializeWithWriter(sampledIn = false)
+        testedFeature.onReceive(onErrorMessage(keep = false, eventsOnError = true, replayOnError = true))
+
+        // When
+        testedFeature.onReceive(
+            mapOf(
+                SessionReplayFeature.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
+                    SessionReplayFeature.RUM_SESSION_RELEASED_BUS_MESSAGE,
+                SessionReplayFeature.RUM_SESSION_ID_BUS_MESSAGE_KEY to "past-session"
+            )
+        )
+
+        // Then
+        verify(mockWriter).release("past-session")
+        verify(mockWriter, never()).stopWithholding(any())
+        verify(mockRecorder, never()).stopRecorders()
+    }
+
+    @Test
+    fun `M throw away what a session held W rum session discarded`() {
+        // Given
+        val mockWriter = initializeWithWriter(sampledIn = false)
+        testedFeature.onReceive(onErrorMessage(keep = false, eventsOnError = true, replayOnError = true))
+
+        // When
+        testedFeature.onReceive(
+            mapOf(
+                SessionReplayFeature.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
+                    SessionReplayFeature.RUM_SESSION_DISCARDED_BUS_MESSAGE,
+                SessionReplayFeature.RUM_SESSION_ID_BUS_MESSAGE_KEY to fakeSessionId
+            )
+        )
+
+        // Then
+        verify(mockWriter).discard(fakeSessionId)
     }
 
     @Test
