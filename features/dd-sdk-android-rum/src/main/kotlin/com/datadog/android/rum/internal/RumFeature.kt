@@ -37,6 +37,8 @@ import com.datadog.android.event.NoOpEventMapper
 import com.datadog.android.internal.flags.RumFlagEvaluationMessage
 import com.datadog.android.internal.system.BuildSdkVersionProvider
 import com.datadog.android.internal.telemetry.InternalTelemetryEvent
+import com.datadog.android.privacy.TrackingConsent
+import com.datadog.android.privacy.TrackingConsentProviderCallback
 import com.datadog.android.rum.BeforeSamplingCallback
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.RumErrorSource
@@ -144,7 +146,7 @@ internal class RumFeature(
         DatadogLateCrashReporter(it)
     },
     private val buildSdkVersionProvider: BuildSdkVersionProvider = BuildSdkVersionProvider.DEFAULT
-) : StorageBackedFeature, FeatureEventReceiver {
+) : StorageBackedFeature, FeatureEventReceiver, TrackingConsentProviderCallback {
 
     internal var dataWriter: DataWriter<Any> = NoOpDataWriter()
     internal val initialized = AtomicBoolean(false)
@@ -427,9 +429,6 @@ internal class RumFeature(
      */
     private fun createWithheldEventWriter(rumDataWriter: RumDataWriter, appContext: Context): WithheldEventWriter {
         val handler = Handler(Looper.getMainLooper())
-        val withRumWriteScope: ((EventBatchWriter) -> Unit) -> Unit = { block ->
-            sdkCore.getFeature(Feature.RUM_FEATURE_NAME)?.withWriteContext { _, writeScope -> writeScope(block) }
-        }
         val writer = WithheldEventWriter(
             delegate = rumDataWriter,
             internalLogger = sdkCore.internalLogger,
@@ -458,6 +457,18 @@ internal class RumFeature(
             withheldEventsBackgroundCallback = callback
         }
         return writer
+    }
+
+    /** FLASHCAT FORK - runs the block on the storage thread, after the RUM writes submitted so far. */
+    private fun withRumWriteScope(block: (EventBatchWriter) -> Unit) {
+        sdkCore.getFeature(Feature.RUM_FEATURE_NAME)?.withWriteContext { _, writeScope -> writeScope(block) }
+    }
+
+    // FLASHCAT FORK - the withheld events are not in the storage consent governs: what was held
+    // under the consent now withdrawn is dropped here, whether or not an event follows to see it.
+    override fun onConsentUpdated(previousConsent: TrackingConsent, newConsent: TrackingConsent) {
+        if (newConsent != TrackingConsent.NOT_GRANTED) return
+        withheldEvents?.let { writer -> withRumWriteScope { writer.dropHeldForConsent() } }
     }
 
     /** FLASHCAT FORK - what became of a withheld session's events, for the replay held with them. */

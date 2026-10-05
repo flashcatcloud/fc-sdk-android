@@ -301,7 +301,7 @@ internal class WithheldEventWriterTest {
     fun `M claim the replay for the releasing error W write() {watched session, view has records}`() {
         // Given
         replayRecords["v1"] = 2L
-        testedWriter.watchForError(sessionId)
+        testedWriter.watchForError(sessionId, batchWriter)
         val releasing = error("e1", "v1")
 
         // When
@@ -394,24 +394,103 @@ internal class WithheldEventWriterTest {
     @Test
     fun `M write through and mark the error W write() {watched session}`() {
         // Given
-        testedWriter.watchForError(sessionId)
+        testedWriter.watchForError(sessionId, batchWriter)
 
         // When
         testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
-        val before = testedWriter.isReleased(sessionId)
+        val before = testedWriter.isReplayReleased(sessionId)
         testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
 
         // Then
         assertThat(before).isFalse
-        assertThat(testedWriter.isReleased(sessionId)).isTrue
+        assertThat(testedWriter.isReplayReleased(sessionId)).isTrue
+        assertThat(releasedReplays).containsExactly(sessionId)
         assertThat(written).containsExactly("v1", "e1")
         assertThat(scheduled).isEmpty()
     }
 
     @Test
+    fun `M keep the withheld session released W write() {late error of a watched session}`() {
+        // Given - a stopped watched session still drains while the withheld one runs and errors
+        val watched = UUID.randomUUID().toString()
+        testedWriter.watchForError(watched, batchWriter)
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+
+        // When
+        testedWriter.write(batchWriter, error("late", "v0", session = watched), EventType.DEFAULT)
+        testedWriter.endSession(sessionId, batchWriter)
+
+        // Then
+        assertThat(testedWriter.isReleased(sessionId)).isTrue
+        assertThat(written).containsExactly("late", "v1", "e1")
+        assertThat(discardedReplays).doesNotContain(sessionId)
+    }
+
+    @Test
+    fun `M tell Session Replay the session is discarded W endSession() {watched session, no error}`() {
+        // Given
+        testedWriter.watchForError(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+
+        // When
+        testedWriter.endSession(sessionId, batchWriter)
+
+        // Then
+        assertThat(discardedReplays).containsExactly(sessionId)
+        assertThat(releasedReplays).isEmpty()
+    }
+
+    @Test
+    fun `M not tell Session Replay twice W endSession() {watched session that errored}`() {
+        // Given
+        testedWriter.watchForError(sessionId, batchWriter)
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+
+        // When
+        testedWriter.endSession(sessionId, batchWriter)
+
+        // Then
+        assertThat(releasedReplays).containsExactly(sessionId)
+        assertThat(discardedReplays).isEmpty()
+    }
+
+    @Test
+    fun `M end a watched session left behind W startWithholding()`() {
+        // Given
+        val watched = UUID.randomUUID().toString()
+        testedWriter.watchForError(watched, batchWriter)
+
+        // When
+        testedWriter.startWithholding(sessionId, batchWriter)
+
+        // Then
+        assertThat(discardedReplays).containsExactly(watched)
+    }
+
+    @Test
+    fun `M drop everything held W dropHeldForConsent() {release waiting for the jitter}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+
+        // When
+        testedWriter.dropHeldForConsent()
+        scheduled.first().second(batchWriter)
+        testedWriter.write(batchWriter, action("a1", "v1"), EventType.DEFAULT)
+        scheduled.last().second(batchWriter)
+
+        // Then - the held minute is gone, the session goes on as a released one
+        assertThat(scheduled).hasSize(2)
+        assertThat(written).containsExactly("a1")
+    }
+
+    @Test
     fun `M not mark W write() {watched session, error dropped by a mapper}`() {
         // Given
-        testedWriter.watchForError(sessionId)
+        testedWriter.watchForError(sessionId, batchWriter)
         val dropped = error("e1", "v1")
         payloads[dropped] = null
 

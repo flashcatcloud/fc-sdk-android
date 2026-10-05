@@ -121,6 +121,11 @@ internal class RumSessionScope(
     // the replay itself and decides from this whether a replay it did not keep is kept on error.
     private var replayOnError: Boolean = false
 
+    // FLASHCAT FORK - whether the current session is a collected one whose replay may be kept on
+    // error: its end is reported to the buffer like a withheld session's, so Session Replay hears
+    // what became of the replay it holds.
+    private var replayWatched: Boolean = false
+
     private var startReason: StartReason = StartReason.USER_APP_LAUNCH
     internal var isActive: Boolean = true
     private val sessionStartNs = AtomicLong(sdkCore.timeProvider.getDeviceElapsedTimeNanos())
@@ -355,7 +360,7 @@ internal class RumSessionScope(
      * pending writes.
      */
     private fun endWithheldSession(writeScope: EventWriteScope) {
-        if (!sampledForError) return
+        if (!sampledForError && !replayWatched) return
         val endedSessionId = sessionId
         writeScope { withheldEvents?.endSession(endedSessionId, it) }
     }
@@ -395,6 +400,14 @@ internal class RumSessionScope(
         // When the session is expired, time-out or stopSession API is called, session ended metric should be sent
         if (isExpired || isTimedOut || isActive.not()) {
             sessionEndedMetricDispatcher.endMetric(sessionId, sdkCore.time.serverTimeOffsetMs)
+        }
+
+        // FLASHCAT FORK - a stopped session drains alongside the one that replaced it; the events
+        // it still sees must not have it draw a new session on top of the one actually running.
+        if (!isActive && (isExpired || isTimedOut)) {
+            if (sessionState != State.EXPIRED) endWithheldSession(writeScope)
+            sessionState = State.EXPIRED
+            return
         }
 
         if (isInteraction || isSdkInitInForeground) {
@@ -461,12 +474,13 @@ internal class RumSessionScope(
         sessionId = UUID.randomUUID().toString()
         replayOnError = withheldEvents != null && (remoteValues?.sessionReplayOnError ?: sessionReplayOnError)
         val drawnSessionId = sessionId
+        replayWatched = !sampledForError && keepSession && replayOnError
         if (sampledForError) {
             writeScope { withheldEvents?.startWithholding(drawnSessionId, it) }
-        } else if (keepSession && replayOnError) {
+        } else if (replayWatched) {
             // The replay may be kept on error only, and the error that releases it is judged
             // after the mappers like the events' own.
-            writeScope { withheldEvents?.watchForError(drawnSessionId) }
+            writeScope { withheldEvents?.watchForError(drawnSessionId, it) }
         }
         // FLASHCAT FORK - remember which console configuration this session was drawn under: its
         // events report that version for as long as it lives, so an auditor can recover the exact

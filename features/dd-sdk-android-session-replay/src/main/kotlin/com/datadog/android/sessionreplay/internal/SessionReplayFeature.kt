@@ -18,6 +18,8 @@ import com.datadog.android.api.net.RequestFactory
 import com.datadog.android.api.storage.FeatureStorageConfiguration
 import com.datadog.android.core.sampling.RateBasedSampler
 import com.datadog.android.core.sampling.Sampler
+import com.datadog.android.privacy.TrackingConsent
+import com.datadog.android.privacy.TrackingConsentProviderCallback
 import com.datadog.android.sessionreplay.ImagePrivacy
 import com.datadog.android.sessionreplay.MapperTypeWrapper
 import com.datadog.android.sessionreplay.SessionReplayInternalCallback
@@ -55,7 +57,7 @@ internal class SessionReplayFeature(
     private val rateBasedSampler: Sampler<Unit>,
     private val startRecordingImmediately: Boolean,
     private val recorderProvider: RecorderProvider
-) : StorageBackedFeature, FeatureEventReceiver {
+) : StorageBackedFeature, FeatureEventReceiver, TrackingConsentProviderCallback {
 
     private val currentRumSessionId = AtomicReference<String>()
 
@@ -215,6 +217,16 @@ internal class SessionReplayFeature(
 
     // endregion
 
+    // region TrackingConsentProviderCallback
+
+    // FLASHCAT FORK - a replay held in memory is not in the storage consent governs: what was held
+    // under the consent now withdrawn is dropped here, whether or not a record follows to see it.
+    override fun onConsentUpdated(previousConsent: TrackingConsent, newConsent: TrackingConsent) {
+        if (newConsent == TrackingConsent.NOT_GRANTED) dataWriter.dropForConsent()
+    }
+
+    // endregion
+
     // region Manual Recording
 
     internal fun manuallyStopRecording() {
@@ -233,6 +245,9 @@ internal class SessionReplayFeature(
 
     // region Internal
 
+    // FLASHCAT FORK - serialized: a session announces itself from the RUM thread, while what became
+    // of a withheld one arrives from the storage thread, and the two must not interleave.
+    @Synchronized
     private fun handleRumSession(sessionMetadata: Map<*, *>) {
         if (sessionMetadata[SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY] ==
             RUM_SESSION_RENEWED_BUS_MESSAGE
@@ -248,7 +263,7 @@ internal class SessionReplayFeature(
                         applySampling(alreadySeenSession, sessionData.forced)
                         val withhold = shouldWithhold(sessionData)
                         modifyShouldRecordState(sessionData, withhold)
-                        updateWithholding(sessionData.sessionId, withhold, sessionData.eventsOnError)
+                        updateWithholding(sessionData.sessionId, withhold)
                         handleRecording(sessionData)
                     }
                 }
@@ -258,7 +273,7 @@ internal class SessionReplayFeature(
             // session; a session that ended before its word arrived only has what it held to send.
             val sessionId = sessionMetadata[RUM_SESSION_ID_BUS_MESSAGE_KEY] as? String ?: return
             if (isReplayWithheld.get() && currentRumSessionId.get() == sessionId) {
-                updateWithholding(sessionId, withhold = false, eventsOnError = false)
+                updateWithholding(sessionId, withhold = false)
             } else {
                 dataWriter.release(sessionId)
             }
@@ -333,10 +348,10 @@ internal class SessionReplayFeature(
         }
     }
 
-    private fun updateWithholding(sessionId: String, withhold: Boolean, eventsOnError: Boolean) {
+    private fun updateWithholding(sessionId: String, withhold: Boolean) {
         if (withhold) {
             onErrorReplaySessionId.set(sessionId)
-            dataWriter.withhold(sessionId, eventsWithheld = eventsOnError)
+            dataWriter.withhold(sessionId)
         } else {
             // Releases what this session held, if it held anything; what another session still
             // holds is kept for RUM's word or thrown away, see the writer.

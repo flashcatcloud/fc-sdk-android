@@ -13,7 +13,7 @@ internal class NoOpRecordWriter : RecordWriter {
         // no-op
     }
 
-    override fun withhold(sessionId: String, eventsWithheld: Boolean) {
+    override fun withhold(sessionId: String) {
         // no-op
     }
 
@@ -26,6 +26,10 @@ internal class NoOpRecordWriter : RecordWriter {
     }
 
     override fun discard(sessionId: String) {
+        // no-op
+    }
+
+    override fun dropForConsent() {
         // no-op
     }
 }

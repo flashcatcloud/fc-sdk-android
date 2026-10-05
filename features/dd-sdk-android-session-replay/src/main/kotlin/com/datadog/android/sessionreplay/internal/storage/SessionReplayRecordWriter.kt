@@ -36,7 +36,7 @@ internal class SessionReplayRecordWriter(
     private class HeldResource(val resource: EnrichedResource, val onWritten: () -> Unit)
 
     /** What one session holds while its replay waits for an error. */
-    private class Buffer(val sessionId: String, val eventsWithheld: Boolean) {
+    private class Buffer(val sessionId: String) {
         val records = ArrayList<HeldRecord>()
         var bytes = 0L
         var droppedCount = 0
@@ -55,17 +55,18 @@ internal class SessionReplayRecordWriter(
     private var current: Buffer? = null
 
     /**
-     * A session that ended while its events were still withheld. RUM decides on the storage thread
-     * whether such a session is released or thrown away, and its word can land after the next
-     * session has announced itself: until it does, what the session held is kept aside.
+     * The sessions that ended while still held. RUM decides on the storage thread whether such a
+     * session is released or thrown away, and its word reaches here one hop later than the next
+     * session's announcement: until it does, what the session held is kept aside. Oldest first;
+     * more than a couple only when storage lags several sessions behind, and then the oldest go.
      */
-    private var parked: Buffer? = null
+    private val parked = ArrayList<Buffer>()
 
     /**
      * The images captured while a replay was withheld, kept across sessions. The recorder captures
      * an image once per process, so one thrown away with a session that never errored would be
-     * missing from every later replay that shows it. An image leaves only with records that refer
-     * to it, so nothing of a session that never errored is ever sent.
+     * missing from every later replay that shows it. An image leaves only with records that show
+     * it, so nothing of a session that never errored is ever sent.
      */
     private val heldResources = LinkedHashMap<String, HeldResource>()
     private var heldResourceBytes = 0L
@@ -82,10 +83,15 @@ internal class SessionReplayRecordWriter(
             // A record of a session kept aside is held with it: it shares that session's fate.
             val buffer = bufferOf(record.sessionId)
             when {
-                buffer == null -> writeNow(writer, record, serialize(record))
+                buffer == null -> {
+                    writeNow(writer, record, serialize(record))
+                    // The recorder captures an image once per process: one it captured while a
+                    // replay was withheld leaves with the first sent record that shows it.
+                    if (heldResources.isNotEmpty()) sendResources(record.resourceIds(), record.sessionId)
+                }
                 // Nothing may be held while consent is withdrawn, and what was held under the
                 // consent now withdrawn goes too.
-                consent == TrackingConsent.NOT_GRANTED -> dropForConsent(buffer)
+                consent == TrackingConsent.NOT_GRANTED -> dropAllForConsent()
                 else -> hold(buffer, record)
             }
         }
@@ -95,26 +101,26 @@ internal class SessionReplayRecordWriter(
         onStorageThread { _, consent ->
             when {
                 consent == TrackingConsent.NOT_GRANTED -> clearResources()
-                sessionId == current?.sessionId || sessionId == parked?.sessionId || sessionId in discardedSessionIds ->
+                bufferOf(sessionId) != null || sessionId in discardedSessionIds ->
                     holdResource(enrichedResource, onWritten)
                 else -> resourcesWriter.write(enrichedResource, sessionId, onWritten)
             }
         }
     }
 
-    override fun withhold(sessionId: String, eventsWithheld: Boolean) {
+    override fun withhold(sessionId: String) {
         onStorageThread { _, _ ->
             // A session already thrown away is over: a word about it that arrives late changes nothing.
             if (sessionId in discardedSessionIds || current?.sessionId == sessionId) return@onStorageThread
-            current?.let(::retire)
-            current = Buffer(sessionId, eventsWithheld)
+            current?.let(::park)
+            current = Buffer(sessionId)
         }
     }
 
     override fun stopWithholding(sessionId: String) {
         onStorageThread { writer, _ ->
             val buffer = current ?: return@onStorageThread
-            if (buffer.sessionId == sessionId) release(writer, buffer) else retire(buffer)
+            if (buffer.sessionId == sessionId) release(writer, buffer) else park(buffer)
         }
     }
 
@@ -130,21 +136,18 @@ internal class SessionReplayRecordWriter(
         }
     }
 
-    private fun bufferOf(sessionId: String): Buffer? = when (sessionId) {
-        current?.sessionId -> current
-        parked?.sessionId -> parked
-        else -> null
+    override fun dropForConsent() {
+        onStorageThread { _, _ -> dropAllForConsent() }
     }
 
-    /** The session is no longer current: kept aside for RUM's word if RUM has one, thrown away if not. */
-    private fun retire(buffer: Buffer) {
-        if (buffer.eventsWithheld) {
-            parked?.let(::discard)
-            parked = buffer
-            if (current === buffer) current = null
-        } else {
-            discard(buffer)
-        }
+    private fun bufferOf(sessionId: String): Buffer? =
+        current?.takeIf { it.sessionId == sessionId } ?: parked.firstOrNull { it.sessionId == sessionId }
+
+    /** The session is no longer current: kept aside for RUM's word. */
+    private fun park(buffer: Buffer) {
+        if (current === buffer) current = null
+        parked.add(buffer)
+        while (parked.size > PARKED_LIMIT) discard(parked.first())
     }
 
     private fun hold(buffer: Buffer, record: EnrichedRecord) {
@@ -172,11 +175,11 @@ internal class SessionReplayRecordWriter(
             }
             if (firstInWindow > 0) dropOldest(buffer, firstInWindow)
         }
-        // Memory bound: the oldest span goes first, down to the latest full snapshot at least.
+        // Memory bound: the oldest span goes first. A single span over the whole budget goes too -
+        // holding starts over at the next full snapshot - since the bound is a promise to the app.
         while (buffer.bytes > BYTES_LIMIT) {
             val nextFullSnapshot = buffer.records.indexOfFirstFrom(1) { it.record.fullSnapshotTimestamp() != null }
-            if (nextFullSnapshot == -1) break
-            dropOldest(buffer, nextFullSnapshot)
+            dropOldest(buffer, if (nextFullSnapshot == -1) buffer.records.size else nextFullSnapshot)
         }
     }
 
@@ -220,12 +223,7 @@ internal class SessionReplayRecordWriter(
             }
         }
         // Only the images these records show: any other held image belongs to what was never sent.
-        buffer.records.flatMapTo(HashSet()) { it.resourceIds }.forEach { id ->
-            heldResources.remove(id)?.let { held ->
-                heldResourceBytes -= held.resource.resource.size
-                resourcesWriter.write(held.resource, buffer.sessionId, held.onWritten)
-            }
-        }
+        sendResources(buffer.records.flatMapTo(HashSet()) { it.resourceIds }, buffer.sessionId)
         recordCallback.onWithheldRecordsCleared(buffer.records.map { it.record })
         // Without this the replay's promise of a minute before the error could not be checked.
         sdkCore.internalLogger.log(
@@ -243,6 +241,15 @@ internal class SessionReplayRecordWriter(
         forget(buffer)
     }
 
+    private fun sendResources(resourceIds: Set<String>, sessionId: String) {
+        resourceIds.forEach { id ->
+            heldResources.remove(id)?.let { held ->
+                heldResourceBytes -= held.resource.resource.size
+                resourcesWriter.write(held.resource, sessionId, held.onWritten)
+            }
+        }
+    }
+
     private fun discard(buffer: Buffer) {
         discardedSessionIds.addLast(buffer.sessionId)
         if (discardedSessionIds.size > DISCARDED_SESSIONS_REMEMBERED) {
@@ -254,19 +261,22 @@ internal class SessionReplayRecordWriter(
 
     private fun forget(buffer: Buffer) {
         if (current === buffer) current = null
-        if (parked === buffer) parked = null
+        parked.remove(buffer)
     }
 
     /**
      * Consent was withdrawn: what was held under the consent now withdrawn is dropped, and the
-     * session holds again from scratch should consent be granted back.
+     * sessions hold again from scratch should consent be granted back. The views' meta and focus
+     * stay: they say how big the screen is, not what it showed, and the view in progress will not
+     * record them again.
      */
-    private fun dropForConsent(buffer: Buffer) {
-        recordCallback.onWithheldRecordsCleared(buffer.records.map { it.record })
-        buffer.droppedCount += buffer.records.size
-        buffer.records.clear()
-        buffer.bytes = 0L
-        buffer.viewStartRecords.clear()
+    private fun dropAllForConsent() {
+        (listOfNotNull(current) + parked).forEach { buffer ->
+            recordCallback.onWithheldRecordsCleared(buffer.records.map { it.record })
+            buffer.droppedCount += buffer.records.size
+            buffer.records.clear()
+            buffer.bytes = 0L
+        }
         clearResources()
     }
 
@@ -313,8 +323,14 @@ internal class SessionReplayRecordWriter(
         /** How much replay a withheld session keeps: the minute leading up to its error. */
         internal val WINDOW_MS = TimeUnit.SECONDS.toMillis(60)
 
-        /** Memory bound on what a withheld session holds, and the same again on the images. */
+        /**
+         * Memory bound on the serialized records a session holds, and the same again on the images.
+         * The records are held as objects too, so a buffer weighs up to about twice this.
+         */
         internal const val BYTES_LIMIT = 4L * 1024 * 1024
+
+        /** How many ended sessions wait for RUM's word at once; beyond that the oldest is thrown away. */
+        internal const val PARKED_LIMIT = 2
 
         private const val DISCARDED_SESSIONS_REMEMBERED = 4
 

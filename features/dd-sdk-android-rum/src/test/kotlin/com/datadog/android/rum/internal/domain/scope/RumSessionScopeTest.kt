@@ -2449,6 +2449,48 @@ internal class RumSessionScopeTest {
     }
 
     @Test
+    fun `M end the watched session W handleEvent { session renewed }`() {
+        // Given
+        val withheldEvents = mock<WithheldEventWriter>()
+        fakeDatadogContext = fakeDatadogContext.copy(trackingConsent = TrackingConsent.GRANTED)
+        initializeTestedScope(sampleRate = 100f, withheldEvents = withheldEvents, sessionReplayOnError = true)
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        val sessionId = testedScope.sessionId
+        advanceTimeByMs(TEST_MAX_DURATION_MS + 1)
+
+        // When
+        testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        assertThat(testedScope.sessionId).isNotEqualTo(sessionId)
+        verify(withheldEvents).endSession(sessionId, mockEventBatchWriter)
+    }
+
+    @Test
+    fun `M not draw a new session W handleEvent { stopped session, interaction after inactivity }`() {
+        // Given - the stopped session still sees the interactions of the one that replaced it
+        val withheldEvents = startWithheldSession()
+        val sessionId = testedScope.sessionId
+        testedScope.handleEvent(RumRawEvent.StopSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        Mockito.clearInvocations(withheldEvents, mockSessionListener)
+        advanceTimeByMs(TEST_INACTIVITY_MS + 1)
+
+        // When
+        testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        assertThat(testedScope.sessionId).isEqualTo(sessionId)
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.EXPIRED)
+        verify(withheldEvents, never()).startWithholding(any(), any())
+        verify(mockSessionListener, never()).onSessionStarted(any(), any())
+    }
+
+    @Test
     fun `M end the session W handleEvent(ResetSession) { zero rate with the switch off }`() {
         // Given
         val remoteConfig = mock<RemoteConfigStore>()
@@ -2502,7 +2544,7 @@ internal class RumSessionScopeTest {
         testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
 
         // Then
-        verify(withheldEvents).watchForError(testedScope.sessionId)
+        verify(withheldEvents).watchForError(testedScope.sessionId, mockEventBatchWriter)
         val captor = argumentCaptor<Any>()
         verify(mockSessionReplayFeatureScope, atLeastOnce()).sendEvent(captor.capture())
         val first = captor.firstValue as Map<*, *>

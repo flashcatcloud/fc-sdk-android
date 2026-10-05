@@ -158,8 +158,9 @@ internal class WithheldEventWriter(
                     element
                 }
                 val written = delegate.write(writer, claimed, eventType)
-                if (written && releasedSessionId != sessionId) {
-                    releasedSessionId = sessionId
+                // Only the replay is told: [releasedSessionId] belongs to the withheld session,
+                // which may be the one running now while this error drains from a stopped one.
+                if (written && replayReleasedSessionId != sessionId) {
                     notifyReplayReleased(sessionId)
                 }
                 return written
@@ -221,27 +222,42 @@ internal class WithheldEventWriter(
 
     /** Watches a collected session whose replay only is kept on error for its first error. */
     @WorkerThread
-    fun watchForError(sessionId: String) {
-        synchronized(this) { watchedSessionId = sessionId }
+    fun watchForError(sessionId: String, writer: EventBatchWriter) {
+        synchronized(this) {
+            endPreviousSessions(sessionId, writer)
+            watchedSessionId = sessionId
+        }
     }
 
     /** Starts withholding the events of a session just drawn as one kept only on error. */
     @WorkerThread
     fun startWithholding(sessionId: String, writer: EventBatchWriter) {
         synchronized(this) {
-            withheldForSessionId?.let { endSession(it, writer) }
+            endPreviousSessions(sessionId, writer)
             withheldForSessionId = sessionId
         }
+    }
+
+    /** A session still held or watched when another one is drawn ended without a word; it ends now. */
+    private fun endPreviousSessions(sessionId: String, writer: EventBatchWriter) {
+        withheldForSessionId?.takeIf { it != sessionId }?.let { endSession(it, writer) }
+        watchedSessionId?.takeIf { it != sessionId }?.let { endSession(it, writer) }
     }
 
     /**
      * The session ended - expired, renewed or stopped. If it had reported an error, what it holds
      * is released now, whether or not the jitter has run out. If not, it never will, so what it holds
-     * is thrown away, and so is anything of it that arrives later.
+     * is thrown away, and so is anything of it that arrives later. A watched session holds nothing
+     * here, but Session Replay holds its replay and waits for the same word.
      */
     @WorkerThread
     fun endSession(sessionId: String, writer: EventBatchWriter) {
         synchronized(this) {
+            if (watchedSessionId == sessionId) {
+                watchedSessionId = null
+                if (replayReleasedSessionId != sessionId) discardReplay(sessionId)
+                return
+            }
             if (withheldForSessionId != sessionId) return
             if (releasedSessionId == sessionId) {
                 release(writer)
@@ -278,6 +294,16 @@ internal class WithheldEventWriter(
             if (withheldForSessionId != sessionId || releasedSessionId == sessionId) return
             clear()
         }
+    }
+
+    /**
+     * Tracking consent was withdrawn: whatever is held goes, released or not. A release still
+     * waiting for its jitter would only reach the writer consent now denies, and consent may be
+     * granted back before any event comes by to notice.
+     */
+    @WorkerThread
+    fun dropHeldForConsent() {
+        synchronized(this) { clear() }
     }
 
     // endregion

@@ -223,7 +223,7 @@ internal class SessionReplayRecordWriterTest {
     fun `M hold resources and write them on release W write(resource) { session withheld }`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1", eventsWithheld = false)
+        testedWriter.withhold("s1")
         testedWriter.write(imageRecord("r1", "s1", 1_000, "img"))
         testedWriter.write(resource("img"), "s1") {}
         testedWriter.write(resource("img"), "s1") {}
@@ -241,7 +241,7 @@ internal class SessionReplayRecordWriterTest {
     fun `M drop held resources W stopWithholding { another session }`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1", eventsWithheld = false)
+        testedWriter.withhold("s1")
         testedWriter.write(resource("img"), "s1") {}
 
         // When
@@ -256,7 +256,7 @@ internal class SessionReplayRecordWriterTest {
     fun `M count held records apart and clear them W hold then release`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1", eventsWithheld = false)
+        testedWriter.withhold("s1")
         val held = record("r1", "s1", fullSnapshotAt = 1_000)
 
         // When
@@ -275,7 +275,7 @@ internal class SessionReplayRecordWriterTest {
     fun `M start the release with the view's meta and focus W release { cut at a periodic full snapshot }`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1", eventsWithheld = false)
+        testedWriter.withhold("s1")
         val meta = MobileSegment.MobileRecord.MetaRecord(0, data = MobileSegment.Data1(100, 200))
         val focus = MobileSegment.MobileRecord.FocusRecord(0, data = MobileSegment.Data2(true))
         val full0 = MobileSegment.MobileRecord.MobileFullSnapshotRecord(0, MobileSegment.Data(emptyList()))
@@ -302,7 +302,7 @@ internal class SessionReplayRecordWriterTest {
     fun `M drop the oldest span but keep a full snapshot W hold { over the byte limit }`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1", eventsWithheld = false)
+        testedWriter.withhold("s1")
         val big = SessionReplayRecordWriter.BYTES_LIMIT.toInt() / 3
         testedWriter.write(bigRecord("old", "s1", 1_000, big))
         testedWriter.write(bigRecord("mid", "s1", 2_000, big))
@@ -316,18 +316,19 @@ internal class SessionReplayRecordWriterTest {
     }
 
     @Test
-    fun `M keep the only full snapshot W hold { a single span over the byte limit }`() {
-        // Given
+    fun `M drop a single span over the byte limit and start over W hold`() {
+        // Given - the bound is a promise to the app, so even a span that cannot be cut goes
         recordWrites()
-        testedWriter.withhold("s1", eventsWithheld = false)
-        testedWriter.write(bigRecord("only", "s1", 1_000, SessionReplayRecordWriter.BYTES_LIMIT.toInt() + 1))
+        testedWriter.withhold("s1")
+        testedWriter.write(bigRecord("huge", "s1", 1_000, SessionReplayRecordWriter.BYTES_LIMIT.toInt() + 1))
         testedWriter.write(record("inc", "s1"))
+        testedWriter.write(record("next", "s1", fullSnapshotAt = 4_000))
 
         // When
         testedWriter.stopWithholding("s1")
 
-        // Then
-        assertThat(written).containsExactly("only", "inc")
+        // Then - holding started over at the next full snapshot
+        assertThat(written).containsExactly("next")
     }
 
     private fun bigRecord(tag: String, sessionId: String, timestamp: Long, size: Int): EnrichedRecord {
@@ -348,7 +349,7 @@ internal class SessionReplayRecordWriterTest {
     fun `M hold the records W write { session withheld }`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1", eventsWithheld = false)
+        testedWriter.withhold("s1")
 
         // When
         testedWriter.write(record("r1", "s1", fullSnapshotAt = 1_000))
@@ -364,7 +365,7 @@ internal class SessionReplayRecordWriterTest {
     fun `M write what was held in order W stopWithholding { session released }`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1", eventsWithheld = false)
+        testedWriter.withhold("s1")
         testedWriter.write(record("r1", "s1", fullSnapshotAt = 1_000))
         testedWriter.write(record("r2", "s1"))
 
@@ -389,7 +390,7 @@ internal class SessionReplayRecordWriterTest {
     fun `M throw away what was held and its stragglers W stopWithholding { another session }`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1", eventsWithheld = false)
+        testedWriter.withhold("s1")
         testedWriter.write(record("r1", "s1", fullSnapshotAt = 1_000))
 
         // When
@@ -406,11 +407,11 @@ internal class SessionReplayRecordWriterTest {
     fun `M throw away the previous session W withhold { new session }`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1", eventsWithheld = false)
+        testedWriter.withhold("s1")
         testedWriter.write(record("r1", "s1", fullSnapshotAt = 1_000))
 
         // When
-        testedWriter.withhold("s2", eventsWithheld = false)
+        testedWriter.withhold("s2")
         testedWriter.write(record("r2", "s2", fullSnapshotAt = 2_000))
         testedWriter.stopWithholding("s2")
 
@@ -422,7 +423,7 @@ internal class SessionReplayRecordWriterTest {
     fun `M keep a playable minute W write { more than a minute held }`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1", eventsWithheld = false)
+        testedWriter.withhold("s1")
         testedWriter.write(record("full0", "s1", fullSnapshotAt = 0))
         testedWriter.write(record("inc0", "s1"))
         testedWriter.write(record("full30", "s1", fullSnapshotAt = 30_000))
@@ -438,14 +439,14 @@ internal class SessionReplayRecordWriterTest {
     }
 
     @Test
-    fun `M keep a session aside W withhold { new session, previous one's events withheld }`() {
+    fun `M keep a session aside W withhold { new session }`() {
         // Given - RUM has yet to say whether the previous session is released or thrown away
         recordWrites()
-        testedWriter.withhold("s1", eventsWithheld = true)
+        testedWriter.withhold("s1")
         testedWriter.write(record("r1", "s1", fullSnapshotAt = 1_000))
 
         // When
-        testedWriter.withhold("s2", eventsWithheld = true)
+        testedWriter.withhold("s2")
         testedWriter.write(record("r2", "s2", fullSnapshotAt = 2_000))
         testedWriter.write(record("r1b", "s1"))
 
@@ -466,10 +467,68 @@ internal class SessionReplayRecordWriterTest {
     }
 
     @Test
+    fun `M keep every session aside until its word W withhold { storage lags two sessions behind }`() {
+        // Given - RUM's word for s1 arrives only after s2 and s3 announced themselves
+        recordWrites()
+        testedWriter.withhold("s1")
+        testedWriter.write(record("r1", "s1", fullSnapshotAt = 1_000))
+        testedWriter.withhold("s2")
+        testedWriter.write(record("r2", "s2", fullSnapshotAt = 2_000))
+        testedWriter.withhold("s3")
+        testedWriter.write(record("r3", "s3", fullSnapshotAt = 3_000))
+
+        // When
+        testedWriter.release("s1")
+        testedWriter.discard("s2")
+        testedWriter.release("s3")
+
+        // Then
+        assertThat(written).containsExactly("r1", "r3")
+    }
+
+    @Test
+    fun `M throw away the oldest session kept aside W withhold { too many wait for their word }`() {
+        // Given
+        recordWrites()
+        val sessions = List(SessionReplayRecordWriter.PARKED_LIMIT + 2) { "s$it" }
+        sessions.forEach {
+            testedWriter.withhold(it)
+            testedWriter.write(record("r-$it", it, fullSnapshotAt = 1_000))
+        }
+
+        // When - every session is released, oldest first
+        sessions.forEach { testedWriter.release(it) }
+
+        // Then - only the last PARKED_LIMIT ended sessions and the current one were still held
+        assertThat(written).containsExactlyElementsOf(sessions.drop(1).map { "r-$it" })
+    }
+
+    @Test
+    fun `M drop what every session holds W dropForConsent`() {
+        // Given
+        recordWrites()
+        testedWriter.withhold("s1")
+        testedWriter.write(imageRecord("r1", "s1", 1_000, "img"))
+        testedWriter.write(resource("img"), "s1") {}
+        testedWriter.withhold("s2")
+        testedWriter.write(record("r2", "s2", fullSnapshotAt = 2_000))
+
+        // When
+        testedWriter.dropForConsent()
+        testedWriter.write(record("r2b", "s2", fullSnapshotAt = 5_000))
+        testedWriter.release("s1")
+        testedWriter.release("s2")
+
+        // Then - only what was held again afterwards goes
+        assertThat(written).containsExactly("r2b")
+        verify(mockResourcesWriter, never()).write(any(), any(), any())
+    }
+
+    @Test
     fun `M throw away a session kept aside W discard`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1", eventsWithheld = true)
+        testedWriter.withhold("s1")
         testedWriter.write(record("r1", "s1", fullSnapshotAt = 1_000))
         testedWriter.stopWithholding("s2")
 
@@ -487,13 +546,13 @@ internal class SessionReplayRecordWriterTest {
     fun `M ignore a word about a session already thrown away W withhold`() {
         // Given - a stopped session may announce itself once more after the next one has
         recordWrites()
-        testedWriter.withhold("s1", eventsWithheld = true)
+        testedWriter.withhold("s1")
         testedWriter.discard("s1")
-        testedWriter.withhold("s2", eventsWithheld = true)
+        testedWriter.withhold("s2")
         testedWriter.write(record("r2", "s2", fullSnapshotAt = 2_000))
 
         // When
-        testedWriter.withhold("s1", eventsWithheld = true)
+        testedWriter.withhold("s1")
         testedWriter.write(record("r2b", "s2"))
         testedWriter.release("s2")
 
@@ -505,7 +564,7 @@ internal class SessionReplayRecordWriterTest {
     fun `M hold nothing and drop what was held W write { consent not granted }`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1", eventsWithheld = true)
+        testedWriter.withhold("s1")
         testedWriter.write(record("r1", "s1", fullSnapshotAt = 1_000))
         testedWriter.write(resource("img"), "s1") {}
 
@@ -527,7 +586,7 @@ internal class SessionReplayRecordWriterTest {
     fun `M drop the oldest span W hold { an incremental record takes the buffer over the byte limit }`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1", eventsWithheld = true)
+        testedWriter.withhold("s1")
         val half = SessionReplayRecordWriter.BYTES_LIMIT.toInt() / 2
         testedWriter.write(bigRecord("old", "s1", 1_000, half))
         testedWriter.write(bigRecord("new", "s1", 2_000, half / 2))
@@ -545,11 +604,11 @@ internal class SessionReplayRecordWriterTest {
     fun `M send only the images the released records show W release`() {
         // Given - an image of a session that never errored, and one of the session released
         recordWrites()
-        testedWriter.withhold("s1", eventsWithheld = false)
+        testedWriter.withhold("s1")
         testedWriter.write(resource("unseen"), "s1") {}
         testedWriter.write(imageRecord("r1", "s1", 1_000, "shared"))
         testedWriter.write(resource("shared"), "s1") {}
-        testedWriter.withhold("s2", eventsWithheld = true)
+        testedWriter.withhold("s2")
         testedWriter.write(imageRecord("r2", "s2", 2_000, "shared"))
         testedWriter.write(resource("own"), "s2") {}
         testedWriter.write(imageRecord("r2b", "s2", 3_000, "own"))
@@ -564,10 +623,57 @@ internal class SessionReplayRecordWriterTest {
     }
 
     @Test
+    fun `M send a held image with a collected session's record that shows it W write`() {
+        // Given - the recorder captured the image once, under a session that never errored
+        recordWrites()
+        testedWriter.withhold("s1")
+        testedWriter.write(resource("icon"), "s1") {}
+        testedWriter.stopWithholding("s2")
+
+        // When
+        testedWriter.write(imageRecord("r2", "s2", 2_000, "icon"))
+
+        // Then
+        assertThat(written).containsExactly("r2")
+        val sent = argumentCaptor<EnrichedResource>()
+        verify(mockResourcesWriter).write(sent.capture(), eq("s2"), any())
+        assertThat(sent.firstValue.filename).isEqualTo("icon")
+    }
+
+    @Test
+    fun `M start the release with the view's meta and focus W release { held again after consent }`() {
+        // Given
+        recordWrites()
+        testedWriter.withhold("s1")
+        val meta = MobileSegment.MobileRecord.MetaRecord(0, data = MobileSegment.Data1(100, 200))
+        val focus = MobileSegment.MobileRecord.FocusRecord(0, data = MobileSegment.Data2(true))
+        val full0 = MobileSegment.MobileRecord.MobileFullSnapshotRecord(0, MobileSegment.Data(emptyList()))
+        testedWriter.write(EnrichedRecord("app", "s1", "view", listOf(meta, focus, full0)))
+        recordWrites(consent = TrackingConsent.NOT_GRANTED)
+        testedWriter.write(record("view", "s1", fullSnapshotAt = 3_000))
+        recordWrites(consent = TrackingConsent.GRANTED)
+        testedWriter.write(record("view", "s1", fullSnapshotAt = 6_000))
+        val released = mutableListOf<String>()
+        whenever(mockEventBatchWriter.write(anyOrNull(), anyOrNull(), any())) doAnswer {
+            released.add(String(it.getArgument<RawBatchEvent>(0).data))
+            true
+        }
+
+        // When
+        testedWriter.release("s1")
+
+        // Then
+        assertThat(released).hasSize(1)
+        val first = com.google.gson.JsonParser.parseString(released[0]).asJsonObject.getAsJsonArray("records")
+        assertThat(first.map { it.asJsonObject.get("type").asInt }).containsExactly(4, 6, 10)
+        assertThat(first.map { it.asJsonObject.get("timestamp").asLong }).containsOnly(6_000L)
+    }
+
+    @Test
     fun `M not hold an image over the budget W write(resource)`() {
         // Given
         recordWrites()
-        testedWriter.withhold("s1", eventsWithheld = true)
+        testedWriter.withhold("s1")
         testedWriter.write(imageRecord("r1", "s1", 1_000, "huge"))
 
         // When

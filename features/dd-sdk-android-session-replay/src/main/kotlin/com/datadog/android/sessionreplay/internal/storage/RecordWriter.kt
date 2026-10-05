@@ -20,17 +20,16 @@ internal interface RecordWriter {
 
     /**
      * FLASHCAT FORK - holds the records of this session in memory instead of writing them, until
-     * [release] or [stopWithholding] lets them go.
+     * RUM says with [release] or [discard] what became of the session. What another session still
+     * holds is kept aside for that word.
      * @param sessionId the RUM session whose replay is kept only if it reports an error
-     * @param eventsWithheld whether the session's events are withheld too, in which case RUM alone
-     * decides, with [release] or [discard], what becomes of the replay once the session has ended
      */
-    fun withhold(sessionId: String, eventsWithheld: Boolean)
+    fun withhold(sessionId: String)
 
     /**
      * FLASHCAT FORK - the session now current is not held. If it is the session whose records are
      * held, they are written now: it has been released. Otherwise what another session still holds
-     * is kept aside for RUM's word if its events were withheld, and thrown away if not.
+     * is kept aside for RUM's word.
      * @param sessionId the RUM session now current
      */
     fun stopWithholding(sessionId: String)
@@ -47,4 +46,9 @@ internal interface RecordWriter {
      * @param sessionId the RUM session that ended without reporting an error
      */
     fun discard(sessionId: String)
+
+    /**
+     * FLASHCAT FORK - tracking consent was withdrawn: whatever is held, of any session, is dropped.
+     */
+    fun dropForConsent()
 }

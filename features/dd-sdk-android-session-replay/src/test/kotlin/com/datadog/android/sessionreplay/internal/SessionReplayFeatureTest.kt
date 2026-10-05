@@ -12,6 +12,7 @@ import com.datadog.android.api.feature.Feature
 import com.datadog.android.api.feature.FeatureContextUpdateReceiver
 import com.datadog.android.api.feature.FeatureSdkCore
 import com.datadog.android.core.sampling.Sampler
+import com.datadog.android.privacy.TrackingConsent
 import com.datadog.android.sessionreplay.NoOpSessionReplayInternalCallback
 import com.datadog.android.sessionreplay.SessionReplayConfiguration
 import com.datadog.android.sessionreplay.forge.ForgeConfigurator
@@ -575,7 +576,7 @@ internal class SessionReplayFeatureTest {
 
         // Then
         verify(mockRecorder).resumeRecorders()
-        verify(mockWriter).withhold(fakeSessionId, eventsWithheld = false)
+        verify(mockWriter).withhold(fakeSessionId)
     }
 
     @Test
@@ -588,7 +589,7 @@ internal class SessionReplayFeatureTest {
 
         // Then
         verify(mockRecorder, never()).resumeRecorders()
-        verify(mockWriter, never()).withhold(any(), any())
+        verify(mockWriter, never()).withhold(any())
     }
 
     @Test
@@ -601,7 +602,7 @@ internal class SessionReplayFeatureTest {
 
         // Then
         verify(mockRecorder).resumeRecorders()
-        verify(mockWriter, never()).withhold(any(), any())
+        verify(mockWriter, never()).withhold(any())
         verify(mockWriter).stopWithholding(fakeSessionId)
     }
 
@@ -615,7 +616,7 @@ internal class SessionReplayFeatureTest {
 
         // Then
         verify(mockRecorder).resumeRecorders()
-        verify(mockWriter).withhold(fakeSessionId, eventsWithheld = true)
+        verify(mockWriter).withhold(fakeSessionId)
     }
 
     @Test
@@ -628,7 +629,7 @@ internal class SessionReplayFeatureTest {
 
         // Then
         verify(mockRecorder).resumeRecorders()
-        verify(mockWriter).withhold(fakeSessionId, eventsWithheld = true)
+        verify(mockWriter).withhold(fakeSessionId)
     }
 
     @Test
@@ -641,7 +642,7 @@ internal class SessionReplayFeatureTest {
 
         // Then
         verify(mockRecorder, never()).resumeRecorders()
-        verify(mockWriter, never()).withhold(any(), any())
+        verify(mockWriter, never()).withhold(any())
     }
 
     @Test
@@ -657,7 +658,7 @@ internal class SessionReplayFeatureTest {
 
         // Then
         inOrder(mockWriter) {
-            verify(mockWriter).withhold(fakeSessionId, eventsWithheld = true)
+            verify(mockWriter).withhold(fakeSessionId)
             verify(mockWriter).stopWithholding(fakeSessionId)
         }
         verify(mockRecorder).resumeRecorders()
@@ -681,7 +682,7 @@ internal class SessionReplayFeatureTest {
 
         // Then
         inOrder(mockWriter) {
-            verify(mockWriter).withhold(fakeSessionId, eventsWithheld = true)
+            verify(mockWriter).withhold(fakeSessionId)
             verify(mockWriter).stopWithholding(fakeSessionId)
         }
         verify(mockRecorder, never()).stopRecorders()
@@ -706,6 +707,20 @@ internal class SessionReplayFeatureTest {
         verify(mockWriter).release("past-session")
         verify(mockWriter, never()).stopWithholding(any())
         verify(mockRecorder, never()).stopRecorders()
+    }
+
+    @Test
+    fun `M drop what is held W onConsentUpdated { consent not granted }`() {
+        // Given
+        val mockWriter = initializeWithWriter(sampledIn = false)
+        testedFeature.onReceive(onErrorMessage(keep = false, eventsOnError = true, replayOnError = true))
+
+        // When
+        testedFeature.onConsentUpdated(TrackingConsent.PENDING, TrackingConsent.NOT_GRANTED)
+        testedFeature.onConsentUpdated(TrackingConsent.NOT_GRANTED, TrackingConsent.GRANTED)
+
+        // Then
+        verify(mockWriter).dropForConsent()
     }
 
     @Test
