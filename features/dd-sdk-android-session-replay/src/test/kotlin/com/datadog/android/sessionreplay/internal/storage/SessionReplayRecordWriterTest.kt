@@ -487,6 +487,66 @@ internal class SessionReplayRecordWriterTest {
     }
 
     @Test
+    fun `M never throw away a released session kept aside W withhold { too many wait for their word }`() {
+        // Given - RUM's word for s0 is given before the storage thread gets to it
+        recordWrites()
+        testedWriter.withhold("s0")
+        testedWriter.write(record("r-s0", "s0", fullSnapshotAt = 1_000))
+        testedWriter.release("s0")
+        val later = List(SessionReplayRecordWriter.PARKED_LIMIT + 2) { "s${it + 1}" }
+        later.forEach {
+            testedWriter.withhold(it)
+            testedWriter.write(record("r-$it", it, fullSnapshotAt = 1_000))
+        }
+
+        // Then
+        assertThat(written).containsExactly("r-s0")
+    }
+
+    @Test
+    fun `M not keep a session aside W withhold { RUM already threw it away }`() {
+        // Given
+        recordWrites()
+        testedWriter.withhold("s1")
+        testedWriter.write(record("r1", "s1", fullSnapshotAt = 1_000))
+        testedWriter.discard("s1")
+
+        // When
+        testedWriter.withhold("s2")
+        testedWriter.write(record("late", "s1"))
+        testedWriter.release("s1")
+
+        // Then
+        assertThat(written).isEmpty()
+    }
+
+    @Test
+    fun `M keep the view's meta and focus W hold { its whole span dropped over the byte limit }`() {
+        // Given
+        recordWrites()
+        testedWriter.withhold("s1")
+        val meta = MobileSegment.MobileRecord.MetaRecord(0, data = MobileSegment.Data1(100, 200))
+        val focus = MobileSegment.MobileRecord.FocusRecord(0, data = MobileSegment.Data2(true))
+        val full0 = MobileSegment.MobileRecord.MobileFullSnapshotRecord(0, MobileSegment.Data(emptyList()))
+        testedWriter.write(EnrichedRecord("app", "s1", "view", listOf(meta, focus, full0)))
+        testedWriter.write(bigRecord("view", "s1", 1_000, SessionReplayRecordWriter.BYTES_LIMIT.toInt() + 1))
+        testedWriter.write(record("view", "s1", fullSnapshotAt = 4_000))
+        val released = mutableListOf<String>()
+        whenever(mockEventBatchWriter.write(anyOrNull(), anyOrNull(), any())) doAnswer {
+            released.add(String(it.getArgument<RawBatchEvent>(0).data))
+            true
+        }
+
+        // When
+        testedWriter.release("s1")
+
+        // Then
+        assertThat(released).hasSize(1)
+        val first = com.google.gson.JsonParser.parseString(released[0]).asJsonObject.getAsJsonArray("records")
+        assertThat(first.map { it.asJsonObject.get("type").asInt }).containsExactly(4, 6, 10)
+    }
+
+    @Test
     fun `M throw away the oldest session kept aside W withhold { too many wait for their word }`() {
         // Given
         recordWrites()

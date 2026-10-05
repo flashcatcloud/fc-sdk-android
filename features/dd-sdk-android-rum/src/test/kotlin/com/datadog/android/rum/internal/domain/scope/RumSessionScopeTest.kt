@@ -2483,9 +2483,9 @@ internal class RumSessionScopeTest {
         // When
         testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
 
-        // Then
+        // Then - and keeps its own state for what it still drains
         assertThat(testedScope.sessionId).isEqualTo(sessionId)
-        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.EXPIRED)
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.WITHHELD)
         verify(withheldEvents, never()).startWithholding(any(), any())
         verify(mockSessionListener, never()).onSessionStarted(any(), any())
     }

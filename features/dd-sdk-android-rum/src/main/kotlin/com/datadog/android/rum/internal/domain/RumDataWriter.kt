@@ -79,6 +79,16 @@ internal class RumDataWriter(
         }
     }
 
+    /**
+     * FLASHCAT FORK - forgets the view written locally for the native crash reporter: the session
+     * it belongs to was thrown away, and a crash reported against it at the next launch would
+     * bring to the intake a session that never errored.
+     */
+    @WorkerThread
+    internal fun deleteLastViewEvent() {
+        sdkCore.deleteLastViewEvent()
+    }
+
     @WorkerThread
     internal fun onDataWritten(data: Any, rawData: ByteArray) {
         when (data) {

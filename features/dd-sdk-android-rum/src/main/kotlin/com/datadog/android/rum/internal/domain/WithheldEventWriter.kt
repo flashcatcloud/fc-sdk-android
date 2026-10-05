@@ -166,7 +166,18 @@ internal class WithheldEventWriter(
                 return written
             }
             if (sessionId != withheldForSessionId) {
-                return delegate.write(writer, element, eventType)
+                // A view of a session whose replay was released claims it as soon as the records
+                // exist, held or sent: a final view assembled before they were written would
+                // otherwise take the place of the released one that claimed it.
+                val claimed = if (
+                    sessionId == replayReleasedSessionId && element is ViewEvent &&
+                    element.session.hasReplay != true && replayRecordsCount(element.view.id) > 0
+                ) {
+                    element.copy(session = element.session.copy(hasReplay = true))
+                } else {
+                    element
+                }
+                return delegate.write(writer, claimed, eventType)
             }
             val batchEvent = delegate.serialize(element) ?: return false
             if (element is ErrorEvent) {
@@ -268,6 +279,9 @@ internal class WithheldEventWriter(
                 }
                 clear()
                 withheldForSessionId = null
+                // The last view it wrote locally would otherwise have the native crash reporter
+                // attach a crash of a later, uncollected session to it at the next launch.
+                delegate.deleteLastViewEvent()
                 discardReplay(sessionId)
             }
         }
@@ -513,7 +527,11 @@ internal class WithheldEventWriter(
          */
         internal const val RELEASE_MAX_DELAY_MS = 3_000L
 
-        private const val DISCARDED_SESSIONS_REMEMBERED = 4
+        /**
+         * A stopped session keeps draining its pending requests while the sessions after it come and
+         * go, so more are remembered than a browser tab would need.
+         */
+        private const val DISCARDED_SESSIONS_REMEMBERED = 16
 
         private const val HTTP_ERROR_STATUS = 400L
 

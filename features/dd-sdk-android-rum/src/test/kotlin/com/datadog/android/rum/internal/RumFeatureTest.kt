@@ -14,7 +14,11 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.res.Resources
 import com.datadog.android.api.InternalLogger
+import com.datadog.android.api.context.DatadogContext
+import com.datadog.android.api.feature.EventWriteScope
+import com.datadog.android.api.feature.Feature
 import com.datadog.android.api.feature.FeatureContextUpdateReceiver
+import com.datadog.android.api.feature.FeatureScope
 import com.datadog.android.api.storage.NoOpDataWriter
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.core.feature.event.JvmCrash
@@ -838,6 +842,23 @@ internal class RumFeatureTest {
 
         // Then
         assertThat(testedFeature.dataWriter).isInstanceOf(NoOpDataWriter::class.java)
+    }
+
+    @Test
+    fun `M flush a release waiting for its jitter W onStop()`() {
+        // Given
+        val mockRumScope = mock<FeatureScope>()
+        val mockWriteScope = mock<EventWriteScope>()
+        whenever(mockSdkCore.getFeature(Feature.RUM_FEATURE_NAME)) doReturn mockRumScope
+        whenever(mockRumScope.getWriteContextSync(any())) doReturn (mock<DatadogContext>() to mockWriteScope)
+        testedFeature.onInitialize(appContext.mockInstance)
+
+        // When
+        testedFeature.onStop()
+
+        // Then
+        verify(mockWriteScope).invoke(any())
+        assertThat(testedFeature.withheldEvents).isNull()
     }
 
     @Test

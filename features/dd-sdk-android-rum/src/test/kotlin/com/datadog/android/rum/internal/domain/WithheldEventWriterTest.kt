@@ -86,11 +86,18 @@ internal class WithheldEventWriterTest {
         val serializer = object : Serializer<Any> {
             override fun serialize(model: Any): String? {
                 if (model is ErrorEvent) claimedErrors.add(model)
+                if (model is ViewEvent && model.session.hasReplay == true) claimedViews.add(model)
                 // A copy claiming the replay serializes like the event it was copied from.
                 val key = payloads.keys.firstOrNull { it === model }
                     ?: (model as? ErrorEvent)?.let { error ->
                         payloads.keys.firstOrNull {
                             it == error.copy(session = error.session.copy(hasReplay = null))
+                        }
+                    }
+                    ?: (model as? ViewEvent)?.let { view ->
+                        payloads.keys.firstOrNull {
+                            it is ViewEvent &&
+                                it == view.copy(session = view.session.copy(hasReplay = it.session.hasReplay))
                         }
                     }
                 return if (key != null) payloads[key] else "untracked"
@@ -112,6 +119,7 @@ internal class WithheldEventWriterTest {
 
     private val replayRecords = mutableMapOf<String, Long>()
     private val claimedErrors = mutableListOf<ErrorEvent>()
+    private val claimedViews = mutableListOf<ViewEvent>()
     private val releasedReplays = mutableListOf<String>()
     private val discardedReplays = mutableListOf<String>()
 
@@ -177,6 +185,33 @@ internal class WithheldEventWriterTest {
     }
 
     @Test
+    fun `M forget the view written locally W endSession() {no error}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+
+        // When
+        testedWriter.endSession(sessionId, batchWriter)
+
+        // Then
+        verify(mockSdkCore).deleteLastViewEvent()
+    }
+
+    @Test
+    fun `M keep the view written locally W endSession() {session had errored}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+
+        // When
+        testedWriter.endSession(sessionId, batchWriter)
+
+        // Then
+        verify(mockSdkCore, never()).deleteLastViewEvent()
+    }
+
+    @Test
     fun `M tell Session Replay the session is released W endSession() {session had errored}`() {
         // Given
         testedWriter.startWithholding(sessionId, batchWriter)
@@ -207,9 +242,9 @@ internal class WithheldEventWriterTest {
     }
 
     @Test
-    fun `M remember only the last four discarded sessions W endSession()`() {
+    fun `M remember only the last sixteen discarded sessions W endSession()`() {
         // Given
-        val sessions = List(5) { UUID.randomUUID().toString() }
+        val sessions = List(17) { UUID.randomUUID().toString() }
         sessions.forEach {
             testedWriter.startWithholding(it, batchWriter)
             testedWriter.endSession(it, batchWriter)
@@ -485,6 +520,24 @@ internal class WithheldEventWriterTest {
         // Then - the held minute is gone, the session goes on as a released one
         assertThat(scheduled).hasSize(2)
         assertThat(written).containsExactly("a1")
+    }
+
+    @Test
+    fun `M claim the replay for a later view W write() {session whose replay was released}`() {
+        // Given - the final view of a stopped session is assembled before the replay records land
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+        replayRecords["v1"] = 3L
+        testedWriter.endSession(sessionId, batchWriter)
+
+        // When
+        val later = view("v1")
+        testedWriter.write(batchWriter, later, EventType.DEFAULT)
+
+        // Then
+        assertThat(claimedViews.map { it.view.id }).contains("v1")
+        assertThat(claimedViews.last().session.hasReplay).isTrue
     }
 
     @Test

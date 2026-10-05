@@ -372,6 +372,13 @@ internal class RumFeature(
 
         withheldEventsBackgroundCallback?.let { (appContext as? Application)?.unregisterActivityLifecycleCallbacks(it) }
         withheldEventsBackgroundCallback = null
+        // A release still waiting for its jitter goes now, with the writes the stop drains: the
+        // timer would find no feature to write with.
+        withheldEvents?.let { writer ->
+            sdkCore.getFeature(Feature.RUM_FEATURE_NAME)?.getWriteContextSync()?.let { (_, writeScope) ->
+                writeScope { writer.flushScheduledRelease(it) }
+            }
+        }
         withheldEvents = null
 
         rumContextUpdateReceivers.forEach {

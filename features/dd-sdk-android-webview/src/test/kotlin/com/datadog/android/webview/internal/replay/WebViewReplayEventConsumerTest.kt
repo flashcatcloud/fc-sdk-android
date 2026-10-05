@@ -191,6 +191,25 @@ internal class WebViewReplayEventConsumerTest {
     }
 
     @Test
+    fun `M do nothing W consume() { native replay withheld on error }`(forge: Forge) {
+        // Given - the session is collected, but its replay waits for an error
+        fakeDatadogContext = fakeDatadogContext.copy(
+            featuresContext = forge.aMap {
+                Feature.SESSION_REPLAY_FEATURE_NAME to forge.aMap {
+                    WebViewReplayEventConsumer.SESSION_REPLAY_ENABLED_KEY to true
+                    WebViewReplayEventConsumer.SESSION_REPLAY_WITHHELD_KEY to true
+                }
+            }
+        )
+
+        // When
+        testedConsumer.consume(fakeValidBrowserEvent)
+
+        // Then
+        verifyNoInteractions(mockDataWriter)
+    }
+
+    @Test
     fun `M do nothing W consume() { sr feature context does not exist }`() {
         // Given
         fakeDatadogContext = fakeDatadogContext.copy(featuresContext = mapOf())

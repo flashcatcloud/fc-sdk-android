@@ -77,6 +77,13 @@ internal class SessionReplayRecordWriter(
      */
     private val discardedSessionIds = ArrayDeque<String>()
 
+    /**
+     * RUM's word on the sessions it ended, true for released, noted the moment it is given rather
+     * than when the storage thread gets to act on it: a session already released is never the one
+     * to go when too many ended sessions wait, its records are about to be written.
+     */
+    private val fates = LinkedHashMap<String, Boolean>()
+
     override fun write(record: EnrichedRecord) {
         onStorageThread { writer, consent ->
             if (record.sessionId in discardedSessionIds) return@onStorageThread
@@ -125,14 +132,24 @@ internal class SessionReplayRecordWriter(
     }
 
     override fun release(sessionId: String) {
+        noteFate(sessionId, released = true)
         onStorageThread { writer, _ ->
             bufferOf(sessionId)?.let { release(writer, it) }
         }
     }
 
     override fun discard(sessionId: String) {
+        noteFate(sessionId, released = false)
         onStorageThread { _, _ ->
             bufferOf(sessionId)?.let(::discard)
+        }
+    }
+
+    private fun noteFate(sessionId: String, released: Boolean) {
+        synchronized(this) {
+            fates.remove(sessionId)
+            fates[sessionId] = released
+            while (fates.size > FATES_REMEMBERED) fates.remove(fates.keys.first())
         }
     }
 
@@ -143,11 +160,16 @@ internal class SessionReplayRecordWriter(
     private fun bufferOf(sessionId: String): Buffer? =
         current?.takeIf { it.sessionId == sessionId } ?: parked.firstOrNull { it.sessionId == sessionId }
 
-    /** The session is no longer current: kept aside for RUM's word. */
+    /** The session is no longer current: kept aside for RUM's word, unless that word was already given. */
     private fun park(buffer: Buffer) {
         if (current === buffer) current = null
+        if (fates[buffer.sessionId] == false) {
+            discard(buffer)
+            return
+        }
         parked.add(buffer)
-        while (parked.size > PARKED_LIMIT) discard(parked.first())
+        val waiting = parked.filter { fates[it.sessionId] != true }
+        if (waiting.size > PARKED_LIMIT) discard(waiting.first())
     }
 
     private fun hold(buffer: Buffer, record: EnrichedRecord) {
@@ -202,10 +224,12 @@ internal class SessionReplayRecordWriter(
         buffer.bytes -= dropped.sumOf { it.data.size.toLong() }
         buffer.droppedCount += dropped.size
         recordCallback.onWithheldRecordsCleared(dropped.map { it.record })
+        val lastDroppedViewId = dropped.last().record.viewId
         dropped.clear()
-        // A view's start is only ever needed by records still held of that view.
+        // A view's start is only ever needed by records still held of that view - or by the records
+        // to come of the view in progress, whose span may just have been dropped whole.
         val viewsHeld = buffer.records.mapTo(HashSet()) { it.record.viewId }
-        buffer.viewStartRecords.keys.retainAll(viewsHeld)
+        buffer.viewStartRecords.keys.retainAll(viewsHeld + lastDroppedViewId)
     }
 
     private fun release(writer: EventBatchWriter, buffer: Buffer) {
@@ -329,10 +353,13 @@ internal class SessionReplayRecordWriter(
          */
         internal const val BYTES_LIMIT = 4L * 1024 * 1024
 
-        /** How many ended sessions wait for RUM's word at once; beyond that the oldest is thrown away. */
+        /** How many ended sessions wait for a word RUM has not given yet; beyond that the oldest goes. */
         internal const val PARKED_LIMIT = 2
 
-        private const val DISCARDED_SESSIONS_REMEMBERED = 4
+        /** More than a browser tab would need: a stopped session keeps draining while others come and go. */
+        private const val DISCARDED_SESSIONS_REMEMBERED = 16
+
+        private const val FATES_REMEMBERED = 16
 
         internal const val RELEASED_MESSAGE = "Error session replay buffer released"
 
