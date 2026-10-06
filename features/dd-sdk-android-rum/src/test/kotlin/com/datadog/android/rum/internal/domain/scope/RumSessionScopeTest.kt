@@ -2274,6 +2274,22 @@ internal class RumSessionScopeTest {
     }
 
     @Test
+    fun `M hand the views nothing to write with W handleEvent { stopped withheld session }`() {
+        // Given - the session was thrown away at the stop; what its views still drain has nowhere to go
+        startWithheldSession()
+        testedScope.handleEvent(RumRawEvent.StopSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // When
+        val event = forge.stopViewEvent()
+        testedScope.handleEvent(event, fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        verify(
+            mockChildScope
+        ).handleEvent(eq(event), eq(fakeDatadogContext), eq(mockEventWriteScope), isA<NoOpDataWriter<Any>>())
+    }
+
+    @Test
     fun `M hold nothing and drop what was held W handleEvent { consent withdrawn }`() {
         // Given
         val withheldEvents = startWithheldSession()

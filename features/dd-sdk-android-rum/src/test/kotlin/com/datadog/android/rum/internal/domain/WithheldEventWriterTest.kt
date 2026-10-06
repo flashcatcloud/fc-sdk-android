@@ -212,6 +212,36 @@ internal class WithheldEventWriterTest {
     }
 
     @Test
+    fun `M throw the session away and forget its view W stop() {no error}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+
+        // When
+        testedWriter.stop(batchWriter)
+
+        // Then
+        assertThat(written).isEmpty()
+        verify(mockSdkCore).deleteLastViewEvent()
+        assertThat(discardedReplays).containsExactly(sessionId)
+    }
+
+    @Test
+    fun `M release at once W stop() {release waiting for the jitter}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+
+        // When
+        testedWriter.stop(batchWriter)
+
+        // Then
+        assertThat(written).containsExactly("v1", "e1")
+        verify(mockSdkCore, never()).deleteLastViewEvent()
+    }
+
+    @Test
     fun `M tell Session Replay the session is released W endSession() {session had errored}`() {
         // Given
         testedWriter.startWithholding(sessionId, batchWriter)
@@ -243,6 +273,8 @@ internal class WithheldEventWriterTest {
 
     @Test
     fun `M remember only the last sixty-four discarded sessions W endSession()`() {
+        // The list covers the writes still in flight behind a session's end; a stopped session's
+        // scope feeds nothing more into this writer, see RumSessionScope.
         // Given
         val sessions = List(65) { UUID.randomUUID().toString() }
         sessions.forEach {

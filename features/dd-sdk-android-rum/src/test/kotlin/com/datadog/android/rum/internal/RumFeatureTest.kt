@@ -845,12 +845,14 @@ internal class RumFeatureTest {
     }
 
     @Test
-    fun `M flush a release waiting for its jitter W onStop()`() {
+    fun `M settle the withheld session and wait for storage W onStop()`() {
         // Given
         val mockRumScope = mock<FeatureScope>()
         val mockWriteScope = mock<EventWriteScope>()
+        val persistence = java.util.concurrent.Executors.newSingleThreadExecutor()
         whenever(mockSdkCore.getFeature(Feature.RUM_FEATURE_NAME)) doReturn mockRumScope
         whenever(mockRumScope.getWriteContextSync(any())) doReturn (mock<DatadogContext>() to mockWriteScope)
+        whenever(mockSdkCore.getPersistenceExecutorService()) doReturn persistence
         testedFeature.onInitialize(appContext.mockInstance)
         // the core takes the feature out of its registry before stopping it
         whenever(mockSdkCore.getFeature(Feature.RUM_FEATURE_NAME)) doReturn null
@@ -858,9 +860,11 @@ internal class RumFeatureTest {
         // When
         testedFeature.onStop()
 
-        // Then
+        // Then - the work was queued, and the stop waited for the queue to get there
         verify(mockWriteScope).invoke(any())
+        assertThat(persistence.submit {}.get(1, java.util.concurrent.TimeUnit.SECONDS)).isNull()
         assertThat(testedFeature.withheldEvents).isNull()
+        persistence.shutdown()
     }
 
     @Test

@@ -379,11 +379,13 @@ internal class RumFeature(
 
         withheldEventsBackgroundCallback?.let { (appContext as? Application)?.unregisterActivityLifecycleCallbacks(it) }
         withheldEventsBackgroundCallback = null
-        // A release still waiting for its jitter goes now, with the writes the stop drains: the
-        // timer would find no feature to write with.
+        // The withheld session ends with the SDK: released if it errored, thrown away if not. The
+        // write scope only queues the work, and the core shuts its executor down without draining
+        // it once the features are stopped, so this waits for the queue to get there.
         withheldEvents?.let { writer ->
             rumFeatureScope()?.getWriteContextSync()?.let { (_, writeScope) ->
-                writeScope { writer.flushScheduledRelease(it) }
+                writeScope { writer.stop(it) }
+                waitForPersistence()
             }
         }
         withheldEvents = null
@@ -477,6 +479,20 @@ internal class RumFeature(
     /** FLASHCAT FORK - runs the block on the storage thread, after the RUM writes submitted so far. */
     private fun withRumWriteScope(block: (EventBatchWriter) -> Unit) {
         rumFeatureScope()?.withWriteContext { _, writeScope -> writeScope(block) }
+    }
+
+    private fun waitForPersistence() {
+        val executor = (sdkCore as? InternalSdkCore)?.getPersistenceExecutorService() ?: return
+        try {
+            executor.submit {}.get(STOP_DRAIN_WAIT_MS, TimeUnit.MILLISECONDS)
+        } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+            sdkCore.internalLogger.log(
+                InternalLogger.Level.WARN,
+                InternalLogger.Target.MAINTAINER,
+                { STOP_DRAIN_FAILED_MESSAGE },
+                e
+            )
+        }
     }
 
     private fun rumFeatureScope(): FeatureScope? {
@@ -990,6 +1006,9 @@ internal class RumFeature(
     )
 
     internal companion object {
+        private const val STOP_DRAIN_WAIT_MS = 2_000L
+        internal const val STOP_DRAIN_FAILED_MESSAGE =
+            "Could not wait for the withheld session to be settled before the SDK stopped."
 
         internal const val NDK_CRASH_BUS_MESSAGE_TYPE = "ndk_crash"
         internal const val LOGGER_ERROR_BUS_MESSAGE_TYPE = "logger_error"

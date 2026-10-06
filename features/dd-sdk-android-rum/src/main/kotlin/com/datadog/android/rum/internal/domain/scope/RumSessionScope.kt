@@ -264,9 +264,12 @@ internal class RumSessionScope(
 
         val actualWriter = when (sessionState) {
             State.TRACKED -> writer
-            // FLASHCAT FORK - nothing may be held while consent is withdrawn, and what was held under
-            // the consent now withdrawn goes too.
-            State.WITHHELD -> if (datadogContext.trackingConsent == TrackingConsent.NOT_GRANTED) {
+            // FLASHCAT FORK - a stopped session that never errored is thrown away at the stop; what
+            // its views still drain has nowhere to go. Nothing may be held while consent is
+            // withdrawn either, and what was held under the consent now withdrawn goes too.
+            State.WITHHELD -> if (!isActive) {
+                noOpWriter
+            } else if (datadogContext.trackingConsent == TrackingConsent.NOT_GRANTED) {
                 val heldSessionId = sessionId
                 writeScope { withheldEvents?.dropHeld(heldSessionId) }
                 noOpWriter

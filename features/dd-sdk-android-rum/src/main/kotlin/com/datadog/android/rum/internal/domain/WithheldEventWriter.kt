@@ -231,6 +231,20 @@ internal class WithheldEventWriter(
         }
     }
 
+    /**
+     * The SDK is stopping: the session ends with it. What a released session still holds goes
+     * now, whether or not the jitter has run out; a session that never errored is thrown away,
+     * along with the view it wrote locally, so that a crash after the stop is not reported
+     * against it at the next launch.
+     */
+    @WorkerThread
+    fun stop(writer: EventBatchWriter) {
+        synchronized(this) {
+            withheldForSessionId?.let { endSession(it, writer) }
+            watchedSessionId?.let { endSession(it, writer) }
+        }
+    }
+
     /** Watches a collected session whose replay only is kept on error for its first error. */
     @WorkerThread
     fun watchForError(sessionId: String, writer: EventBatchWriter) {
