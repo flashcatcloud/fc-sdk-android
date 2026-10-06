@@ -45,6 +45,7 @@ import fr.xgouchet.elmyr.annotation.FloatForgery
 import fr.xgouchet.elmyr.annotation.Forgery
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
 import fr.xgouchet.elmyr.junit5.ForgeExtension
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -248,6 +249,64 @@ internal class RumSessionScopeStartupManagerTest {
         }
 
         verifyNoMoreInteractions(mockWriter, mockRumAppStartupTelemetryReporter)
+    }
+
+    @ParameterizedTest
+    @MethodSource("testScenarios")
+    fun `M report a zero sample rate W onTTIDEvent { session kept on error }`(
+        scenario: RumStartupScenario,
+        forge: Forge
+    ) {
+        // Given
+        val event = RumRawEvent.AppStartTTIDEvent(
+            info = RumTTIDInfo(scenario = scenario, durationNs = forge.aLong(min = 0, max = 10000))
+        )
+
+        // When
+        manager.onAppStartEvent(mock())
+        manager.onTTIDEvent(
+            event = event,
+            datadogContext = fakeDatadogContext,
+            writeScope = mockEventWriteScope,
+            writer = mockWriter,
+            rumContext = rumContext.copy(sampledForError = true),
+            customAttributes = fakeParentAttributes
+        )
+
+        // Then
+        argumentCaptor<VitalAppLaunchEvent> {
+            verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
+            assertThat(lastValue.dd.configuration?.sessionSampleRate?.toFloat()).isEqualTo(0f)
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("testScenarios")
+    fun `M report the configured sample rate W onTTIDEvent { plainly sampled session }`(
+        scenario: RumStartupScenario,
+        forge: Forge
+    ) {
+        // Given - the negative control
+        val event = RumRawEvent.AppStartTTIDEvent(
+            info = RumTTIDInfo(scenario = scenario, durationNs = forge.aLong(min = 0, max = 10000))
+        )
+
+        // When
+        manager.onAppStartEvent(mock())
+        manager.onTTIDEvent(
+            event = event,
+            datadogContext = fakeDatadogContext,
+            writeScope = mockEventWriteScope,
+            writer = mockWriter,
+            rumContext = rumContext,
+            customAttributes = fakeParentAttributes
+        )
+
+        // Then
+        argumentCaptor<VitalAppLaunchEvent> {
+            verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
+            assertThat(lastValue.dd.configuration?.sessionSampleRate?.toFloat()).isEqualTo(fakeSampleRate)
+        }
     }
 
     @ParameterizedTest

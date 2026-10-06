@@ -84,7 +84,9 @@ internal class SessionReplayRecordWriterTest {
         whenever(mockSdkCore.getFeature(Feature.SESSION_REPLAY_FEATURE_NAME))
             .thenReturn(mockSessionReplayFeature)
 
-        testedWriter = SessionReplayRecordWriter(mockSdkCore, mockRecordCallback, mockResourcesWriter)
+        testedWriter = SessionReplayRecordWriter(mockSdkCore, mockRecordCallback, mockResourcesWriter) {
+            forgottenResources.addAll(it)
+        }
     }
 
     @Test
@@ -205,6 +207,39 @@ internal class SessionReplayRecordWriterTest {
     lateinit var mockResourcesWriter: ResourcesWriter
 
     private fun resource(hash: String, size: Int = 10) = EnrichedResource(ByteArray(size), hash)
+
+    private val forgottenResources = mutableListOf<String>()
+
+    @Test
+    fun `M tell the recorder to forget an image W write(resource) { evicted over the image budget }`() {
+        // Given
+        recordWrites()
+        testedWriter.withhold("s1")
+        val half = SessionReplayRecordWriter.BYTES_LIMIT.toInt() / 2
+        testedWriter.write(resource("first", size = half), "s1") {}
+        testedWriter.write(resource("second", size = half), "s1") {}
+
+        // When
+        testedWriter.write(resource("third", size = half), "s1") {}
+
+        // Then
+        assertThat(forgottenResources).containsExactly("first")
+    }
+
+    @Test
+    fun `M tell the recorder to forget every image W dropForConsent`() {
+        // Given
+        recordWrites()
+        testedWriter.withhold("s1")
+        testedWriter.write(resource("a"), "s1") {}
+        testedWriter.write(resource("b"), "s1") {}
+
+        // When
+        testedWriter.dropForConsent()
+
+        // Then
+        assertThat(forgottenResources).containsExactlyInAnyOrder("a", "b")
+    }
 
     @Test
     fun `M write a resource through W write(resource) { session not withheld }`() {

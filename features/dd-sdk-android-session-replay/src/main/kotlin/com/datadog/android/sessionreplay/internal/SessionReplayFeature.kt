@@ -458,7 +458,9 @@ internal class SessionReplayFeature(
 
     private fun createDataWriter(resourcesWriter: ResourcesWriter): SessionReplayRecordWriter {
         val recordCallback = SessionReplayRecordCallback(sdkCore)
-        return SessionReplayRecordWriter(sdkCore, recordCallback, resourcesWriter)
+        return SessionReplayRecordWriter(sdkCore, recordCallback, resourcesWriter) { resourceIds ->
+            sessionReplayRecorder.forgetResources(resourceIds)
+        }
     }
 
     /**

@@ -28,7 +28,12 @@ import java.util.concurrent.TimeUnit
 internal class SessionReplayRecordWriter(
     private val sdkCore: FeatureSdkCore,
     private val recordCallback: RecordCallback,
-    private val resourcesWriter: ResourcesWriter
+    private val resourcesWriter: ResourcesWriter,
+    /**
+     * Tells the recorder the images were dropped unsent, so it captures them again when shown:
+     * it captures each image once, and would otherwise never send one dropped here.
+     */
+    private val forgetResources: (Collection<String>) -> Unit
 ) : RecordWriter, ResourcesWriter {
 
     private class HeldRecord(val record: EnrichedRecord, val data: ByteArray, val resourceIds: Set<String>)
@@ -211,12 +216,15 @@ internal class SessionReplayRecordWriter(
         if (size > BYTES_LIMIT || heldResources.containsKey(resource.filename)) return
         heldResources[resource.filename] = HeldResource(resource, onWritten)
         heldResourceBytes += size
-        // Images are bounded apart from the records; the oldest go first. A record released without
-        // its image shows a placeholder, it does not break the replay.
+        // Images are bounded apart from the records; the oldest go first, and the recorder is told
+        // so that it captures them again when they are shown again.
+        val evicted = ArrayList<String>()
         while (heldResourceBytes > BYTES_LIMIT) {
             val oldest = heldResources.keys.first()
             heldResourceBytes -= heldResources.remove(oldest)?.resource?.resource?.size ?: 0
+            evicted.add(oldest)
         }
+        if (evicted.isNotEmpty()) forgetResources(evicted)
     }
 
     private fun dropOldest(buffer: Buffer, count: Int) {
@@ -305,6 +313,7 @@ internal class SessionReplayRecordWriter(
     }
 
     private fun clearResources() {
+        if (heldResources.isNotEmpty()) forgetResources(heldResources.keys.toList())
         heldResources.clear()
         heldResourceBytes = 0L
     }
