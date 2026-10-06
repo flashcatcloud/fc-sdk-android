@@ -112,7 +112,11 @@ internal class SessionReplayRecordWriter(
     override fun write(enrichedResource: EnrichedResource, sessionId: String, onWritten: () -> Unit) {
         onStorageThread { _, consent ->
             when {
-                consent == TrackingConsent.NOT_GRANTED -> clearResources()
+                consent == TrackingConsent.NOT_GRANTED -> {
+                    clearResources()
+                    // Captured once, like any image: told to the recorder so it is captured again.
+                    forgetResources(listOf(enrichedResource.filename))
+                }
                 bufferOf(sessionId) != null || sessionId in discardedSessionIds ->
                     holdResource(enrichedResource, onWritten)
                 else -> resourcesWriter.write(enrichedResource, sessionId, onWritten)
@@ -306,8 +310,11 @@ internal class SessionReplayRecordWriter(
         (listOfNotNull(current) + parked).forEach { buffer ->
             recordCallback.onWithheldRecordsCleared(buffer.records.map { it.record })
             buffer.droppedCount += buffer.records.size
+            // Only the view in progress will hold records again without recording its start anew.
+            val viewInProgress = buffer.records.lastOrNull()?.record?.viewId
             buffer.records.clear()
             buffer.bytes = 0L
+            buffer.viewStartRecords.keys.retainAll(listOfNotNull(viewInProgress))
         }
         clearResources()
     }
@@ -366,7 +373,7 @@ internal class SessionReplayRecordWriter(
         internal const val PARKED_LIMIT = 2
 
         /** More than a browser tab would need: a stopped session keeps draining while others come and go. */
-        private const val DISCARDED_SESSIONS_REMEMBERED = 16
+        private const val DISCARDED_SESSIONS_REMEMBERED = 64
 
         private const val FATES_REMEMBERED = 16
 

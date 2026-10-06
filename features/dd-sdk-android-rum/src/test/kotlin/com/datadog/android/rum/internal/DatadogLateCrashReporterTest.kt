@@ -236,6 +236,44 @@ internal class DatadogLateCrashReporterTest {
     }
 
     @Test
+    fun `M report the view of a session kept on error however old W handleNdkCrashEvent()`(
+        @StringForgery crashMessage: String,
+        @LongForgery(min = 1) fakeTimestamp: Long,
+        @StringForgery fakeSignalName: String,
+        @StringForgery fakeStacktrace: String,
+        @Forgery viewEvent: ViewEvent,
+        forge: Forge
+    ) {
+        // Given - a withheld session uploaded nothing: this view is the only one the intake will get
+        val fakeViewEvent = viewEvent.copy(
+            date = fakeCurrentTimeMs - forge.aLong(
+                min = DatadogLateCrashReporter.VIEW_EVENT_AVAILABILITY_TIME_THRESHOLD + 1,
+                max = DatadogLateCrashReporter.VIEW_EVENT_AVAILABILITY_TIME_THRESHOLD * 4
+            ),
+            session = viewEvent.session.copy(sampledForError = true)
+        )
+        val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
+        whenever(mockRumEventDeserializer.deserialize(fakeViewEventJson)) doReturn fakeViewEvent
+        val fakeEvent = mapOf(
+            "timestamp" to fakeTimestamp,
+            "signalName" to fakeSignalName,
+            "stacktrace" to fakeStacktrace,
+            "message" to crashMessage,
+            "lastViewEvent" to fakeViewEventJson
+        )
+
+        // When
+        testedHandler.handleNdkCrashEvent(fakeEvent, mockRumWriter)
+
+        // Then - the crash and the view, unlike a collected session's view this old
+        argumentCaptor<Any> {
+            verify(mockRumWriter, times(2)).write(eq(mockEventBatchWriter), capture(), eq(EventType.CRASH))
+            assertThat(firstValue).isInstanceOf(ErrorEvent::class.java)
+            assertThat((secondValue as ViewEvent).session.sampledForError).isTrue
+        }
+    }
+
+    @Test
     fun `M report the crash of a session kept on error W handleNdkCrashEvent()`(
         @StringForgery crashMessage: String,
         @LongForgery(min = 1) fakeTimestamp: Long,

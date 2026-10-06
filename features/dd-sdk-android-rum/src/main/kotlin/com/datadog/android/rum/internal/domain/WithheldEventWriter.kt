@@ -305,8 +305,8 @@ internal class WithheldEventWriter(
     @WorkerThread
     fun dropHeld(sessionId: String) {
         synchronized(this) {
-            if (withheldForSessionId != sessionId || releasedSessionId == sessionId) return
-            clear()
+            if (withheldForSessionId != sessionId) return
+            dropForConsent()
         }
     }
 
@@ -317,7 +317,17 @@ internal class WithheldEventWriter(
      */
     @WorkerThread
     fun dropHeldForConsent() {
-        synchronized(this) { clear() }
+        synchronized(this) { dropForConsent() }
+    }
+
+    /**
+     * A session already released holds nothing more after this: its events go to the batch, where
+     * consent decides, rather than through here, where a release granted later would carry out
+     * what was collected while consent was withdrawn.
+     */
+    private fun dropForConsent() {
+        clear()
+        if (releasedSessionId == withheldForSessionId) withheldForSessionId = null
     }
 
     // endregion
@@ -531,7 +541,7 @@ internal class WithheldEventWriter(
          * A stopped session keeps draining its pending requests while the sessions after it come and
          * go, so more are remembered than a browser tab would need.
          */
-        private const val DISCARDED_SESSIONS_REMEMBERED = 16
+        private const val DISCARDED_SESSIONS_REMEMBERED = 64
 
         private const val HTTP_ERROR_STATUS = 400L
 

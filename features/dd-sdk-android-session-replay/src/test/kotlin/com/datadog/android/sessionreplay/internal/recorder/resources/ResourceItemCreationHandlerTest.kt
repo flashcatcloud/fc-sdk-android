@@ -81,6 +81,20 @@ internal class ResourceItemCreationHandlerTest {
     }
 
     @Test
+    fun `M forget the oldest forgotten ids W forget() { over the limit }`() {
+        // Given
+        val ids = List(ResourceItemCreationHandler.FORGOTTEN_RESOURCE_IDS_LIMIT + 1) { "r$it" }
+
+        // When
+        testedHandler.forget(ids)
+
+        // Then
+        assertThat(testedHandler.isForgotten("r0")).isFalse
+        assertThat(testedHandler.isForgotten(ids.last())).isTrue
+        assertThat(testedHandler.forgottenResourceIds).hasSize(ResourceItemCreationHandler.FORGOTTEN_RESOURCE_IDS_LIMIT)
+    }
+
+    @Test
     fun `M not queue item W queueItem() { previously seen }`() {
         // Given
         val fakeByteArray = fakeResourceId.toByteArray()

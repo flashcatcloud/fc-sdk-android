@@ -242,9 +242,9 @@ internal class WithheldEventWriterTest {
     }
 
     @Test
-    fun `M remember only the last sixteen discarded sessions W endSession()`() {
+    fun `M remember only the last sixty-four discarded sessions W endSession()`() {
         // Given
-        val sessions = List(17) { UUID.randomUUID().toString() }
+        val sessions = List(65) { UUID.randomUUID().toString() }
         sessions.forEach {
             testedWriter.startWithholding(it, batchWriter)
             testedWriter.endSession(it, batchWriter)
@@ -505,6 +505,24 @@ internal class WithheldEventWriterTest {
     }
 
     @Test
+    fun `M hold nothing more W dropHeldForConsent() {released session, events while consent is withdrawn}`() {
+        // Given - the session earned its release, then consent was withdrawn
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+        testedWriter.dropHeldForConsent()
+
+        // When - events of the released session arrive, then consent is granted back
+        val result = testedWriter.write(batchWriter, action("a1", "v1"), EventType.DEFAULT)
+        scheduled.forEach { it.second(batchWriter) }
+
+        // Then - they went to the batch at once, where consent decides, rather than being held
+        assertThat(result).isTrue
+        assertThat(written).containsExactly("a1")
+        assertThat(scheduled).hasSize(1)
+    }
+
+    @Test
     fun `M drop everything held W dropHeldForConsent() {release waiting for the jitter}`() {
         // Given
         testedWriter.startWithholding(sessionId, batchWriter)
@@ -515,10 +533,9 @@ internal class WithheldEventWriterTest {
         testedWriter.dropHeldForConsent()
         scheduled.first().second(batchWriter)
         testedWriter.write(batchWriter, action("a1", "v1"), EventType.DEFAULT)
-        scheduled.last().second(batchWriter)
 
         // Then - the held minute is gone, the session goes on as a released one
-        assertThat(scheduled).hasSize(2)
+        assertThat(scheduled).hasSize(1)
         assertThat(written).containsExactly("a1")
     }
 
@@ -551,7 +568,8 @@ internal class WithheldEventWriterTest {
         testedWriter.write(batchWriter, dropped, EventType.DEFAULT)
 
         // Then
-        assertThat(testedWriter.isReleased(sessionId)).isFalse
+        assertThat(testedWriter.isReplayReleased(sessionId)).isFalse
+        assertThat(releasedReplays).isEmpty()
     }
 
     // endregion

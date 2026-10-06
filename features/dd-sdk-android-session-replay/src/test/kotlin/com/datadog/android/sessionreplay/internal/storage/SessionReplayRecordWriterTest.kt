@@ -210,6 +210,40 @@ internal class SessionReplayRecordWriterTest {
 
     private val forgottenResources = mutableListOf<String>()
 
+    /** Storage work queued rather than run, as the real write scope does; [runQueued] runs it in order. */
+    private val queued = mutableListOf<() -> Unit>()
+
+    private fun deferWrites() {
+        recordWrites()
+        whenever(mockSessionReplayFeature.withWriteContext(any(), any())) doAnswer {
+            val callback = it.getArgument<(DatadogContext, EventWriteScope) -> Unit>(it.arguments.lastIndex)
+            queued.add { callback.invoke(fakeDatadogContext, mockEventWriteScope) }
+            Unit
+        }
+    }
+
+    private fun runQueued() {
+        while (queued.isNotEmpty()) queued.removeAt(0).invoke()
+    }
+
+    @Test
+    fun `M keep a released session aside until its write W withhold { its word given, storage behind }`() {
+        // Given - RUM's word for s0 is given while the next sessions' announcements are still queued
+        deferWrites()
+        testedWriter.withhold("s0")
+        testedWriter.write(record("r-s0", "s0", fullSnapshotAt = 1_000))
+        runQueued()
+        val later = List(SessionReplayRecordWriter.PARKED_LIMIT + 2) { "s${it + 1}" }
+        later.forEach { testedWriter.withhold(it) }
+        testedWriter.release("s0")
+
+        // When
+        runQueued()
+
+        // Then - s0 was parked behind every later session yet never evicted, and went out
+        assertThat(written).containsExactly("r-s0")
+    }
+
     @Test
     fun `M tell the recorder to forget an image W write(resource) { evicted over the image budget }`() {
         // Given
@@ -224,6 +258,20 @@ internal class SessionReplayRecordWriterTest {
 
         // Then
         assertThat(forgottenResources).containsExactly("first")
+    }
+
+    @Test
+    fun `M tell the recorder to forget an image W write(resource) { consent not granted }`() {
+        // Given - the recorder captured it once, under consent now withdrawn
+        recordWrites(consent = TrackingConsent.NOT_GRANTED)
+        testedWriter.withhold("s1")
+
+        // When
+        testedWriter.write(resource("new"), "s1") {}
+
+        // Then
+        assertThat(forgottenResources).containsExactly("new")
+        verify(mockResourcesWriter, never()).write(any(), any(), any())
     }
 
     @Test
