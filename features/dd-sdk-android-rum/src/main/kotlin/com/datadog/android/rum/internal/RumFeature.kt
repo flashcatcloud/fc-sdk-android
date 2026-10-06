@@ -20,6 +20,7 @@ import com.datadog.android.api.InternalLogger
 import com.datadog.android.api.feature.Feature
 import com.datadog.android.api.feature.FeatureContextUpdateReceiver
 import com.datadog.android.api.feature.FeatureEventReceiver
+import com.datadog.android.api.feature.FeatureScope
 import com.datadog.android.api.feature.FeatureSdkCore
 import com.datadog.android.api.feature.StorageBackedFeature
 import com.datadog.android.api.net.RequestFactory
@@ -192,6 +193,10 @@ internal class RumFeature(
      */
     internal var withheldEvents: WithheldEventWriter? = null
     private var withheldEventsBackgroundCallback: ProcessForegroundCallback? = null
+
+    // The core takes the feature out of its registry before it stops it, so a stop can no longer
+    // look the scope up: it is kept from the first time it was looked up.
+    private var rumFeatureScope: FeatureScope? = null
     internal var initialResourceIdentifier: InitialResourceIdentifier = NoOpInitialResourceIdentifier()
     internal var lastInteractionIdentifier: LastInteractionIdentifier? = NoOpLastInteractionIdentifier()
     internal var slowFramesListener: SlowFramesListener? = null
@@ -237,6 +242,8 @@ internal class RumFeature(
         )
         dataWriter = rumDataWriter
         withheldEvents = createWithheldEventWriter(rumDataWriter, appContext)
+        // Registered before it is initialized, so it can be looked up now - and must be, see onStop.
+        rumFeatureScope = sdkCore.getFeature(Feature.RUM_FEATURE_NAME)
 
         sampleRate = if (sdkCore.isDeveloperModeEnabled) {
             sdkCore.internalLogger.log(
@@ -375,11 +382,12 @@ internal class RumFeature(
         // A release still waiting for its jitter goes now, with the writes the stop drains: the
         // timer would find no feature to write with.
         withheldEvents?.let { writer ->
-            sdkCore.getFeature(Feature.RUM_FEATURE_NAME)?.getWriteContextSync()?.let { (_, writeScope) ->
+            rumFeatureScope()?.getWriteContextSync()?.let { (_, writeScope) ->
                 writeScope { writer.flushScheduledRelease(it) }
             }
         }
         withheldEvents = null
+        rumFeatureScope = null
 
         rumContextUpdateReceivers.forEach {
             sdkCore.removeContextUpdateReceiver(it)
@@ -468,7 +476,12 @@ internal class RumFeature(
 
     /** FLASHCAT FORK - runs the block on the storage thread, after the RUM writes submitted so far. */
     private fun withRumWriteScope(block: (EventBatchWriter) -> Unit) {
-        sdkCore.getFeature(Feature.RUM_FEATURE_NAME)?.withWriteContext { _, writeScope -> writeScope(block) }
+        rumFeatureScope()?.withWriteContext { _, writeScope -> writeScope(block) }
+    }
+
+    private fun rumFeatureScope(): FeatureScope? {
+        rumFeatureScope = rumFeatureScope ?: sdkCore.getFeature(Feature.RUM_FEATURE_NAME)
+        return rumFeatureScope
     }
 
     // FLASHCAT FORK - the withheld events are not in the storage consent governs: what was held
@@ -906,7 +919,6 @@ internal class RumFeature(
             store = store,
             initialSessionSampleRate = sampleRate,
             initialSessionOnError = configuration.sessionOnError,
-            initialSessionReplayOnError = configuration.sessionReplayOnError,
             callFactory = sdkCore.createOkHttpCallFactory(),
             executor = sdkCore.createScheduledExecutorService("rum-remote-config"),
             // Looked up when it fires rather than captured now: the monitor is registered after

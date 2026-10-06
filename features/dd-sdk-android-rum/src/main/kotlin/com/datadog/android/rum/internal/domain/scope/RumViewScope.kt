@@ -136,6 +136,12 @@ internal open class RumViewScope(
     internal val featureFlags: MutableMap<String, Any?> = mutableMapOf()
     internal var hasReplay = false
 
+    // FLASHCAT FORK - a session's replay draw is made once: these stay true once resolved so, so a
+    // late update of this view, written after another session took over the replay context,
+    // still describes its own session.
+    private var sampledForReplay: Boolean? = null
+    private var sampledForErrorReplay: Boolean? = null
+
     internal var stopped: Boolean = false
 
     // region Vitals Fields
@@ -252,8 +258,12 @@ internal open class RumViewScope(
         }
 
         return if (isViewComplete()) {
-            sdkCore.updateFeatureContext(Feature.SESSION_REPLAY_FEATURE_NAME) {
-                it.remove(viewId)
+            // FLASHCAT FORK - a view of a withheld session may still be released, and claims the
+            // replay held for it from this entry: Session Replay drops it with the held records.
+            if (getRumContext().sessionState != RumSessionScope.State.WITHHELD) {
+                sdkCore.updateFeatureContext(Feature.SESSION_REPLAY_FEATURE_NAME) {
+                    it.remove(viewId)
+                }
             }
             null
         } else {
@@ -1340,14 +1350,8 @@ internal open class RumViewScope(
                     // FLASHCAT FORK - tells the intake this session's detail only starts where the
                     // withheld buffer reached. Absent, rather than false, for every other session.
                     sampledForError = rumContext.sampledForError.takeIf { it },
-                    sampledForReplay = featuresContextResolver.resolveSampledForReplay(
-                        datadogContext,
-                        rumContext.sessionId,
-                        rumContext.sampledForError
-                    ),
-                    sampledForErrorReplay = featuresContextResolver
-                        .resolveSampledForErrorReplay(datadogContext, rumContext.sessionId)
-                        ?.takeIf { it }
+                    sampledForReplay = resolveSampledForReplay(datadogContext, rumContext),
+                    sampledForErrorReplay = resolveSampledForErrorReplay(datadogContext, rumContext)
                 ),
                 synthetics = syntheticsAttribute,
                 source = ViewEvent.ViewEventSource.tryFromSource(
@@ -1625,6 +1629,26 @@ internal open class RumViewScope(
                 isActive = isActive()
             )
         )
+    }
+
+    private fun resolveSampledForReplay(datadogContext: DatadogContext, rumContext: RumContext): Boolean? {
+        if (sampledForReplay != true) {
+            sampledForReplay = featuresContextResolver.resolveSampledForReplay(
+                datadogContext,
+                rumContext.sessionId,
+                rumContext.sampledForError
+            )
+        }
+        return sampledForReplay
+    }
+
+    private fun resolveSampledForErrorReplay(datadogContext: DatadogContext, rumContext: RumContext): Boolean? {
+        if (sampledForErrorReplay != true) {
+            sampledForErrorReplay = featuresContextResolver
+                .resolveSampledForErrorReplay(datadogContext, rumContext.sessionId)
+                ?.takeIf { it }
+        }
+        return sampledForErrorReplay
     }
 
     private fun isViewComplete(): Boolean {

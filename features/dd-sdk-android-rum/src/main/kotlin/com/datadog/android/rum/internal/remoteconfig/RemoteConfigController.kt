@@ -48,9 +48,8 @@ internal class RemoteConfigController(
     private val restartSession: () -> Unit,
     private val elapsedTimeMs: () -> Long = SystemClock::elapsedRealtime,
     private val jitter: () -> Double = { Random.nextDouble() },
-    // The init values of the on-error switches, which a cleared knob hands back to.
-    private val initialSessionOnError: Boolean = false,
-    private val initialSessionReplayOnError: Boolean = false
+    // The init value of the on-error switch, which a cleared knob hands back to.
+    private val initialSessionOnError: Boolean = false
 ) {
 
     @Volatile
@@ -447,9 +446,9 @@ internal class RemoteConfigController(
         val nextRate = after.sessionSampleRate ?: initialSessionSampleRate
         val switchChanged =
             (before.sessionOnError ?: initialSessionOnError) != (after.sessionOnError ?: initialSessionOnError)
-        val replaySwitchChanged = (before.sessionReplayOnError ?: initialSessionReplayOnError) !=
-            (after.sessionReplayOnError ?: initialSessionReplayOnError)
-        if (previousRate == nextRate && !switchChanged && !replaySwitchChanged) return false
+        // The replay switch only decides a replay draw, which a running session has already made:
+        // it applies to the next session, whatever the activation says.
+        if (previousRate == nextRate && !switchChanged) return false
         return activation == ACTIVATION_IMMEDIATE ||
             (previousRate == 0f) != (nextRate == 0f) ||
             (nextRate == 0f && switchChanged)

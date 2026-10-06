@@ -195,5 +195,7 @@ internal class SessionReplayRecordCallbackTest {
             SessionReplayRecordCallback.HAS_REPLAY_KEY,
             SessionReplayRecordCallback.VIEW_RECORDS_COUNT_KEY
         )
+        // and the entry left with nothing in it goes too
+        assertThat(featureContext).doesNotContainKey(fakeEnrichedRecord.viewId)
     }
 }

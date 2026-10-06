@@ -58,6 +58,9 @@ internal class SessionReplayRecordCallback(
                     viewMetadata[VIEW_WITHHELD_RECORDS_COUNT_KEY] = remaining
                 } else {
                     viewMetadata.remove(VIEW_WITHHELD_RECORDS_COUNT_KEY)
+                    // RUM leaves the entry of a completed view in place while its session is
+                    // withheld; nothing sent and nothing held means nothing to keep it for.
+                    if (viewMetadata.isEmpty()) it.remove(viewId)
                 }
             }
         }

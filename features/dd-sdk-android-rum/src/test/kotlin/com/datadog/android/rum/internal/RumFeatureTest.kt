@@ -852,6 +852,8 @@ internal class RumFeatureTest {
         whenever(mockSdkCore.getFeature(Feature.RUM_FEATURE_NAME)) doReturn mockRumScope
         whenever(mockRumScope.getWriteContextSync(any())) doReturn (mock<DatadogContext>() to mockWriteScope)
         testedFeature.onInitialize(appContext.mockInstance)
+        // the core takes the feature out of its registry before stopping it
+        whenever(mockSdkCore.getFeature(Feature.RUM_FEATURE_NAME)) doReturn null
 
         // When
         testedFeature.onStop()

@@ -247,7 +247,8 @@ internal class RemoteConfigControllerTest {
     }
 
     @Test
-    fun `M restart the session W apply() { immediate and only the replay switch changed }`() {
+    fun `M leave the running session alone W apply() { immediate and only the replay switch changed }`() {
+        // A replay draw is made once per session: the switch applies to the next one.
         whenever(store.sessionSampleRate()).thenReturn(20f)
         whenever(store.sessionReplayOnError()).thenReturn(null)
 
@@ -255,7 +256,7 @@ internal class RemoteConfigControllerTest {
             body(activation = "immediate", rum = """"sessionSampleRate":20,"sessionReplayOnError":true""")
         )
 
-        assertThat(restarts).isOne()
+        assertThat(restarts).isZero()
     }
 
     @Test
