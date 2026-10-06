@@ -45,9 +45,14 @@ internal class WebViewRumEventConsumer(
                     val sessionReplayFeatureContext = datadogContext.featuresContext[
                         Feature.SESSION_REPLAY_FEATURE_NAME
                     ]
-                    val sessionReplayEnabled = sessionReplayFeatureContext?.get(
-                        WebViewReplayEventConsumer.SESSION_REPLAY_ENABLED_KEY
-                    ) as? Boolean ?: false
+                    // FLASHCAT FORK - a replay still held on error is not one these events may claim.
+                    val sessionReplayEnabled = (
+                        sessionReplayFeatureContext?.get(
+                            WebViewReplayEventConsumer.SESSION_REPLAY_ENABLED_KEY
+                        ) as? Boolean ?: false
+                        ) && sessionReplayFeatureContext?.get(
+                        WebViewReplayEventConsumer.SESSION_REPLAY_WITHHELD_KEY
+                    ) != true
                     writeScope {
                         val mappedEvent = map(event, datadogContext, rumContext, sessionReplayEnabled)
                         dataWriter.write(it, mappedEvent, EventType.DEFAULT)

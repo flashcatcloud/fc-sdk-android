@@ -95,7 +95,7 @@ internal class DatadogLateCrashReporter(
             )
             writeScope {
                 rumWriter.write(it, toSendErrorEvent, EventType.CRASH)
-                if (lastViewEvent.isWithinSessionAvailability) {
+                if (lastViewEvent.isWithinSessionAvailability || lastViewEvent.isOnlyKnownHere) {
                     val updatedViewEvent = updateViewEvent(lastViewEvent)
                     rumWriter.write(it, updatedViewEvent, EventType.CRASH)
                 }
@@ -156,7 +156,7 @@ internal class DatadogLateCrashReporter(
                     // RUM events are written
                     sdkCore.writeLastFatalAnrSent(anrExitInfo.timestamp)
                     rumWriter.write(it, toSendErrorEvent, EventType.CRASH)
-                    if (lastViewEvent.isWithinSessionAvailability) {
+                    if (lastViewEvent.isWithinSessionAvailability || lastViewEvent.isOnlyKnownHere) {
                         val updatedViewEvent = updateViewEvent(lastViewEvent)
                         rumWriter.write(it, updatedViewEvent, EventType.CRASH)
                     }
@@ -325,6 +325,13 @@ internal class DatadogLateCrashReporter(
 
     private val ViewEvent.sampleRate: Float
         get() = dd.configuration?.sessionSampleRate?.toFloat() ?: 0f
+
+    /**
+     * FLASHCAT FORK - a session kept only on error uploaded nothing before it crashed: the view
+     * written locally is the only one the intake will ever get, however old it is by now.
+     */
+    private val ViewEvent.isOnlyKnownHere: Boolean
+        get() = session.sampledForError == true
 
     private val ViewEvent.isWithinSessionAvailability: Boolean
         get() {

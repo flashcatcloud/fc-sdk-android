@@ -33,18 +33,29 @@ internal class RumViewEventFilter(
             }
         }
 
-        return batch.filter {
-            if (viewMetaByEvent.containsKey(it)) {
-                @Suppress("UnsafeThirdPartyFunctionCall") // we checked the key before
-                val viewMeta = viewMetaByEvent.getValue(it)
-
+        // FLASHCAT FORK - the surviving version of a view takes the place of the view's first
+        // occurrence rather than staying where it was written. A session kept on error releases its
+        // views first, oldest first, and their live updates follow in the same batch: keeping each
+        // latest version where it was written would push the views behind the events they contain
+        // and out of start order, while the intake builds the session out of the first view it sees.
+        val latestByViewId = mutableMapOf<String, RawBatchEvent>()
+        viewMetaByEvent.forEach { (event, viewMeta) ->
+            @Suppress("UnsafeThirdPartyFunctionCall") // if there is a meta, there is a max doc version
+            if (viewMeta.documentVersion == maxDocVersionByViewId.getValue(viewMeta.viewId)) {
+                latestByViewId[viewMeta.viewId] = event
+            }
+        }
+        val placed = mutableSetOf<String>()
+        val emitted = mutableSetOf<RawBatchEvent>()
+        return batch.mapNotNull {
+            val viewMeta = viewMetaByEvent[it]
+            when {
+                viewMeta == null -> it
                 // we need to leave only view events with accessibility OR view event with a max doc version
                 // for a give viewId in the batch, because backend will do the same during the reduce process
-                @Suppress("UnsafeThirdPartyFunctionCall") // if there is a meta, there is a max doc version
-                viewMeta.hasAccessibility == true ||
-                    viewMeta.documentVersion == maxDocVersionByViewId.getValue(viewMeta.viewId)
-            } else {
-                true
+                viewMeta.hasAccessibility == true -> it.takeIf { event -> emitted.add(event) }
+                placed.add(viewMeta.viewId) -> latestByViewId[viewMeta.viewId]?.takeIf { event -> emitted.add(event) }
+                else -> null
             }
         }
     }

@@ -57,6 +57,10 @@ internal class RemoteConfigStore(
 
     fun sessionSampleRate(): Float? = read(sessionKey())
 
+    fun sessionOnError(): Boolean? = readSwitch(sessionOnErrorKey())
+
+    fun sessionReplayOnError(): Boolean? = readSwitch(sessionReplayOnErrorKey())
+
     /**
      * Reads one committed preferences snapshot. A session must use the same response for its
      * sampling rate, custom values and reported version, even if another response arrives during
@@ -67,6 +71,8 @@ internal class RemoteConfigStore(
         val stored = preferences?.all.orEmpty()
         return RemoteConfigValues(
             sessionSampleRate = (stored[sessionKey()] as? Float)?.takeUnless { it == ABSENT },
+            sessionOnError = stored[sessionOnErrorKey()] as? Boolean,
+            sessionReplayOnError = stored[sessionReplayOnErrorKey()] as? Boolean,
             version = (stored[versionKey()] as? Int)?.takeUnless { it == ABSENT_VERSION },
             custom = stored[customKey()] as? String,
             etag = stored[etagKey()] as? String,
@@ -126,6 +132,8 @@ internal class RemoteConfigStore(
     fun store(values: RemoteConfigValues) {
         val editor = preferences?.edit() ?: return
         write(editor, sessionKey(), values.sessionSampleRate)
+        write(editor, sessionOnErrorKey(), values.sessionOnError)
+        write(editor, sessionReplayOnErrorKey(), values.sessionReplayOnError)
         // Kept even when there are no rates — that is what "remote configuration is off, use your
         // own settings" looks like — so the console can still see this client is up to date with
         // the change that turned them off.
@@ -220,6 +228,8 @@ internal class RemoteConfigStore(
         return key.removeSuffix(suffix)
     }
 
+    private fun readSwitch(key: String): Boolean? = preferences?.all?.get(key) as? Boolean
+
     private fun read(key: String): Float? {
         val stored = preferences?.getFloat(key, ABSENT) ?: ABSENT
         return if (stored == ABSENT) null else stored
@@ -233,7 +243,20 @@ internal class RemoteConfigStore(
         }
     }
 
+    // FLASHCAT FORK - absent like a rate: a switch the console did not send hands it back to init.
+    private fun write(editor: SharedPreferences.Editor, key: String, enabled: Boolean?) {
+        if (enabled == null) {
+            editor.remove(key)
+        } else {
+            editor.putBoolean(key, enabled)
+        }
+    }
+
     private fun sessionKey() = "$storeKey$SUFFIX_SESSION_SAMPLE_RATE"
+
+    private fun sessionOnErrorKey() = "$storeKey$SUFFIX_SESSION_ON_ERROR"
+
+    private fun sessionReplayOnErrorKey() = "$storeKey$SUFFIX_SESSION_REPLAY_ON_ERROR"
 
     private fun versionKey() = "$storeKey$SUFFIX_VERSION"
 
@@ -285,6 +308,8 @@ internal class RemoteConfigStore(
         // suffixes. Named here once because two things read them: the accessors that build a key,
         // and the sweep that has to take an entry apart again.
         private const val SUFFIX_SESSION_SAMPLE_RATE = ".sessionSampleRate"
+        private const val SUFFIX_SESSION_ON_ERROR = ".sessionOnError"
+        private const val SUFFIX_SESSION_REPLAY_ON_ERROR = ".sessionReplayOnError"
         private const val SUFFIX_VERSION = ".version"
         private const val SUFFIX_CUSTOM = ".custom"
         private const val SUFFIX_ETAG = ".etag"
@@ -294,6 +319,8 @@ internal class RemoteConfigStore(
 
         private val FIELD_SUFFIXES = listOf(
             SUFFIX_SESSION_SAMPLE_RATE,
+            SUFFIX_SESSION_ON_ERROR,
+            SUFFIX_SESSION_REPLAY_ON_ERROR,
             SUFFIX_VERSION,
             SUFFIX_CUSTOM,
             SUFFIX_ETAG,
@@ -368,5 +395,9 @@ internal data class RemoteConfigValues(
     /** How long the server asked this client to treat these values as fresh, or null when it did not say. */
     val ttlSeconds: Long? = null,
     /** Whether the server allows a refresh when the app returns to the foreground. */
-    val refreshOnForeground: Boolean = false
+    val refreshOnForeground: Boolean = false,
+    /** Whether a session the rate does not keep is kept on error; null leaves the init value. */
+    val sessionOnError: Boolean? = null,
+    /** Whether a replay the replay rate does not keep is kept on error; null leaves the init value. */
+    val sessionReplayOnError: Boolean? = null
 )

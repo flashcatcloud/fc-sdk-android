@@ -27,7 +27,10 @@ import java.util.concurrent.atomic.AtomicInteger
  * is stale anyway, so it is left alone rather than given a state machine of its own.
  */
 internal class ProcessForegroundCallback(
-    private val onForeground: () -> Unit
+    private val onForeground: () -> Unit,
+    // FLASHCAT FORK - called whenever a stop leaves no activity started, including the stop of an
+    // activity started before this was registered.
+    private val onBackground: () -> Unit = {}
 ) : Application.ActivityLifecycleCallbacks {
 
     private val startedActivities = AtomicInteger(0)
@@ -52,6 +55,9 @@ internal class ProcessForegroundCallback(
         // thread; the counter is atomic only because [refreshIfStale] reads its effect elsewhere.
         if (startedActivities.get() > 0) {
             startedActivities.decrementAndGet()
+        }
+        if (startedActivities.get() == 0) {
+            onBackground()
         }
     }
 

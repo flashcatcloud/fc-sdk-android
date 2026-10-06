@@ -54,6 +54,14 @@ internal class ResourceResolver(
         applicationContext.unregisterComponentCallbacks(alpha8ResourceCache)
     }
 
+    /**
+     * FLASHCAT FORK - the resources were dropped unsent from the store that held them for a replay
+     * kept on error: they are captured and queued again the next time they are shown.
+     */
+    internal fun forgetResources(resourceIds: Collection<String>) {
+        resourceItemCreationHandler.forget(resourceIds)
+    }
+
     // region internal
 
     @MainThread
@@ -88,7 +96,7 @@ internal class ResourceResolver(
                 customResourceIdCacheKey = key
             )
 
-            if (resourceId != null) {
+            if (resourceId != null && !resourceItemCreationHandler.isForgotten(resourceId)) {
                 // if we got here it means we saw the bitmap before,
                 // so we don't need to send the resource again
                 resourceResolverCallback.onSuccess(resourceId)
@@ -143,7 +151,9 @@ internal class ResourceResolver(
         val resourceId =
             tryToGetResourceFromCache(drawable = originalDrawable, customResourceIdCacheKey = customResourceIdCacheKey)
 
-        if (resourceId != null) {
+        // FLASHCAT FORK - a resource dropped unsent from the store holding it for a replay kept on
+        // error is resolved again from the drawable, so it can be queued again.
+        if (resourceId != null && !resourceItemCreationHandler.isForgotten(resourceId)) {
             // if we got here it means we saw the bitmap before,
             // so we don't need to send the resource again
             resourceResolverCallback.onSuccess(resourceId)
@@ -386,7 +396,7 @@ internal class ResourceResolver(
 
         if (cacheKey != null) {
             val cachedResourceId = alpha8ResourceCache.get(cacheKey)
-            if (cachedResourceId != null) {
+            if (cachedResourceId != null && !resourceItemCreationHandler.isForgotten(cachedResourceId)) {
                 resourceResolverCallback.onSuccess(cachedResourceId)
                 return
             }

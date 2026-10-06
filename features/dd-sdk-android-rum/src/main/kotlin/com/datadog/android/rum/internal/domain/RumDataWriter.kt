@@ -27,12 +27,31 @@ internal class RumDataWriter(
 
     @WorkerThread
     override fun write(writer: EventBatchWriter, element: Any, eventType: EventType): Boolean {
+        val batchEvent = serialize(element) ?: return false
+        val result = writeSerialized(writer, batchEvent, eventType)
+        if (result) {
+            onDataWritten(element, batchEvent.data)
+        }
+        return result
+    }
+
+    // endregion
+
+    // region Internal
+
+    /**
+     * FLASHCAT FORK - runs the event mappers and serializes, exactly as [write] does before it
+     * writes. Null when a mapper dropped the event. Split out so that [WithheldEventWriter] can hold
+     * what the batch would have received, judged after the mappers had their say.
+     */
+    @WorkerThread
+    internal fun serialize(element: Any): RawBatchEvent? {
         val byteArray = eventSerializer.serializeToByteArray(
             element,
             sdkCore.internalLogger
-        ) ?: return false
+        ) ?: return null
 
-        val batchEvent = if (element is ViewEvent) {
+        return if (element is ViewEvent) {
             val hasAccessibility = element.view.accessibility != null
 
             val eventMeta = RumEventMeta.View(
@@ -50,19 +69,25 @@ internal class RumDataWriter(
         } else {
             RawBatchEvent(data = byteArray)
         }
+    }
 
+    /** FLASHCAT FORK - writes an event [serialize] already produced. */
+    @WorkerThread
+    internal fun writeSerialized(writer: EventBatchWriter, batchEvent: RawBatchEvent, eventType: EventType): Boolean {
         synchronized(this) {
-            val result = writer.write(batchEvent, null, eventType)
-            if (result) {
-                onDataWritten(element, byteArray)
-            }
-            return result
+            return writer.write(batchEvent, null, eventType)
         }
     }
 
-    // endregion
-
-    // region Internal
+    /**
+     * FLASHCAT FORK - forgets the view written locally for the native crash reporter: the session
+     * it belongs to was thrown away, and a crash reported against it at the next launch would
+     * bring to the intake a session that never errored.
+     */
+    @WorkerThread
+    internal fun deleteLastViewEvent() {
+        sdkCore.deleteLastViewEvent()
+    }
 
     @WorkerThread
     internal fun onDataWritten(data: Any, rawData: ByteArray) {

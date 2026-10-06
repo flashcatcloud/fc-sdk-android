@@ -19,14 +19,41 @@ internal class ResourceItemCreationHandler(
     @VisibleForTesting internal val resourceIdsSeen: MutableSet<String> =
         Collections.synchronizedSet(HashSet<String>())
 
+    // FLASHCAT FORK - the resources dropped unsent from the store that held them for a replay kept
+    // on error: they are queued again the next time they are shown, as if never seen.
+    @VisibleForTesting internal val forgottenResourceIds: MutableSet<String> =
+        Collections.synchronizedSet(LinkedHashSet<String>())
+
     internal fun queueItem(resourceId: String, resourceData: ByteArray) {
         if (!resourceIdsSeen.contains(resourceId)) {
             resourceIdsSeen.add(resourceId)
+            forgottenResourceIds.remove(resourceId)
 
             recordedDataQueueHandler.addResourceItem(
                 identifier = resourceId,
                 resourceData = resourceData
             )
         }
+    }
+
+    /** FLASHCAT FORK - whether a resource once queued was dropped unsent since. */
+    internal fun isForgotten(resourceId: String): Boolean = forgottenResourceIds.contains(resourceId)
+
+    /** FLASHCAT FORK - see [forgottenResourceIds]. */
+    internal fun forget(resourceIds: Collection<String>) {
+        resourceIdsSeen.removeAll(resourceIds.toSet())
+        synchronized(forgottenResourceIds) {
+            forgottenResourceIds.addAll(resourceIds)
+            // Bounded: an image never shown again is one nobody misses.
+            val iterator = forgottenResourceIds.iterator()
+            while (forgottenResourceIds.size > FORGOTTEN_RESOURCE_IDS_LIMIT && iterator.hasNext()) {
+                iterator.next()
+                iterator.remove()
+            }
+        }
+    }
+
+    companion object {
+        internal const val FORGOTTEN_RESOURCE_IDS_LIMIT = 1024
     }
 }

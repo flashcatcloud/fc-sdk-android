@@ -44,19 +44,21 @@ internal class RecordedDataProcessor(
         val isKnownResource = resourceDataStoreManager.isPreviouslySentResource(resourceHash)
 
         if (!isKnownResource) {
-            // the cacheResourceHash method overwrites the datastore entry and we don't want that if we haven't finished
-            // initializing
-            if (resourceDataStoreManager.isReady()) {
-                resourceDataStoreManager.cacheResourceHash(resourceHash)
-            }
-
             val enrichedResource = EnrichedResource(
                 resource = item.resourceData,
                 filename = resourceHash,
                 mimeType = item.mimeType
             )
 
-            resourcesWriter.write(enrichedResource)
+            // FLASHCAT FORK - remembered as sent only once it is written: a resource held for a
+            // session whose replay is withheld, and thrown away with it, was never sent.
+            resourcesWriter.write(enrichedResource, item.recordedQueuedItemContext.newRumContext.sessionId) {
+                // the cacheResourceHash method overwrites the datastore entry and we don't want that if we haven't
+                // finished initializing
+                if (resourceDataStoreManager.isReady()) {
+                    resourceDataStoreManager.cacheResourceHash(resourceHash)
+                }
+            }
         }
     }
 

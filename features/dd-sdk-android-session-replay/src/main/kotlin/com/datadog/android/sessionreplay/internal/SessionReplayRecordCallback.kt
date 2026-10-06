@@ -30,6 +30,42 @@ internal class SessionReplayRecordCallback(
         }
     }
 
+    // FLASHCAT FORK - held records are counted apart, under a key RUM reads only to claim the
+    // replay for events released alongside them: `has_replay` and `records_count` stay for records
+    // actually sent.
+    @Suppress("UNCHECKED_CAST")
+    override fun onRecordForViewWithheld(record: EnrichedRecord) {
+        val recordsSize = record.records.size
+        if (recordsSize == 0) return
+        featureSdkCore.updateFeatureContext(Feature.SESSION_REPLAY_FEATURE_NAME, useContextThread = false) {
+            val viewMetadata = (it[record.viewId] as? MutableMap<String, Any?>) ?: mutableMapOf()
+            viewMetadata[VIEW_WITHHELD_RECORDS_COUNT_KEY] =
+                (viewMetadata[VIEW_WITHHELD_RECORDS_COUNT_KEY] as? Long ?: 0L) + recordsSize
+            it[record.viewId] = viewMetadata
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun onWithheldRecordsCleared(records: List<EnrichedRecord>) {
+        val clearedByView = records.groupBy { it.viewId }
+            .mapValues { (_, cleared) -> cleared.sumOf { it.records.size } }
+        if (clearedByView.values.all { it == 0 }) return
+        featureSdkCore.updateFeatureContext(Feature.SESSION_REPLAY_FEATURE_NAME, useContextThread = false) {
+            clearedByView.forEach { (viewId, cleared) ->
+                val viewMetadata = it[viewId] as? MutableMap<String, Any?> ?: return@forEach
+                val remaining = (viewMetadata[VIEW_WITHHELD_RECORDS_COUNT_KEY] as? Long ?: 0L) - cleared
+                if (remaining > 0) {
+                    viewMetadata[VIEW_WITHHELD_RECORDS_COUNT_KEY] = remaining
+                } else {
+                    viewMetadata.remove(VIEW_WITHHELD_RECORDS_COUNT_KEY)
+                    // RUM leaves the entry of a completed view in place while its session is
+                    // withheld; nothing sent and nothing held means nothing to keep it for.
+                    if (viewMetadata.isEmpty()) it.remove(viewId)
+                }
+            }
+        }
+    }
+
     private fun updateRecordsCount(
         viewMetadata: MutableMap<String, Any?>,
         recordsCount: Int
@@ -42,5 +78,6 @@ internal class SessionReplayRecordCallback(
     companion object {
         internal const val HAS_REPLAY_KEY = "has_replay"
         internal const val VIEW_RECORDS_COUNT_KEY = "records_count"
+        internal const val VIEW_WITHHELD_RECORDS_COUNT_KEY = "withheld_records_count"
     }
 }

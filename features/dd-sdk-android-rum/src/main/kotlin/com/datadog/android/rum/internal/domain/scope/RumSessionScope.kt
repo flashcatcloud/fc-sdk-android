@@ -16,6 +16,7 @@ import com.datadog.android.api.storage.NoOpDataWriter
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.core.internal.net.FirstPartyHostHeaderTypeResolver
 import com.datadog.android.internal.profiling.ProfilerStopEvent
+import com.datadog.android.privacy.TrackingConsent
 import com.datadog.android.rum.BeforeSamplingCallback
 import com.datadog.android.rum.BeforeSamplingContext
 import com.datadog.android.rum.RumSessionListener
@@ -23,6 +24,7 @@ import com.datadog.android.rum.RumSessionType
 import com.datadog.android.rum.internal.domain.InfoProvider
 import com.datadog.android.rum.internal.domain.RumContext
 import com.datadog.android.rum.internal.domain.Time
+import com.datadog.android.rum.internal.domain.WithheldEventWriter
 import com.datadog.android.rum.internal.domain.accessibility.AccessibilitySnapshotManager
 import com.datadog.android.rum.internal.domain.battery.BatteryInfo
 import com.datadog.android.rum.internal.domain.display.DisplayInfo
@@ -31,6 +33,7 @@ import com.datadog.android.rum.internal.metric.SessionMetricDispatcher
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
 import com.datadog.android.rum.internal.remoteconfig.DrawnConfiguration
 import com.datadog.android.rum.internal.remoteconfig.RemoteConfigStore
+import com.datadog.android.rum.internal.remoteconfig.RemoteConfigValues
 import com.datadog.android.rum.internal.remoteconfig.decodeCustomValues
 import com.datadog.android.rum.internal.startup.RumSessionScopeStartupManager
 import com.datadog.android.rum.internal.utils.percent
@@ -81,7 +84,14 @@ internal class RumSessionScope(
     // collected regardless of the rates. Passed in rather than owned here because it outlives any
     // one session: the application asked for the user, not for whichever session happened to be
     // running when it asked. [RumApplicationScope] holds it and hands it to every session it makes.
-    internal var forcedSession: Boolean = false
+    internal var forcedSession: Boolean = false,
+    // FLASHCAT FORK - where a session kept only on error holds its events until it reports one.
+    // Null where there is nothing to buffer with, and then no session is drawn on error.
+    private val withheldEvents: WithheldEventWriter? = null,
+    // FLASHCAT FORK - the init values of `sessionOnError` and `sessionReplayOnError`; the console's
+    // values win over them.
+    private val sessionOnError: Boolean = false,
+    private val sessionReplayOnError: Boolean = false
 ) : RumScope {
 
     // FLASHCAT FORK - the rate the current session's events report as their configured sample
@@ -100,6 +110,21 @@ internal class RumSessionScope(
 
     internal var sessionId = RumContext.NULL_UUID
     internal var sessionState: State = State.NOT_TRACKED
+
+    // FLASHCAT FORK - whether the current session is kept only because of `sessionOnError`. Unlike
+    // [State.WITHHELD] it stays true once the session has reported its error, so what is stored can
+    // be told apart from a plainly sampled session - its detail only starts where the buffer reached.
+    internal var sampledForError: Boolean = false
+        private set
+
+    // FLASHCAT FORK - the replay switch the current session was drawn under. Session Replay draws
+    // the replay itself and decides from this whether a replay it did not keep is kept on error.
+    private var replayOnError: Boolean = false
+
+    // FLASHCAT FORK - whether the current session is a collected one whose replay may be kept on
+    // error: its end is reported to the buffer like a withheld session's, so Session Replay hears
+    // what became of the replay it holds.
+    private var replayWatched: Boolean = false
 
     private var startReason: StartReason = StartReason.USER_APP_LAUNCH
     internal var isActive: Boolean = true
@@ -147,6 +172,11 @@ internal class RumSessionScope(
     enum class State(val asString: String) {
         NOT_TRACKED("NOT_TRACKED"),
         TRACKED("TRACKED"),
+
+        // FLASHCAT FORK - collected but withheld until the session reports an error, at which point
+        // it becomes TRACKED. Nothing of it reaches the intake before then, so to everything outside
+        // RUM - and to the host application - it reads as not tracked.
+        WITHHELD("WITHHELD"),
         EXPIRED("EXPIRED");
 
         companion object {
@@ -193,9 +223,10 @@ internal class RumSessionScope(
             // the next interaction; maximum-duration renewal keeps its normal start reason.
             if (isActive && !forcedSession && sessionId != RumContext.NULL_UUID &&
                 now - lastUserInteractionNs.get() < sessionInactivityNanos &&
-                now - sessionStartNs.get() < sessionMaxDurationNanos
+                now - sessionStartNs.get() < sessionMaxDurationNanos &&
+                !isKeptOnErrorUnderCurrentSettings()
             ) {
-                renewSession(event.eventTime, StartReason.EXPLICIT_STOP)
+                renewSession(event.eventTime, StartReason.EXPLICIT_STOP, writeScope)
             }
         } else if (event is RumRawEvent.SetForcedSession && isActive) {
             // FLASHCAT FORK - the escape hatch for "collect this user NOW": the application knows
@@ -204,25 +235,55 @@ internal class RumSessionScope(
             // come after this one, including the ones that follow a `stopSession()`.
             forcedSession = true
             // A session already being collected keeps running: RUM cannot retro-collect what a
-            // running session already dropped, so cutting it in two would gain nothing. One that
-            // was NOT collected restarts now, so a collected one takes its place.
-            if (sessionState != State.TRACKED) {
-                renewSession(event.eventTime, StartReason.EXPLICIT_STOP)
+            // running session already dropped, so cutting it in two would gain nothing. One kept
+            // only on error has collected everything, so it is simply released now, without waiting
+            // for an error or for the jitter. One that was NOT collected restarts now, so a
+            // collected one takes its place.
+            if (sampledForError && (sessionState == State.TRACKED || sessionState == State.WITHHELD)) {
+                val releasedSessionId = sessionId
+                writeScope { withheldEvents?.forceRelease(releasedSessionId, it) }
+                if (sessionState == State.WITHHELD) sessionState = State.TRACKED
+            } else if (sessionState != State.TRACKED) {
+                renewSession(event.eventTime, StartReason.EXPLICIT_STOP, writeScope)
                 // Forcing is a deliberate act of the host application; without this the renewal
                 // is immediately re-expired when no user interaction happened yet.
                 lastUserInteractionNs.set(now)
             }
         } else if (event is RumRawEvent.StopSession) {
-            stopSession()
+            stopSession(writeScope)
         }
 
-        updateSession(event, now)
+        // FLASHCAT FORK - the session reported its error since the last event: it is a collected
+        // session from here on. Its events still pass through the buffer, which holds them until the
+        // release it scheduled has gone out, so they leave in order.
+        if (sessionState == State.WITHHELD && withheldEvents?.isReleased(sessionId) == true) {
+            sessionState = State.TRACKED
+        }
 
-        val actualWriter = if (sessionState == State.TRACKED) writer else noOpWriter
+        updateSession(event, now, writeScope)
+
+        val actualWriter = when (sessionState) {
+            State.TRACKED -> writer
+            // FLASHCAT FORK - a stopped session that never errored is thrown away at the stop; what
+            // its views still drain has nowhere to go. Nothing may be held while consent is
+            // withdrawn either, and what was held under the consent now withdrawn goes too.
+            State.WITHHELD -> if (!isActive) {
+                noOpWriter
+            } else if (datadogContext.trackingConsent == TrackingConsent.NOT_GRANTED) {
+                val heldSessionId = sessionId
+                writeScope { withheldEvents?.dropHeld(heldSessionId) }
+                noOpWriter
+            } else {
+                withheldEvents ?: noOpWriter
+            }
+            else -> noOpWriter
+        }
 
         val rumContext = activeView?.getRumContext() ?: getRumContext()
 
         when (event) {
+            // FLASHCAT FORK - app launch vitals stay with plainly collected sessions: the launch
+            // profile they hand to the profiler is uploaded on its own and cannot be withheld.
             is RumRawEvent.AppStartTTIDEvent -> {
                 if (sessionState == State.TRACKED) {
                     rumSessionScopeStartupManager?.onTTIDEvent(
@@ -277,7 +338,8 @@ internal class RumSessionScope(
             sessionId = sessionId,
             sessionState = sessionState,
             sessionStartReason = startReason,
-            isSessionActive = isActive
+            isSessionActive = isActive,
+            sampledForError = sampledForError
         )
     }
 
@@ -289,9 +351,35 @@ internal class RumSessionScope(
 
     // region Internal
 
-    private fun stopSession() {
+    private fun stopSession(writeScope: EventWriteScope) {
         isActive = false
         sessionEndedMetricDispatcher.onSessionStopped(sessionId)
+        endWithheldSession(writeScope)
+    }
+
+    /**
+     * FLASHCAT FORK - the current session ends: what it withheld is released if it reported an
+     * error, and thrown away if not. Posted to the write scope so it lands after the session's own
+     * pending writes.
+     */
+    private fun endWithheldSession(writeScope: EventWriteScope) {
+        if (!sampledForError && !replayWatched) return
+        val endedSessionId = sessionId
+        writeScope { withheldEvents?.endSession(endedSessionId, it) }
+    }
+
+    /**
+     * FLASHCAT FORK - whether a reset asked for by the console must leave this session alone: a
+     * session kept on error, under anything but the emergency stop. It is a collected session,
+     * and redrawing it under a new rate would throw away what the switch exists to keep - on every
+     * first fetch and every release of the app, when the console says a zero rate with the switch
+     * on, which is the ordinary configuration for "only the sessions that error". Only the stop -
+     * a zero rate with the switch off - ends it, as it ends every collected session.
+     */
+    private fun isKeptOnErrorUnderCurrentSettings(): Boolean {
+        if (!sampledForError) return false
+        val sampling = resolveSampling(remoteConfig?.snapshot())
+        return !(sampling.rate == 0f && !sampling.onError)
     }
 
     private fun isSessionComplete(): Boolean {
@@ -299,7 +387,7 @@ internal class RumSessionScope(
     }
 
     @Suppress("ComplexMethod")
-    private fun updateSession(event: RumRawEvent, nanoTime: Long) {
+    private fun updateSession(event: RumRawEvent, nanoTime: Long, writeScope: EventWriteScope) {
         val isNewSession = sessionId == RumContext.NULL_UUID
 
         val timeSinceLastInteractionNs = nanoTime - lastUserInteractionNs.get()
@@ -317,6 +405,11 @@ internal class RumSessionScope(
             sessionEndedMetricDispatcher.endMetric(sessionId, sdkCore.time.serverTimeOffsetMs)
         }
 
+        // FLASHCAT FORK - a stopped session drains alongside the one that replaced it; the events
+        // it still sees must not have it draw a new session on top of the one actually running.
+        // It keeps its own state: what it still drains belongs to the session it was.
+        if (!isActive && (isExpired || isTimedOut)) return
+
         if (isInteraction || isSdkInitInForeground) {
             if (isNewSession || isExpired || isTimedOut) {
                 val reason = if (isNewSession) {
@@ -326,24 +419,27 @@ internal class RumSessionScope(
                 } else {
                     StartReason.MAX_DURATION
                 }
-                renewSession(event.eventTime, reason)
+                renewSession(event.eventTime, reason, writeScope)
             }
             lastUserInteractionNs.set(nanoTime)
         } else if (isExpired) {
             if (backgroundTrackingEnabled && (isBackgroundEvent || isSdkInitInBackground)) {
-                renewSession(event.eventTime, StartReason.BACKGROUND_LAUNCH)
+                renewSession(event.eventTime, StartReason.BACKGROUND_LAUNCH, writeScope)
                 lastUserInteractionNs.set(nanoTime)
             } else {
+                if (sessionState != State.EXPIRED) endWithheldSession(writeScope)
                 sessionState = State.EXPIRED
             }
         } else if (isTimedOut) {
-            renewSession(event.eventTime, StartReason.MAX_DURATION)
+            renewSession(event.eventTime, StartReason.MAX_DURATION, writeScope)
         }
 
         updateSessionStateForSessionReplay(sessionState, sessionId)
     }
 
-    private fun renewSession(time: Time, reason: StartReason) {
+    @Suppress("LongMethod")
+    private fun renewSession(time: Time, reason: StartReason, writeScope: EventWriteScope) {
+        endWithheldSession(writeScope)
         // FLASHCAT FORK - read the console's rate here, at the one moment a session's fate is
         // decided. A session already running is never redrawn, so a rate arriving mid-session
         // cannot start or stop collecting for someone in the middle of using the app.
@@ -351,18 +447,41 @@ internal class RumSessionScope(
         // word precisely so an allow-list can keep collecting a visitor the console's rate would
         // drop.
         val remoteValues = remoteConfig?.snapshot()
-        val drawRate = askBeforeSampling(remoteValues?.sessionSampleRate ?: sampleRate, remoteValues?.custom)
+        val sampling = resolveSampling(remoteValues)
+        val drawRate = sampling.rate
         val keepSession = forcedSession || random.nextFloat() < drawRate.percent()
+        // FLASHCAT FORK - only for sessions the rate missed, so a session is never counted by both.
+        sampledForError = !keepSession && sampling.onError && withheldEvents != null
         // FLASHCAT FORK - a forced session was not drawn, so it does not report a rate it was drawn
         // at. It reports the rate that describes it: every session like it is kept. Reporting the
         // rate it would have been drawn at instead would have the intake weight one deliberately
         // kept session as the whole population that rate implies - a session forced at a rate of 1
         // would count as a hundred - and would leave nothing to tell it from a lucky draw.
-        effectiveSampleRate = if (forcedSession) FORCED_SAMPLE_RATE else drawRate
+        // A session kept only because it errored reports 0 for the same reason: it stands for
+        // itself, and 0 is what the intake reads as "one session, do not scale".
+        effectiveSampleRate = when {
+            forcedSession -> FORCED_SAMPLE_RATE
+            sampledForError -> 0f
+            else -> drawRate
+        }
         childScope?.sampleRate = effectiveSampleRate
         startReason = reason
-        sessionState = if (keepSession) State.TRACKED else State.NOT_TRACKED
+        sessionState = when {
+            keepSession -> State.TRACKED
+            sampledForError -> State.WITHHELD
+            else -> State.NOT_TRACKED
+        }
         sessionId = UUID.randomUUID().toString()
+        replayOnError = withheldEvents != null && (remoteValues?.sessionReplayOnError ?: sessionReplayOnError)
+        val drawnSessionId = sessionId
+        replayWatched = !sampledForError && keepSession && replayOnError
+        if (sampledForError) {
+            writeScope { withheldEvents?.startWithholding(drawnSessionId, it) }
+        } else if (replayWatched) {
+            // The replay may be kept on error only, and the error that releases it is judged
+            // after the mappers like the events' own.
+            writeScope { withheldEvents?.watchForError(drawnSessionId, it) }
+        }
         // FLASHCAT FORK - remember which console configuration this session was drawn under: its
         // events report that version for as long as it lives, so an auditor can recover the exact
         // settings from the console's history. A forced session reports none: it was kept whatever
@@ -387,6 +506,8 @@ internal class RumSessionScope(
                 backgroundEventTracking = backgroundTrackingEnabled
             )
         }
+        // FLASHCAT FORK - a session kept on error reports as discarded: until it errors it does not
+        // exist at the intake, and an id handed out now could not be looked up.
         sessionListener?.onSessionStarted(sessionId, !keepSession)
         // FLASHCAT FORK - the draw is done, so now is the moment to ask again: the response lands
         // in storage for the NEXT session's draw, which is exactly the next-session semantics the
@@ -395,12 +516,33 @@ internal class RumSessionScope(
     }
 
     /**
-     * FLASHCAT FORK - asks the host application's hook for the rate to draw with. Anything
-     * unusable — a throw, a null, a rate outside 0..100 — leaves the incoming rate alone: a mistake
-     * in the host application must never take a customer's collection down with it.
+     * FLASHCAT FORK - what a draw made now would use: the console's values where it set them, the
+     * init values where it did not, and the host application's hook with the last word on the
+     * rate. The hook's documented contract is that 0 never collects, so a rate it sets to 0 turns
+     * the on-error switch off too - "never" must not quietly become "on error". A rate it leaves
+     * alone leaves the switch alone.
      */
-    private fun askBeforeSampling(rate: Float, customJson: String?): Float {
-        val hook = beforeSampling ?: return rate
+    private fun resolveSampling(remoteValues: RemoteConfigValues?): Sampling {
+        val rate = remoteValues?.sessionSampleRate ?: sampleRate
+        val onError = remoteValues?.sessionOnError ?: sessionOnError
+        val override = askBeforeSampling(rate, remoteValues?.custom)
+        return if (override == null) {
+            Sampling(rate, onError)
+        } else {
+            Sampling(override, onError && override != 0f)
+        }
+    }
+
+    private data class Sampling(val rate: Float, val onError: Boolean)
+
+    /**
+     * FLASHCAT FORK - asks the host application's hook for the rate to draw with, or null to keep
+     * the incoming one. Anything unusable — a throw, a null, a rate outside 0..100 — leaves the
+     * incoming rate alone: a mistake in the host application must never take a customer's
+     * collection down with it.
+     */
+    private fun askBeforeSampling(rate: Float, customJson: String?): Float? {
+        val hook = beforeSampling ?: return null
         val override = try {
             val custom = decodeCustomValues(customJson)
             hook.sampleRate(BeforeSamplingContext(sessionSampleRate = rate, custom = custom))
@@ -414,13 +556,17 @@ internal class RumSessionScope(
             null
         }
         return if (override == null || override.isNaN() || override < 0f || override > MAX_SAMPLE_RATE) {
-            rate
+            null
         } else {
             override
         }
     }
 
     private fun updateSessionStateForSessionReplay(state: State, sessionId: String) {
+        // FLASHCAT FORK - a stopped session drains alongside the one that replaced it, and has
+        // no business announcing itself as current: Session Replay would take each turn as a new
+        // session, and throw away what it holds for the one actually running.
+        if (!isActive) return
         val keepSession = (state == State.TRACKED)
         sdkCore.getFeature(Feature.SESSION_REPLAY_FEATURE_NAME)?.sendEvent(
             mapOf(
@@ -429,7 +575,13 @@ internal class RumSessionScope(
                 // FLASHCAT FORK - a forced session must come out with replay, so Session Replay
                 // skips its own draw when this is set.
                 RUM_SESSION_FORCED_BUS_MESSAGE_KEY to forcedSession,
-                RUM_SESSION_ID_BUS_MESSAGE_KEY to sessionId
+                RUM_SESSION_ID_BUS_MESSAGE_KEY to sessionId,
+                // FLASHCAT FORK - what Session Replay needs to keep a replay on error: whether the
+                // session's events are kept on error (its replay then waits with them), the replay
+                // switch it was drawn under, and whether its replay may go out.
+                RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY to sampledForError,
+                RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY to replayOnError,
+                RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to (withheldEvents?.isReplayReleased(sessionId) == true)
             )
         )
     }
@@ -443,6 +595,12 @@ internal class RumSessionScope(
         internal const val RUM_KEEP_SESSION_BUS_MESSAGE_KEY = "keepSession"
         internal const val RUM_SESSION_FORCED_BUS_MESSAGE_KEY = "sessionForced"
         internal const val RUM_SESSION_ID_BUS_MESSAGE_KEY = "sessionId"
+        internal const val RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY = "sessionOnError"
+        internal const val RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY = "sessionReplayOnError"
+        internal const val RUM_SESSION_RELEASED_BUS_MESSAGE_KEY = "sessionReleased"
+        internal const val RUM_SESSION_RELEASED_BUS_MESSAGE = "rum_session_released"
+        internal const val RUM_SESSION_DISCARDED_BUS_MESSAGE = "rum_session_discarded"
+        internal const val RUM_SESSION_ERRORED_BUS_MESSAGE = "rum_session_errored"
 
         private const val MAX_SAMPLE_RATE = 100f
 

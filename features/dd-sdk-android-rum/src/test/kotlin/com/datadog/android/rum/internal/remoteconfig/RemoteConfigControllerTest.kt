@@ -154,7 +154,110 @@ internal class RemoteConfigControllerTest {
 
     // endregion
 
+    @Test
+    fun `M store the on-error switches the response carries W apply()`() {
+        testedController.apply(
+            body(rum = """"sessionSampleRate":0,"sessionOnError":true,"sessionReplayOnError":false""")
+        )
+
+        verify(store).store(
+            RemoteConfigValues(0f, 3, ttlSeconds = 300L, sessionOnError = true, sessionReplayOnError = false)
+        )
+    }
+
+    @Test
+    fun `M leave a switch absent W apply() { omitted or not a boolean }`() {
+        testedController.apply(body(rum = """"sessionOnError":"true","sessionReplayOnError":1"""))
+
+        verify(store).store(RemoteConfigValues(null, 3, ttlSeconds = 300L))
+    }
+
     // region activation
+
+    @Test
+    fun `M restart the session W apply() { next_session, zero rate and the switch turns on }`() {
+        // A session drawn at zero with the switch off was in no draw at all; with the switch on it
+        // could be kept, exactly like a rate leaving zero.
+        whenever(store.sessionSampleRate()).thenReturn(0f)
+        whenever(store.sessionOnError()).thenReturn(false)
+
+        testedController.apply(
+            body(activation = "next_session", rum = """"sessionSampleRate":0,"sessionOnError":true""")
+        )
+
+        assertThat(restarts).isOne()
+    }
+
+    @Test
+    fun `M restart the session W apply() { next_session, zero rate and the switch turns off }`() {
+        whenever(store.sessionSampleRate()).thenReturn(0f)
+        whenever(store.sessionOnError()).thenReturn(true)
+
+        testedController.apply(body(activation = "next_session", rum = """"sessionSampleRate":0"""))
+
+        assertThat(restarts).isOne()
+    }
+
+    @Test
+    fun `M restart the session W apply() { next_session, the switch hands an init value back }`() {
+        whenever(store.sessionSampleRate()).thenReturn(0f)
+        whenever(store.sessionOnError()).thenReturn(false)
+        val sdkCore = mock<FeatureSdkCore>()
+        whenever(sdkCore.internalLogger).thenReturn(mock())
+        testedController = RemoteConfigController(
+            sdkCore = sdkCore,
+            configUrl = "https://example.com/api/v2/rum/config",
+            store = store,
+            initialSessionSampleRate = INIT_SESSION_RATE,
+            callFactory = callFactory,
+            executor = executor,
+            restartSession = { restarts++ },
+            initialSessionOnError = true
+        )
+
+        testedController.apply(body(activation = "next_session", rum = """"sessionSampleRate":0"""))
+
+        assertThat(restarts).isOne()
+    }
+
+    @Test
+    fun `M leave the running session alone W apply() { next_session, the switch changes under a non-zero rate }`() {
+        // Negative control: away from zero the switch only shapes the next draw.
+        whenever(store.sessionSampleRate()).thenReturn(20f)
+        whenever(store.sessionOnError()).thenReturn(false)
+
+        testedController.apply(
+            body(activation = "next_session", rum = """"sessionSampleRate":20,"sessionOnError":true""")
+        )
+
+        assertThat(restarts).isZero()
+    }
+
+    @Test
+    fun `M leave the running session alone W apply() { zero rate and the switch stays on }`() {
+        // The configuration for "only the sessions that error", fetched again: nothing changed.
+        whenever(store.sessionSampleRate()).thenReturn(0f)
+        whenever(store.sessionOnError()).thenReturn(true)
+
+        testedController.apply(
+            body(activation = "immediate", rum = """"sessionSampleRate":0,"sessionOnError":true""")
+        )
+
+        assertThat(restarts).isZero()
+    }
+
+    @Test
+    fun `M leave the running session alone W apply() { immediate and only the replay switch changed }`() {
+        // A replay draw is made once per session: the switch applies to the next one.
+        whenever(store.sessionSampleRate()).thenReturn(20f)
+        whenever(store.sessionReplayOnError()).thenReturn(null)
+
+        testedController.apply(
+            body(activation = "immediate", rum = """"sessionSampleRate":20,"sessionReplayOnError":true""")
+        )
+
+        assertThat(restarts).isZero()
+    }
 
     @Test
     fun `M leave the running session alone W apply() { activation is next_session }`() {

@@ -676,6 +676,144 @@ internal class RumViewScopeTest {
     }
 
     @Test
+    fun `M mark the session sampled for error W handleEvent(StartView) { session kept on error }`(
+        @Forgery key: RumScopeKey
+    ) {
+        // Given
+        fakeParentContext = fakeParentContext.copy(sampledForError = true)
+        whenever(mockParentScope.getRumContext()) doReturn fakeParentContext
+        testedScope = newRumViewScope(trackFrustrations = true)
+        mockSessionReplayContext(testedScope)
+
+        // When
+        testedScope.handleEvent(
+            RumRawEvent.StartView(key, emptyMap()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        // Then
+        argumentCaptor<ViewEvent> {
+            verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
+            assertThat(lastValue.session.sampledForError).isTrue
+        }
+    }
+
+    @Test
+    fun `M report the replay markers Session Replay resolves W handleEvent(StartView)`(
+        @Forgery key: RumScopeKey
+    ) {
+        // Given
+        testedScope = newRumViewScope(trackFrustrations = true)
+        whenever(mockFeaturesContextResolver.resolveSampledForReplay(any(), any(), any())) doReturn true
+        whenever(mockFeaturesContextResolver.resolveSampledForErrorReplay(any(), eq(fakeParentContext.sessionId)))
+            .doReturn(true)
+
+        // When
+        testedScope.handleEvent(
+            RumRawEvent.StartView(key, emptyMap()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        // Then
+        argumentCaptor<ViewEvent> {
+            verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
+            assertThat(lastValue.session.sampledForReplay).isTrue
+            assertThat(lastValue.session.sampledForErrorReplay).isTrue
+        }
+    }
+
+    @Test
+    fun `M keep the replay markers W handleEvent { another session took over the replay context }`(
+        @Forgery key: RumScopeKey
+    ) {
+        // Given - the markers were resolved once, then the context started describing another session
+        testedScope = newRumViewScope(trackFrustrations = true)
+        whenever(mockFeaturesContextResolver.resolveSampledForReplay(any(), any(), any()))
+            .doReturn(true, false)
+        whenever(mockFeaturesContextResolver.resolveSampledForErrorReplay(any(), eq(fakeParentContext.sessionId)))
+            .doReturn(true, false)
+        testedScope.handleEvent(
+            RumRawEvent.AddCustomTiming("t"),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        // When - another view starts, which stops this one with a last update
+        testedScope.handleEvent(
+            RumRawEvent.StartView(key, emptyMap()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        // Then
+        argumentCaptor<ViewEvent> {
+            verify(mockWriter, times(2)).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
+            assertThat(lastValue.session.sampledForReplay).isTrue
+            assertThat(lastValue.session.sampledForErrorReplay).isTrue
+        }
+    }
+
+    @Test
+    fun `M keep the Session Replay entry W handleEvent(any) on stopped view { withheld session }`() {
+        // Given - the view may still be released, and claims the replay held for it from the entry
+        fakeParentContext = fakeParentContext.copy(sessionState = RumSessionScope.State.WITHHELD)
+        whenever(mockParentScope.getRumContext()) doReturn fakeParentContext
+        testedScope = newRumViewScope(trackFrustrations = true)
+        testedScope.stopped = true
+        fakeEvent = mock()
+
+        // When
+        testedScope.handleEvent(fakeEvent, fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        verify(rumMonitorConfiguration.mockSdkCore, never()).updateFeatureContext(
+            eq(Feature.SESSION_REPLAY_FEATURE_NAME),
+            any(),
+            any()
+        )
+    }
+
+    @Test
+    fun `M not mark the session W handleEvent(StartView) { plainly sampled session }`(
+        @Forgery key: RumScopeKey
+    ) {
+        // Given
+        fakeParentContext = fakeParentContext.copy(sampledForError = false)
+        whenever(mockParentScope.getRumContext()) doReturn fakeParentContext
+        testedScope = newRumViewScope(trackFrustrations = true, featuresContextResolver = FeaturesContextResolver())
+        fakeDatadogContext = fakeDatadogContext.copy(
+            featuresContext = mapOf(
+                Feature.SESSION_REPLAY_FEATURE_NAME to mapOf(FeaturesContextResolver.REPLAY_ENABLED_KEY to true)
+            )
+        )
+        mockSessionReplayContext(testedScope)
+
+        // When
+        testedScope.handleEvent(
+            RumRawEvent.StartView(key, emptyMap()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        // Then - absent rather than false
+        argumentCaptor<ViewEvent> {
+            verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
+            assertThat(lastValue.session.sampledForError).isNull()
+            assertThat(lastValue.session.sampledForErrorReplay).isNull()
+            // the view a Session Replay customer who did not opt in sends is unchanged
+            assertThat(lastValue.toJson().asJsonObject.getAsJsonObject("session").keySet())
+                .containsExactlyInAnyOrder("id", "type", "has_replay", "is_active")
+        }
+    }
+
+    @Test
     fun `M report no draw W handleEvent(StartView) { the app did not opt in }`(
         @Forgery key: RumScopeKey
     ) {

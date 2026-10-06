@@ -18,6 +18,8 @@ import com.datadog.android.api.net.RequestFactory
 import com.datadog.android.api.storage.FeatureStorageConfiguration
 import com.datadog.android.core.sampling.RateBasedSampler
 import com.datadog.android.core.sampling.Sampler
+import com.datadog.android.privacy.TrackingConsent
+import com.datadog.android.privacy.TrackingConsentProviderCallback
 import com.datadog.android.sessionreplay.ImagePrivacy
 import com.datadog.android.sessionreplay.MapperTypeWrapper
 import com.datadog.android.sessionreplay.SessionReplayInternalCallback
@@ -33,10 +35,13 @@ import com.datadog.android.sessionreplay.internal.resources.ResourceHashesEntryD
 import com.datadog.android.sessionreplay.internal.resources.ResourceHashesEntrySerializer
 import com.datadog.android.sessionreplay.internal.storage.NoOpRecordWriter
 import com.datadog.android.sessionreplay.internal.storage.RecordWriter
+import com.datadog.android.sessionreplay.internal.storage.ResourcesWriter
 import com.datadog.android.sessionreplay.internal.storage.SessionReplayRecordWriter
 import com.datadog.android.sessionreplay.recorder.OptionSelectorDetector
 import com.datadog.android.sessionreplay.utils.DrawableToColorMapper
 import java.util.Locale
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
@@ -54,7 +59,7 @@ internal class SessionReplayFeature(
     private val rateBasedSampler: Sampler<Unit>,
     private val startRecordingImmediately: Boolean,
     private val recorderProvider: RecorderProvider
-) : StorageBackedFeature, FeatureEventReceiver {
+) : StorageBackedFeature, FeatureEventReceiver, TrackingConsentProviderCallback {
 
     private val currentRumSessionId = AtomicReference<String>()
 
@@ -115,6 +120,11 @@ internal class SessionReplayFeature(
     // is the current session sampled in
     private val isSessionSampledIn = AtomicBoolean(false)
 
+    // FLASHCAT FORK - the session whose replay is kept only in case it reports an error, for as long
+    // as it lives (it stays set once the replay is released), and whether its records are still held.
+    private val onErrorReplaySessionId = AtomicReference<String?>()
+    private val isReplayWithheld = AtomicBoolean(false)
+
     internal var sessionReplayRecorder: Recorder = NoOpRecorder()
     internal var dataWriter: RecordWriter = NoOpRecordWriter()
     internal val initialized = AtomicBoolean(false)
@@ -141,12 +151,15 @@ internal class SessionReplayFeature(
             resourceHashesDeserializer = ResourceHashesEntryDeserializer(internalLogger = sdkCore.internalLogger)
         )
 
-        dataWriter = createDataWriter()
+        // FLASHCAT FORK - resources go through the record writer, which holds them with the records
+        // of a session whose replay is withheld.
+        val recordWriter = createDataWriter(resourcesFeature.dataWriter)
+        dataWriter = recordWriter
         sdkCore.setContextUpdateReceiver(rumContextProvider)
         sessionReplayRecorder =
             recorderProvider.provideSessionReplayRecorder(
                 resourceDataStoreManager = resourceDataStoreManager,
-                resourceWriter = resourcesFeature.dataWriter,
+                resourceWriter = recordWriter,
                 recordWriter = dataWriter,
                 rumContextProvider = rumContextProvider,
                 application = appContext
@@ -178,6 +191,24 @@ internal class SessionReplayFeature(
         sdkCore.removeContextUpdateReceiver(rumContextProvider)
         sessionReplayRecorder.unregisterCallbacks()
         sessionReplayRecorder.stopProcessingRecords()
+        // FLASHCAT FORK - a replay held for a session that reported its error goes out with the
+        // stop, since RUM may be stopped after this feature and could not tell it to any more; the
+        // write is queued, so this waits - with a bound - for it to have run.
+        val settled = CountDownLatch(1)
+        dataWriter.stop { settled.countDown() }
+        val done = try {
+            settled.await(STOP_WAIT_MS, TimeUnit.MILLISECONDS)
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            false
+        }
+        if (!done) {
+            sdkCore.internalLogger.log(
+                InternalLogger.Level.WARN,
+                InternalLogger.Target.MAINTAINER,
+                { STOP_WAIT_FAILED_MESSAGE }
+            )
+        }
         dataWriter = NoOpRecordWriter()
         sessionReplayRecorder = NoOpRecorder()
         initialized.set(false)
@@ -206,6 +237,16 @@ internal class SessionReplayFeature(
 
     // endregion
 
+    // region TrackingConsentProviderCallback
+
+    // FLASHCAT FORK - a replay held in memory is not in the storage consent governs: what was held
+    // under the consent now withdrawn is dropped here, whether or not a record follows to see it.
+    override fun onConsentUpdated(previousConsent: TrackingConsent, newConsent: TrackingConsent) {
+        if (newConsent == TrackingConsent.NOT_GRANTED) dataWriter.dropForConsent()
+    }
+
+    // endregion
+
     // region Manual Recording
 
     internal fun manuallyStopRecording() {
@@ -224,6 +265,9 @@ internal class SessionReplayFeature(
 
     // region Internal
 
+    // FLASHCAT FORK - serialized: a session announces itself from the RUM thread, while what became
+    // of a withheld one arrives from the storage thread, and the two must not interleave.
+    @Synchronized
     private fun handleRumSession(sessionMetadata: Map<*, *>) {
         if (sessionMetadata[SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY] ==
             RUM_SESSION_RENEWED_BUS_MESSAGE
@@ -232,12 +276,34 @@ internal class SessionReplayFeature(
                 ?.let { sessionData ->
                     val alreadySeenSession = currentRumSessionId.get() == sessionData.sessionId
                     val forceSampling = sessionData.forced && !isSessionSampledIn.get()
-                    if (!alreadySeenSession || forceSampling || userIntentToRecordChanged.get()) {
+                    // FLASHCAT FORK - a held replay is released once the session's events are (or by
+                    // forcing).
+                    val released = isReplayWithheld.get() && (sessionData.released || sessionData.forced)
+                    if (!alreadySeenSession || forceSampling || released || userIntentToRecordChanged.get()) {
                         applySampling(alreadySeenSession, sessionData.forced)
-                        modifyShouldRecordState(sessionData)
+                        val withhold = shouldWithhold(sessionData)
+                        modifyShouldRecordState(sessionData, withhold)
+                        updateWithholding(sessionData.sessionId, withhold)
                         handleRecording(sessionData)
                     }
                 }
+        } else if (sessionMetadata[SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY] == RUM_SESSION_RELEASED_BUS_MESSAGE) {
+            // FLASHCAT FORK - the session's events have just been released: the replay held for it
+            // goes out now. For the session still current, recording carries on as for any collected
+            // session; a session that ended before its word arrived only has what it held to send.
+            val sessionId = sessionMetadata[RUM_SESSION_ID_BUS_MESSAGE_KEY] as? String ?: return
+            if (isReplayWithheld.get() && currentRumSessionId.get() == sessionId) {
+                updateWithholding(sessionId, withhold = false)
+            } else {
+                dataWriter.release(sessionId)
+            }
+        } else if (sessionMetadata[SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY] == RUM_SESSION_ERRORED_BUS_MESSAGE) {
+            // FLASHCAT FORK - the session reported its error: its replay goes out once its events
+            // do, or with the stop if that comes first.
+            (sessionMetadata[RUM_SESSION_ID_BUS_MESSAGE_KEY] as? String)?.let { dataWriter.expectRelease(it) }
+        } else if (sessionMetadata[SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY] == RUM_SESSION_DISCARDED_BUS_MESSAGE) {
+            // FLASHCAT FORK - the session ended without an error: what was held for it goes.
+            (sessionMetadata[RUM_SESSION_ID_BUS_MESSAGE_KEY] as? String)?.let { dataWriter.discard(it) }
         } else {
             sdkCore.internalLogger.log(
                 InternalLogger.Level.WARN,
@@ -255,7 +321,11 @@ internal class SessionReplayFeature(
     private data class SessionData(
         val keepSession: Boolean,
         val sessionId: String,
-        val forced: Boolean
+        val forced: Boolean,
+        // FLASHCAT FORK - see `RumSessionScope.updateSessionStateForSessionReplay`.
+        val eventsOnError: Boolean,
+        val replayOnError: Boolean,
+        val released: Boolean
     )
 
     private fun parseSessionMetadata(sessionMetadata: Map<*, *>): SessionData? {
@@ -268,7 +338,14 @@ internal class SessionReplayFeature(
         }
 
         val forced = sessionMetadata[RUM_SESSION_FORCED_BUS_MESSAGE_KEY] as? Boolean ?: false
-        return SessionData(keepSession, sessionId, forced)
+        return SessionData(
+            keepSession = keepSession,
+            sessionId = sessionId,
+            forced = forced,
+            eventsOnError = sessionMetadata[RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY] as? Boolean ?: false,
+            replayOnError = sessionMetadata[RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY] as? Boolean ?: false,
+            released = sessionMetadata[RUM_SESSION_RELEASED_BUS_MESSAGE_KEY] as? Boolean ?: false
+        )
     }
 
     private fun applySampling(alreadySeenSession: Boolean, forced: Boolean) {
@@ -279,8 +356,46 @@ internal class SessionReplayFeature(
         }
     }
 
-    private fun modifyShouldRecordState(sessionData: SessionData) {
-        val isSessionEligible = sessionData.keepSession && isSessionSampledIn.get()
+    /**
+     * FLASHCAT FORK - whether this session's records are held until it reports an error. Two
+     * sessions are: a collected one whose replay the rate missed while the replay switch is on, and
+     * one whose events are themselves held - its replay waits with them whichever way the replay
+     * draw went, because until the events are released the session does not exist at the intake and
+     * a replay uploaded before then would have nothing to attach to.
+     */
+    private fun shouldWithhold(sessionData: SessionData): Boolean {
+        if (sessionData.released || sessionData.forced) return false
+        return if (sessionData.eventsOnError) {
+            isSessionSampledIn.get() || sessionData.replayOnError
+        } else {
+            sessionData.keepSession && !isSessionSampledIn.get() && sessionData.replayOnError
+        }
+    }
+
+    private fun updateWithholding(sessionId: String, withhold: Boolean) {
+        if (withhold) {
+            onErrorReplaySessionId.set(sessionId)
+            dataWriter.withhold(sessionId)
+        } else {
+            // Releases what this session held, if it held anything; what another session still
+            // holds is kept for RUM's word or thrown away, see the writer.
+            dataWriter.stopWithholding(sessionId)
+        }
+        val wasWithheld = isReplayWithheld.getAndSet(withhold)
+        val onErrorSessionId = onErrorReplaySessionId.get()
+        // Nothing ever withheld: the context stays exactly as it is for everyone who did not opt in.
+        if (!withhold && !wasWithheld && onErrorSessionId == null) return
+        sdkCore.updateFeatureContext(Feature.SESSION_REPLAY_FEATURE_NAME) {
+            it[SESSION_REPLAY_ON_ERROR_SESSION_KEY] = onErrorSessionId?.takeIf { id -> id == sessionId }
+            it[SESSION_REPLAY_WITHHELD_KEY] = withhold
+        }
+    }
+
+    private fun modifyShouldRecordState(sessionData: SessionData, withhold: Boolean) {
+        // A replay kept on error stays eligible once released, whether or not the rate drew it.
+        val keptOnError = onErrorReplaySessionId.get() == sessionData.sessionId
+        val isSessionEligible = withhold ||
+            (sessionData.keepSession && (isSessionSampledIn.get() || keptOnError))
         if (isSessionEligible) {
             shouldRecord.set(userIntentToRecord.get())
         } else {
@@ -365,9 +480,11 @@ internal class SessionReplayFeature(
         }
     }
 
-    private fun createDataWriter(): RecordWriter {
+    private fun createDataWriter(resourcesWriter: ResourcesWriter): SessionReplayRecordWriter {
         val recordCallback = SessionReplayRecordCallback(sdkCore)
-        return SessionReplayRecordWriter(sdkCore, recordCallback)
+        return SessionReplayRecordWriter(sdkCore, recordCallback, resourcesWriter) { resourceIds ->
+            sessionReplayRecorder.forgetResources(resourceIds)
+        }
     }
 
     /**
@@ -434,6 +551,20 @@ internal class SessionReplayFeature(
         const val RUM_KEEP_SESSION_BUS_MESSAGE_KEY = "keepSession"
         const val RUM_SESSION_FORCED_BUS_MESSAGE_KEY = "sessionForced"
         const val RUM_SESSION_ID_BUS_MESSAGE_KEY = "sessionId"
+        const val RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY = "sessionOnError"
+        const val RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY = "sessionReplayOnError"
+        const val RUM_SESSION_RELEASED_BUS_MESSAGE_KEY = "sessionReleased"
+        const val RUM_SESSION_RELEASED_BUS_MESSAGE = "rum_session_released"
+        const val RUM_SESSION_DISCARDED_BUS_MESSAGE = "rum_session_discarded"
+        const val RUM_SESSION_ERRORED_BUS_MESSAGE = "rum_session_errored"
+        private const val STOP_WAIT_MS = 2_000L
+        internal const val STOP_WAIT_FAILED_MESSAGE =
+            "Could not wait for the held replay to be settled before Session Replay stopped."
+
+        // FLASHCAT FORK - read by RUM to mark view events: the current session when its replay is
+        // kept only on error, and whether its records are still held.
+        internal const val SESSION_REPLAY_ON_ERROR_SESSION_KEY = "session_replay_on_error_session_id"
+        internal const val SESSION_REPLAY_WITHHELD_KEY = "session_replay_withheld"
         internal const val SESSION_REPLAY_SAMPLE_RATE_KEY = "session_replay_sample_rate"
         internal const val SESSION_REPLAY_TEXT_AND_INPUT_PRIVACY_KEY = "session_replay_text_and_input_privacy"
         internal const val SESSION_REPLAY_IMAGE_PRIVACY_KEY = "session_replay_image_privacy"
