@@ -19,6 +19,7 @@ import com.datadog.android.api.feature.EventWriteScope
 import com.datadog.android.api.feature.Feature
 import com.datadog.android.api.feature.FeatureContextUpdateReceiver
 import com.datadog.android.api.feature.FeatureScope
+import com.datadog.android.api.storage.EventBatchWriter
 import com.datadog.android.api.storage.NoOpDataWriter
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.core.feature.event.JvmCrash
@@ -93,6 +94,7 @@ import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.doAnswer
@@ -846,13 +848,24 @@ internal class RumFeatureTest {
 
     @Test
     fun `M settle the withheld session and wait for storage W onStop()`() {
-        // Given
+        // Given - the work runs on another thread, as the real write scope's does
         val mockRumScope = mock<FeatureScope>()
-        val mockWriteScope = mock<EventWriteScope>()
-        val persistence = java.util.concurrent.Executors.newSingleThreadExecutor()
+        val mockBatchWriter = mock<EventBatchWriter>()
+        val storage = java.util.concurrent.Executors.newSingleThreadExecutor()
+        val ranOn = java.util.concurrent.atomic.AtomicReference<Thread>()
         whenever(mockSdkCore.getFeature(Feature.RUM_FEATURE_NAME)) doReturn mockRumScope
-        whenever(mockRumScope.getWriteContextSync(any())) doReturn (mock<DatadogContext>() to mockWriteScope)
-        whenever(mockSdkCore.getPersistenceExecutorService()) doReturn persistence
+        whenever(mockRumScope.withWriteContext(any(), any())) doAnswer {
+            val callback = it.getArgument<(DatadogContext, EventWriteScope) -> Unit>(it.arguments.lastIndex)
+            val writeScope = object : EventWriteScope {
+                override fun invoke(block: (EventBatchWriter) -> Unit) {
+                    storage.execute {
+                        ranOn.set(Thread.currentThread())
+                        block(mockBatchWriter)
+                    }
+                }
+            }
+            callback.invoke(mock(), writeScope)
+        }
         testedFeature.onInitialize(appContext.mockInstance)
         // the core takes the feature out of its registry before stopping it
         whenever(mockSdkCore.getFeature(Feature.RUM_FEATURE_NAME)) doReturn null
@@ -860,11 +873,35 @@ internal class RumFeatureTest {
         // When
         testedFeature.onStop()
 
-        // Then - the work was queued, and the stop waited for the queue to get there
-        verify(mockWriteScope).invoke(any())
-        assertThat(persistence.submit {}.get(1, java.util.concurrent.TimeUnit.SECONDS)).isNull()
+        // Then - the stop returned only once the queued work had run
+        assertThat(ranOn.get()).isNotNull.isNotSameAs(Thread.currentThread())
         assertThat(testedFeature.withheldEvents).isNull()
-        persistence.shutdown()
+        storage.shutdown()
+    }
+
+    @Test
+    fun `M not wait forever W onStop() { the write scope never runs }`() {
+        // Given - a stop asked for from the RUM thread, whose context thread waits on it
+        val mockRumScope = mock<FeatureScope>()
+        whenever(mockSdkCore.getFeature(Feature.RUM_FEATURE_NAME)) doReturn mockRumScope
+        whenever(mockRumScope.withWriteContext(any(), any())) doAnswer { Unit }
+        testedFeature.onInitialize(appContext.mockInstance)
+
+        // When
+        val started = System.nanoTime()
+        testedFeature.onStop()
+
+        // Then
+        assertThat(java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started))
+            .isLessThan(10_000)
+        verify(mockInternalLogger).log(
+            eq(InternalLogger.Level.WARN),
+            eq(InternalLogger.Target.MAINTAINER),
+            any(),
+            anyOrNull(),
+            any(),
+            anyOrNull()
+        )
     }
 
     @Test

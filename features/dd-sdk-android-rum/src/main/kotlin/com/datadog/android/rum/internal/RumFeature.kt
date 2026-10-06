@@ -129,6 +129,7 @@ import com.datadog.android.rum.tracking.ViewAttributesProvider
 import com.datadog.android.rum.tracking.ViewTrackingStrategy
 import com.datadog.android.telemetry.model.TelemetryConfigurationEvent
 import java.util.Locale
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
@@ -380,13 +381,17 @@ internal class RumFeature(
         withheldEventsBackgroundCallback?.let { (appContext as? Application)?.unregisterActivityLifecycleCallbacks(it) }
         withheldEventsBackgroundCallback = null
         // The withheld session ends with the SDK: released if it errored, thrown away if not. The
-        // write scope only queues the work, and the core shuts its executor down without draining
-        // it once the features are stopped, so this waits for the queue to get there.
+        // write scope only queues the work, and the core shuts its executors down without draining
+        // them once the features are stopped, so this waits for the work to have run - but never
+        // without a bound: a stop asked for from the RUM thread would otherwise wait on a context
+        // thread that is itself waiting on the RUM thread.
         withheldEvents?.let { writer ->
-            rumFeatureScope()?.getWriteContextSync()?.let { (_, writeScope) ->
-                writeScope { writer.stop(it) }
-                waitForPersistence()
+            val settled = CountDownLatch(1)
+            withRumWriteScope {
+                writer.stop(it)
+                settled.countDown()
             }
+            waitForStop(settled)
         }
         withheldEvents = null
         rumFeatureScope = null
@@ -481,16 +486,18 @@ internal class RumFeature(
         rumFeatureScope()?.withWriteContext { _, writeScope -> writeScope(block) }
     }
 
-    private fun waitForPersistence() {
-        val executor = (sdkCore as? InternalSdkCore)?.getPersistenceExecutorService() ?: return
-        try {
-            executor.submit {}.get(STOP_DRAIN_WAIT_MS, TimeUnit.MILLISECONDS)
-        } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+    private fun waitForStop(settled: CountDownLatch) {
+        val done = try {
+            settled.await(STOP_DRAIN_WAIT_MS, TimeUnit.MILLISECONDS)
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            false
+        }
+        if (!done) {
             sdkCore.internalLogger.log(
                 InternalLogger.Level.WARN,
                 InternalLogger.Target.MAINTAINER,
-                { STOP_DRAIN_FAILED_MESSAGE },
-                e
+                { STOP_DRAIN_FAILED_MESSAGE }
             )
         }
     }
