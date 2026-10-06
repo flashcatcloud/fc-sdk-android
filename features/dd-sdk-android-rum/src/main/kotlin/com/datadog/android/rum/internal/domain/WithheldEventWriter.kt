@@ -66,7 +66,12 @@ internal class WithheldEventWriter(
      * session goes too. Session Replay keeps a replay whose events are withheld until it hears one
      * or the other: the next session can announce itself before this one's fate is settled here.
      */
-    private val discardReplay: (sessionId: String) -> Unit
+    private val discardReplay: (sessionId: String) -> Unit,
+    /**
+     * Tells Session Replay the session reported its error, the moment it is seen: the replay goes
+     * out when the events do, but a stop that comes first must still know to write it.
+     */
+    private val expectReplayRelease: (sessionId: String) -> Unit
 ) : DataWriter<Any> {
 
     private class HeldView(val viewId: String, val date: Long, val event: RawBatchEvent, val eventType: EventType)
@@ -181,7 +186,10 @@ internal class WithheldEventWriter(
             }
             val batchEvent = delegate.serialize(element) ?: return false
             if (element is ErrorEvent) {
-                releasedSessionId = sessionId
+                if (releasedSessionId != sessionId) {
+                    releasedSessionId = sessionId
+                    expectReplayRelease(sessionId)
+                }
                 if (batchEvent.data.size > BYTES_LIMIT) {
                     // The session has earned its release. An error larger than the whole budget
                     // could only be held by evicting the history it explains, so it goes to the

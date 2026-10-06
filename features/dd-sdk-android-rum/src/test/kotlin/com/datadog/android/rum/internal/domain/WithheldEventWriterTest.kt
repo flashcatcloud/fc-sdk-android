@@ -113,8 +113,26 @@ internal class WithheldEventWriterTest {
             scheduleRelease = { delayMs, release -> scheduled.add(delayMs to release) },
             replayRecordsCount = { viewId -> replayRecords[viewId] ?: 0L },
             releaseReplay = { releasedReplays.add(it) },
-            discardReplay = { discardedReplays.add(it) }
+            discardReplay = { discardedReplays.add(it) },
+            expectReplayRelease = { expectedReplays.add(it) }
         )
+    }
+
+    private val expectedReplays = mutableListOf<String>()
+
+    @Test
+    fun `M tell Session Replay to expect the release W write() {first error}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+
+        // When
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, error("e2", "v1"), EventType.DEFAULT)
+
+        // Then - told once, ahead of the release itself
+        assertThat(expectedReplays).containsExactly(sessionId)
+        assertThat(releasedReplays).isEmpty()
     }
 
     private val replayRecords = mutableMapOf<String, Long>()

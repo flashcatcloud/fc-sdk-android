@@ -48,6 +48,7 @@ import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.inOrder
@@ -721,6 +722,39 @@ internal class SessionReplayFeatureTest {
 
         // Then
         verify(mockWriter).dropForConsent()
+    }
+
+    @Test
+    fun `M expect the release W rum session errored`() {
+        // Given
+        val mockWriter = initializeWithWriter(sampledIn = false)
+        testedFeature.onReceive(onErrorMessage(keep = false, eventsOnError = true, replayOnError = true))
+
+        // When
+        testedFeature.onReceive(
+            mapOf(
+                SessionReplayFeature.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
+                    SessionReplayFeature.RUM_SESSION_ERRORED_BUS_MESSAGE,
+                SessionReplayFeature.RUM_SESSION_ID_BUS_MESSAGE_KEY to fakeSessionId
+            )
+        )
+
+        // Then
+        verify(mockWriter).expectRelease(fakeSessionId)
+    }
+
+    @Test
+    fun `M settle what the writer holds and wait for it W onStop()`() {
+        // Given
+        val mockWriter = initializeWithWriter(sampledIn = false)
+        whenever(mockWriter.stop(any())) doAnswer { it.getArgument<() -> Unit>(0).invoke() }
+
+        // When
+        testedFeature.onStop()
+
+        // Then
+        verify(mockWriter).stop(any())
+        assertThat(testedFeature.dataWriter).isInstanceOf(NoOpRecordWriter::class.java)
     }
 
     @Test

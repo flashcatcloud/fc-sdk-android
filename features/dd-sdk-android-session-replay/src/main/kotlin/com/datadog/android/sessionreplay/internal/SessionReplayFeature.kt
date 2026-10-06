@@ -40,6 +40,8 @@ import com.datadog.android.sessionreplay.internal.storage.SessionReplayRecordWri
 import com.datadog.android.sessionreplay.recorder.OptionSelectorDetector
 import com.datadog.android.sessionreplay.utils.DrawableToColorMapper
 import java.util.Locale
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
@@ -189,6 +191,24 @@ internal class SessionReplayFeature(
         sdkCore.removeContextUpdateReceiver(rumContextProvider)
         sessionReplayRecorder.unregisterCallbacks()
         sessionReplayRecorder.stopProcessingRecords()
+        // FLASHCAT FORK - a replay held for a session that reported its error goes out with the
+        // stop, since RUM may be stopped after this feature and could not tell it to any more; the
+        // write is queued, so this waits - with a bound - for it to have run.
+        val settled = CountDownLatch(1)
+        dataWriter.stop { settled.countDown() }
+        val done = try {
+            settled.await(STOP_WAIT_MS, TimeUnit.MILLISECONDS)
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            false
+        }
+        if (!done) {
+            sdkCore.internalLogger.log(
+                InternalLogger.Level.WARN,
+                InternalLogger.Target.MAINTAINER,
+                { STOP_WAIT_FAILED_MESSAGE }
+            )
+        }
         dataWriter = NoOpRecordWriter()
         sessionReplayRecorder = NoOpRecorder()
         initialized.set(false)
@@ -277,6 +297,10 @@ internal class SessionReplayFeature(
             } else {
                 dataWriter.release(sessionId)
             }
+        } else if (sessionMetadata[SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY] == RUM_SESSION_ERRORED_BUS_MESSAGE) {
+            // FLASHCAT FORK - the session reported its error: its replay goes out once its events
+            // do, or with the stop if that comes first.
+            (sessionMetadata[RUM_SESSION_ID_BUS_MESSAGE_KEY] as? String)?.let { dataWriter.expectRelease(it) }
         } else if (sessionMetadata[SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY] == RUM_SESSION_DISCARDED_BUS_MESSAGE) {
             // FLASHCAT FORK - the session ended without an error: what was held for it goes.
             (sessionMetadata[RUM_SESSION_ID_BUS_MESSAGE_KEY] as? String)?.let { dataWriter.discard(it) }
@@ -532,6 +556,10 @@ internal class SessionReplayFeature(
         const val RUM_SESSION_RELEASED_BUS_MESSAGE_KEY = "sessionReleased"
         const val RUM_SESSION_RELEASED_BUS_MESSAGE = "rum_session_released"
         const val RUM_SESSION_DISCARDED_BUS_MESSAGE = "rum_session_discarded"
+        const val RUM_SESSION_ERRORED_BUS_MESSAGE = "rum_session_errored"
+        private const val STOP_WAIT_MS = 2_000L
+        internal const val STOP_WAIT_FAILED_MESSAGE =
+            "Could not wait for the held replay to be settled before Session Replay stopped."
 
         // FLASHCAT FORK - read by RUM to mark view events: the current session when its replay is
         // kept only on error, and whether its records are still held.

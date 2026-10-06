@@ -668,6 +668,38 @@ internal class SessionReplayRecordWriterTest {
     }
 
     @Test
+    fun `M write what a session expected to be released holds and throw the rest away W stop`() {
+        // Given - s1 reported its error, s2 did not
+        recordWrites()
+        testedWriter.withhold("s1")
+        testedWriter.write(record("r1", "s1", fullSnapshotAt = 1_000))
+        testedWriter.expectRelease("s1")
+        testedWriter.withhold("s2")
+        testedWriter.write(record("r2", "s2", fullSnapshotAt = 2_000))
+        var done = false
+
+        // When
+        testedWriter.stop { done = true }
+
+        // Then
+        assertThat(written).containsExactly("r1")
+        assertThat(done).isTrue
+    }
+
+    @Test
+    fun `M call back at once W stop { no feature to write with }`() {
+        // Given
+        whenever(mockSdkCore.getFeature(Feature.SESSION_REPLAY_FEATURE_NAME)).thenReturn(null)
+        var done = false
+
+        // When
+        testedWriter.stop { done = true }
+
+        // Then
+        assertThat(done).isTrue
+    }
+
+    @Test
     fun `M throw away a session kept aside W discard`() {
         // Given
         recordWrites()

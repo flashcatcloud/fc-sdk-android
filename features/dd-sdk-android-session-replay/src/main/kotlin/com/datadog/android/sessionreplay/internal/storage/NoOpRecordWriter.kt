@@ -32,4 +32,12 @@ internal class NoOpRecordWriter : RecordWriter {
     override fun dropForConsent() {
         // no-op
     }
+
+    override fun expectRelease(sessionId: String) {
+        // no-op
+    }
+
+    override fun stop(onDone: () -> Unit) {
+        onDone()
+    }
 }

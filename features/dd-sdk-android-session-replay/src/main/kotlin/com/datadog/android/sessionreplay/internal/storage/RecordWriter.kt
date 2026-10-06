@@ -51,4 +51,18 @@ internal interface RecordWriter {
      * FLASHCAT FORK - tracking consent was withdrawn: whatever is held, of any session, is dropped.
      */
     fun dropForConsent()
+
+    /**
+     * FLASHCAT FORK - the session reported its error: its replay will be released once its events
+     * are. Noted now so that a stop in between still writes it.
+     * @param sessionId the RUM session that reported an error
+     */
+    fun expectRelease(sessionId: String)
+
+    /**
+     * FLASHCAT FORK - the SDK is stopping: what is held for a session known to be released is
+     * written now, whatever is held for any other session is thrown away.
+     * @param onDone called once that is done, on the storage thread - or at once if there is none
+     */
+    fun stop(onDone: () -> Unit)
 }

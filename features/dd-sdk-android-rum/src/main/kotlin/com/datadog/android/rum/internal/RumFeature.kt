@@ -468,6 +468,12 @@ internal class RumFeature(
                     RumSessionScope.RUM_SESSION_DISCARDED_BUS_MESSAGE,
                     sessionId
                 )
+            },
+            expectReplayRelease = { sessionId ->
+                tellSessionReplay(
+                    RumSessionScope.RUM_SESSION_ERRORED_BUS_MESSAGE,
+                    sessionId
+                )
             }
         )
         (appContext as? Application)?.let { application ->

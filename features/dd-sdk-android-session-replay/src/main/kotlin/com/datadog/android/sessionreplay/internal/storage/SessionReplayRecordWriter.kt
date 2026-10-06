@@ -166,6 +166,28 @@ internal class SessionReplayRecordWriter(
         onStorageThread { _, _ -> dropAllForConsent() }
     }
 
+    override fun expectRelease(sessionId: String) {
+        noteFate(sessionId, released = true)
+    }
+
+    override fun stop(onDone: () -> Unit) {
+        val feature = sdkCore.getFeature(Feature.SESSION_REPLAY_FEATURE_NAME)
+        if (feature == null) {
+            onDone()
+            return
+        }
+        feature.withWriteContext { _, writeScope ->
+            writeScope { writer ->
+                synchronized(this@SessionReplayRecordWriter) {
+                    (listOfNotNull(current) + parked).forEach { buffer ->
+                        if (fates[buffer.sessionId] == true) release(writer, buffer) else discard(buffer)
+                    }
+                }
+                onDone()
+            }
+        }
+    }
+
     private fun bufferOf(sessionId: String): Buffer? =
         current?.takeIf { it.sessionId == sessionId } ?: parked.firstOrNull { it.sessionId == sessionId }
 

@@ -600,6 +600,7 @@ internal class RumSessionScope(
         internal const val RUM_SESSION_RELEASED_BUS_MESSAGE_KEY = "sessionReleased"
         internal const val RUM_SESSION_RELEASED_BUS_MESSAGE = "rum_session_released"
         internal const val RUM_SESSION_DISCARDED_BUS_MESSAGE = "rum_session_discarded"
+        internal const val RUM_SESSION_ERRORED_BUS_MESSAGE = "rum_session_errored"
 
         private const val MAX_SAMPLE_RATE = 100f
 
