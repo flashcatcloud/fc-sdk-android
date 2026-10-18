@@ -1,3 +1,9 @@
+# 0.7.3 / 2026-10-18
+
+* [FIX] RUM: keep the remote configuration across app upgrades. The stored settings were keyed by the app version as well as the endpoint, application, service and environment, so the first session after every app upgrade found no stored entry, was drawn on the values passed to init, and reported no settings version. An installed app runs one version at a time, so the key no longer includes it: the first session after an upgrade uses the settings the previous version stored until the new fetch replaces them. The request still sends `app_version`. Entries written by earlier versions of the SDK are no longer read and are removed by the existing sweep, so the first session after upgrading the SDK itself uses the init values once.
+
+---
+
 # 0.7.2 / 2026-09-14
 
 * [FIX] RUM: same fix as 0.7.1 below: the remote configuration request sends the running SDK's name in `sdk` instead of the literal `android`. 0.7.1 was tagged but its release job failed before publishing, so it was never published to Maven Central; use 0.7.2.
