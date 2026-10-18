@@ -67,7 +67,7 @@ internal class RemoteConfigController(
 
     private val inFlight = AtomicBoolean(false)
 
-    /** Whether the entries of app versions this device no longer runs have been cleared yet. */
+    /** Whether the entries this device no longer reads have been cleared yet. */
     private val swept = AtomicBoolean(false)
     private var failedAttempts = 0
     private var pendingRetry: ScheduledFuture<*>? = null
