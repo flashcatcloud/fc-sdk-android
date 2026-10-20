@@ -32,6 +32,7 @@ import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
@@ -752,9 +753,42 @@ internal class WithheldEventWriterTest {
                     "buffer.views_count" to 2,
                     "buffer.events_count" to 4,
                     "buffer.dropped_count" to 0,
-                    "buffer.bytes" to 8L
+                    "buffer.bytes" to 8L,
+                    "buffer.write_failures" to 0
                 )
             )
+        )
+    }
+
+    @Test
+    fun `M report what storage refused W release() {a write fails}`() {
+        // Given
+        val refusing = object : EventBatchWriter {
+            override fun currentMetadata(): ByteArray? = null
+            override fun write(event: RawBatchEvent, batchMetadata: ByteArray?, eventType: EventType): Boolean {
+                val data = String(event.data, Charsets.UTF_8)
+                if (data == "a1") return false
+                written.add(data)
+                return true
+            }
+        }
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, action("a1", "v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+
+        // When
+        scheduled.single().second(refusing)
+
+        // Then
+        assertThat(written).containsExactly("v1", "e1")
+        verify(mockInternalLogger).log(
+            eq(InternalLogger.Level.INFO),
+            eq(InternalLogger.Target.TELEMETRY),
+            any(),
+            anyOrNull(),
+            eq(false),
+            argThat<Map<String, Any?>> { this["buffer.write_failures"] == 1 }
         )
     }
 

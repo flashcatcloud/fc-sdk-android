@@ -958,6 +958,39 @@ internal class DatadogLateCrashReporterTest {
     }
 
     @Test
+    fun `M send RUM view+error W handleAnrCrash() { view of a session kept on error is old }`(
+        @Forgery viewEvent: ViewEvent,
+        forge: Forge
+    ) {
+        // Given - a withheld session uploaded nothing: this view is the only one the intake will get
+        val fakeViewEvent = viewEvent.copy(
+            date = fakeCurrentTimeMs - forge.aLong(
+                min = DatadogLateCrashReporter.VIEW_EVENT_AVAILABILITY_TIME_THRESHOLD + 1,
+                max = DatadogLateCrashReporter.VIEW_EVENT_AVAILABILITY_TIME_THRESHOLD * 2
+            ),
+            session = viewEvent.session.copy(sampledForError = true)
+        )
+        val fakeTimestamp = fakeViewEvent.date + forge.aLong(min = 1L, max = 1000000L)
+        val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
+        whenever(mockRumEventDeserializer.deserialize(fakeViewEventJson)) doReturn fakeViewEvent
+        whenever(mockAndroidTraceParser.parse(any())) doReturn forge.anrCrashThreadDump()
+        val mockAnrExitInfo = mock<ApplicationExitInfo>().apply {
+            whenever(traceInputStream) doReturn mock()
+            whenever(timestamp) doReturn fakeTimestamp
+        }
+
+        // When
+        testedHandler.handleAnrCrash(mockAnrExitInfo, fakeViewEventJson, mockRumWriter)
+
+        // Then - the ANR and the view, unlike a collected session's view this old
+        argumentCaptor<Any> {
+            verify(mockRumWriter, times(2)).write(eq(mockEventBatchWriter), capture(), eq(EventType.CRASH))
+            assertThat((firstValue as ErrorEvent).session.id).isEqualTo(fakeViewEvent.session.id)
+            assertThat((secondValue as ViewEvent).session.sampledForError).isTrue
+        }
+    }
+
+    @Test
     fun `M send only RUM error W handleAnrCrash() { view is too old }`(
         @Forgery viewEvent: ViewEvent,
         @Forgery fakeUserInfo: UserInfo,

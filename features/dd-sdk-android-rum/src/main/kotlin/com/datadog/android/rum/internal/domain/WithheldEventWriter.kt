@@ -482,10 +482,11 @@ internal class WithheldEventWriter(
         // the error the session is kept for. Then the errors - a release at exit leaves in as many
         // requests as the process still gets to send, and the error is what the session is kept
         // for - then the rest.
-        views.values.sortedBy { it.date }.forEach { write(writer, it.event, it.eventType, it.viewId, replayGoesOut) }
         val (errors, others) = details.partition { it.tier >= EvictionTier.LAST_RESORT }
-        errors.forEach { write(writer, it.event, it.eventType, it.viewId, replayGoesOut) }
-        others.forEach { write(writer, it.event, it.eventType, it.viewId, replayGoesOut) }
+        // What storage refused is counted, so the release reports what actually landed.
+        val writeFailures = views.values.sortedBy { it.date }
+            .count { !write(writer, it.event, it.eventType, it.viewId, replayGoesOut) } +
+            (errors + others).count { !write(writer, it.event, it.eventType, it.viewId, replayGoesOut) }
 
         // Without this the promise of a minute of history before the error could not be checked.
         internalLogger.log(
@@ -498,7 +499,8 @@ internal class WithheldEventWriter(
                 "buffer.views_count" to views.size,
                 "buffer.events_count" to details.size,
                 "buffer.dropped_count" to droppedCount,
-                "buffer.bytes" to bytes
+                "buffer.bytes" to bytes,
+                "buffer.write_failures" to writeFailures
             )
         )
 
@@ -521,9 +523,11 @@ internal class WithheldEventWriter(
         eventType: EventType,
         viewId: String?,
         includeHeldReplay: Boolean
-    ) {
-        delegate.writeSerialized(writer, viewId?.let { claimReplay(event, it, includeHeldReplay) } ?: event, eventType)
-    }
+    ): Boolean = delegate.writeSerialized(
+        writer,
+        viewId?.let { claimReplay(event, it, includeHeldReplay) } ?: event,
+        eventType
+    )
 
     /**
      * An event assembled while the replay was withheld could not claim it then, since the replay

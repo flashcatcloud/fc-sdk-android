@@ -119,6 +119,11 @@ data class RumConfiguration internal constructor(
          * A native crash is reported at the next launch with the last view, like for any collected
          * session, but without the minute leading up to it.
          *
+         * Only errors of the native SDK count. Events tracked inside a WebView through
+         * `WebViewTracking` are not held while the session waits for its error, so an error raised
+         * in a WebView does not keep the session, and a kept session's released minute has no
+         * WebView events in it.
+         *
          * Disabled by default. With [setRemoteConfigurationEnabled], the console's value wins over
          * this one.
          *
