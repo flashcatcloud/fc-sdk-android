@@ -182,12 +182,13 @@ internal class RemoteConfigStore(
     }
 
     /**
-     * Removes the entries of app versions this device is no longer running.
+     * Removes the entries this device no longer reads: those of an endpoint, application, service
+     * or environment the app has stopped using, and those written by releases that still keyed the
+     * entry by app version, which no current key can reach.
      *
-     * The key covers the app version, so every release the device installs leaves one behind, and
-     * nothing read or removed them again — they accumulated for good inside a preferences file
-     * that is parsed in full at every launch. Age is what separates an abandoned entry from a live
-     * one: a store that is still being read is also being written, at the latest by [touch] when
+     * Nothing else reads or removes them, so they would accumulate for good inside a preferences
+     * file that is parsed in full at every launch. Age is what separates an abandoned entry from a
+     * live one: a store that is still being read is also being written, at the latest by [touch] when
      * its answer comes back unchanged.
      *
      * This store's own entry is never a candidate, whatever its age says. It is the one entry that
@@ -220,7 +221,7 @@ internal class RemoteConfigStore(
     /**
      * The entry a stored key belongs to, or null when the key is not one of ours. Splitting on the
      * known suffixes rather than on the last separator is what keeps a store key free to contain
-     * one: a service name and an app version both routinely do.
+     * one: a service name and an environment name both routinely do.
      */
     private fun entryKeyOf(key: String): String? {
         if (!key.startsWith(STORE_KEY_PREFIX)) return null
@@ -352,15 +353,23 @@ internal class RemoteConfigStore(
             "Unable to open the remote configuration store; the values passed to init will apply."
 
         /**
-         * Identifies whose configuration this is. It covers everything that can change the answer —
-         * which endpoint the app asks, which application, in which environment, at which app
-         * version — so an app that ships a new version, or two applications sharing a device, never
-         * read each other's values.
+         * Identifies whose configuration this is: which endpoint the app asks, which application,
+         * which service, in which environment — so two applications or two environments sharing a
+         * device never read each other's values.
          *
-         * It deliberately leaves out the SDK version: including it would discard the stored values
-         * on every SDK upgrade and put the first session after an upgrade back on the init values.
-         * The storage format version lives in [STORE_KEY_PREFIX] instead, so only a real format
-         * change orphans the cache.
+         * It deliberately leaves out the app version. An installed app runs one version at a time,
+         * and keying by version would send the first session after every upgrade to the init values
+         * with no settings version to report, even though the previous release's settings are a
+         * better answer than that until the new fetch is stored. The console does not target by app
+         * version either; if it ever did, the response stored here is replaced by the first fetch
+         * of the new version anyway.
+         *
+         * It also leaves out the SDK version, for the same reason. The storage format version lives
+         * in [STORE_KEY_PREFIX] instead, so only a real format change orphans the cache.
+         *
+         * Entries written under the earlier layout, which ended in the app version, are not reached
+         * by this key and are left for [sweepAbandoned]; the format did not change, so there is
+         * nothing for new code to misparse and no reason to bump the prefix.
          */
         fun buildStoreKey(context: DatadogContext, intakeUrl: String, applicationId: String): String {
             val host = try {
@@ -375,8 +384,7 @@ internal class RemoteConfigStore(
                 host,
                 applicationId,
                 context.service,
-                context.env,
-                context.version
+                context.env
             ).joinToString("|")
         }
     }
