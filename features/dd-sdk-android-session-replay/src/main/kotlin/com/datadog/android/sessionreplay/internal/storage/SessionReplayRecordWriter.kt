@@ -239,8 +239,13 @@ internal class SessionReplayRecordWriter(
 
     private fun holdResource(resource: EnrichedResource, onWritten: () -> Unit) {
         val size = resource.resource.size
-        // One image the size of the whole budget would only ever evict every other.
-        if (size > BYTES_LIMIT || heldResources.containsKey(resource.filename)) return
+        if (heldResources.containsKey(resource.filename)) return
+        // One image the size of the whole budget would only ever evict every other. Told to the
+        // recorder like an evicted one, or no later replay that shows it would ever carry it.
+        if (size > BYTES_LIMIT) {
+            forgetResources(listOf(resource.filename))
+            return
+        }
         heldResources[resource.filename] = HeldResource(resource, onWritten)
         heldResourceBytes += size
         // Images are bounded apart from the records; the oldest go first, and the recorder is told

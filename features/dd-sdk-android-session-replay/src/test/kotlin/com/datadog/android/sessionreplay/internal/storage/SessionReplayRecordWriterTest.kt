@@ -261,6 +261,21 @@ internal class SessionReplayRecordWriterTest {
     }
 
     @Test
+    fun `M tell the recorder to forget an image W write(resource) { held image over the budget }`() {
+        // Given
+        recordWrites()
+        testedWriter.withhold("s1")
+
+        // When
+        testedWriter.write(resource("huge", size = SessionReplayRecordWriter.BYTES_LIMIT.toInt() + 1), "s1") {}
+        testedWriter.write(resource("small"), "s1") {}
+
+        // Then - captured once, so only a recapture would ever carry it
+        assertThat(forgottenResources).containsExactly("huge")
+        verify(mockResourcesWriter, never()).write(any(), any(), any())
+    }
+
+    @Test
     fun `M tell the recorder to forget an image W write(resource) { consent not granted }`() {
         // Given - the recorder captured it once, under consent now withdrawn
         recordWrites(consent = TrackingConsent.NOT_GRANTED)
