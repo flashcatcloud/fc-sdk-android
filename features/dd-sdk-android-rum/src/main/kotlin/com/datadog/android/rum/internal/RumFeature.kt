@@ -531,11 +531,12 @@ internal class RumFeature(
     }
 
     /** FLASHCAT FORK - the replay records a view has, sent or still held by Session Replay. */
-    private fun resolveReplayRecordsCount(viewId: String): Long {
+    private fun resolveReplayRecordsCount(viewId: String, includeHeld: Boolean): Long {
         val sessionReplayContext =
             sdkCore.getFeatureContext(Feature.SESSION_REPLAY_FEATURE_NAME, useContextThread = false)
         val viewMetadata = sessionReplayContext[viewId] as? Map<*, *> ?: return 0L
         val sent = viewMetadata[FeaturesContextResolver.VIEW_RECORDS_COUNT_KEY] as? Long ?: 0L
+        if (!includeHeld) return sent
         val held = viewMetadata[FeaturesContextResolver.VIEW_WITHHELD_RECORDS_COUNT_KEY] as? Long ?: 0L
         return sent + held
     }

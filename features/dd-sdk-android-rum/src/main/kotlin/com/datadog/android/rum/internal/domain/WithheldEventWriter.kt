@@ -52,10 +52,10 @@ internal class WithheldEventWriter(
      */
     private val scheduleRelease: (delayMs: Long, release: (EventBatchWriter) -> Unit) -> Unit,
     /**
-     * How many replay records a view holds or has sent, so released events can claim the replay
-     * that goes out with them.
+     * How many replay records a view has sent - and, with `includeHeld`, still holds - so released
+     * events can claim the replay that goes out with them.
      */
-    private val replayRecordsCount: (viewId: String) -> Long,
+    private val replayRecordsCount: (viewId: String, includeHeld: Boolean) -> Long,
     /**
      * Tells Session Replay the session's events are released, so the replay it holds for that
      * session goes out too - never ahead of the events it attaches to.
@@ -156,8 +156,10 @@ internal class WithheldEventWriter(
                 return true
             }
             if (sessionId == watchedSessionId && element is ErrorEvent) {
-                // The error the console opens the replay from claims it, if its view has records.
-                val claimed = if (replayRecordsCount(element.view.id) > 0) {
+                // The error the console opens the replay from claims it, if its view has records -
+                // only those already written when it is a crash: the held ones die with the process.
+                val includeHeld = element.error.isCrash != true
+                val claimed = if (replayRecordsCount(element.view.id, includeHeld) > 0) {
                     element.copy(session = element.session.copy(hasReplay = true))
                 } else {
                     element
@@ -176,7 +178,7 @@ internal class WithheldEventWriter(
                 // otherwise take the place of the released one that claimed it.
                 val claimed = if (
                     sessionId == replayReleasedSessionId && element is ViewEvent &&
-                    element.session.hasReplay != true && replayRecordsCount(element.view.id) > 0
+                    element.session.hasReplay != true && replayRecordsCount(element.view.id, true) > 0
                 ) {
                     element.copy(session = element.session.copy(hasReplay = true))
                 } else {
@@ -192,11 +194,14 @@ internal class WithheldEventWriter(
                 }
                 if (batchEvent.data.size > BYTES_LIMIT) {
                     // The session has earned its release. An error larger than the whole budget
-                    // could only be held by evicting the history it explains, so it goes to the
-                    // batch on its own; the history still leaves behind the jitter - unless this
-                    // is a crash, after which no timer would ever fire.
-                    delegate.writeSerialized(writer, claimReplay(batchEvent, element.view.id), eventType)
-                    if (element.error.isCrash == true) release(writer) else scheduleReleaseOnce(sessionId)
+                    // could only be held by evicting the history it explains, so the history is
+                    // released at once, with the error after its views - written ahead of them it
+                    // could reach the intake before the session it belongs to, or alone should the
+                    // app die during the jitter. Rare enough to forgo the jitter.
+                    details.add(
+                        HeldEvent(element.view.id, batchEvent, eventType, elapsedTimeNs(), EvictionTier.CRASH)
+                    )
+                    release(writer, replayGoesOut = element.error.isCrash != true)
                     return true
                 }
             }
@@ -204,8 +209,9 @@ internal class WithheldEventWriter(
             if (releasedSessionId == sessionId) {
                 if (element is ErrorEvent && element.error.isCrash == true) {
                     // The process is going down: the crash handler waits for this write and no
-                    // timer would ever fire. What was held goes now, with the crash.
-                    release(writer)
+                    // timer would ever fire. What was held goes now, with the crash - but not the
+                    // replay, which is held in memory and goes down with the process.
+                    release(writer, replayGoesOut = false)
                 } else {
                     scheduleReleaseOnce(sessionId)
                 }
@@ -461,8 +467,13 @@ internal class WithheldEventWriter(
         }
     }
 
+    /**
+     * Writes what is held. [replayGoesOut] is false when the process is going down: the replay
+     * held in memory never reaches storage then, so the events claim only the records already
+     * written.
+     */
     @WorkerThread
-    private fun release(writer: EventBatchWriter) {
+    private fun release(writer: EventBatchWriter, replayGoesOut: Boolean = true) {
         val sessionId = withheldForSessionId
         prune()
         // Views only set the order: the session is built out of whichever of its views arrives
@@ -471,10 +482,10 @@ internal class WithheldEventWriter(
         // the error the session is kept for. Then the errors - a release at exit leaves in as many
         // requests as the process still gets to send, and the error is what the session is kept
         // for - then the rest.
-        views.values.sortedBy { it.date }.forEach { write(writer, it.event, it.eventType, it.viewId) }
+        views.values.sortedBy { it.date }.forEach { write(writer, it.event, it.eventType, it.viewId, replayGoesOut) }
         val (errors, others) = details.partition { it.tier >= EvictionTier.LAST_RESORT }
-        errors.forEach { write(writer, it.event, it.eventType, it.viewId) }
-        others.forEach { write(writer, it.event, it.eventType, it.viewId) }
+        errors.forEach { write(writer, it.event, it.eventType, it.viewId, replayGoesOut) }
+        others.forEach { write(writer, it.event, it.eventType, it.viewId, replayGoesOut) }
 
         // Without this the promise of a minute of history before the error could not be checked.
         internalLogger.log(
@@ -504,8 +515,14 @@ internal class WithheldEventWriter(
         releaseReplay(sessionId)
     }
 
-    private fun write(writer: EventBatchWriter, event: RawBatchEvent, eventType: EventType, viewId: String?) {
-        delegate.writeSerialized(writer, viewId?.let { claimReplay(event, it) } ?: event, eventType)
+    private fun write(
+        writer: EventBatchWriter,
+        event: RawBatchEvent,
+        eventType: EventType,
+        viewId: String?,
+        includeHeldReplay: Boolean
+    ) {
+        delegate.writeSerialized(writer, viewId?.let { claimReplay(event, it, includeHeldReplay) } ?: event, eventType)
     }
 
     /**
@@ -513,8 +530,8 @@ internal class WithheldEventWriter(
      * might have been dropped. It goes out now alongside its records, so it claims it if its view
      * has any.
      */
-    private fun claimReplay(event: RawBatchEvent, viewId: String): RawBatchEvent {
-        if (replayRecordsCount(viewId) <= 0) return event
+    private fun claimReplay(event: RawBatchEvent, viewId: String, includeHeld: Boolean): RawBatchEvent {
+        if (replayRecordsCount(viewId, includeHeld) <= 0) return event
         val json = try {
             JsonParser.parseString(String(event.data, Charsets.UTF_8)).asJsonObject
         } catch (@Suppress("TooGenericExceptionCaught") e: RuntimeException) {

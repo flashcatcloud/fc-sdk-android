@@ -687,6 +687,24 @@ internal class SessionReplayRecordWriterTest {
     }
 
     @Test
+    fun `M write what a released session holds W stop { feature already unregistered by the core }`() {
+        // Given - the core removes a feature from its registry before stopping it
+        recordWrites()
+        testedWriter.withhold("s1")
+        testedWriter.write(record("r1", "s1", fullSnapshotAt = 1_000))
+        testedWriter.expectRelease("s1")
+        whenever(mockSdkCore.getFeature(Feature.SESSION_REPLAY_FEATURE_NAME)).thenReturn(null)
+        var done = false
+
+        // When
+        testedWriter.stop { done = true }
+
+        // Then
+        assertThat(written).containsExactly("r1")
+        assertThat(done).isTrue
+    }
+
+    @Test
     fun `M call back at once W stop { no feature to write with }`() {
         // Given
         whenever(mockSdkCore.getFeature(Feature.SESSION_REPLAY_FEATURE_NAME)).thenReturn(null)

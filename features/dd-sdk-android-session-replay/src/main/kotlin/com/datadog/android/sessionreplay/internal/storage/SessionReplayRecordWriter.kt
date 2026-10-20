@@ -8,6 +8,7 @@ package com.datadog.android.sessionreplay.internal.storage
 
 import com.datadog.android.api.InternalLogger
 import com.datadog.android.api.feature.Feature
+import com.datadog.android.api.feature.FeatureScope
 import com.datadog.android.api.feature.FeatureSdkCore
 import com.datadog.android.api.storage.EventBatchWriter
 import com.datadog.android.api.storage.EventType
@@ -171,7 +172,7 @@ internal class SessionReplayRecordWriter(
     }
 
     override fun stop(onDone: () -> Unit) {
-        val feature = sdkCore.getFeature(Feature.SESSION_REPLAY_FEATURE_NAME)
+        val feature = featureScope()
         if (feature == null) {
             onDone()
             return
@@ -360,8 +361,19 @@ internal class SessionReplayRecordWriter(
         }
     }
 
+    /**
+     * Kept once found: the core unregisters the feature before stopping it, so a lookup from
+     * [stop] would find nothing and the replay a released session earned would never be written.
+     */
+    private var featureScope: FeatureScope? = null
+
+    private fun featureScope(): FeatureScope? {
+        featureScope = featureScope ?: sdkCore.getFeature(Feature.SESSION_REPLAY_FEATURE_NAME)
+        return featureScope
+    }
+
     private fun onStorageThread(block: (EventBatchWriter, TrackingConsent) -> Unit) {
-        sdkCore.getFeature(Feature.SESSION_REPLAY_FEATURE_NAME)
+        featureScope()
             ?.withWriteContext { datadogContext, writeScope ->
                 writeScope {
                     synchronized(this@SessionReplayRecordWriter) {

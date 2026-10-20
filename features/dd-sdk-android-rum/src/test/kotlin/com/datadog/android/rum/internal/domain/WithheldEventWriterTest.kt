@@ -111,7 +111,9 @@ internal class WithheldEventWriterTest {
             internalLogger = mockInternalLogger,
             elapsedTimeNs = { nowNs },
             scheduleRelease = { delayMs, release -> scheduled.add(delayMs to release) },
-            replayRecordsCount = { viewId -> replayRecords[viewId] ?: 0L },
+            replayRecordsCount = { viewId, includeHeld ->
+                (replayRecords[viewId] ?: 0L) + if (includeHeld) heldReplayRecords[viewId] ?: 0L else 0L
+            },
             releaseReplay = { releasedReplays.add(it) },
             discardReplay = { discardedReplays.add(it) },
             expectReplayRelease = { expectedReplays.add(it) }
@@ -136,6 +138,9 @@ internal class WithheldEventWriterTest {
     }
 
     private val replayRecords = mutableMapOf<String, Long>()
+
+    /** Replay records a view holds in memory, not yet written. */
+    private val heldReplayRecords = mutableMapOf<String, Long>()
     private val claimedErrors = mutableListOf<ErrorEvent>()
     private val claimedViews = mutableListOf<ViewEvent>()
     private val releasedReplays = mutableListOf<String>()
@@ -380,6 +385,89 @@ internal class WithheldEventWriterTest {
         }
         assertThat(hasReplay).containsEntry("v1", true).containsEntry("e1", true).containsEntry("a1", true)
         assertThat(hasReplay).containsEntry("v2", null).containsEntry("a2", null)
+    }
+
+    @Test
+    fun `M claim a held replay W release() {error, replay records held only}`() {
+        // Given
+        heldReplayRecords["v1"] = 3L
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1", payload = jsonPayload("v1")), EventType.DEFAULT)
+
+        // When
+        testedWriter.write(batchWriter, error("e1", "v1", payload = jsonPayload("e1")), EventType.DEFAULT)
+        scheduled.single().second(batchWriter)
+
+        // Then - the held replay goes out with the events
+        assertThat(hasReplayByTag()).containsEntry("v1", true).containsEntry("e1", true)
+    }
+
+    @Test
+    fun `M not claim a held replay W write() {crash, replay records held only}`() {
+        // Given
+        heldReplayRecords["v1"] = 3L
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1", payload = jsonPayload("v1")), EventType.DEFAULT)
+
+        // When
+        testedWriter.write(
+            batchWriter,
+            error("c1", "v1", isCrash = true, payload = jsonPayload("c1")),
+            EventType.CRASH
+        )
+
+        // Then - the held replay dies with the process, so nothing may advertise it
+        assertThat(hasReplayByTag()).containsEntry("v1", null).containsEntry("c1", null)
+    }
+
+    @Test
+    fun `M claim a written replay W write() {crash, replay records written}`() {
+        // Given
+        replayRecords["v1"] = 2L
+        heldReplayRecords["v1"] = 3L
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1", payload = jsonPayload("v1")), EventType.DEFAULT)
+
+        // When
+        testedWriter.write(
+            batchWriter,
+            error("c1", "v1", isCrash = true, payload = jsonPayload("c1")),
+            EventType.CRASH
+        )
+
+        // Then
+        assertThat(hasReplayByTag()).containsEntry("v1", true).containsEntry("c1", true)
+    }
+
+    @Test
+    fun `M not claim a held replay W write() {watched session, crash, replay records held only}`() {
+        // Given
+        heldReplayRecords["v1"] = 2L
+        testedWriter.watchForError(sessionId, batchWriter)
+
+        // When
+        testedWriter.write(batchWriter, error("c1", "v1", isCrash = true), EventType.CRASH)
+
+        // Then
+        assertThat(claimedErrors.single().session.hasReplay).isNull()
+    }
+
+    @Test
+    fun `M claim a held replay W write() {watched session, error, replay records held only}`() {
+        // Given
+        heldReplayRecords["v1"] = 2L
+        testedWriter.watchForError(sessionId, batchWriter)
+
+        // When
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+
+        // Then
+        assertThat(claimedErrors.single().session.hasReplay).isTrue
+    }
+
+    private fun hasReplayByTag(): Map<String, Boolean?> = written.associate {
+        val json = com.google.gson.JsonParser.parseString(it).asJsonObject
+        json.get("tag").asString to json.getAsJsonObject("session").get("has_replay")?.asBoolean
     }
 
     @Test
@@ -810,13 +898,13 @@ internal class WithheldEventWriterTest {
         // When
         testedWriter.write(batchWriter, hugeCrash, EventType.CRASH)
 
-        // Then
+        // Then - after the view it belongs to
         assertThat(scheduled).isEmpty()
-        assertThat(written.drop(1)).containsExactly("v1", "a1")
+        assertThat(written.map { it.first() }).containsExactly('v', 'C', 'a')
     }
 
     @Test
-    fun `M send an oversized error on its own W write() {error over the budget}`() {
+    fun `M release the history at once, the error after its view W write() {error over the budget}`() {
         // Given
         testedWriter.startWithholding(sessionId, batchWriter)
         testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
@@ -826,16 +914,10 @@ internal class WithheldEventWriterTest {
         // When
         testedWriter.write(batchWriter, hugeError, EventType.DEFAULT)
 
-        // Then
-        assertThat(written).hasSize(1)
-        assertThat(written.single()).startsWith("EEE")
-        assertThat(scheduled).hasSize(1)
-
-        // When
-        scheduled.single().second(batchWriter)
-
-        // Then
-        assertThat(written.drop(1)).containsExactly("v1", "a1")
+        // Then - never ahead of the view, and not left alone should the app die during a jitter
+        assertThat(scheduled).isEmpty()
+        assertThat(written.map { it.first() }).containsExactly('v', 'E', 'a')
+        assertThat(releasedReplays).containsExactly(sessionId)
     }
 
     @Test
@@ -1083,7 +1165,7 @@ internal class WithheldEventWriterTest {
     ): ErrorEvent {
         val base = forge.getForgery(ErrorEvent::class.java)
         return base.copy(
-            session = base.session.copy(id = session),
+            session = base.session.copy(id = session, hasReplay = null),
             view = base.view.copy(id = viewId),
             error = base.error.copy(isCrash = isCrash)
         ).also { payloads[it] = payload }
