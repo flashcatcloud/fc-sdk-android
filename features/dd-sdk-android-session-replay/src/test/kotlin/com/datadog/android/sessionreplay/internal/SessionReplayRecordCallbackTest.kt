@@ -198,4 +198,41 @@ internal class SessionReplayRecordCallbackTest {
         // and the entry left with nothing in it goes too
         assertThat(featureContext).doesNotContainKey(fakeEnrichedRecord.viewId)
     }
+
+    @Suppress("UNCHECKED_CAST")
+    @Test
+    fun `M drop the entry of a completed view W onWithheldRecordsCleared { records sent on release }`() {
+        // Given - the view completed while its records were held; the release then wrote them
+        val featureContext = mutableMapOf<String, Any?>()
+        whenever(mockDatadogCore.updateFeatureContext(eq(Feature.SESSION_REPLAY_FEATURE_NAME), eq(false), any()))
+            .doAnswer { it.getArgument<(MutableMap<String, Any?>) -> Unit>(2).invoke(featureContext) }
+        testedRecordCallback.onRecordForViewWithheld(fakeEnrichedRecord)
+        (featureContext[fakeEnrichedRecord.viewId] as MutableMap<String, Any?>)[
+            SessionReplayRecordCallback.VIEW_COMPLETED_KEY
+        ] = true
+        testedRecordCallback.onRecordForViewSent(fakeEnrichedRecord)
+
+        // When
+        testedRecordCallback.onWithheldRecordsCleared(listOf(fakeEnrichedRecord))
+
+        // Then - nothing will read it again
+        assertThat(featureContext).doesNotContainKey(fakeEnrichedRecord.viewId)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    @Test
+    fun `M keep the entry of a running view W onWithheldRecordsCleared { records sent on release }`() {
+        // Given
+        val featureContext = mutableMapOf<String, Any?>()
+        whenever(mockDatadogCore.updateFeatureContext(eq(Feature.SESSION_REPLAY_FEATURE_NAME), eq(false), any()))
+            .doAnswer { it.getArgument<(MutableMap<String, Any?>) -> Unit>(2).invoke(featureContext) }
+        testedRecordCallback.onRecordForViewWithheld(fakeEnrichedRecord)
+        testedRecordCallback.onRecordForViewSent(fakeEnrichedRecord)
+
+        // When
+        testedRecordCallback.onWithheldRecordsCleared(listOf(fakeEnrichedRecord))
+
+        // Then - its next view update still reads the records it sent
+        assertThat(featureContext).containsKey(fakeEnrichedRecord.viewId)
+    }
 }

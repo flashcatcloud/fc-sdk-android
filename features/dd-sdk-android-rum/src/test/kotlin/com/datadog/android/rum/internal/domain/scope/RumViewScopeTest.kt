@@ -767,16 +767,53 @@ internal class RumViewScopeTest {
         testedScope = newRumViewScope(trackFrustrations = true)
         testedScope.stopped = true
         fakeEvent = mock()
+        val entry = mutableMapOf<String, Any?>(FeaturesContextResolver.VIEW_WITHHELD_RECORDS_COUNT_KEY to 3L)
+        val replayContext = mutableMapOf<String, Any?>(testedScope.viewId to entry)
+
+        // When
+        testedScope.handleEvent(fakeEvent, fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then - marked completed, for Session Replay to drop with the held records
+        argumentCaptor<(MutableMap<String, Any?>) -> Unit> {
+            verify(rumMonitorConfiguration.mockSdkCore).updateFeatureContext(
+                eq(Feature.SESSION_REPLAY_FEATURE_NAME),
+                eq(true),
+                capture()
+            )
+            firstValue.invoke(replayContext)
+        }
+        assertThat(replayContext).containsKey(testedScope.viewId)
+        assertThat(entry[FeaturesContextResolver.VIEW_COMPLETED_KEY]).isEqualTo(true)
+    }
+
+    @Test
+    fun `M keep the Session Replay entry W handleEvent(any) on stopped view { released session, records held }`() {
+        // Given - the session reported its error, but its release still waits for the jitter
+        fakeParentContext = fakeParentContext.copy(sessionState = RumSessionScope.State.TRACKED)
+        whenever(mockParentScope.getRumContext()) doReturn fakeParentContext
+        testedScope = newRumViewScope(trackFrustrations = true)
+        testedScope.stopped = true
+        fakeEvent = mock()
+        val entry = mutableMapOf<String, Any?>(
+            FeaturesContextResolver.VIEW_RECORDS_COUNT_KEY to 1L,
+            FeaturesContextResolver.VIEW_WITHHELD_RECORDS_COUNT_KEY to 3L
+        )
+        val replayContext = mutableMapOf<String, Any?>(testedScope.viewId to entry)
 
         // When
         testedScope.handleEvent(fakeEvent, fakeDatadogContext, mockEventWriteScope, mockWriter)
 
         // Then
-        verify(rumMonitorConfiguration.mockSdkCore, never()).updateFeatureContext(
-            eq(Feature.SESSION_REPLAY_FEATURE_NAME),
-            any(),
-            any()
-        )
+        argumentCaptor<(MutableMap<String, Any?>) -> Unit> {
+            verify(rumMonitorConfiguration.mockSdkCore).updateFeatureContext(
+                eq(Feature.SESSION_REPLAY_FEATURE_NAME),
+                eq(true),
+                capture()
+            )
+            firstValue.invoke(replayContext)
+        }
+        assertThat(replayContext).containsKey(testedScope.viewId)
+        assertThat(entry[FeaturesContextResolver.VIEW_COMPLETED_KEY]).isEqualTo(true)
     }
 
     @Test

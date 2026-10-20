@@ -258,10 +258,17 @@ internal open class RumViewScope(
         }
 
         return if (isViewComplete()) {
-            // FLASHCAT FORK - a view of a withheld session may still be released, and claims the
-            // replay held for it from this entry: Session Replay drops it with the held records.
-            if (getRumContext().sessionState != RumSessionScope.State.WITHHELD) {
-                sdkCore.updateFeatureContext(Feature.SESSION_REPLAY_FEATURE_NAME) {
+            // FLASHCAT FORK - a view whose records are held may still be released - its session
+            // withheld, or past its error but before the release - and claims the replay from this
+            // entry. It is only marked completed then: Session Replay drops it with the held records.
+            val withheld = getRumContext().sessionState == RumSessionScope.State.WITHHELD
+            sdkCore.updateFeatureContext(Feature.SESSION_REPLAY_FEATURE_NAME) {
+                @Suppress("UNCHECKED_CAST")
+                val viewMetadata = it[viewId] as? MutableMap<String, Any?>
+                val recordsHeld = FeaturesContextResolver.VIEW_WITHHELD_RECORDS_COUNT_KEY in viewMetadata.orEmpty()
+                if (withheld || recordsHeld) {
+                    viewMetadata?.put(FeaturesContextResolver.VIEW_COMPLETED_KEY, true)
+                } else {
                     it.remove(viewId)
                 }
             }

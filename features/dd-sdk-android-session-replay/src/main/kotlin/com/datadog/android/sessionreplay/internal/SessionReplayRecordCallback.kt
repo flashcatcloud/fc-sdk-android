@@ -58,9 +58,10 @@ internal class SessionReplayRecordCallback(
                     viewMetadata[VIEW_WITHHELD_RECORDS_COUNT_KEY] = remaining
                 } else {
                     viewMetadata.remove(VIEW_WITHHELD_RECORDS_COUNT_KEY)
-                    // RUM leaves the entry of a completed view in place while its session is
-                    // withheld; nothing sent and nothing held means nothing to keep it for.
-                    if (viewMetadata.isEmpty()) it.remove(viewId)
+                    // RUM leaves the entry of a completed view in place while records of it are
+                    // held, for the events released with them to claim. Once none is held - written
+                    // or thrown away - nothing will read it again.
+                    if (viewMetadata.isEmpty() || viewMetadata[VIEW_COMPLETED_KEY] == true) it.remove(viewId)
                 }
             }
         }
@@ -79,5 +80,6 @@ internal class SessionReplayRecordCallback(
         internal const val HAS_REPLAY_KEY = "has_replay"
         internal const val VIEW_RECORDS_COUNT_KEY = "records_count"
         internal const val VIEW_WITHHELD_RECORDS_COUNT_KEY = "withheld_records_count"
+        internal const val VIEW_COMPLETED_KEY = "view_completed"
     }
 }

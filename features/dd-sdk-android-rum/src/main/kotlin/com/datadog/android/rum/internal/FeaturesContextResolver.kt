@@ -56,6 +56,9 @@ internal class FeaturesContextResolver {
         internal const val HAS_REPLAY_KEY = "has_replay"
         internal const val VIEW_RECORDS_COUNT_KEY = "records_count"
         internal const val VIEW_WITHHELD_RECORDS_COUNT_KEY = "withheld_records_count"
+
+        /** FLASHCAT FORK - set on the entry of a completed view whose records are still held. */
+        internal const val VIEW_COMPLETED_KEY = "view_completed"
         internal const val REPLAY_ENABLED_KEY = "session_replay_is_enabled"
         internal const val REPLAY_ON_ERROR_SESSION_KEY = "session_replay_on_error_session_id"
         internal const val REPLAY_WITHHELD_KEY = "session_replay_withheld"
