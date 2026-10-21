@@ -420,8 +420,28 @@ internal class WithheldEventWriterTest {
         // Then - the held replay dies with the process, so nothing may advertise it, nor write it
         assertThat(hasReplayByTag()).containsEntry("v1", null).containsEntry("c1", null)
         assertThat(releasedReplays).isEmpty()
-        // and should the process survive the crash, the held replay is dropped rather than left behind
-        assertThat(discardedReplays).containsExactly(sessionId)
+        assertThat(discardedReplays).isEmpty()
+    }
+
+    @Test
+    fun `M let the replay out and claim it W write() {process survives a crash release}`() {
+        // Given - a wrapper reported a fatal error and the process carried on
+        heldReplayRecords["v1"] = 3L
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1", payload = jsonPayload("v1")), EventType.DEFAULT)
+        testedWriter.write(
+            batchWriter,
+            error("c1", "v1", isCrash = true, payload = jsonPayload("c1")),
+            EventType.CRASH
+        )
+
+        // When - the session goes on
+        testedWriter.write(batchWriter, view("v1", payload = jsonPayload("v1-next")), EventType.DEFAULT)
+
+        // Then - the replay is neither thrown away nor left unclaimed
+        assertThat(releasedReplays).containsExactly(sessionId)
+        assertThat(discardedReplays).isEmpty()
+        assertThat(claimedViews.last().session.hasReplay).isTrue
     }
 
     @Test

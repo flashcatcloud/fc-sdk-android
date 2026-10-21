@@ -123,6 +123,9 @@ internal class WithheldEventWriter(
     /** The session whose replay was told to go out: its events have actually been released. */
     private var replayReleasedSessionId: String? = null
 
+    /** A session released by a crash, whose replay waits to see whether the process survived. */
+    private var crashReleasedSessionId: String? = null
+
     /** Latest event per view, least recently updated first. */
     private val views = LinkedHashMap<String, HeldView>()
     private val details = ArrayList<HeldEvent>()
@@ -150,6 +153,11 @@ internal class WithheldEventWriter(
     override fun write(writer: EventBatchWriter, element: Any, eventType: EventType): Boolean {
         val sessionId = sessionIdOf(element) ?: return delegate.write(writer, element, eventType)
         synchronized(this) {
+            if (sessionId == crashReleasedSessionId) {
+                // The process outlived the crash that released this session: its replay goes now.
+                crashReleasedSessionId = null
+                notifyReplayReleased(sessionId)
+            }
             if (sessionId in discardedSessionIds) {
                 // Accepted and dropped, as the batch would have done had the session never been
                 // collected.
@@ -527,10 +535,11 @@ internal class WithheldEventWriter(
         clear()
         withheldForSessionId = null
         // After the events, so the replay is never written ahead of the session it belongs to. Not
-        // on a crash: the events claimed no held replay, and one written later - in the crash
-        // handler's last moments, or at the stop should the process survive a crash reported by
-        // a wrapper - would be stored with nothing to open it from. Session Replay drops it.
-        sessionId?.let { if (replayGoesOut) notifyReplayReleased(it) else discardReplay(it) }
+        // on a crash: the events claimed no held replay, and one written in the crash handler's
+        // last moments would be stored with nothing to open it from. Should the process survive -
+        // a wrapper can report a fatal error and carry on - the session's next event lets it out,
+        // and the views written from then on claim it.
+        if (replayGoesOut) sessionId?.let(::notifyReplayReleased) else crashReleasedSessionId = sessionId
     }
 
     private fun notifyReplayReleased(sessionId: String) {
