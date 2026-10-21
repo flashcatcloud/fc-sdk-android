@@ -720,6 +720,19 @@ internal class SessionReplayRecordWriterTest {
     }
 
     @Test
+    fun `M call back at once without queuing W stop { nothing held }`() {
+        // Given - a customer who never turned the switch on
+        var done = false
+
+        // When
+        testedWriter.stop { done = true }
+
+        // Then
+        assertThat(done).isTrue
+        verify(mockSessionReplayFeature, never()).withWriteContext(any(), any())
+    }
+
+    @Test
     fun `M call back at once W stop { no feature to write with }`() {
         // Given
         whenever(mockSdkCore.getFeature(Feature.SESSION_REPLAY_FEATURE_NAME)).thenReturn(null)

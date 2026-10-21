@@ -417,8 +417,9 @@ internal class WithheldEventWriterTest {
             EventType.CRASH
         )
 
-        // Then - the held replay dies with the process, so nothing may advertise it
+        // Then - the held replay dies with the process, so nothing may advertise it, nor write it
         assertThat(hasReplayByTag()).containsEntry("v1", null).containsEntry("c1", null)
+        assertThat(releasedReplays).isEmpty()
     }
 
     @Test
@@ -451,6 +452,7 @@ internal class WithheldEventWriterTest {
 
         // Then
         assertThat(claimedErrors.single().session.hasReplay).isNull()
+        assertThat(releasedReplays).isEmpty()
     }
 
     @Test

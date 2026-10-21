@@ -147,6 +147,9 @@ data class RumConfiguration internal constructor(
          * events are released, whether or not the replay rate kept it. View events of a session
          * whose replay is kept this way carry `session.sampled_for_error_replay`.
          *
+         * WebView content is not recorded while the replay is held, so it is missing from the
+         * released minute. A replay held when the app crashes is lost with the process.
+         *
          * Needs the Session Replay feature. Disabled by default. With
          * [setRemoteConfigurationEnabled], the console's value wins over this one.
          *

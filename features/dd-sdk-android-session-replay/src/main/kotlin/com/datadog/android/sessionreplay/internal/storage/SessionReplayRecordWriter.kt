@@ -173,7 +173,9 @@ internal class SessionReplayRecordWriter(
 
     override fun stop(onDone: () -> Unit) {
         val feature = featureScope()
-        if (feature == null) {
+        // Nothing held: a customer who never turned the switch on pays nothing at the stop.
+        val nothingHeld = synchronized(this) { current == null && parked.isEmpty() }
+        if (feature == null || nothingHeld) {
             onDone()
             return
         }
@@ -275,8 +277,11 @@ internal class SessionReplayRecordWriter(
     private fun release(writer: EventBatchWriter, buffer: Buffer) {
         val first = buffer.records.firstOrNull()?.record
         val startRecords = first?.let { buffer.viewStartRecords[it.viewId] }
-        buffer.records.forEachIndexed { index, heldRecord ->
-            if (index == 0 && first != null && startRecords != null && first.records.none { it.isViewStart() }) {
+        // What storage refused is counted, so the release reports what actually landed.
+        val writeFailures = buffer.records.withIndex().count { (index, heldRecord) ->
+            val written = if (
+                index == 0 && first != null && startRecords != null && first.records.none { it.isViewStart() }
+            ) {
                 // Cut at a periodic full snapshot: the view's meta and focus were left behind, and a
                 // segment cannot be played without them.
                 val timestamp = first.fullSnapshotTimestamp() ?: startRecords.first().timestamp()
@@ -285,6 +290,7 @@ internal class SessionReplayRecordWriter(
             } else {
                 writeNow(writer, heldRecord.record, heldRecord.data)
             }
+            !written
         }
         // Only the images these records show: any other held image belongs to what was never sent.
         sendResources(buffer.records.flatMapTo(HashSet()) { it.resourceIds }, buffer.sessionId)
@@ -299,7 +305,8 @@ internal class SessionReplayRecordWriter(
             additionalProperties = mapOf(
                 "buffer.records_count" to buffer.records.sumOf { it.record.records.size },
                 "buffer.duration_ms" to buffer.records.durationMs(),
-                "buffer.dropped_count" to buffer.droppedCount
+                "buffer.dropped_count" to buffer.droppedCount,
+                "buffer.write_failures" to writeFailures
             )
         )
         forget(buffer)
@@ -353,7 +360,7 @@ internal class SessionReplayRecordWriter(
         heldResourceBytes = 0L
     }
 
-    private fun writeNow(writer: EventBatchWriter, record: EnrichedRecord, data: ByteArray) {
+    private fun writeNow(writer: EventBatchWriter, record: EnrichedRecord, data: ByteArray): Boolean {
         val success = writer.write(
             event = RawBatchEvent(data = data),
             batchMetadata = null,
@@ -364,6 +371,7 @@ internal class SessionReplayRecordWriter(
             // held records that are thrown away never count.
             updateViewSent(record)
         }
+        return success
     }
 
     /**

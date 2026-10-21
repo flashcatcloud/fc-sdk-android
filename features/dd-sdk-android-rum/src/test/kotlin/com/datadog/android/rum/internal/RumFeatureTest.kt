@@ -103,6 +103,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
@@ -867,6 +868,7 @@ internal class RumFeatureTest {
             callback.invoke(mock(), writeScope)
         }
         testedFeature.onInitialize(appContext.mockInstance)
+        testedFeature.withheldEvents?.startWithholding("s1", mockBatchWriter)
         // the core takes the feature out of its registry before stopping it
         whenever(mockSdkCore.getFeature(Feature.RUM_FEATURE_NAME)) doReturn null
 
@@ -886,6 +888,7 @@ internal class RumFeatureTest {
         whenever(mockSdkCore.getFeature(Feature.RUM_FEATURE_NAME)) doReturn mockRumScope
         whenever(mockRumScope.withWriteContext(any(), any())) doAnswer { Unit }
         testedFeature.onInitialize(appContext.mockInstance)
+        testedFeature.withheldEvents?.startWithholding("s1", mock())
 
         // When
         val started = System.nanoTime()
@@ -902,6 +905,24 @@ internal class RumFeatureTest {
             any(),
             anyOrNull()
         )
+    }
+
+    @Test
+    fun `M not wait W onStop() { no session withheld or watched }`() {
+        // Given - a customer who never turned either switch on
+        val mockRumScope = mock<FeatureScope>()
+        whenever(mockSdkCore.getFeature(Feature.RUM_FEATURE_NAME)) doReturn mockRumScope
+        whenever(mockRumScope.withWriteContext(any(), any())) doAnswer { Unit }
+        testedFeature.onInitialize(appContext.mockInstance)
+
+        // When
+        val started = System.nanoTime()
+        testedFeature.onStop()
+
+        // Then - nothing queued, nothing waited for
+        assertThat(java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started))
+            .isLessThan(1_000)
+        verify(mockRumScope, never()).withWriteContext(any(), any())
     }
 
     @Test

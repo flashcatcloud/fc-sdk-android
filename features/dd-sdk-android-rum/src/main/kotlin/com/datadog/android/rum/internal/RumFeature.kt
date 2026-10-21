@@ -385,7 +385,7 @@ internal class RumFeature(
         // them once the features are stopped, so this waits for the work to have run - but never
         // without a bound: a stop asked for from the RUM thread would otherwise wait on a context
         // thread that is itself waiting on the RUM thread.
-        withheldEvents?.let { writer ->
+        withheldEvents?.takeIf { it.hasSessionToSettle() }?.let { writer ->
             val settled = CountDownLatch(1)
             withRumWriteScope {
                 writer.stop(it)

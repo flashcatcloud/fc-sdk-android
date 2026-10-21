@@ -166,8 +166,9 @@ internal class WithheldEventWriter(
                 }
                 val written = delegate.write(writer, claimed, eventType)
                 // Only the replay is told: [releasedSessionId] belongs to the withheld session,
-                // which may be the one running now while this error drains from a stopped one.
-                if (written && replayReleasedSessionId != sessionId) {
+                // which may be the one running now while this error drains from a stopped one. Not
+                // on a crash: the error did not claim the held replay, so none may be written.
+                if (written && includeHeld && replayReleasedSessionId != sessionId) {
                     notifyReplayReleased(sessionId)
                 }
                 return written
@@ -223,6 +224,14 @@ internal class WithheldEventWriter(
     // endregion
 
     // region Session lifecycle
+
+    /**
+     * Whether a session is withheld or watched, so the SDK's stop has something to settle. A
+     * customer who never turned either switch on never has one, and pays nothing at the stop.
+     */
+    fun hasSessionToSettle(): Boolean = synchronized(this) {
+        withheldForSessionId != null || watchedSessionId != null
+    }
 
     /** Whether the given session earned its release. Read by the session scope to stop withholding. */
     fun isReleased(sessionId: String): Boolean = synchronized(this) { releasedSessionId == sessionId }
@@ -506,10 +515,10 @@ internal class WithheldEventWriter(
 
         clear()
         withheldForSessionId = null
-        // After the events, so the replay never reaches the intake ahead of the session it belongs
-        // to. After a JVM crash this is as far as it gets: the replay is still held in memory and
-        // goes down with the process - only the events, written in the crash's own write, survive.
-        sessionId?.let(::notifyReplayReleased)
+        // After the events, so the replay is never written ahead of the session it belongs to. Not
+        // on a crash: the events claimed no held replay, and one written in the crash handler's
+        // last moments would be stored without anything to open it from.
+        if (replayGoesOut) sessionId?.let(::notifyReplayReleased)
     }
 
     private fun notifyReplayReleased(sessionId: String) {
