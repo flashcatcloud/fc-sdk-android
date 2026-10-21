@@ -17,6 +17,7 @@ import android.os.Looper
 import androidx.annotation.AnyThread
 import androidx.annotation.RequiresApi
 import com.datadog.android.api.InternalLogger
+import com.datadog.android.api.feature.EventWriteScope
 import com.datadog.android.api.feature.Feature
 import com.datadog.android.api.feature.FeatureContextUpdateReceiver
 import com.datadog.android.api.feature.FeatureEventReceiver
@@ -128,6 +129,7 @@ import com.datadog.android.rum.tracking.TrackingStrategy
 import com.datadog.android.rum.tracking.ViewAttributesProvider
 import com.datadog.android.rum.tracking.ViewTrackingStrategy
 import com.datadog.android.telemetry.model.TelemetryConfigurationEvent
+import com.google.gson.JsonObject
 import java.util.Locale
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
@@ -455,7 +457,9 @@ internal class RumFeature(
             delegate = rumDataWriter,
             internalLogger = sdkCore.internalLogger,
             elapsedTimeNs = { sdkCore.timeProvider.getDeviceElapsedTimeNanos() },
-            scheduleRelease = { delayMs, release -> handler.postDelayed({ withRumWriteScope(release) }, delayMs) },
+            scheduleRelease = { delayMs, release, drop ->
+                JitteredRelease(release, drop).schedule(handler, delayMs)
+            },
             replayRecordsCount = ::resolveReplayRecordsCount,
             releaseReplay = { sessionId ->
                 tellSessionReplay(
@@ -490,6 +494,58 @@ internal class RumFeature(
     /** FLASHCAT FORK - runs the block on the storage thread, after the RUM writes submitted so far. */
     private fun withRumWriteScope(block: (EventBatchWriter) -> Unit) {
         rumFeatureScope()?.withWriteContext { _, writeScope -> writeScope(block) }
+    }
+
+    /**
+     * FLASHCAT FORK - a release of withheld events waiting for its jitter. Once the jitter runs out it
+     * writes under the consent in force then, like any event. Should consent be withdrawn first, it
+     * runs at once through a write scope taken when it was scheduled, provided consent was granted
+     * then - see [WithheldEventWriter.ScheduledRelease].
+     */
+    private inner class JitteredRelease(
+        private val release: (EventBatchWriter) -> Unit,
+        private val drop: () -> Unit
+    ) : WithheldEventWriter.ScheduledRelease, Runnable {
+
+        private val grantedScope = AtomicReference<EventWriteScope?>(null)
+        private val captured = AtomicBoolean(false)
+        private val withdrawn = AtomicBoolean(false)
+        private val settled = AtomicBoolean(false)
+
+        fun schedule(handler: Handler, delayMs: Long): JitteredRelease {
+            handler.postDelayed(this, delayMs)
+            rumFeatureScope()?.withWriteContext { datadogContext, scope ->
+                if (datadogContext.trackingConsent == TrackingConsent.GRANTED) grantedScope.set(scope)
+                captured.set(true)
+                if (withdrawn.get()) settleWithdrawn()
+            }
+            return this
+        }
+
+        override fun run() {
+            rumFeatureScope()?.withWriteContext { datadogContext, scope ->
+                // Consent withdrawn, and its callback not run yet.
+                if (datadogContext.trackingConsent == TrackingConsent.NOT_GRANTED) {
+                    runNow()
+                } else {
+                    settle { scope(release) }
+                }
+            }
+        }
+
+        override fun runNow() {
+            withdrawn.set(true)
+            if (captured.get()) settleWithdrawn()
+        }
+
+        private fun settleWithdrawn() = settle {
+            val scope = grantedScope.get()
+            if (scope != null) scope(release) else drop()
+        }
+
+        private fun settle(action: () -> Unit) {
+            if (settled.compareAndSet(false, true)) action()
+        }
     }
 
     private fun waitForStop(settled: CountDownLatch) {
@@ -602,6 +658,22 @@ internal class RumFeature(
             LOGGER_ERROR_WITH_STACK_TRACE_MESSAGE_TYPE -> addLoggerErrorWithStacktrace(event)
             WEB_VIEW_INGESTED_NOTIFICATION_MESSAGE_TYPE -> {
                 (GlobalRumMonitor.get(sdkCore) as? AdvancedRumMonitor)?.sendWebViewEvent()
+            }
+
+            WEB_VIEW_WITHHELD_EVENT_MESSAGE_TYPE -> {
+                val webEvent = event[WEB_VIEW_EVENT_KEY] as? JsonObject
+                val writer = withheldEvents
+                if (webEvent != null && writer != null) {
+                    withRumWriteScope { writer.writeWebEvent(it, webEvent) }
+                }
+            }
+
+            WEB_VIEW_ERROR_MESSAGE_TYPE -> {
+                val sessionId = event[WEB_VIEW_SESSION_ID_KEY] as? String
+                val writer = withheldEvents
+                if (sessionId != null && writer != null && writer.mayHaveSessionToSettle()) {
+                    withRumWriteScope { writer.onWebViewError(sessionId) }
+                }
             }
 
             TELEMETRY_SESSION_REPLAY_SKIP_FRAME -> addSessionReplaySkippedFrame()
@@ -1023,6 +1095,13 @@ internal class RumFeature(
         private const val STOP_DRAIN_WAIT_MS = 2_000L
         internal const val STOP_DRAIN_FAILED_MESSAGE =
             "Could not wait for the withheld session to be settled before the SDK stopped."
+
+        // FLASHCAT FORK - sent by the WebView feature: an event of a WebView in a withheld session,
+        // and an error raised in a WebView of a collected one.
+        internal const val WEB_VIEW_WITHHELD_EVENT_MESSAGE_TYPE = "web_view_withheld_event"
+        internal const val WEB_VIEW_ERROR_MESSAGE_TYPE = "web_view_error"
+        internal const val WEB_VIEW_EVENT_KEY = "event"
+        internal const val WEB_VIEW_SESSION_ID_KEY = "sessionId"
 
         internal const val NDK_CRASH_BUS_MESSAGE_TYPE = "ndk_crash"
         internal const val LOGGER_ERROR_BUS_MESSAGE_TYPE = "logger_error"

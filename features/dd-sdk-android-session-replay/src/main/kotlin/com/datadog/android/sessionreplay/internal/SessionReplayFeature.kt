@@ -128,6 +128,9 @@ internal class SessionReplayFeature(
     internal var sessionReplayRecorder: Recorder = NoOpRecorder()
     internal var dataWriter: RecordWriter = NoOpRecordWriter()
     internal val initialized = AtomicBoolean(false)
+
+    // FLASHCAT FORK - see settleHeldReplay.
+    private val heldReplaySettled = AtomicBoolean(false)
     private val rumContextProvider = SessionReplayRumContextProvider()
 
     // region Feature
@@ -191,24 +194,7 @@ internal class SessionReplayFeature(
         sdkCore.removeContextUpdateReceiver(rumContextProvider)
         sessionReplayRecorder.unregisterCallbacks()
         sessionReplayRecorder.stopProcessingRecords()
-        // FLASHCAT FORK - a replay held for a session that reported its error goes out with the
-        // stop, since RUM may be stopped after this feature and could not tell it to any more; the
-        // write is queued, so this waits - with a bound - for it to have run.
-        val settled = CountDownLatch(1)
-        dataWriter.stop { settled.countDown() }
-        val done = try {
-            settled.await(STOP_WAIT_MS, TimeUnit.MILLISECONDS)
-        } catch (e: InterruptedException) {
-            Thread.currentThread().interrupt()
-            false
-        }
-        if (!done) {
-            sdkCore.internalLogger.log(
-                InternalLogger.Level.WARN,
-                InternalLogger.Target.MAINTAINER,
-                { STOP_WAIT_FAILED_MESSAGE }
-            )
-        }
+        settleHeldReplay()
         dataWriter = NoOpRecordWriter()
         sessionReplayRecorder = NoOpRecorder()
         initialized.set(false)
@@ -480,6 +466,32 @@ internal class SessionReplayFeature(
         }
     }
 
+    /**
+     * FLASHCAT FORK - a replay held for a session that reported its error goes out with the stop,
+     * since RUM may be stopped after this feature and could not tell it to any more. The writes are
+     * queued, so this waits - with a bound - for the records and their images to be written. Run by
+     * whichever of this feature and the resources one the core stops first: the images need the
+     * latter's storage.
+     */
+    private fun settleHeldReplay() {
+        if (heldReplaySettled.getAndSet(true)) return
+        val settled = CountDownLatch(1)
+        dataWriter.stop { settled.countDown() }
+        val done = try {
+            settled.await(STOP_WAIT_MS, TimeUnit.MILLISECONDS)
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            false
+        }
+        if (!done) {
+            sdkCore.internalLogger.log(
+                InternalLogger.Level.WARN,
+                InternalLogger.Target.MAINTAINER,
+                { STOP_WAIT_FAILED_MESSAGE }
+            )
+        }
+    }
+
     private fun createDataWriter(resourcesWriter: ResourcesWriter): SessionReplayRecordWriter {
         val recordCallback = SessionReplayRecordCallback(sdkCore)
         return SessionReplayRecordWriter(sdkCore, recordCallback, resourcesWriter) { resourceIds ->
@@ -506,7 +518,8 @@ internal class SessionReplayFeature(
     private fun registerResourceFeature(sdkCore: SdkCore): ResourcesFeature {
         val resourcesFeature = ResourcesFeature(
             sdkCore = sdkCore as FeatureSdkCore,
-            customEndpointUrl = customEndpointUrl
+            customEndpointUrl = customEndpointUrl,
+            beforeStop = ::settleHeldReplay
         )
         sdkCore.registerFeature(resourcesFeature)
 

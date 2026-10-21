@@ -19,7 +19,10 @@ import com.datadog.android.rum.model.ResourceEvent
 import com.datadog.android.rum.model.ViewEvent
 import com.datadog.android.rum.model.VitalAppLaunchEvent
 import com.datadog.android.rum.model.VitalOperationStepEvent
+import com.google.gson.JsonElement
+import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
 import java.util.concurrent.TimeUnit
 import kotlin.math.absoluteValue
 
@@ -33,7 +36,9 @@ import kotlin.math.absoluteValue
  *
  * Events are held as the batch would have received them - after the event mappers, serialized - so
  * an error a mapper drops releases nothing (a session billed for an error nobody can find would be
- * worse than none), and the memory budget is the size actually uploaded.
+ * worse than none), and the memory budget is the size actually uploaded. Events of a WebView in
+ * the session are held alongside, as the web SDK sent them - after its own `beforeSend` - see
+ * [writeWebEvent].
  *
  * Every RUM event of a collected session passes through here, so that the events of a session
  * whose buffer was thrown away are thrown away too when they arrive late - see [discardedSessionIds].
@@ -47,10 +52,15 @@ internal class WithheldEventWriter(
     private val internalLogger: InternalLogger,
     private val elapsedTimeNs: () -> Long,
     /**
-     * Runs the release after the given delay, on the storage thread, with a writer for whatever
-     * the tracking consent is by then.
+     * Runs the release after the given delay, on the storage thread, with a writer for the tracking
+     * consent in force then. Should consent be withdrawn first, see [ScheduledRelease.runNow]: `drop`
+     * is what becomes of a history that may not go out.
      */
-    private val scheduleRelease: (delayMs: Long, release: (EventBatchWriter) -> Unit) -> Unit,
+    private val scheduleRelease: (
+        delayMs: Long,
+        release: (EventBatchWriter) -> Unit,
+        drop: () -> Unit
+    ) -> ScheduledRelease,
     /**
      * How many replay records a view has sent - and, with `includeHeld`, still holds - so released
      * events can claim the replay that goes out with them.
@@ -74,6 +84,16 @@ internal class WithheldEventWriter(
     private val expectReplayRelease: (sessionId: String) -> Unit
 ) : DataWriter<Any> {
 
+    /** A release waiting for its jitter. */
+    internal fun interface ScheduledRelease {
+        /**
+         * Consent was withdrawn: the release runs now, through a writer taken when it was scheduled,
+         * if consent was granted then. Otherwise the history was never consented to and is dropped:
+         * a pending consent withdrawn means its data is wiped, not sent.
+         */
+        fun runNow()
+    }
+
     private class HeldView(val viewId: String, val date: Long, val event: RawBatchEvent, val eventType: EventType)
 
     private class HeldEvent(
@@ -81,7 +101,9 @@ internal class WithheldEventWriter(
         val event: RawBatchEvent,
         val eventType: EventType,
         val heldAtNs: Long,
-        val tier: EvictionTier
+        val tier: EvictionTier,
+        /** False for a crash larger than the whole budget: held apart from it, see [holdDetail]. */
+        val budgeted: Boolean = true
     )
 
     /** What goes first when the buffer is over budget. */
@@ -99,10 +121,10 @@ internal class WithheldEventWriter(
         LAST_RESORT,
 
         /**
-         * A crash is never evicted: the process is going down, the history is released with it at
+         * Never evicted: a crash - the process is going down, the history is released with it at
          * once, and it is what that release exists to deliver.
          */
-        CRASH
+        KEPT
     }
 
     private var withheldForSessionId: String? = null
@@ -137,6 +159,14 @@ internal class WithheldEventWriter(
     /** When the release was scheduled, which is what freezes the window - see [prune]. */
     private var releaseScheduledAtNs: Long? = null
 
+    private var scheduledRelease: ScheduledRelease? = null
+
+    /**
+     * Set once consent is withdrawn while the release still waits for the jitter: that release goes
+     * with the consent the history was collected under, and nothing collected after it joins.
+     */
+    private var holdingClosed = false
+
     /** Bumped whenever the buffer is cleared, so a release scheduled for its previous content is inert. */
     private var generation = 0
 
@@ -153,8 +183,9 @@ internal class WithheldEventWriter(
     override fun write(writer: EventBatchWriter, element: Any, eventType: EventType): Boolean {
         val sessionId = sessionIdOf(element) ?: return delegate.write(writer, element, eventType)
         synchronized(this) {
-            if (sessionId == crashReleasedSessionId) {
+            if (sessionId == crashReleasedSessionId && element !is ViewEvent) {
                 // The process outlived the crash that released this session: its replay goes now.
+                // Not on a view: the crash itself updates its view right after the error.
                 crashReleasedSessionId = null
                 notifyReplayReleased(sessionId)
             }
@@ -181,7 +212,7 @@ internal class WithheldEventWriter(
                 }
                 return written
             }
-            if (sessionId != withheldForSessionId) {
+            if (sessionId != withheldForSessionId || holdingClosed) {
                 // A view of a session whose replay was released claims it as soon as the records
                 // exist, held or sent: a final view assembled before they were written would
                 // otherwise take the place of the released one that claimed it.
@@ -196,38 +227,78 @@ internal class WithheldEventWriter(
                 return delegate.write(writer, claimed, eventType)
             }
             val batchEvent = delegate.serialize(element) ?: return false
-            if (element is ErrorEvent) {
-                if (releasedSessionId != sessionId) {
-                    releasedSessionId = sessionId
-                    // Not for a crash: its release is synchronous and lets no replay out, so Session
-                    // Replay must not take the replay as due should the process survive.
-                    if (element.error.isCrash != true) expectReplayRelease(sessionId)
-                }
-                if (batchEvent.data.size > BYTES_LIMIT) {
-                    // The session has earned its release. An error larger than the whole budget
-                    // could only be held by evicting the history it explains, so the history is
-                    // released at once, with the error after its views - written ahead of them it
-                    // could reach the intake before the session it belongs to, or alone should the
-                    // app die during the jitter. Rare enough to forgo the jitter.
-                    details.add(
-                        HeldEvent(element.view.id, batchEvent, eventType, elapsedTimeNs(), EvictionTier.CRASH)
-                    )
-                    release(writer, replayGoesOut = element.error.isCrash != true)
-                    return true
-                }
+            if (element is ViewEvent) {
+                holdView(element.view.id, element.date, batchEvent, eventType)
+                // Written locally like any view the batch takes, and only locally: a native crash
+                // is reported at the next launch from this file, and is exactly the error such a
+                // session is kept for.
+                delegate.onDataWritten(element, batchEvent.data)
+                return true
             }
-            hold(element, batchEvent, eventType)
-            if (releasedSessionId == sessionId) {
-                if (element is ErrorEvent && element.error.isCrash == true) {
-                    // The process is going down: the crash handler waits for this write and no
-                    // timer would ever fire. What was held goes now, with the crash - but not the
-                    // replay, which is held in memory and goes down with the process.
-                    release(writer, replayGoesOut = false)
-                } else {
-                    scheduleReleaseOnce(sessionId)
-                }
+            val isCrash = element is ErrorEvent && element.error.isCrash == true
+            // Not for a crash: its release is synchronous and lets no replay out, so Session Replay
+            // must not take the replay as due should the process survive.
+            if (element is ErrorEvent) markReleased(sessionId, expectReplay = !isCrash)
+            if (element is ErrorEvent && !isCrash && batchEvent.data.size > BYTES_LIMIT) {
+                return writeOversizedError(writer, sessionId, batchEvent, eventType)
             }
+            holdDetail(viewIdOf(element), batchEvent, eventType, evictionTierOf(element), element is ErrorEvent)
+            releaseIfEarned(writer, sessionId, isCrash)
             return true
+        }
+    }
+
+    // endregion
+
+    // region WebView
+
+    /**
+     * An event of a WebView in a withheld session, already mapped onto the session. Held with the
+     * session's own events and released with them, and an error raised in the WebView releases the
+     * session like a native one. The web SDK ran its `beforeSend` before handing the event over, so
+     * an error that reaches here is one that survived it. Its own errors - `source: agent` - do not
+     * count, or every session of an app whose WebView cannot reach the intake would be kept.
+     */
+    @WorkerThread
+    fun writeWebEvent(writer: EventBatchWriter, event: JsonObject) {
+        val sessionId = event.stringAt(SESSION_KEY, ID_KEY) ?: return
+        synchronized(this) {
+            if (sessionId in discardedSessionIds) return
+            val batchEvent = RawBatchEvent(data = event.toString().toByteArray(Charsets.UTF_8))
+            if (sessionId != withheldForSessionId || holdingClosed) {
+                // Released while the event was on its way here: the session is collected now.
+                if (sessionId == releasedSessionId) {
+                    delegate.writeSerialized(writer, batchEvent, EventType.DEFAULT)
+                }
+                return
+            }
+            val type = event.stringAt(TYPE_KEY)
+            val viewId = event.stringAt(VIEW_KEY, ID_KEY)
+            if (type == WEB_VIEW_TYPE) {
+                if (viewId != null) holdView(viewId, event.longAt(DATE_KEY) ?: 0L, batchEvent, EventType.DEFAULT)
+                return
+            }
+            val isError = type == WEB_ERROR_TYPE && event.stringAt(ERROR_KEY, SOURCE_KEY) != WEB_AGENT_SOURCE
+            if (isError) markReleased(sessionId, expectReplay = true)
+            if (isError && batchEvent.data.size > BYTES_LIMIT) {
+                writeOversizedError(writer, sessionId, batchEvent, EventType.DEFAULT)
+                return
+            }
+            holdDetail(viewId, batchEvent, EventType.DEFAULT, webEvictionTierOf(type, event, isError), isError)
+            releaseIfEarned(writer, sessionId, isCrash = false)
+        }
+    }
+
+    /**
+     * An error was raised in a WebView of a collected session. Its events go to the batch on their
+     * own, but a replay kept on error is released by it like by a native error.
+     */
+    @WorkerThread
+    fun onWebViewError(sessionId: String) {
+        synchronized(this) {
+            if (sessionId == watchedSessionId && replayReleasedSessionId != sessionId) {
+                notifyReplayReleased(sessionId)
+            }
         }
     }
 
@@ -362,85 +433,93 @@ internal class WithheldEventWriter(
     }
 
     /**
-     * Tracking consent was withdrawn while the session was still withholding. What it holds was
-     * collected under the consent now withdrawn, so it is dropped; the session itself goes on, and
-     * holds again from scratch should consent be granted back.
+     * Tracking consent was withdrawn while the session was still withholding - see
+     * [onConsentWithdrawn]. The session itself goes on, and holds again from scratch should consent
+     * be granted back.
      */
     @WorkerThread
     fun dropHeld(sessionId: String) {
         synchronized(this) {
             if (withheldForSessionId != sessionId) return
-            dropForConsent()
+            onConsentWithdrawn()
         }
     }
 
-    /**
-     * Tracking consent was withdrawn: whatever is held goes, released or not. A release still
-     * waiting for its jitter would only reach the writer consent now denies, and consent may be
-     * granted back before any event comes by to notice.
-     */
+    /** Tracking consent was withdrawn - see [onConsentWithdrawn]. */
     @WorkerThread
     fun dropHeldForConsent() {
-        synchronized(this) { dropForConsent() }
+        synchronized(this) { onConsentWithdrawn() }
     }
 
     /**
-     * A session already released holds nothing more after this: its events go to the batch, where
-     * consent decides, rather than through here, where a release granted later would carry out
-     * what was collected while consent was withdrawn.
+     * A session that already reported its error under granted consent had its minute collected with
+     * that consent: it is released now, through a writer taken when its release was scheduled - one
+     * taken now would write where consent is now denied - and nothing collected after this joins it.
+     * See [ScheduledRelease.runNow] for one scheduled while consent was pending. A session that never
+     * errored is thrown away: nothing of it may be kept under the consent now withdrawn.
      */
-    private fun dropForConsent() {
+    private fun onConsentWithdrawn() {
+        val sessionId = withheldForSessionId ?: return
+        val scheduled = scheduledRelease
+        if (releasedSessionId == sessionId && scheduled != null) {
+            holdingClosed = true
+            scheduled.runNow()
+            return
+        }
         clear()
-        if (releasedSessionId == withheldForSessionId) withheldForSessionId = null
+        // A session already released holds nothing more after this: its events go to the batch,
+        // where consent decides, rather than through here.
+        if (releasedSessionId == sessionId) withheldForSessionId = null
     }
 
     // endregion
 
     // region Internal
 
-    @WorkerThread
-    private fun hold(element: Any, batchEvent: RawBatchEvent, eventType: EventType) {
-        if (element is ViewEvent) {
-            holdView(element, batchEvent, eventType)
-            return
-        }
-        val size = batchEvent.data.size
-        if (size > BYTES_LIMIT) {
-            // Holding it would evict the whole minute before it to make room it never fits into.
-            droppedCount++
-            return
-        }
-        details.add(
-            HeldEvent(
-                viewId = viewIdOf(element),
-                event = batchEvent,
-                eventType = eventType,
-                heldAtNs = elapsedTimeNs(),
-                tier = evictionTierOf(element)
-            )
-        )
-        bytes += size
-        prune()
-        while (details.size > EVENTS_LIMIT || bytes > BYTES_LIMIT) {
-            if (!evictOne()) break
-        }
+    private fun markReleased(sessionId: String, expectReplay: Boolean) {
+        if (releasedSessionId == sessionId) return
+        releasedSessionId = sessionId
+        if (expectReplay) expectReplayRelease(sessionId)
+    }
+
+    /**
+     * What was just held may have been the error that earned the release, or come after it. A crash
+     * releases at once: the process is going down, the crash handler waits for this write and no
+     * timer would ever fire - but the replay held in memory goes down with the process. Otherwise
+     * the release waits for its jitter.
+     */
+    private fun releaseIfEarned(writer: EventBatchWriter, sessionId: String, isCrash: Boolean) {
+        if (releasedSessionId != sessionId) return
+        if (isCrash) release(writer, replayGoesOut = false) else scheduleReleaseOnce(sessionId)
+    }
+
+    /**
+     * An error larger than the whole budget could only be held by evicting the history it explains,
+     * so it is not held: it goes out at once, like any event of a collected session - an ANR, which
+     * carries every thread's stack, is the usual one, and the app is often killed right after. The
+     * history it earned still waits for its own jitter, so it may reach the intake after the error.
+     */
+    private fun writeOversizedError(
+        writer: EventBatchWriter,
+        sessionId: String,
+        batchEvent: RawBatchEvent,
+        eventType: EventType
+    ): Boolean {
+        val written = delegate.writeSerialized(writer, batchEvent, eventType)
+        releaseIfEarned(writer, sessionId, isCrash = false)
+        return written
     }
 
     @WorkerThread
-    private fun holdView(element: ViewEvent, batchEvent: RawBatchEvent, eventType: EventType) {
-        val viewId = element.view.id
+    private fun holdView(viewId: String, date: Long, batchEvent: RawBatchEvent, eventType: EventType) {
         // A view event is cumulative, so the latest supersedes the ones before. Removed first so the
         // map orders views by their last update.
         views.remove(viewId)
-        views[viewId] = HeldView(viewId, element.date, batchEvent, eventType)
-        // Written locally like any view the batch takes, and only locally: a native crash is
-        // reported at the next launch from this file, and is exactly the error such a session is
-        // kept for.
-        delegate.onDataWritten(element, batchEvent.data)
+        views[viewId] = HeldView(viewId, date, batchEvent, eventType)
         // A late update of a view that already ended must not make it current again, or `prune`
         // would drop the view the next error hangs from.
-        if (element.date >= currentViewDate) {
-            currentViewDate = element.date
+        if (date >= currentViewDate) {
+            currentViewDate = date
             currentViewId = viewId
         }
         while (views.size > VIEWS_LIMIT) {
@@ -448,6 +527,43 @@ internal class WithheldEventWriter(
             views.remove(oldest)
         }
         prune()
+    }
+
+    /**
+     * An event larger than the whole budget would evict the minute before it to make room it never
+     * fits into, so it is dropped - unless it is a crash, the only error that reaches here that large
+     * (see [writeOversizedError]): it is held apart from the budget and released at once, after the
+     * views it belongs to.
+     */
+    @WorkerThread
+    private fun holdDetail(
+        viewId: String?,
+        batchEvent: RawBatchEvent,
+        eventType: EventType,
+        tier: EvictionTier,
+        isError: Boolean
+    ) {
+        val size = batchEvent.data.size
+        val oversized = size > BYTES_LIMIT
+        if (oversized && !isError) {
+            droppedCount++
+            return
+        }
+        details.add(
+            HeldEvent(
+                viewId = viewId,
+                event = batchEvent,
+                eventType = eventType,
+                heldAtNs = elapsedTimeNs(),
+                tier = if (oversized) EvictionTier.KEPT else tier,
+                budgeted = !oversized
+            )
+        )
+        if (!oversized) bytes += size
+        prune()
+        while (details.size > EVENTS_LIMIT || bytes > BYTES_LIMIT) {
+            if (!evictOne()) break
+        }
     }
 
     /** Drops what has aged out of the window, and the views left with nothing in it. */
@@ -460,7 +576,7 @@ internal class WithheldEventWriter(
         while (iterator.hasNext()) {
             val held = iterator.next()
             if (held.heldAtNs >= oldestAllowed) break
-            bytes -= held.event.data.size
+            if (held.budgeted) bytes -= held.event.data.size
             droppedCount++
             iterator.remove()
         }
@@ -494,13 +610,24 @@ internal class WithheldEventWriter(
         if (releaseScheduledAtNs != null) return
         releaseScheduledAtNs = elapsedTimeNs()
         val scheduledGeneration = generation
-        scheduleRelease(computeReleaseDelayMs(sessionId)) { writer ->
-            synchronized(this) {
-                if (generation == scheduledGeneration && withheldForSessionId == sessionId) {
-                    release(writer)
+        scheduledRelease = scheduleRelease(
+            computeReleaseDelayMs(sessionId),
+            { writer ->
+                synchronized(this) {
+                    if (generation == scheduledGeneration && withheldForSessionId == sessionId) {
+                        release(writer)
+                    }
+                }
+            },
+            {
+                synchronized(this) {
+                    if (generation == scheduledGeneration && withheldForSessionId == sessionId) {
+                        clear()
+                        withheldForSessionId = null
+                    }
                 }
             }
-        }
+        )
     }
 
     /**
@@ -587,6 +714,8 @@ internal class WithheldEventWriter(
     private fun clear() {
         generation++
         releaseScheduledAtNs = null
+        scheduledRelease = null
+        holdingClosed = false
         views.clear()
         details.clear()
         bytes = 0L
@@ -630,6 +759,19 @@ internal class WithheldEventWriter(
 
         private const val SESSION_KEY = "session"
         private const val HAS_REPLAY_KEY = "has_replay"
+        private const val ID_KEY = "id"
+        private const val TYPE_KEY = "type"
+        private const val VIEW_KEY = "view"
+        private const val DATE_KEY = "date"
+        private const val ERROR_KEY = "error"
+        private const val SOURCE_KEY = "source"
+        private const val RESOURCE_KEY = "resource"
+        private const val STATUS_CODE_KEY = "status_code"
+        private const val WEB_VIEW_TYPE = "view"
+        private const val WEB_ERROR_TYPE = "error"
+        private const val WEB_RESOURCE_TYPE = "resource"
+        private const val WEB_LONG_TASK_TYPE = "long_task"
+        private const val WEB_AGENT_SOURCE = "agent"
 
         internal const val RELEASED_MESSAGE = "Error session event buffer released"
 
@@ -663,19 +805,42 @@ internal class WithheldEventWriter(
         }
 
         private fun evictionTierOf(element: Any): EvictionTier = when (element) {
-            is ErrorEvent -> if (element.error.isCrash == true) EvictionTier.CRASH else EvictionTier.LAST_RESORT
+            is ErrorEvent -> if (element.error.isCrash == true) EvictionTier.KEPT else EvictionTier.LAST_RESORT
             is LongTaskEvent -> EvictionTier.FIRST
-            is ResourceEvent -> {
-                // A request that failed is part of how the error happened; one that succeeded
-                // rarely is. An unknown status is treated like an ordinary success.
-                val statusCode = element.resource.statusCode
-                if (statusCode == 0L || (statusCode != null && statusCode >= HTTP_ERROR_STATUS)) {
-                    EvictionTier.LAST
-                } else {
-                    EvictionTier.FIRST
-                }
-            }
+            is ResourceEvent -> resourceTier(element.resource.statusCode)
             else -> EvictionTier.LAST
+        }
+
+        private fun webEvictionTierOf(type: String?, event: JsonObject, isError: Boolean): EvictionTier = when {
+            isError -> EvictionTier.LAST_RESORT
+            type == WEB_LONG_TASK_TYPE -> EvictionTier.FIRST
+            type == WEB_RESOURCE_TYPE -> resourceTier(event.longAt(RESOURCE_KEY, STATUS_CODE_KEY))
+            else -> EvictionTier.LAST
+        }
+
+        /**
+         * A request that failed is part of how the error happened; one that succeeded rarely is. An
+         * unknown status is treated like an ordinary success.
+         */
+        private fun resourceTier(statusCode: Long?): EvictionTier =
+            if (statusCode == 0L || (statusCode != null && statusCode >= HTTP_ERROR_STATUS)) {
+                EvictionTier.LAST
+            } else {
+                EvictionTier.FIRST
+            }
+
+        private fun JsonObject.stringAt(vararg path: String): String? =
+            primitiveAt(path)?.takeIf { it.isString }?.asString
+
+        private fun JsonObject.longAt(vararg path: String): Long? =
+            primitiveAt(path)?.takeIf { it.isNumber }?.asLong
+
+        private fun JsonObject.primitiveAt(path: Array<out String>): JsonPrimitive? {
+            var node: JsonElement = this
+            for (key in path) {
+                node = (node as? JsonObject)?.get(key) ?: return null
+            }
+            return node as? JsonPrimitive
         }
     }
 }

@@ -125,10 +125,14 @@ data class RumConfiguration internal constructor(
          * The release is written one event at a time, views first: an app killed in the middle of
          * it can leave a kept session whose error never reached storage.
          *
-         * Only errors of the native SDK count. Events tracked inside a WebView through
-         * `WebViewTracking` are not held while the session waits for its error, so an error raised
-         * in a WebView does not keep the session, and a kept session's released minute has no
-         * WebView events in it.
+         * Events tracked inside a WebView through `WebViewTracking` are held with the session's own,
+         * and an error the web page reports keeps the session like a native one - after the web
+         * SDK's `beforeSend`, and not the web SDK's own errors (`source: agent`).
+         *
+         * If tracking consent is withdrawn after the session reported its error under granted
+         * consent but before its minute is uploaded, that minute - and its replay - is still stored,
+         * under that consent; nothing collected afterwards joins it. One reported while consent was
+         * pending is dropped, like any data collected while consent was pending.
          *
          * Disabled by default. With [setRemoteConfigurationEnabled], the console's value wins over
          * this one.
@@ -151,8 +155,7 @@ data class RumConfiguration internal constructor(
          * whose replay is kept this way carry `session.sampled_for_error_replay`.
          *
          * WebView content is not recorded while the replay is held, so it is missing from the
-         * released minute. A replay held when the app crashes is lost with the process. Images of a
-         * replay released by the SDK's stop may not be written before the SDK shuts down.
+         * released minute. A replay held when the app crashes is lost with the process.
          *
          * Needs the Session Replay feature. Disabled by default. With
          * [setRemoteConfigurationEnabled], the console's value wins over this one.

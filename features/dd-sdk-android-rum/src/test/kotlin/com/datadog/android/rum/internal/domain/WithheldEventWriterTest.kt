@@ -19,6 +19,8 @@ import com.datadog.android.rum.model.LongTaskEvent
 import com.datadog.android.rum.model.ResourceEvent
 import com.datadog.android.rum.model.ViewEvent
 import com.datadog.android.rum.utils.forge.Configurator
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.junit5.ForgeConfiguration
 import fr.xgouchet.elmyr.junit5.ForgeExtension
@@ -77,6 +79,22 @@ internal class WithheldEventWriterTest {
     private var nowNs = TimeUnit.HOURS.toNanos(1)
     private val scheduled = mutableListOf<Pair<Long, (EventBatchWriter) -> Unit>>()
 
+    /** Releases asked to run at once; run, like the real ones, on the storage thread later. */
+    private val ranNow = mutableListOf<(EventBatchWriter) -> Unit>()
+
+    /** What each scheduled release drops instead, if consent was not granted when it was scheduled. */
+    private val drops = mutableListOf<() -> Unit>()
+
+    /** The writer handed out once consent is withdrawn. */
+    private val deniedWrites = mutableListOf<String>()
+    private val deniedWriter = object : EventBatchWriter {
+        override fun currentMetadata(): ByteArray? = null
+        override fun write(event: RawBatchEvent, batchMetadata: ByteArray?, eventType: EventType): Boolean {
+            deniedWrites.add(String(event.data, Charsets.UTF_8))
+            return true
+        }
+    }
+
     private val sessionId = UUID.randomUUID().toString()
     private var nextDate = 1_000L
 
@@ -111,7 +129,11 @@ internal class WithheldEventWriterTest {
             delegate = RumDataWriter(serializer, metaSerializer, mockSdkCore),
             internalLogger = mockInternalLogger,
             elapsedTimeNs = { nowNs },
-            scheduleRelease = { delayMs, release -> scheduled.add(delayMs to release) },
+            scheduleRelease = { delayMs, release, drop ->
+                scheduled.add(delayMs to release)
+                drops.add(drop)
+                WithheldEventWriter.ScheduledRelease { ranNow.add(release) }
+            },
             replayRecordsCount = { viewId, includeHeld ->
                 (replayRecords[viewId] ?: 0L) + if (includeHeld) heldReplayRecords[viewId] ?: 0L else 0L
             },
@@ -457,12 +479,33 @@ internal class WithheldEventWriterTest {
         )
 
         // When - the session goes on
+        testedWriter.write(batchWriter, action("a1", "v1"), EventType.DEFAULT)
         testedWriter.write(batchWriter, view("v1", payload = jsonPayload("v1-next")), EventType.DEFAULT)
 
         // Then - the replay is neither thrown away nor left unclaimed
         assertThat(releasedReplays).containsExactly(sessionId)
         assertThat(discardedReplays).isEmpty()
         assertThat(claimedViews.last().session.hasReplay).isTrue
+    }
+
+    @Test
+    fun `M keep the replay held W write() {view updated by the crash itself}`() {
+        // Given
+        heldReplayRecords["v1"] = 3L
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1", payload = jsonPayload("v1")), EventType.DEFAULT)
+        testedWriter.write(
+            batchWriter,
+            error("c1", "v1", isCrash = true, payload = jsonPayload("c1")),
+            EventType.CRASH
+        )
+
+        // When - the crash counts itself on its view, in the crash handler's last moments
+        testedWriter.write(batchWriter, view("v1", payload = jsonPayload("v1-crashed")), EventType.CRASH)
+
+        // Then - that is no sign the process survived
+        assertThat(releasedReplays).isEmpty()
+        assertThat(hasReplayByTag()).containsEntry("v1-crashed", null)
     }
 
     @Test
@@ -689,38 +732,80 @@ internal class WithheldEventWriterTest {
     }
 
     @Test
-    fun `M hold nothing more W dropHeldForConsent() {released session, events while consent is withdrawn}`() {
-        // Given - the session earned its release, then consent was withdrawn
+    fun `M release through the writer it was scheduled with W dropHeldForConsent() {release waiting for the jitter}`() {
+        // Given - the session earned its release under granted consent
         testedWriter.startWithholding(sessionId, batchWriter)
         testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, action("a0", "v1"), EventType.DEFAULT)
         testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
-        testedWriter.dropHeldForConsent()
 
-        // When - events of the released session arrive, then consent is granted back
-        val result = testedWriter.write(batchWriter, action("a1", "v1"), EventType.DEFAULT)
+        // When - consent is withdrawn during the jitter, and the session goes on
+        testedWriter.dropHeldForConsent()
+        val result = testedWriter.write(deniedWriter, action("a1", "v1"), EventType.DEFAULT)
+        ranNow.forEach { it(batchWriter) }
         scheduled.forEach { it.second(batchWriter) }
 
-        // Then - they went to the batch at once, where consent decides, rather than being held
+        // Then - the minute went once, where its consent sent it; what followed went where consent decides
         assertThat(result).isTrue
-        assertThat(written).containsExactly("a1")
-        assertThat(scheduled).hasSize(1)
+        assertThat(written).containsExactly("v1", "e1", "a0")
+        assertThat(deniedWrites).containsExactly("a1")
+        assertThat(ranNow).hasSize(1)
     }
 
     @Test
-    fun `M drop everything held W dropHeldForConsent() {release waiting for the jitter}`() {
+    fun `M write nothing held W dropHeldForConsent() {release scheduled while consent was pending}`() {
         // Given
         testedWriter.startWithholding(sessionId, batchWriter)
         testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
         testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
 
-        // When
+        // When - consent goes from pending to withdrawn: the scheduled release drops instead
         testedWriter.dropHeldForConsent()
-        scheduled.first().second(batchWriter)
-        testedWriter.write(batchWriter, action("a1", "v1"), EventType.DEFAULT)
+        drops.single()()
+        ranNow.forEach { it(batchWriter) }
+        scheduled.forEach { it.second(batchWriter) }
+        testedWriter.write(deniedWriter, action("a1", "v1"), EventType.DEFAULT)
 
-        // Then - the held minute is gone, the session goes on as a released one
-        assertThat(scheduled).hasSize(1)
-        assertThat(written).containsExactly("a1")
+        // Then - nothing of the minute went out; what followed went where consent decides
+        assertThat(written).isEmpty()
+        assertThat(deniedWrites).containsExactly("a1")
+        assertThat(releasedReplays).isEmpty()
+    }
+
+    @Test
+    fun `M drop everything held W dropHeldForConsent() {session that never errored}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, action("a0", "v1"), EventType.DEFAULT)
+
+        // When - consent is withdrawn, granted back, and the session errors
+        testedWriter.dropHeldForConsent()
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+        scheduled.single().second(batchWriter)
+
+        // Then - it held again from scratch
+        assertThat(ranNow).isEmpty()
+        assertThat(written).containsExactly("e1")
+    }
+
+    @Test
+    fun `M hold nothing more W dropHeld() {released session, release already gone}`() {
+        // Given - released, then consent withdrawn
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+        scheduled.single().second(batchWriter)
+        written.clear()
+
+        // When
+        testedWriter.dropHeld(sessionId)
+        testedWriter.write(deniedWriter, action("a1", "v1"), EventType.DEFAULT)
+
+        // Then
+        assertThat(ranNow).isEmpty()
+        assertThat(written).isEmpty()
+        assertThat(deniedWrites).containsExactly("a1")
     }
 
     @Test
@@ -983,7 +1068,7 @@ internal class WithheldEventWriterTest {
     }
 
     @Test
-    fun `M release the history at once, the error after its view W write() {error over the budget}`() {
+    fun `M write the error at once and the history after the jitter W write() {error over the budget}`() {
         // Given
         testedWriter.startWithholding(sessionId, batchWriter)
         testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
@@ -991,12 +1076,53 @@ internal class WithheldEventWriterTest {
         val hugeError = error("e1", "v1", payload = "E".repeat(WithheldEventWriter.BYTES_LIMIT + 1))
 
         // When
+        val result = testedWriter.write(batchWriter, hugeError, EventType.DEFAULT)
+
+        // Then - the error is not held; the history it earned still waits for its jitter
+        assertThat(result).isTrue
+        assertThat(written.map { it.first() }).containsExactly('E')
+        assertThat(scheduled).hasSize(1)
+        assertThat(releasedReplays).isEmpty()
+        scheduled.single().second(batchWriter)
+        assertThat(written.map { it.first() }).containsExactly('E', 'v', 'a')
+        assertThat(releasedReplays).containsExactly(sessionId)
+    }
+
+    @Test
+    fun `M keep holding the budget W write() {error over the budget, then more}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        val hugeError = error("E1", "v1", payload = "E".repeat(WithheldEventWriter.BYTES_LIMIT + 1))
         testedWriter.write(batchWriter, hugeError, EventType.DEFAULT)
 
-        // Then - never ahead of the view, and not left alone should the app die during a jitter
-        assertThat(scheduled).isEmpty()
-        assertThat(written.map { it.first() }).containsExactly('v', 'E', 'a')
-        assertThat(releasedReplays).containsExactly(sessionId)
+        // When - the budget is filled after it
+        val chunk = WithheldEventWriter.BYTES_LIMIT / 2
+        testedWriter.write(batchWriter, action("a1", "v1", payload = "a".repeat(chunk)), EventType.DEFAULT)
+        testedWriter.write(batchWriter, action("b1", "v1", payload = "b".repeat(chunk)), EventType.DEFAULT)
+        scheduled.single().second(batchWriter)
+
+        // Then - the oversized error took nothing from what the budget holds
+        assertThat(written.map { it.first() }).containsExactly('E', 'v', 'a', 'b')
+    }
+
+    @Test
+    fun `M write each at once and schedule once W write() {several errors over the budget}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        val huge = "E".repeat(WithheldEventWriter.BYTES_LIMIT + 1)
+
+        // When
+        repeat(5) {
+            testedWriter.write(batchWriter, error("e$it", "v1", payload = huge), EventType.DEFAULT)
+        }
+
+        // Then - nothing piles up in memory, and the history goes once, after the jitter
+        assertThat(written).hasSize(5)
+        assertThat(scheduled).hasSize(1)
+        scheduled.single().second(batchWriter)
+        assertThat(written.last()).isEqualTo("v1")
     }
 
     @Test
@@ -1193,6 +1319,135 @@ internal class WithheldEventWriterTest {
         assertThat(captor.allValues).hasSize(1)
         verify(mockSdkCore, never()).writeLastViewEvent(eq("e1".toByteArray()))
     }
+
+    // region WebView
+
+    @Test
+    fun `M hold WebView events and release them W writeWebEvent() {error raised in the WebView}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, action("a1", "v1"), EventType.DEFAULT)
+        testedWriter.writeWebEvent(batchWriter, webEvent("wv", "view", "web-v1", date = 5_000L))
+        testedWriter.writeWebEvent(batchWriter, webEvent("wr", "resource", "web-v1"))
+
+        // When
+        testedWriter.writeWebEvent(batchWriter, webEvent("we", "error", "web-v1"))
+
+        // Then - released like on a native error, after the jitter: views first, then the error
+        assertThat(written).isEmpty()
+        assertThat(testedWriter.isReleased(sessionId)).isTrue
+        assertThat(expectedReplays).containsExactly(sessionId)
+        scheduled.single().second(batchWriter)
+        assertThat(written.map(::tagOf)).containsExactly("v1", "wv", "we", "a1", "wr")
+    }
+
+    @Test
+    fun `M write the error at once W writeWebEvent() {WebView error over the budget}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, action("a1", "v1"), EventType.DEFAULT)
+        testedWriter.writeWebEvent(batchWriter, webEvent("wv", "view", "web-v1", date = 5_000L))
+        val hugeError = webEvent("we", "error", "web-v1").apply {
+            addProperty("padding", "E".repeat(WithheldEventWriter.BYTES_LIMIT))
+        }
+
+        // When
+        testedWriter.writeWebEvent(batchWriter, hugeError)
+
+        // Then - the history still waits for its jitter
+        assertThat(written.map(::tagOf)).containsExactly("we")
+        scheduled.single().second(batchWriter)
+        assertThat(written.map(::tagOf)).containsExactly("we", "v1", "wv", "a1")
+    }
+
+    @Test
+    fun `M not release W writeWebEvent() {error of the web SDK itself}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+
+        // When
+        testedWriter.writeWebEvent(batchWriter, webEvent("agent", "error", "web-v1", errorSource = "agent"))
+
+        // Then
+        assertThat(testedWriter.isReleased(sessionId)).isFalse
+        assertThat(scheduled).isEmpty()
+        assertThat(written).isEmpty()
+    }
+
+    @Test
+    fun `M write at once W writeWebEvent() {session released while the event was on its way}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, error("e1", "v1"), EventType.DEFAULT)
+        scheduled.single().second(batchWriter)
+        written.clear()
+
+        // When
+        testedWriter.writeWebEvent(batchWriter, webEvent("late", "action", "web-v1"))
+
+        // Then
+        assertThat(written.map(::tagOf)).containsExactly("late")
+    }
+
+    @Test
+    fun `M drop W writeWebEvent() {session thrown away}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.endSession(sessionId, batchWriter)
+
+        // When
+        testedWriter.writeWebEvent(batchWriter, webEvent("late", "error", "web-v1"))
+
+        // Then
+        assertThat(written).isEmpty()
+        assertThat(scheduled).isEmpty()
+    }
+
+    @Test
+    fun `M release the replay W onWebViewError() {session whose replay is kept on error}`() {
+        // Given
+        testedWriter.watchForError(sessionId, batchWriter)
+
+        // When
+        testedWriter.onWebViewError(sessionId)
+        testedWriter.onWebViewError(sessionId)
+
+        // Then
+        assertThat(releasedReplays).containsExactly(sessionId)
+    }
+
+    @Test
+    fun `M do nothing W onWebViewError() {session not watched}`() {
+        // When
+        testedWriter.onWebViewError(sessionId)
+
+        // Then
+        assertThat(releasedReplays).isEmpty()
+    }
+
+    private fun webEvent(
+        tag: String,
+        type: String,
+        viewId: String,
+        date: Long = nextDate++,
+        errorSource: String = "source"
+    ): JsonObject = JsonObject().apply {
+        addProperty("tag", tag)
+        addProperty("type", type)
+        addProperty("date", date)
+        add("session", JsonObject().apply { addProperty("id", sessionId) })
+        add("view", JsonObject().apply { addProperty("id", viewId) })
+        if (type == "error") add("error", JsonObject().apply { addProperty("source", errorSource) })
+    }
+
+    private fun tagOf(written: String): String =
+        if (written.startsWith("{")) JsonParser.parseString(written).asJsonObject.get("tag").asString else written
+
+    // endregion
 
     // region Helpers
 

@@ -13,6 +13,7 @@ import com.datadog.android.api.feature.Feature
 import com.datadog.android.api.feature.FeatureSdkCore
 import com.datadog.android.api.storage.DataWriter
 import com.datadog.android.api.storage.EventType
+import com.datadog.android.privacy.TrackingConsent
 import com.datadog.android.webview.internal.WebViewEventConsumer
 import com.datadog.android.webview.internal.replay.WebViewReplayEventConsumer
 import com.datadog.android.webview.internal.rum.domain.RumContext
@@ -41,7 +42,9 @@ internal class WebViewRumEventConsumer(
                 withFeatureContexts = setOf(Feature.RUM_FEATURE_NAME, Feature.SESSION_REPLAY_FEATURE_NAME)
             ) { datadogContext, writeScope ->
                 val rumContext = contextProvider.getRumContext(datadogContext)
-                if (rumContext != null && rumContext.sessionState == "TRACKED") {
+                if (rumContext != null && rumContext.sessionState == WITHHELD_SESSION_STATE) {
+                    handOverWithheld(event, datadogContext, rumContext)
+                } else if (rumContext != null && rumContext.sessionState == "TRACKED") {
                     val sessionReplayFeatureContext = datadogContext.featuresContext[
                         Feature.SESSION_REPLAY_FEATURE_NAME
                     ]
@@ -56,9 +59,45 @@ internal class WebViewRumEventConsumer(
                     writeScope {
                         val mappedEvent = map(event, datadogContext, rumContext, sessionReplayEnabled)
                         dataWriter.write(it, mappedEvent, EventType.DEFAULT)
+                        if (isSessionError(mappedEvent)) {
+                            sdkCore.getFeature(Feature.RUM_FEATURE_NAME)?.sendEvent(
+                                mapOf(
+                                    "type" to WEB_VIEW_ERROR_MESSAGE_TYPE,
+                                    WEB_VIEW_SESSION_ID_KEY to rumContext.sessionId
+                                )
+                            )
+                        }
                     }
                 }
             }
+    }
+
+    /**
+     * FLASHCAT FORK - the session is withheld until it reports an error (see
+     * `RumConfiguration.Builder.setSessionOnError`): its WebView events are handed to RUM, which
+     * holds them with the session's own and releases them with it - or on an error raised here.
+     * Not under a withdrawn consent: RUM holds nothing of the session then either.
+     */
+    private fun handOverWithheld(event: JsonObject, datadogContext: DatadogContext, rumContext: RumContext) {
+        if (datadogContext.trackingConsent == TrackingConsent.NOT_GRANTED) return
+        // Mapped without the replay: a replay withheld with the session is claimed on release.
+        val mappedEvent = map(event, datadogContext, rumContext, sessionReplayEnabled = false)
+        sdkCore.getFeature(Feature.RUM_FEATURE_NAME)?.sendEvent(
+            mapOf(
+                "type" to WEB_VIEW_WITHHELD_EVENT_MESSAGE_TYPE,
+                WEB_VIEW_EVENT_KEY to mappedEvent
+            )
+        )
+    }
+
+    /**
+     * FLASHCAT FORK - an error the web page reported, as opposed to one of the web SDK's own: it
+     * releases a replay kept on error like a native error does.
+     */
+    private fun isSessionError(event: JsonObject): Boolean {
+        if (event.get(TYPE_KEY_NAME)?.takeIf { it.isJsonPrimitive }?.asString != ERROR_EVENT_TYPE) return false
+        val error = event.get(ERROR_EVENT_TYPE)?.takeIf { it.isJsonObject }?.asJsonObject ?: return true
+        return error.get(SOURCE_KEY_NAME)?.takeIf { it.isJsonPrimitive }?.asString != AGENT_ERROR_SOURCE
     }
 
     private fun map(
@@ -113,6 +152,16 @@ internal class WebViewRumEventConsumer(
         const val VIEW_KEY_NAME = "view"
         const val VIEW_ID_KEY_NAME = "id"
         const val JSON_PARSING_ERROR_MESSAGE = "The bundled web RUM event could not be deserialized"
+        const val TYPE_KEY_NAME = "type"
+        const val SOURCE_KEY_NAME = "source"
+        const val AGENT_ERROR_SOURCE = "agent"
+
+        // FLASHCAT FORK - mirror the RUM feature's session state and bus messages.
+        const val WITHHELD_SESSION_STATE = "WITHHELD"
+        const val WEB_VIEW_WITHHELD_EVENT_MESSAGE_TYPE = "web_view_withheld_event"
+        const val WEB_VIEW_ERROR_MESSAGE_TYPE = "web_view_error"
+        const val WEB_VIEW_EVENT_KEY = "event"
+        const val WEB_VIEW_SESSION_ID_KEY = "sessionId"
         val RUM_EVENT_TYPES = setOf(
             VIEW_EVENT_TYPE,
             ACTION_EVENT_TYPE,
