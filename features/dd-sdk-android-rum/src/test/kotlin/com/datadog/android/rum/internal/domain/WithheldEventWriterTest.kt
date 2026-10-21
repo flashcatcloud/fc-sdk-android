@@ -420,6 +420,8 @@ internal class WithheldEventWriterTest {
         // Then - the held replay dies with the process, so nothing may advertise it, nor write it
         assertThat(hasReplayByTag()).containsEntry("v1", null).containsEntry("c1", null)
         assertThat(releasedReplays).isEmpty()
+        // and should the process survive the crash, the held replay is dropped rather than left behind
+        assertThat(discardedReplays).containsExactly(sessionId)
     }
 
     @Test

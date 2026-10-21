@@ -475,6 +475,8 @@ internal class RumSessionScope(
         replayOnError = withheldEvents != null && (remoteValues?.sessionReplayOnError ?: sessionReplayOnError)
         val drawnSessionId = sessionId
         replayWatched = !sampledForError && keepSession && replayOnError
+        // Before the work is queued: the stop decides from this whether there is anything to settle.
+        if (sampledForError || replayWatched) withheldEvents?.engage()
         if (sampledForError) {
             writeScope { withheldEvents?.startWithholding(drawnSessionId, it) }
         } else if (replayWatched) {

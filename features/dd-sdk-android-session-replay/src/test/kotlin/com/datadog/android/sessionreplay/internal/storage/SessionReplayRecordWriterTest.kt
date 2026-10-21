@@ -720,6 +720,24 @@ internal class SessionReplayRecordWriterTest {
     }
 
     @Test
+    fun `M write what a released session holds W stop { its withholding still queued when the stop is asked }`() {
+        // Given - the stop is asked before the storage thread has run the session's work
+        deferWrites()
+        testedWriter.withhold("s1")
+        testedWriter.write(record("r1", "s1", fullSnapshotAt = 1_000))
+        testedWriter.expectRelease("s1")
+        var done = false
+
+        // When
+        testedWriter.stop { done = true }
+        runQueued()
+
+        // Then - settled in storage order, behind the work queued before it
+        assertThat(written).containsExactly("r1")
+        assertThat(done).isTrue
+    }
+
+    @Test
     fun `M call back at once without queuing W stop { nothing held }`() {
         // Given - a customer who never turned the switch on
         var done = false

@@ -226,12 +226,23 @@ internal class WithheldEventWriter(
     // region Session lifecycle
 
     /**
-     * Whether a session is withheld or watched, so the SDK's stop has something to settle. A
-     * customer who never turned either switch on never has one, and pays nothing at the stop.
+     * Set by the session scope, on its own thread, before it queues the first session to withhold
+     * or watch. The stop reads it rather than [withheldForSessionId]: that one is set by work that
+     * may still be queued, and the core drops queued work once the features are stopped.
      */
-    fun hasSessionToSettle(): Boolean = synchronized(this) {
-        withheldForSessionId != null || watchedSessionId != null
+    @Volatile
+    private var engaged = false
+
+    /** A session is about to be withheld or watched. Called before its work is queued. */
+    fun engage() {
+        engaged = true
     }
+
+    /**
+     * Whether the SDK's stop may have a session to settle. A customer who never turned either
+     * switch on never engaged this writer, and pays nothing at the stop.
+     */
+    fun mayHaveSessionToSettle(): Boolean = engaged
 
     /** Whether the given session earned its release. Read by the session scope to stop withholding. */
     fun isReleased(sessionId: String): Boolean = synchronized(this) { releasedSessionId == sessionId }
@@ -516,9 +527,10 @@ internal class WithheldEventWriter(
         clear()
         withheldForSessionId = null
         // After the events, so the replay is never written ahead of the session it belongs to. Not
-        // on a crash: the events claimed no held replay, and one written in the crash handler's
-        // last moments would be stored without anything to open it from.
-        if (replayGoesOut) sessionId?.let(::notifyReplayReleased)
+        // on a crash: the events claimed no held replay, and one written later - in the crash
+        // handler's last moments, or at the stop should the process survive a crash reported by
+        // a wrapper - would be stored with nothing to open it from. Session Replay drops it.
+        sessionId?.let { if (replayGoesOut) notifyReplayReleased(it) else discardReplay(it) }
     }
 
     private fun notifyReplayReleased(sessionId: String) {

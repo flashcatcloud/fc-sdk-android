@@ -122,6 +122,9 @@ data class RumConfiguration internal constructor(
          * App launch vitals (time to initial and full display) are not part of such a session:
          * kept only because it errored, it would skew the launch times of the fleet.
          *
+         * The release is written one event at a time, views first: an app killed in the middle of
+         * it can leave a kept session whose error never reached storage.
+         *
          * Only errors of the native SDK count. Events tracked inside a WebView through
          * `WebViewTracking` are not held while the session waits for its error, so an error raised
          * in a WebView does not keep the session, and a kept session's released minute has no

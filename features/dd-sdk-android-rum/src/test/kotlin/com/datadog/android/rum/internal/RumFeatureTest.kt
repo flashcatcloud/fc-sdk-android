@@ -868,6 +868,7 @@ internal class RumFeatureTest {
             callback.invoke(mock(), writeScope)
         }
         testedFeature.onInitialize(appContext.mockInstance)
+        testedFeature.withheldEvents?.engage()
         testedFeature.withheldEvents?.startWithholding("s1", mockBatchWriter)
         // the core takes the feature out of its registry before stopping it
         whenever(mockSdkCore.getFeature(Feature.RUM_FEATURE_NAME)) doReturn null
@@ -888,7 +889,7 @@ internal class RumFeatureTest {
         whenever(mockSdkCore.getFeature(Feature.RUM_FEATURE_NAME)) doReturn mockRumScope
         whenever(mockRumScope.withWriteContext(any(), any())) doAnswer { Unit }
         testedFeature.onInitialize(appContext.mockInstance)
-        testedFeature.withheldEvents?.startWithholding("s1", mock())
+        testedFeature.withheldEvents?.engage()
 
         // When
         val started = System.nanoTime()

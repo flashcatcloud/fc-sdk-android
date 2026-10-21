@@ -90,6 +90,10 @@ internal class SessionReplayRecordWriter(
      */
     private val fates = LinkedHashMap<String, Boolean>()
 
+    /** Set, on the caller's thread, the first time a session's replay is withheld. */
+    @Volatile
+    private var engaged = false
+
     override fun write(record: EnrichedRecord) {
         onStorageThread { writer, consent ->
             if (record.sessionId in discardedSessionIds) return@onStorageThread
@@ -126,6 +130,7 @@ internal class SessionReplayRecordWriter(
     }
 
     override fun withhold(sessionId: String) {
+        engaged = true
         onStorageThread { _, _ ->
             // A session already thrown away is over: a word about it that arrives late changes nothing.
             if (sessionId in discardedSessionIds || current?.sessionId == sessionId) return@onStorageThread
@@ -173,9 +178,10 @@ internal class SessionReplayRecordWriter(
 
     override fun stop(onDone: () -> Unit) {
         val feature = featureScope()
-        // Nothing held: a customer who never turned the switch on pays nothing at the stop.
-        val nothingHeld = synchronized(this) { current == null && parked.isEmpty() }
-        if (feature == null || nothingHeld) {
+        // A customer who never turned the switch on pays nothing at the stop. Decided from a flag
+        // set before any withholding work is queued, not from the buffers that work fills: the
+        // core drops queued work once the features are stopped.
+        if (feature == null || !engaged) {
             onDone()
             return
         }
