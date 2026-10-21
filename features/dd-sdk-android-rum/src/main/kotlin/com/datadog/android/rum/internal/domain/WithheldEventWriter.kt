@@ -199,7 +199,9 @@ internal class WithheldEventWriter(
             if (element is ErrorEvent) {
                 if (releasedSessionId != sessionId) {
                     releasedSessionId = sessionId
-                    expectReplayRelease(sessionId)
+                    // Not for a crash: its release is synchronous and lets no replay out, so Session
+                    // Replay must not take the replay as due should the process survive.
+                    if (element.error.isCrash != true) expectReplayRelease(sessionId)
                 }
                 if (batchEvent.data.size > BYTES_LIMIT) {
                     // The session has earned its release. An error larger than the whole budget
@@ -320,6 +322,12 @@ internal class WithheldEventWriter(
     @WorkerThread
     fun endSession(sessionId: String, writer: EventBatchWriter) {
         synchronized(this) {
+            if (crashReleasedSessionId == sessionId) {
+                // Outlived its crash without another event to let the replay out: nothing claims it.
+                crashReleasedSessionId = null
+                discardReplay(sessionId)
+                return
+            }
             if (watchedSessionId == sessionId) {
                 watchedSessionId = null
                 if (replayReleasedSessionId != sessionId) discardReplay(sessionId)
