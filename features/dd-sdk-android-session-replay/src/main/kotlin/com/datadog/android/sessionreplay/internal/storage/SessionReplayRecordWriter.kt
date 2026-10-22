@@ -114,10 +114,6 @@ internal class SessionReplayRecordWriter(
         }
     }
 
-    override fun afterQueuedWrites(block: () -> Unit) {
-        resourcesWriter.afterQueuedWrites(block)
-    }
-
     override fun write(enrichedResource: EnrichedResource, sessionId: String, onWritten: () -> Unit) {
         onStorageThread { _, consent ->
             when {
@@ -196,8 +192,7 @@ internal class SessionReplayRecordWriter(
                         if (fates[buffer.sessionId] == true) release(writer, buffer) else discard(buffer)
                     }
                 }
-                // The images of what was released are on their way through another feature.
-                resourcesWriter.afterQueuedWrites(onDone)
+                onDone()
             }
         }
     }

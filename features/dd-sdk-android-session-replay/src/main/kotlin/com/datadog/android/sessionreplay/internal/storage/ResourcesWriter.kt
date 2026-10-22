@@ -17,10 +17,4 @@ internal interface ResourcesWriter {
      * @param onWritten called once the resource is handed to storage, which is when it counts as sent
      */
     fun write(enrichedResource: EnrichedResource, sessionId: String, onWritten: () -> Unit)
-
-    /**
-     * FLASHCAT FORK - runs [block] once the resources already handed to [write] are in storage, so
-     * a stop can wait for the images of a replay it releases.
-     */
-    fun afterQueuedWrites(block: () -> Unit)
 }

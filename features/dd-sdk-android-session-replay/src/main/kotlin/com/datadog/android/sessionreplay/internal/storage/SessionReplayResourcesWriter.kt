@@ -17,15 +17,8 @@ import com.datadog.android.sessionreplay.internal.processor.asBinaryMetadata
 internal class SessionReplayResourcesWriter(
     private val sdkCore: FeatureSdkCore
 ) : ResourcesWriter {
-
-    /**
-     * FLASHCAT FORK - found once, while the feature is registered: the core unregisters it before
-     * stopping the features, and the images of a replay released at the stop must still be written.
-     */
-    private val featureScope = sdkCore.getFeature(Feature.SESSION_REPLAY_RESOURCES_FEATURE_NAME)
-
     override fun write(enrichedResource: EnrichedResource, sessionId: String, onWritten: () -> Unit) {
-        (featureScope ?: sdkCore.getFeature(Feature.SESSION_REPLAY_RESOURCES_FEATURE_NAME))
+        sdkCore.getFeature(Feature.SESSION_REPLAY_RESOURCES_FEATURE_NAME)
             ?.withWriteContext(
                 withFeatureContexts = setOf(Feature.RUM_FEATURE_NAME)
             ) { datadogContext, writeScope ->
@@ -45,16 +38,6 @@ internal class SessionReplayResourcesWriter(
                     }
                 }
             }
-    }
-
-    override fun afterQueuedWrites(block: () -> Unit) {
-        // Same two queues as [write], both run in order: the block runs after every write before it.
-        val scope = featureScope ?: sdkCore.getFeature(Feature.SESSION_REPLAY_RESOURCES_FEATURE_NAME)
-        if (scope == null) {
-            block()
-            return
-        }
-        scope.withWriteContext { _, writeScope -> writeScope { block() } }
     }
 
     private val DatadogContext.rumApplicationId: String
