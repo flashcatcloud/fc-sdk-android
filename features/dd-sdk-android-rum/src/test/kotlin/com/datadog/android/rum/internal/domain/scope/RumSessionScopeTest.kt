@@ -2148,7 +2148,8 @@ internal class RumSessionScopeTest {
         remoteConfig: RemoteConfigStore? = null,
         beforeSampling: BeforeSamplingCallback? = null
     ): WithheldEventWriter {
-        val withheldEvents = mock<WithheldEventWriter>()
+        // engaged, as the real writer is once a session is drawn on error
+        val withheldEvents = mock<WithheldEventWriter> { on { mayHaveSessionToSettle() } doReturn true }
         fakeDatadogContext = fakeDatadogContext.copy(trackingConsent = TrackingConsent.GRANTED)
         initializeTestedScope(
             sampleRate = sampleRate,
@@ -2467,9 +2468,59 @@ internal class RumSessionScopeTest {
     }
 
     @Test
+    fun `M announce a stopped session to Session Replay W handleEvent { after StopSession, on-error unused }`() {
+        // Given - like upstream for an application that never used on-error capture
+        val withheldEvents = mock<WithheldEventWriter>()
+        initializeTestedScope(100f, withheldEvents = withheldEvents)
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        testedScope.handleEvent(RumRawEvent.StopSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        Mockito.clearInvocations(mockSessionReplayFeatureScope)
+
+        // When
+        testedScope.handleEvent(
+            RumRawEvent.KeepAlive(currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        // Then - and the writer's lock is never taken for it
+        verify(mockSessionReplayFeatureScope).sendEvent(any())
+        verify(withheldEvents, never()).isReplayReleased(any())
+    }
+
+    @Test
+    fun `M renew a stopped session W handleEvent { max duration after StopSession, on-error unused }`() {
+        // Given - like upstream for an application that never used on-error capture
+        initializeTestedScope(100f, withheldEvents = mock())
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        val sessionId = testedScope.sessionId
+        testedScope.handleEvent(RumRawEvent.StopSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // When - interactions keep it from expiring until it reaches its maximum duration
+        repeat((TEST_MAX_DURATION_MS / (TEST_INACTIVITY_MS / 2)).toInt() + 1) {
+            advanceTimeByMs(TEST_INACTIVITY_MS / 2)
+            testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        }
+
+        // Then
+        assertThat(testedScope.sessionId).isNotEqualTo(sessionId)
+    }
+
+    @Test
     fun `M not announce a stopped session to Session Replay W handleEvent { after StopSession }`() {
         // Given - the stopped session keeps draining its views while the next session runs
-        initializeTestedScope(100f)
+        initializeTestedScope(100f, withheldEvents = mock { on { mayHaveSessionToSettle() } doReturn true })
         testedScope.handleEvent(
             RumRawEvent.SdkInit(true, currentFakeTime()),
             fakeDatadogContext,
@@ -2572,7 +2623,7 @@ internal class RumSessionScopeTest {
     @Test
     fun `M watch a collected session and tell Session Replay W draw { replay switch on }`() {
         // Given
-        val withheldEvents = mock<WithheldEventWriter>()
+        val withheldEvents = mock<WithheldEventWriter> { on { mayHaveSessionToSettle() } doReturn true }
         fakeDatadogContext = fakeDatadogContext.copy(trackingConsent = TrackingConsent.GRANTED)
         initializeTestedScope(sampleRate = 100f, withheldEvents = withheldEvents, sessionReplayOnError = true)
 
