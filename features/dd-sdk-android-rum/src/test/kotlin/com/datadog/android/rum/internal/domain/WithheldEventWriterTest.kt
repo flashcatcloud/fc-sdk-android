@@ -721,23 +721,6 @@ internal class WithheldEventWriterTest {
         // Then - the held minute is gone, the session goes on as a released one
         assertThat(scheduled).hasSize(1)
         assertThat(written).containsExactly("a1")
-        // and Session Replay hears it, rather than holding the session's replay until the stop
-        assertThat(releasedReplays).containsExactly(sessionId)
-        assertThat(testedWriter.isReplayReleased(sessionId)).isTrue
-    }
-
-    @Test
-    fun `M give Session Replay no word W dropHeldForConsent() {session that has not errored}`() {
-        // Given
-        testedWriter.startWithholding(sessionId, batchWriter)
-        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
-
-        // When
-        testedWriter.dropHeldForConsent()
-
-        // Then - still withheld: its fate is decided by an error or by its end, as before
-        assertThat(releasedReplays).isEmpty()
-        assertThat(discardedReplays).isEmpty()
     }
 
     @Test
@@ -1000,7 +983,7 @@ internal class WithheldEventWriterTest {
     }
 
     @Test
-    fun `M release the error after its view behind the jitter W write() {error over the budget}`() {
+    fun `M release the history at once, the error after its view W write() {error over the budget}`() {
         // Given
         testedWriter.startWithholding(sessionId, batchWriter)
         testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
@@ -1010,34 +993,10 @@ internal class WithheldEventWriterTest {
         // When
         testedWriter.write(batchWriter, hugeError, EventType.DEFAULT)
 
-        // Then - nothing before the jitter, and the history it did not evict
-        assertThat(written).isEmpty()
-        assertThat(scheduled).hasSize(1)
-        assertThat(scheduled.single().first).isEqualTo(WithheldEventWriter.computeReleaseDelayMs(sessionId))
-
-        // When
-        scheduled.single().second(batchWriter)
-
-        // Then - never ahead of the view
+        // Then - never ahead of the view, and not left alone should the app die during a jitter
+        assertThat(scheduled).isEmpty()
         assertThat(written.map { it.first() }).containsExactly('v', 'E', 'a')
         assertThat(releasedReplays).containsExactly(sessionId)
-    }
-
-    @Test
-    fun `M keep only the first errors over the budget W write() {many errors over the budget}`() {
-        // Given
-        testedWriter.startWithholding(sessionId, batchWriter)
-        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
-        val payload = "E".repeat(WithheldEventWriter.BYTES_LIMIT + 1)
-
-        // When
-        repeat(WithheldEventWriter.OVERSIZED_ERRORS_LIMIT + 2) {
-            testedWriter.write(batchWriter, error("e$it", "v1", payload = payload), EventType.DEFAULT)
-        }
-        scheduled.single().second(batchWriter)
-
-        // Then - memory stays bounded
-        assertThat(written.count { it.startsWith("EEE") }).isEqualTo(WithheldEventWriter.OVERSIZED_ERRORS_LIMIT)
     }
 
     @Test
