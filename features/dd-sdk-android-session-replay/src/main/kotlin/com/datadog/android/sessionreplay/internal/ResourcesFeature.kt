@@ -23,7 +23,12 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 internal class ResourcesFeature(
     private val sdkCore: FeatureSdkCore,
-    customEndpointUrl: String?
+    customEndpointUrl: String?,
+    /**
+     * FLASHCAT FORK - lets Session Replay write the replay it releases at the stop, images
+     * included, while this feature can still store them.
+     */
+    private val beforeStop: () -> Unit = {}
 ) : StorageBackedFeature {
 
     internal var dataWriter: ResourcesWriter = NoOpResourcesWriter()
@@ -47,6 +52,7 @@ internal class ResourcesFeature(
         STORAGE_CONFIGURATION
 
     override fun onStop() {
+        beforeStop()
         dataWriter = NoOpResourcesWriter()
         initialized.set(false)
     }

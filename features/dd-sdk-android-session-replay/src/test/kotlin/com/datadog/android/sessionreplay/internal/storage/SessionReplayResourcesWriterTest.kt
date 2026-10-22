@@ -114,4 +114,48 @@ internal class SessionReplayResourcesWriterTest {
         )
         assertThat(written).isEqualTo(1)
     }
+
+    @Test
+    fun `M write the resource W write() { feature unregistered by the core since }`() {
+        // Given - the core takes the feature out of its registry before stopping the features
+        whenever(mockEventWriteScope.invoke(any())) doAnswer {
+            it.getArgument<(EventBatchWriter) -> Unit>(0).invoke(mockEventBatchWriter)
+        }
+        whenever(mockResourcesFeature.withWriteContext(any(), any())) doAnswer {
+            val callback = it.getArgument<(DatadogContext, EventWriteScope) -> Unit>(it.arguments.lastIndex)
+            callback.invoke(fakeDatadogContext, mockEventWriteScope)
+        }
+        whenever(mockFeatureSdkCore.getFeature(Feature.SESSION_REPLAY_RESOURCES_FEATURE_NAME)).thenReturn(null)
+        var written = 0
+
+        // When
+        testedWriter.write(fakeEnrichedResource, "session") { written++ }
+
+        // Then
+        assertThat(written).isEqualTo(1)
+    }
+
+    @Test
+    fun `M run the block behind the queued writes W afterQueuedWrites()`() {
+        // Given - the write scope queues, as the real one does
+        val queued = mutableListOf<() -> Unit>()
+        whenever(mockEventWriteScope.invoke(any())) doAnswer {
+            val callback = it.getArgument<(EventBatchWriter) -> Unit>(0)
+            queued.add { callback.invoke(mockEventBatchWriter) }
+            Unit
+        }
+        whenever(mockResourcesFeature.withWriteContext(any(), any())) doAnswer {
+            val callback = it.getArgument<(DatadogContext, EventWriteScope) -> Unit>(it.arguments.lastIndex)
+            callback.invoke(fakeDatadogContext, mockEventWriteScope)
+        }
+        val order = mutableListOf<String>()
+        testedWriter.write(fakeEnrichedResource, "session") { order.add("image") }
+
+        // When
+        testedWriter.afterQueuedWrites { order.add("done") }
+        queued.forEach { it() }
+
+        // Then
+        assertThat(order).containsExactly("image", "done")
+    }
 }

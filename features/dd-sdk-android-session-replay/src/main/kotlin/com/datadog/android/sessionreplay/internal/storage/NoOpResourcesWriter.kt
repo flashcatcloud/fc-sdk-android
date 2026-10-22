@@ -12,4 +12,8 @@ internal class NoOpResourcesWriter : ResourcesWriter {
     override fun write(enrichedResource: EnrichedResource, sessionId: String, onWritten: () -> Unit) {
         // no-op
     }
+
+    override fun afterQueuedWrites(block: () -> Unit) {
+        block()
+    }
 }

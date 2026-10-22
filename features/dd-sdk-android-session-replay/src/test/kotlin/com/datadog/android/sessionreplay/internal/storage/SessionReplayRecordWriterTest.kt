@@ -83,6 +83,9 @@ internal class SessionReplayRecordWriterTest {
 
         whenever(mockSdkCore.getFeature(Feature.SESSION_REPLAY_FEATURE_NAME))
             .thenReturn(mockSessionReplayFeature)
+        whenever(mockResourcesWriter.afterQueuedWrites(any())) doAnswer {
+            it.getArgument<() -> Unit>(0).invoke()
+        }
 
         testedWriter = SessionReplayRecordWriter(mockSdkCore, mockRecordCallback, mockResourcesWriter) {
             forgottenResources.addAll(it)
@@ -734,6 +737,29 @@ internal class SessionReplayRecordWriterTest {
 
         // Then - settled in storage order, behind the work queued before it
         assertThat(written).containsExactly("r1")
+        assertThat(done).isTrue
+    }
+
+    @Test
+    fun `M call back only once the images are written W stop { released session }`() {
+        // Given
+        recordWrites()
+        testedWriter.withhold("s1")
+        testedWriter.write(record("r1", "s1", fullSnapshotAt = 1_000))
+        testedWriter.expectRelease("s1")
+        var pendingImages: (() -> Unit)? = null
+        whenever(mockResourcesWriter.afterQueuedWrites(any())) doAnswer {
+            pendingImages = it.getArgument<() -> Unit>(0)
+        }
+        var done = false
+
+        // When
+        testedWriter.stop { done = true }
+
+        // Then - not before the images queued with the release are in storage
+        assertThat(written).containsExactly("r1")
+        assertThat(done).isFalse
+        pendingImages?.invoke()
         assertThat(done).isTrue
     }
 

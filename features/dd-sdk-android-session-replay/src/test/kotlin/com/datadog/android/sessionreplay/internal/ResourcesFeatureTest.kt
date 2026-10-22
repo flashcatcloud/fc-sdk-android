@@ -85,6 +85,25 @@ internal class ResourcesFeatureTest {
     }
 
     @Test
+    fun `M let Session Replay settle first W onStop()`() {
+        // Given - the images of a replay released at the stop still need this feature's writer
+        var writerWhenSettling: ResourcesWriter? = null
+        testedFeature = ResourcesFeature(
+            sdkCore = mockSdkCore,
+            customEndpointUrl = null,
+            beforeStop = { writerWhenSettling = testedFeature.dataWriter }
+        )
+        testedFeature.onInitialize(mockContext)
+
+        // When
+        testedFeature.onStop()
+
+        // Then
+        assertThat(writerWhenSettling).isNotNull.isNotInstanceOf(NoOpResourcesWriter::class.java)
+        assertThat(testedFeature.dataWriter).isInstanceOf(NoOpResourcesWriter::class.java)
+    }
+
+    @Test
     fun `M perform setup W onInitialize()`() {
         // When
         testedFeature.onInitialize(mockContext)
