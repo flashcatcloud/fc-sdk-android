@@ -7,6 +7,7 @@
 package com.datadog.android.sessionreplay.internal.storage
 
 import com.datadog.android.api.InternalLogger
+import com.datadog.android.api.feature.EventWriteScope
 import com.datadog.android.api.feature.Feature
 import com.datadog.android.api.feature.FeatureScope
 import com.datadog.android.api.feature.FeatureSdkCore
@@ -19,6 +20,7 @@ import com.datadog.android.sessionreplay.internal.processor.EnrichedRecord
 import com.datadog.android.sessionreplay.internal.processor.EnrichedResource
 import com.datadog.android.sessionreplay.model.MobileSegment
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Writes the records - and, through [ResourcesWriter], the images they refer to - unless their
@@ -52,6 +54,39 @@ internal class SessionReplayRecordWriter(
          * be playable, and cutting the buffer at a periodic full snapshot leaves them behind.
          */
         val viewStartRecords = HashMap<String, List<MobileSegment.MobileRecord>>()
+
+        /**
+         * Set when consent is withdrawn after the session reported its error under granted consent:
+         * the replay is released through what was taken then, and holds nothing more.
+         */
+        var consentedRelease: ConsentedRelease? = null
+    }
+
+    /**
+     * Where a session that reported its error goes should consent be withdrawn before RUM releases
+     * it, both taken the moment it reported it - and only if consent was granted then.
+     */
+    private class ConsentedRelease {
+        @Volatile
+        var records: EventWriteScope? = null
+
+        /** Without it, the images go: they would be written under the consent now withdrawn. */
+        @Volatile
+        var resources: ResourcesWriter? = null
+    }
+
+    /** The writes of a stop: it is over once the records and every image they show are written. */
+    private class Settlement(private val onDone: () -> Unit) {
+        private val pending = AtomicInteger(1)
+
+        fun begin(): () -> Unit {
+            pending.incrementAndGet()
+            return ::end
+        }
+
+        fun end() {
+            if (pending.decrementAndGet() == 0) onDone()
+        }
     }
 
     // Everything below is touched on the storage thread only, in submission order, which keeps the
@@ -90,6 +125,9 @@ internal class SessionReplayRecordWriter(
      */
     private val fates = LinkedHashMap<String, Boolean>()
 
+    /** Per session that reported its error - see [ConsentedRelease] and [dropAllForConsent]. */
+    private val consentedReleases = LinkedHashMap<String, ConsentedRelease>()
+
     /** Set, on the caller's thread, the first time a session's replay is withheld. */
     @Volatile
     private var engaged = false
@@ -104,11 +142,15 @@ internal class SessionReplayRecordWriter(
                     writeNow(writer, record, serialize(record))
                     // The recorder captures an image once per process: one it captured while a
                     // replay was withheld leaves with the first sent record that shows it.
-                    if (heldResources.isNotEmpty()) sendResources(record.resourceIds(), record.sessionId)
+                    if (heldResources.isNotEmpty() && consent != TrackingConsent.NOT_GRANTED) {
+                        sendResources(record.resourceIds(), record.sessionId)
+                    }
                 }
                 // Nothing may be held while consent is withdrawn, and what was held under the
                 // consent now withdrawn goes too.
                 consent == TrackingConsent.NOT_GRANTED -> dropAllForConsent()
+                // Waits for its release under the consent it was recorded with: nothing joins it.
+                buffer.consentedRelease != null -> Unit
                 else -> hold(buffer, record)
             }
         }
@@ -118,13 +160,13 @@ internal class SessionReplayRecordWriter(
         onStorageThread { _, consent ->
             when {
                 consent == TrackingConsent.NOT_GRANTED -> {
-                    clearResources()
+                    dropResourcesForConsent()
                     // Captured once, like any image: told to the recorder so it is captured again.
                     forgetResources(listOf(enrichedResource.filename))
                 }
                 bufferOf(sessionId) != null || sessionId in discardedSessionIds ->
                     holdResource(enrichedResource, onWritten)
-                else -> resourcesWriter.write(enrichedResource, sessionId, onWritten)
+                else -> resourcesWriter.write(enrichedResource, sessionId, onWritten, onSettled = {})
             }
         }
     }
@@ -142,14 +184,14 @@ internal class SessionReplayRecordWriter(
     override fun stopWithholding(sessionId: String) {
         onStorageThread { writer, _ ->
             val buffer = current ?: return@onStorageThread
-            if (buffer.sessionId == sessionId) release(writer, buffer) else park(buffer)
+            if (buffer.sessionId == sessionId) releaseHeld(writer, buffer) else park(buffer)
         }
     }
 
     override fun release(sessionId: String) {
         noteFate(sessionId, released = true)
         onStorageThread { writer, _ ->
-            bufferOf(sessionId)?.let { release(writer, it) }
+            bufferOf(sessionId)?.let { releaseHeld(writer, it) }
         }
     }
 
@@ -174,8 +216,22 @@ internal class SessionReplayRecordWriter(
 
     override fun expectRelease(sessionId: String) {
         noteFate(sessionId, released = true)
+        val consentedRelease = ConsentedRelease()
+        synchronized(this) {
+            consentedReleases.remove(sessionId)
+            consentedReleases[sessionId] = consentedRelease
+            while (consentedReleases.size > FATES_REMEMBERED) consentedReleases.remove(consentedReleases.keys.first())
+        }
+        featureScope()?.withWriteContext { datadogContext, writeScope ->
+            if (datadogContext.trackingConsent == TrackingConsent.GRANTED) consentedRelease.records = writeScope
+        }
+        resourcesWriter.captureGranted { consentedRelease.resources = it }
     }
 
+    /**
+     * Done once the held records are written and every image they show has been through storage -
+     * the images go through their own feature, which the core may stop right after this one.
+     */
     override fun stop(onDone: () -> Unit) {
         val feature = featureScope()
         // A customer who never turned the switch on pays nothing at the stop. Decided from a flag
@@ -187,12 +243,21 @@ internal class SessionReplayRecordWriter(
         }
         feature.withWriteContext { _, writeScope ->
             writeScope { writer ->
+                val settlement = Settlement(onDone)
                 synchronized(this@SessionReplayRecordWriter) {
                     (listOfNotNull(current) + parked).forEach { buffer ->
-                        if (fates[buffer.sessionId] == true) release(writer, buffer) else discard(buffer)
+                        if (fates[buffer.sessionId] == true) {
+                            releaseHeld(
+                                writer,
+                                buffer,
+                                settlement
+                            )
+                        } else {
+                            discard(buffer)
+                        }
                     }
                 }
-                onDone()
+                settlement.end()
             }
         }
     }
@@ -280,7 +345,30 @@ internal class SessionReplayRecordWriter(
         buffer.viewStartRecords.keys.retainAll(viewsHeld + lastDroppedViewId)
     }
 
-    private fun release(writer: EventBatchWriter, buffer: Buffer) {
+    /** Through what was taken under granted consent, if consent was withdrawn since. */
+    private fun releaseHeld(writer: EventBatchWriter, buffer: Buffer, settlement: Settlement? = null) {
+        val consented = buffer.consentedRelease
+        val scope = consented?.records
+        if (scope == null) {
+            release(writer, buffer, settlement)
+            return
+        }
+        forget(buffer)
+        val settled = settlement?.begin()
+        scope { scopedWriter ->
+            synchronized(this@SessionReplayRecordWriter) {
+                release(scopedWriter, buffer, settlement, consented.resources)
+            }
+            settled?.invoke()
+        }
+    }
+
+    private fun release(
+        writer: EventBatchWriter,
+        buffer: Buffer,
+        settlement: Settlement? = null,
+        imagesWriter: ResourcesWriter? = resourcesWriter
+    ) {
         val first = buffer.records.firstOrNull()?.record
         val startRecords = first?.let { buffer.viewStartRecords[it.viewId] }
         // What storage refused is counted, so the release reports what actually landed.
@@ -299,7 +387,12 @@ internal class SessionReplayRecordWriter(
             !written
         }
         // Only the images these records show: any other held image belongs to what was never sent.
-        sendResources(buffer.records.flatMapTo(HashSet()) { it.resourceIds }, buffer.sessionId)
+        sendResources(
+            buffer.records.flatMapTo(HashSet()) { it.resourceIds },
+            buffer.sessionId,
+            settlement,
+            imagesWriter
+        )
         recordCallback.onWithheldRecordsCleared(buffer.records.map { it.record })
         // Without this the replay's promise of a minute before the error could not be checked.
         sdkCore.internalLogger.log(
@@ -318,13 +411,25 @@ internal class SessionReplayRecordWriter(
         forget(buffer)
     }
 
-    private fun sendResources(resourceIds: Set<String>, sessionId: String) {
+    /** Through [via]; with none, the images are dropped and told to the recorder. */
+    private fun sendResources(
+        resourceIds: Set<String>,
+        sessionId: String,
+        settlement: Settlement? = null,
+        via: ResourcesWriter? = resourcesWriter
+    ) {
+        val dropped = ArrayList<String>()
         resourceIds.forEach { id ->
             heldResources.remove(id)?.let { held ->
                 heldResourceBytes -= held.resource.resource.size
-                resourcesWriter.write(held.resource, sessionId, held.onWritten)
+                if (via == null) {
+                    dropped.add(id)
+                } else {
+                    via.write(held.resource, sessionId, held.onWritten, onSettled = settlement?.begin() ?: {})
+                }
             }
         }
+        if (dropped.isNotEmpty()) forgetResources(dropped)
     }
 
     private fun discard(buffer: Buffer) {
@@ -346,9 +451,19 @@ internal class SessionReplayRecordWriter(
      * sessions hold again from scratch should consent be granted back. The views' meta and focus
      * stay: they say how big the screen is, not what it showed, and the view in progress will not
      * record them again.
+     *
+     * A session that already reported its error under granted consent is the exception: RUM
+     * releases its minute under that consent, and the replay waits to follow it - records and the
+     * images they show - under that consent too. One that reported it while consent was pending
+     * goes like the others: a pending consent withdrawn means its data is wiped.
      */
     private fun dropAllForConsent() {
         (listOfNotNull(current) + parked).forEach { buffer ->
+            val consented = consentedReleases[buffer.sessionId]
+            if (fates[buffer.sessionId] == true && consented?.records != null) {
+                buffer.consentedRelease = consented
+                return@forEach
+            }
             recordCallback.onWithheldRecordsCleared(buffer.records.map { it.record })
             buffer.droppedCount += buffer.records.size
             // Only the view in progress will hold records again without recording its start anew.
@@ -357,13 +472,18 @@ internal class SessionReplayRecordWriter(
             buffer.bytes = 0L
             buffer.viewStartRecords.keys.retainAll(listOfNotNull(viewInProgress))
         }
-        clearResources()
+        dropResourcesForConsent()
     }
 
-    private fun clearResources() {
-        if (heldResources.isNotEmpty()) forgetResources(heldResources.keys.toList())
-        heldResources.clear()
-        heldResourceBytes = 0L
+    /** All held images but those a replay waiting to go out under granted consent shows. */
+    private fun dropResourcesForConsent() {
+        val shown = (listOfNotNull(current) + parked)
+            .filter { it.consentedRelease != null }
+            .flatMapTo(HashSet()) { buffer -> buffer.records.flatMap { it.resourceIds } }
+        val dropped = heldResources.keys.filter { it !in shown }
+        if (dropped.isEmpty()) return
+        dropped.forEach { id -> heldResourceBytes -= heldResources.remove(id)?.resource?.resource?.size ?: 0 }
+        forgetResources(dropped)
     }
 
     private fun writeNow(writer: EventBatchWriter, record: EnrichedRecord, data: ByteArray): Boolean {

@@ -15,6 +15,7 @@ import com.datadog.android.api.feature.FeatureSdkCore
 import com.datadog.android.api.storage.DataWriter
 import com.datadog.android.api.storage.EventBatchWriter
 import com.datadog.android.api.storage.EventType
+import com.datadog.android.privacy.TrackingConsent
 import com.datadog.android.rum.model.ActionEvent
 import com.datadog.android.rum.model.ErrorEvent
 import com.datadog.android.rum.model.LongTaskEvent
@@ -480,6 +481,112 @@ internal class WebViewRumEventConsumerTest {
         testedConsumer.consume(fakeErrorEventAsJson)
 
         // Then
+        verify(mockDataWriter, never()).write(any(), any(), any())
+    }
+
+    @Test
+    fun `M tell RUM of the error W consume() { Error event raised by the page }`(forge: Forge) {
+        // Given
+        whenever(mockSdkCore.getFeature(Feature.RUM_FEATURE_NAME)) doReturn mockRumFeatureScope
+        val fakeErrorEventAsJson = forge.getForgery<ErrorEvent>().toJson().asJsonObject
+        fakeMappedErrorEvent.getAsJsonObject("error").addProperty("source", "source")
+        whenever(
+            mockWebViewRumEventMapper.mapEvent(
+                fakeErrorEventAsJson,
+                fakeRumContext,
+                fakeServerTimeOffsetInMillis,
+                fakeSessionReplayEnabled
+            )
+        ).thenReturn(fakeMappedErrorEvent)
+
+        // When
+        testedConsumer.consume(fakeErrorEventAsJson)
+
+        // Then
+        verify(mockRumFeatureScope).sendEvent(
+            mapOf(
+                "type" to WebViewRumEventConsumer.WEB_VIEW_ERROR_MESSAGE_TYPE,
+                WebViewRumEventConsumer.WEB_VIEW_SESSION_ID_KEY to fakeRumContext.sessionId
+            )
+        )
+    }
+
+    @Test
+    fun `M not tell RUM of the error W consume() { Error event of the web SDK itself }`(forge: Forge) {
+        // Given
+        whenever(mockSdkCore.getFeature(Feature.RUM_FEATURE_NAME)) doReturn mockRumFeatureScope
+        val fakeErrorEventAsJson = forge.getForgery<ErrorEvent>().toJson().asJsonObject
+        fakeMappedErrorEvent.getAsJsonObject("error").addProperty("source", "agent")
+        whenever(
+            mockWebViewRumEventMapper.mapEvent(
+                fakeErrorEventAsJson,
+                fakeRumContext,
+                fakeServerTimeOffsetInMillis,
+                fakeSessionReplayEnabled
+            )
+        ).thenReturn(fakeMappedErrorEvent)
+
+        // When
+        testedConsumer.consume(fakeErrorEventAsJson)
+
+        // Then
+        verify(mockRumFeatureScope, never()).sendEvent(
+            mapOf(
+                "type" to WebViewRumEventConsumer.WEB_VIEW_ERROR_MESSAGE_TYPE,
+                WebViewRumEventConsumer.WEB_VIEW_SESSION_ID_KEY to fakeRumContext.sessionId
+            )
+        )
+    }
+
+    // endregion
+
+    // region Withheld session
+
+    @Test
+    fun `M hand the event over to RUM W consume() { session withheld until it errors }`(forge: Forge) {
+        // Given
+        fakeRumContext = fakeRumContext.copy(sessionState = "WITHHELD")
+        whenever(mockRumContextProvider.getRumContext(any())) doReturn fakeRumContext
+        whenever(mockSdkCore.getFeature(Feature.RUM_FEATURE_NAME)) doReturn mockRumFeatureScope
+        fakeDatadogContext = fakeDatadogContext.copy(trackingConsent = TrackingConsent.GRANTED)
+        whenever(mockOffsetProvider.getOffset(any(), any())) doReturn fakeServerTimeOffsetInMillis
+        val fakeErrorEventAsJson = forge.getForgery<ErrorEvent>().toJson().asJsonObject
+        whenever(
+            mockWebViewRumEventMapper.mapEvent(
+                fakeErrorEventAsJson,
+                fakeRumContext,
+                fakeServerTimeOffsetInMillis,
+                false
+            )
+        ).thenReturn(fakeMappedErrorEvent)
+
+        // When
+        testedConsumer.consume(fakeErrorEventAsJson)
+
+        // Then
+        verify(mockRumFeatureScope).sendEvent(
+            mapOf(
+                "type" to WebViewRumEventConsumer.WEB_VIEW_WITHHELD_EVENT_MESSAGE_TYPE,
+                WebViewRumEventConsumer.WEB_VIEW_EVENT_KEY to fakeMappedErrorEvent
+            )
+        )
+        verify(mockDataWriter, never()).write(any(), any(), any())
+    }
+
+    @Test
+    fun `M drop the event W consume() { session withheld, consent withdrawn }`(forge: Forge) {
+        // Given
+        fakeRumContext = fakeRumContext.copy(sessionState = "WITHHELD")
+        whenever(mockRumContextProvider.getRumContext(any())) doReturn fakeRumContext
+        whenever(mockSdkCore.getFeature(Feature.RUM_FEATURE_NAME)) doReturn mockRumFeatureScope
+        fakeDatadogContext = fakeDatadogContext.copy(trackingConsent = TrackingConsent.NOT_GRANTED)
+        val fakeErrorEventAsJson = forge.getForgery<ErrorEvent>().toJson().asJsonObject
+
+        // When
+        testedConsumer.consume(fakeErrorEventAsJson)
+
+        // Then
+        verify(mockWebViewRumEventMapper, never()).mapEvent(any(), any(), any(), any())
         verify(mockDataWriter, never()).write(any(), any(), any())
     }
 

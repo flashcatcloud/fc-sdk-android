@@ -36,6 +36,7 @@ import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
@@ -272,7 +273,7 @@ internal class SessionReplayRecordWriterTest {
 
         // Then - captured once, so only a recapture would ever carry it
         assertThat(forgottenResources).containsExactly("huge")
-        verify(mockResourcesWriter, never()).write(any(), any(), any())
+        verify(mockResourcesWriter, never()).write(any(), any(), any(), any())
     }
 
     @Test
@@ -286,7 +287,7 @@ internal class SessionReplayRecordWriterTest {
 
         // Then
         assertThat(forgottenResources).containsExactly("new")
-        verify(mockResourcesWriter, never()).write(any(), any(), any())
+        verify(mockResourcesWriter, never()).write(any(), any(), any(), any())
     }
 
     @Test
@@ -314,7 +315,7 @@ internal class SessionReplayRecordWriterTest {
         testedWriter.write(resource("img"), "s1", onWritten)
 
         // Then
-        verify(mockResourcesWriter).write(any(), eq("s1"), eq(onWritten))
+        verify(mockResourcesWriter).write(any(), eq("s1"), eq(onWritten), any())
     }
 
     @Test
@@ -332,7 +333,7 @@ internal class SessionReplayRecordWriterTest {
 
         // Then
         assertThat(beforeRelease).isZero()
-        verify(mockResourcesWriter, times(1)).write(any(), eq("s1"), any())
+        verify(mockResourcesWriter, times(1)).write(any(), eq("s1"), any(), any())
     }
 
     @Test
@@ -347,7 +348,7 @@ internal class SessionReplayRecordWriterTest {
         testedWriter.write(resource("late"), "s1") {}
 
         // Then
-        verify(mockResourcesWriter, never()).write(any(), any(), any())
+        verify(mockResourcesWriter, never()).write(any(), any(), any(), any())
     }
 
     @Test
@@ -679,7 +680,7 @@ internal class SessionReplayRecordWriterTest {
 
         // Then - only what was held again afterwards goes
         assertThat(written).containsExactly("r2b")
-        verify(mockResourcesWriter, never()).write(any(), any(), any())
+        verify(mockResourcesWriter, never()).write(any(), any(), any(), any())
     }
 
     @Test
@@ -764,6 +765,105 @@ internal class SessionReplayRecordWriterTest {
     }
 
     @Test
+    fun `M call back once the images are written W stop { released session shows images }`() {
+        // Given
+        recordWrites()
+        val settles = mutableListOf<() -> Unit>()
+        whenever(mockResourcesWriter.write(any(), any(), any(), any())) doAnswer {
+            settles.add(it.getArgument(3))
+            Unit
+        }
+        testedWriter.withhold("s1")
+        testedWriter.write(imageRecord("r1", "s1", 1_000, "img"))
+        testedWriter.write(resource("img"), "s1") {}
+        testedWriter.expectRelease("s1")
+        var done = false
+
+        // When
+        testedWriter.stop { done = true }
+
+        // Then - the image goes through its own feature, asynchronously
+        assertThat(written).containsExactly("r1")
+        assertThat(settles).hasSize(1)
+        assertThat(done).isFalse
+        settles.single().invoke()
+        assertThat(done).isTrue
+    }
+
+    @Test
+    fun `M release under the consent it was recorded with W dropForConsent { session reported its error }`() {
+        // Given - s1 reported its error while consent was granted
+        recordWrites()
+        testedWriter.withhold("s1")
+        testedWriter.write(record("r1", "s1", fullSnapshotAt = 1_000))
+        testedWriter.expectRelease("s1")
+        // From now on, the writer handed out is the one of a withdrawn consent
+        val deniedWrites = mutableListOf<String>()
+        val deniedWriter = org.mockito.Mockito.mock(EventBatchWriter::class.java)
+        whenever(deniedWriter.write(anyOrNull(), anyOrNull(), any())) doAnswer {
+            deniedWrites.add(EnrichedRecordTag.of(it.getArgument<RawBatchEvent>(0)))
+            true
+        }
+        val deniedScope: EventWriteScope = { block -> block(deniedWriter) }
+        val deniedContext = fakeDatadogContext.copy(trackingConsent = TrackingConsent.NOT_GRANTED)
+        whenever(mockSessionReplayFeature.withWriteContext(any(), any())) doAnswer {
+            it.getArgument<(DatadogContext, EventWriteScope) -> Unit>(it.arguments.lastIndex)
+                .invoke(deniedContext, deniedScope)
+        }
+
+        // When
+        testedWriter.dropForConsent()
+        testedWriter.write(record("r1b", "s1", fullSnapshotAt = 5_000))
+        testedWriter.release("s1")
+
+        // Then - what was held goes where its consent sent it, and nothing recorded since joins it
+        assertThat(written).containsExactly("r1")
+        assertThat(deniedWrites).isEmpty()
+    }
+
+    @Test
+    fun `M drop the replay W dropForConsent { session reported its error while consent was pending }`() {
+        // Given
+        recordWrites(consent = TrackingConsent.PENDING)
+        testedWriter.withhold("s1")
+        testedWriter.write(record("r1", "s1", fullSnapshotAt = 1_000))
+        testedWriter.expectRelease("s1")
+
+        // When - pending consent withdrawn, then RUM's word on the session
+        recordWrites(consent = TrackingConsent.NOT_GRANTED)
+        testedWriter.dropForConsent()
+        testedWriter.release("s1")
+
+        // Then
+        assertThat(written).isEmpty()
+    }
+
+    @Test
+    fun `M release the images a released replay shows W dropForConsent { session reported its error }`() {
+        // Given - s1 reported its error while consent was granted; one held image it shows, one not
+        recordWrites()
+        val consentedImages = org.mockito.Mockito.mock(ResourcesWriter::class.java)
+        whenever(mockResourcesWriter.captureGranted(any())) doAnswer {
+            it.getArgument<(ResourcesWriter?) -> Unit>(0).invoke(consentedImages)
+        }
+        testedWriter.withhold("s1")
+        testedWriter.write(imageRecord("r1", "s1", fullSnapshotAt = 1_000, resourceId = "shown"))
+        testedWriter.write(resource("shown"), "s1") {}
+        testedWriter.write(resource("unshown"), "s1") {}
+        testedWriter.expectRelease("s1")
+
+        // When
+        recordWrites(consent = TrackingConsent.NOT_GRANTED)
+        testedWriter.dropForConsent()
+        testedWriter.release("s1")
+
+        // Then - the image goes with its records, through what was taken under granted consent
+        verify(consentedImages).write(argThat { filename == "shown" }, eq("s1"), any(), any())
+        verify(mockResourcesWriter, never()).write(any(), any(), any(), any())
+        assertThat(forgottenResources).containsExactly("unshown")
+    }
+
+    @Test
     fun `M throw away a session kept aside W discard`() {
         // Given
         recordWrites()
@@ -818,7 +918,7 @@ internal class SessionReplayRecordWriterTest {
 
         // Then - holding starts over at the first full snapshot under consent
         assertThat(written).containsExactly("r3")
-        verify(mockResourcesWriter, never()).write(any(), any(), any())
+        verify(mockResourcesWriter, never()).write(any(), any(), any(), any())
     }
 
     @Test
@@ -857,7 +957,7 @@ internal class SessionReplayRecordWriterTest {
 
         // Then - the image captured under the discarded session goes with the records that show it
         val sent = argumentCaptor<EnrichedResource>()
-        verify(mockResourcesWriter, times(2)).write(sent.capture(), eq("s2"), any())
+        verify(mockResourcesWriter, times(2)).write(sent.capture(), eq("s2"), any(), any())
         assertThat(sent.allValues.map { it.filename }).containsExactlyInAnyOrder("shared", "own")
     }
 
@@ -875,7 +975,7 @@ internal class SessionReplayRecordWriterTest {
         // Then
         assertThat(written).containsExactly("r2")
         val sent = argumentCaptor<EnrichedResource>()
-        verify(mockResourcesWriter).write(sent.capture(), eq("s2"), any())
+        verify(mockResourcesWriter).write(sent.capture(), eq("s2"), any(), any())
         assertThat(sent.firstValue.filename).isEqualTo("icon")
     }
 
@@ -920,7 +1020,7 @@ internal class SessionReplayRecordWriterTest {
         testedWriter.release("s1")
 
         // Then
-        verify(mockResourcesWriter, never()).write(any(), any(), any())
+        verify(mockResourcesWriter, never()).write(any(), any(), any(), any())
     }
 
     private fun imageRecord(tag: String, sessionId: String, fullSnapshotAt: Long, resourceId: String): EnrichedRecord {
