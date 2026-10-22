@@ -53,7 +53,7 @@ internal class SessionReplayRecordWriter(
          * The latest meta and focus records of each view held. A view's first segment needs them to
          * be playable, and cutting the buffer at a periodic full snapshot leaves them behind.
          */
-        val viewStartRecords = HashMap<String, List<MobileSegment.MobileRecord>>()
+        val viewStartRecords = LinkedHashMap<String, List<MobileSegment.MobileRecord>>()
 
         /**
          * Set when consent is withdrawn after the session reported its error under granted consent:
@@ -279,7 +279,12 @@ internal class SessionReplayRecordWriter(
 
     private fun hold(buffer: Buffer, record: EnrichedRecord) {
         record.records.filter { it.isViewStart() }.takeIf { it.isNotEmpty() }?.let {
+            buffer.viewStartRecords.remove(record.viewId)
             buffer.viewStartRecords[record.viewId] = it
+            // Kept even while nothing is held yet, so bounded on its own: the oldest views go first.
+            while (buffer.viewStartRecords.size > VIEW_STARTS_REMEMBERED) {
+                buffer.viewStartRecords.remove(buffer.viewStartRecords.keys.first())
+            }
         }
         val fullSnapshotAt = record.fullSnapshotTimestamp()
         // History can only be replayed from a full snapshot, so holding starts at one: a touch
@@ -549,6 +554,9 @@ internal class SessionReplayRecordWriter(
         private const val DISCARDED_SESSIONS_REMEMBERED = 64
 
         private const val FATES_REMEMBERED = 16
+
+        /** The views whose meta and focus a held span may need; one per view, the oldest go first. */
+        internal const val VIEW_STARTS_REMEMBERED = 16
 
         internal const val RELEASED_MESSAGE = "Error session replay buffer released"
 

@@ -398,6 +398,32 @@ internal class SessionReplayRecordWriterTest {
     }
 
     @Test
+    fun `M forget the oldest view's meta and focus W hold { more views than remembered }`() {
+        // Given
+        recordWrites()
+        testedWriter.withhold("s1")
+        val meta = MobileSegment.MobileRecord.MetaRecord(0, data = MobileSegment.Data1(100, 200))
+        val focus = MobileSegment.MobileRecord.FocusRecord(0, data = MobileSegment.Data2(true))
+        repeat(SessionReplayRecordWriter.VIEW_STARTS_REMEMBERED + 1) {
+            // a view start the recorder sent without its full snapshot: nothing is held yet
+            testedWriter.write(EnrichedRecord("app", "s1", "view$it", listOf(meta, focus)))
+        }
+        testedWriter.write(record("view0", "s1", fullSnapshotAt = 30_000))
+        val released = mutableListOf<String>()
+        whenever(mockEventBatchWriter.write(anyOrNull(), anyOrNull(), any())) doAnswer {
+            released.add(String(it.getArgument<RawBatchEvent>(0).data))
+            true
+        }
+
+        // When
+        testedWriter.stopWithholding("s1")
+
+        // Then - the first view's meta and focus were not kept
+        val first = com.google.gson.JsonParser.parseString(released.single()).asJsonObject.getAsJsonArray("records")
+        assertThat(first.map { it.asJsonObject.get("type").asInt }).containsExactly(10)
+    }
+
+    @Test
     fun `M drop the oldest span but keep a full snapshot W hold { over the byte limit }`() {
         // Given
         recordWrites()

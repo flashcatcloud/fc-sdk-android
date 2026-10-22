@@ -1092,7 +1092,12 @@ internal class RumFeature(
     )
 
     internal companion object {
-        private const val STOP_DRAIN_WAIT_MS = 2_000L
+        /**
+         * The stop is usually called on the main thread, and the core's own shutdown already waits
+         * up to three seconds: together with the Session Replay's wait this keeps a stop well under
+         * the five seconds of an ANR. A release still queued after it is lost, like any queued event.
+         */
+        private const val STOP_DRAIN_WAIT_MS = 500L
         internal const val STOP_DRAIN_FAILED_MESSAGE =
             "Could not wait for the withheld session to be settled before the SDK stopped."
 

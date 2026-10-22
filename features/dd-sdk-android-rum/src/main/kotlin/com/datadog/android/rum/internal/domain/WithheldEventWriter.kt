@@ -275,7 +275,10 @@ internal class WithheldEventWriter(
             val type = event.stringAt(TYPE_KEY)
             val viewId = event.stringAt(VIEW_KEY, ID_KEY)
             if (type == WEB_VIEW_TYPE) {
-                if (viewId != null) holdView(viewId, event.longAt(DATE_KEY) ?: 0L, batchEvent, EventType.DEFAULT)
+                // The page sets the date: one in the future would keep its view current over the
+                // native views that come after it.
+                val date = event.longAt(DATE_KEY)?.coerceAtMost(System.currentTimeMillis()) ?: 0L
+                if (viewId != null) holdView(viewId, date, batchEvent, EventType.DEFAULT)
                 return
             }
             val isError = type == WEB_ERROR_TYPE && event.stringAt(ERROR_KEY, SOURCE_KEY) != WEB_AGENT_SOURCE
@@ -512,6 +515,11 @@ internal class WithheldEventWriter(
 
     @WorkerThread
     private fun holdView(viewId: String, date: Long, batchEvent: RawBatchEvent, eventType: EventType) {
+        // One view over the whole bound would push out every other and still not fit.
+        if (batchEvent.data.size > VIEWS_BYTES_LIMIT) {
+            droppedCount++
+            return
+        }
         // A view event is cumulative, so the latest supersedes the ones before. Removed first so the
         // map orders views by their last update.
         views.remove(viewId)
@@ -522,11 +530,12 @@ internal class WithheldEventWriter(
             currentViewDate = date
             currentViewId = viewId
         }
-        while (views.size > VIEWS_LIMIT) {
+        // The views left with nothing in the window go first, then the oldest of the others.
+        prune()
+        while (views.size > VIEWS_LIMIT || views.values.sumOf { it.event.data.size.toLong() } > VIEWS_BYTES_LIMIT) {
             val oldest = views.keys.firstOrNull { it != currentViewId } ?: break
             views.remove(oldest)
         }
-        prune()
     }
 
     /**
@@ -742,6 +751,13 @@ internal class WithheldEventWriter(
         internal const val VIEWS_LIMIT = 50
 
         /**
+         * A view's size is the app's (its attributes) or a web page's to choose, so the views get a
+         * memory bound of their own: the oldest go first, and the one in progress stays - unless it
+         * is over the bound alone, then it is not held at all.
+         */
+        internal const val VIEWS_BYTES_LIMIT = 256 * 1024
+
+        /**
          * Correlated errors make a whole fleet release at the same instant, right when whatever
          * caused them is under strain. Releases are spread over this window instead.
          */
@@ -832,8 +848,12 @@ internal class WithheldEventWriter(
         private fun JsonObject.stringAt(vararg path: String): String? =
             primitiveAt(path)?.takeIf { it.isString }?.asString
 
+        /**
+         * Read through a double: a web page writes these numbers, and `asLong` on a literal such as
+         * `1e99999999999` throws on the storage thread, or materialises an enormous integer.
+         */
         private fun JsonObject.longAt(vararg path: String): Long? =
-            primitiveAt(path)?.takeIf { it.isNumber }?.asLong
+            primitiveAt(path)?.takeIf { it.isNumber }?.asString?.toDoubleOrNull()?.takeIf { it.isFinite() }?.toLong()
 
         private fun JsonObject.primitiveAt(path: Array<out String>): JsonPrimitive? {
             var node: JsonElement = this
