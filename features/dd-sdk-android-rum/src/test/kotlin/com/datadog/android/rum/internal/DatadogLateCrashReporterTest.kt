@@ -16,6 +16,7 @@ import com.datadog.android.api.feature.FeatureScope
 import com.datadog.android.api.storage.DataWriter
 import com.datadog.android.api.storage.EventBatchWriter
 import com.datadog.android.api.storage.EventType
+import com.datadog.android.api.storage.RawBatchEvent
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.core.feature.event.ThreadDump
 import com.datadog.android.core.internal.persistence.Deserializer
@@ -27,6 +28,7 @@ import com.datadog.android.rum.internal.anr.ANRDetectorRunnable
 import com.datadog.android.rum.internal.anr.ANRException
 import com.datadog.android.rum.internal.anr.AndroidTraceParser
 import com.datadog.android.rum.internal.domain.RumContext
+import com.datadog.android.rum.internal.domain.RumDataWriter
 import com.datadog.android.rum.internal.domain.scope.toErrorSchemaType
 import com.datadog.android.rum.model.ErrorEvent
 import com.datadog.android.rum.model.ViewEvent
@@ -57,7 +59,9 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.inOrder
+import org.mockito.kotlin.isA
 import org.mockito.kotlin.isNull
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
@@ -271,6 +275,105 @@ internal class DatadogLateCrashReporterTest {
             assertThat(firstValue).isInstanceOf(ErrorEvent::class.java)
             assertThat((secondValue as ViewEvent).session.sampledForError).isTrue
         }
+    }
+
+    @Test
+    fun `M write the view before the crash W handleNdkCrashEvent() {session kept on error}`(
+        @StringForgery crashMessage: String,
+        @LongForgery(min = 1) fakeTimestamp: Long,
+        @StringForgery fakeSignalName: String,
+        @StringForgery fakeStacktrace: String,
+        @Forgery viewEvent: ViewEvent
+    ) {
+        // Given - the view is the only one the intake will get, so it has to go first
+        val fakeViewEvent = viewEvent.copy(
+            date = fakeCurrentTimeMs - 1000,
+            session = viewEvent.session.copy(sampledForError = true)
+        )
+        val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
+        whenever(mockRumEventDeserializer.deserialize(fakeViewEventJson)) doReturn fakeViewEvent
+        val serializedCrash = RawBatchEvent(data = "crash".toByteArray())
+        val mockRumDataWriter = mock<RumDataWriter>()
+        whenever(mockRumDataWriter.serialize(any())) doReturn serializedCrash
+        val fakeEvent = mapOf(
+            "timestamp" to fakeTimestamp,
+            "signalName" to fakeSignalName,
+            "stacktrace" to fakeStacktrace,
+            "message" to crashMessage,
+            "lastViewEvent" to fakeViewEventJson
+        )
+
+        // When
+        testedHandler.handleNdkCrashEvent(fakeEvent, mockRumDataWriter)
+
+        // Then
+        inOrder(mockRumDataWriter) {
+            verify(mockRumDataWriter).serialize(isA<ErrorEvent>())
+            verify(mockRumDataWriter).write(eq(mockEventBatchWriter), isA<ViewEvent>(), eq(EventType.CRASH))
+            verify(mockRumDataWriter).writeSerialized(mockEventBatchWriter, serializedCrash, EventType.CRASH)
+        }
+    }
+
+    @Test
+    fun `M write nothing W handleNdkCrashEvent() {session kept on error, crash dropped by a mapper}`(
+        @StringForgery crashMessage: String,
+        @LongForgery(min = 1) fakeTimestamp: Long,
+        @StringForgery fakeSignalName: String,
+        @StringForgery fakeStacktrace: String,
+        @Forgery viewEvent: ViewEvent
+    ) {
+        // Given - without its crash the session is one that never errored
+        val fakeViewEvent = viewEvent.copy(
+            date = fakeCurrentTimeMs - 1000,
+            session = viewEvent.session.copy(sampledForError = true)
+        )
+        val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
+        whenever(mockRumEventDeserializer.deserialize(fakeViewEventJson)) doReturn fakeViewEvent
+        val mockRumDataWriter = mock<RumDataWriter>()
+        whenever(mockRumDataWriter.serialize(any())) doReturn null
+        val fakeEvent = mapOf(
+            "timestamp" to fakeTimestamp,
+            "signalName" to fakeSignalName,
+            "stacktrace" to fakeStacktrace,
+            "message" to crashMessage,
+            "lastViewEvent" to fakeViewEventJson
+        )
+
+        // When
+        testedHandler.handleNdkCrashEvent(fakeEvent, mockRumDataWriter)
+
+        // Then
+        verify(mockRumDataWriter, never()).write(any(), any(), any())
+        verify(mockRumDataWriter, never()).writeSerialized(any(), any(), any())
+    }
+
+    @Test
+    fun `M write nothing W handleAnrCrash() {session kept on error, ANR dropped by a mapper}`(
+        @Forgery viewEvent: ViewEvent,
+        forge: Forge
+    ) {
+        // Given
+        val fakeViewEvent = viewEvent.copy(
+            date = fakeCurrentTimeMs - 1000,
+            session = viewEvent.session.copy(sampledForError = true)
+        )
+        val fakeTimestamp = fakeViewEvent.date + forge.aLong(min = 1L, max = 1000000L)
+        val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
+        whenever(mockRumEventDeserializer.deserialize(fakeViewEventJson)) doReturn fakeViewEvent
+        whenever(mockAndroidTraceParser.parse(any())) doReturn forge.anrCrashThreadDump()
+        val mockAnrExitInfo = mock<ApplicationExitInfo>().apply {
+            whenever(traceInputStream) doReturn mock()
+            whenever(timestamp) doReturn fakeTimestamp
+        }
+        val mockRumDataWriter = mock<RumDataWriter>()
+        whenever(mockRumDataWriter.serialize(any())) doReturn null
+
+        // When
+        testedHandler.handleAnrCrash(mockAnrExitInfo, fakeViewEventJson, mockRumDataWriter)
+
+        // Then
+        verify(mockRumDataWriter, never()).write(any(), any(), any())
+        verify(mockRumDataWriter, never()).writeSerialized(any(), any(), any())
     }
 
     @Test
