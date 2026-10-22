@@ -129,6 +129,9 @@ internal class WithheldEventWriter(
     /** Latest event per view, least recently updated first. */
     private val views = LinkedHashMap<String, HeldView>()
     private val details = ArrayList<HeldEvent>()
+
+    /** Errors over the whole budget, kept out of it until the release - see [write]. */
+    private val oversizedErrors = ArrayList<HeldEvent>()
     private var bytes = 0L
     private var droppedCount = 0
     private var currentViewId: String? = null
@@ -205,14 +208,24 @@ internal class WithheldEventWriter(
                 }
                 if (batchEvent.data.size > BYTES_LIMIT) {
                     // The session has earned its release. An error larger than the whole budget
-                    // could only be held by evicting the history it explains, so the history is
-                    // released at once, with the error after its views - written ahead of them it
-                    // could reach the intake before the session it belongs to, or alone should the
-                    // app die during the jitter. Rare enough to forgo the jitter.
-                    details.add(
-                        HeldEvent(element.view.id, batchEvent, eventType, elapsedTimeNs(), EvictionTier.CRASH)
-                    )
-                    release(writer, replayGoesOut = element.error.isCrash != true)
+                    // could only be held by evicting the history it explains, so it is kept apart,
+                    // out of the budget, and leaves with the history behind the jitter - after the
+                    // views, which it would otherwise reach the intake ahead of. A crash leaves at
+                    // once: no timer would ever fire.
+                    if (element.error.isCrash == true) {
+                        oversizedErrors.add(
+                            HeldEvent(element.view.id, batchEvent, eventType, elapsedTimeNs(), EvictionTier.CRASH)
+                        )
+                        release(writer, replayGoesOut = false)
+                    } else if (oversizedErrors.size < OVERSIZED_ERRORS_LIMIT) {
+                        oversizedErrors.add(
+                            HeldEvent(element.view.id, batchEvent, eventType, elapsedTimeNs(), EvictionTier.CRASH)
+                        )
+                        scheduleReleaseOnce(sessionId)
+                    } else {
+                        droppedCount++
+                        scheduleReleaseOnce(sessionId)
+                    }
                     return true
                 }
             }
@@ -391,7 +404,12 @@ internal class WithheldEventWriter(
      */
     private fun dropForConsent() {
         clear()
-        if (releasedSessionId == withheldForSessionId) withheldForSessionId = null
+        val releasedId = withheldForSessionId?.takeIf { it == releasedSessionId } ?: return
+        withheldForSessionId = null
+        // The session goes on collected, so its replay does too, from here on and through the
+        // storage consent governs. Session Replay already dropped what it held; without this word
+        // it would hold the session's replay until the SDK stops.
+        if (replayReleasedSessionId != releasedId) notifyReplayReleased(releasedId)
     }
 
     // endregion
@@ -518,7 +536,8 @@ internal class WithheldEventWriter(
         // the error the session is kept for. Then the errors - a release at exit leaves in as many
         // requests as the process still gets to send, and the error is what the session is kept
         // for - then the rest.
-        val (errors, others) = details.partition { it.tier >= EvictionTier.LAST_RESORT }
+        val (heldErrors, others) = details.partition { it.tier >= EvictionTier.LAST_RESORT }
+        val errors = heldErrors + oversizedErrors
         // What storage refused is counted, so the release reports what actually landed.
         val writeFailures = views.values.sortedBy { it.date }
             .count { !write(writer, it.event, it.eventType, it.viewId, replayGoesOut) } +
@@ -533,7 +552,7 @@ internal class WithheldEventWriter(
             onlyOnce = false,
             additionalProperties = mapOf(
                 "buffer.views_count" to views.size,
-                "buffer.events_count" to details.size,
+                "buffer.events_count" to details.size + oversizedErrors.size,
                 "buffer.dropped_count" to droppedCount,
                 "buffer.bytes" to bytes,
                 "buffer.write_failures" to writeFailures
@@ -589,6 +608,7 @@ internal class WithheldEventWriter(
         releaseScheduledAtNs = null
         views.clear()
         details.clear()
+        oversizedErrors.clear()
         bytes = 0L
         droppedCount = 0
         currentViewId = null
@@ -611,6 +631,12 @@ internal class WithheldEventWriter(
          * this only bounds pathological view counts.
          */
         internal const val VIEWS_LIMIT = 50
+
+        /**
+         * Errors over [BYTES_LIMIT] kept apart while a release waits for its jitter. Each can be
+         * as large as the batch allows, so only the first few are kept.
+         */
+        internal const val OVERSIZED_ERRORS_LIMIT = 4
 
         /**
          * Correlated errors make a whole fleet release at the same instant, right when whatever
