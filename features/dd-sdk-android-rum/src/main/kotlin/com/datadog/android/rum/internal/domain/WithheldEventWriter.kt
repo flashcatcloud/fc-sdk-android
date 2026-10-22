@@ -138,11 +138,14 @@ internal class WithheldEventWriter(
     /**
      * The session that earned its release, by an error or by being forced. Marked the moment the
      * error is seen, ahead of the release itself, so a session that ends while its release still
-     * waits for the jitter is released rather than thrown away.
+     * waits for the jitter is released rather than thrown away. Volatile: read by the RUM thread
+     * without the lock, which the storage thread may hold across a file write.
      */
+    @Volatile
     private var releasedSessionId: String? = null
 
     /** The session whose replay was told to go out: its events have actually been released. */
+    @Volatile
     private var replayReleasedSessionId: String? = null
 
     /** A session released by a crash, whose replay waits to see whether the process survived. */
@@ -329,13 +332,13 @@ internal class WithheldEventWriter(
     fun mayHaveSessionToSettle(): Boolean = engaged
 
     /** Whether the given session earned its release. Read by the session scope to stop withholding. */
-    fun isReleased(sessionId: String): Boolean = synchronized(this) { releasedSessionId == sessionId }
+    fun isReleased(sessionId: String): Boolean = releasedSessionId == sessionId
 
     /**
      * Whether the replay of the given session may go out: its events have actually left - after the
      * jitter for a withheld session, at its first error for a session whose replay only is withheld.
      */
-    fun isReplayReleased(sessionId: String): Boolean = synchronized(this) { replayReleasedSessionId == sessionId }
+    fun isReplayReleased(sessionId: String): Boolean = replayReleasedSessionId == sessionId
 
     /**
      * The app went to the background: a release waiting for the jitter goes now, since the process

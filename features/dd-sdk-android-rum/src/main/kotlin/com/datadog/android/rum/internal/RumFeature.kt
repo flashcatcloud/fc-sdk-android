@@ -480,7 +480,10 @@ internal class RumFeature(
                 )
             }
         )
-        (appContext as? Application)?.let { application ->
+        // Only where on-error capture can be used: switched on here, or by the console.
+        val canBeUsed = configuration.sessionOnError || configuration.sessionReplayOnError ||
+            configuration.remoteConfigurationEnabled
+        (appContext as? Application)?.takeIf { canBeUsed }?.let { application ->
             val callback = ProcessForegroundCallback(
                 onForeground = {},
                 // Nothing is queued for a customer who never turned either switch on.

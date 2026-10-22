@@ -405,12 +405,12 @@ internal class RumSessionScope(
             sessionEndedMetricDispatcher.endMetric(sessionId, sdkCore.time.serverTimeOffsetMs)
         }
 
-        // FLASHCAT FORK - once on-error capture is in use, a stopped session draining alongside the
+        // FLASHCAT FORK - where on-error capture is in use, a stopped session draining alongside the
         // one that replaced it must not draw a new session: that draw would take the withheld
         // buffer of the session actually running. A session kept on error keeps its own state, as
         // what it still drains belongs to the session it was; any other expires and writes nothing
-        // more. An application that never used on-error capture goes through the upstream path.
-        if (!isActive && (isExpired || isTimedOut) && withheldEvents?.mayHaveSessionToSettle() == true) {
+        // more. An application that does not use on-error capture goes through the upstream path.
+        if (!isActive && (isExpired || isTimedOut) && isOnErrorCaptureInUse()) {
             if (isExpired && !sampledForError && !replayWatched) sessionState = State.EXPIRED
             return
         }
@@ -440,6 +440,18 @@ internal class RumSessionScope(
         }
 
         updateSessionStateForSessionReplay(sessionState, sessionId)
+    }
+
+    /**
+     * FLASHCAT FORK - on-error capture is switched on, here or by the console, or a session already
+     * used it. Read only for a stopped session, never for one that runs.
+     */
+    private fun isOnErrorCaptureInUse(): Boolean {
+        val writer = withheldEvents ?: return false
+        val remoteValues = remoteConfig?.snapshot()
+        return (remoteValues?.sessionOnError ?: sessionOnError) ||
+            (remoteValues?.sessionReplayOnError ?: sessionReplayOnError) ||
+            writer.mayHaveSessionToSettle()
     }
 
     @Suppress("LongMethod")
@@ -570,11 +582,11 @@ internal class RumSessionScope(
     }
 
     private fun updateSessionStateForSessionReplay(state: State, sessionId: String) {
-        // FLASHCAT FORK - once on-error capture is in use, a stopped session draining alongside the
+        // FLASHCAT FORK - where on-error capture is in use, a stopped session draining alongside the
         // one that replaced it has no business announcing itself as current: Session Replay would
         // take each turn as a new session, and throw away what it holds for the one actually
-        // running. An application that never used on-error capture keeps the upstream behaviour.
-        if (!isActive && withheldEvents?.mayHaveSessionToSettle() == true) return
+        // running. An application that does not use on-error capture keeps the upstream behaviour.
+        if (!isActive && isOnErrorCaptureInUse()) return
         val keepSession = (state == State.TRACKED)
         sdkCore.getFeature(Feature.SESSION_REPLAY_FEATURE_NAME)?.sendEvent(
             mapOf(

@@ -2566,6 +2566,31 @@ internal class RumSessionScopeTest {
     }
 
     @Test
+    fun `M not draw a new session W handleEvent { stopped session, switch on but no session withheld yet }`() {
+        // Given - every session is sampled in, so none has engaged the writer
+        val withheldEvents = mock<WithheldEventWriter>()
+        fakeDatadogContext = fakeDatadogContext.copy(trackingConsent = TrackingConsent.GRANTED)
+        initializeTestedScope(sampleRate = 100f, withheldEvents = withheldEvents, sessionOnError = true)
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        val sessionId = testedScope.sessionId
+        testedScope.handleEvent(RumRawEvent.StopSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        Mockito.clearInvocations(mockSessionListener)
+        advanceTimeByMs(TEST_INACTIVITY_MS + 1)
+
+        // When - the interaction that builds the next session reaches the stopped one too
+        testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        assertThat(testedScope.sessionId).isEqualTo(sessionId)
+        verify(mockSessionListener, never()).onSessionStarted(any(), any())
+    }
+
+    @Test
     fun `M not draw a new session W handleEvent { stopped session, interaction after inactivity }`() {
         // Given - the stopped session still sees the interactions of the one that replaced it
         val withheldEvents = startWithheldSession()
