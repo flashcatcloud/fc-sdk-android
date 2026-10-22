@@ -2440,6 +2440,33 @@ internal class RumSessionScopeTest {
     }
 
     @Test
+    fun `M expire a stopped session W handleEvent { inactivity after StopSession, no on-error switch }`() {
+        // Given
+        initializeTestedScope(100f)
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        val sessionId = testedScope.sessionId
+        testedScope.handleEvent(RumRawEvent.StopSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        advanceTimeByMs(TEST_INACTIVITY_MS)
+
+        // When
+        testedScope.handleEvent(
+            RumRawEvent.KeepAlive(currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        // Then - like upstream: what the stopped session still drains is not written
+        assertThat(testedScope.sessionId).isEqualTo(sessionId)
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.EXPIRED)
+    }
+
+    @Test
     fun `M not announce a stopped session to Session Replay W handleEvent { after StopSession }`() {
         // Given - the stopped session keeps draining its views while the next session runs
         initializeTestedScope(100f)

@@ -407,8 +407,12 @@ internal class RumSessionScope(
 
         // FLASHCAT FORK - a stopped session drains alongside the one that replaced it; the events
         // it still sees must not have it draw a new session on top of the one actually running.
-        // It keeps its own state: what it still drains belongs to the session it was.
-        if (!isActive && (isExpired || isTimedOut)) return
+        // A session kept on error keeps its own state: what it still drains belongs to the session
+        // it was. Any other expires like upstream, and writes nothing more.
+        if (!isActive && (isExpired || isTimedOut)) {
+            if (isExpired && !sampledForError && !replayWatched) sessionState = State.EXPIRED
+            return
+        }
 
         if (isInteraction || isSdkInitInForeground) {
             if (isNewSession || isExpired || isTimedOut) {

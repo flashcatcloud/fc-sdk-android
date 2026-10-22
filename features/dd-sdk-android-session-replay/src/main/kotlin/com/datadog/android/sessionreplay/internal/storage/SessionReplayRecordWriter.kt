@@ -326,10 +326,10 @@ internal class SessionReplayRecordWriter(
         }
         heldResources[resource.filename] = HeldResource(resource, onWritten)
         heldResourceBytes += size
-        // Images are bounded apart from the records; the oldest go first, and the recorder is told
-        // so that it captures them again when they are shown again.
+        // Images are bounded apart from the records, in bytes and in count; the oldest go first, and
+        // the recorder is told so that it captures them again when they are shown again.
         val evicted = ArrayList<String>()
-        while (heldResourceBytes > BYTES_LIMIT) {
+        while (heldResourceBytes > BYTES_LIMIT || heldResources.size > RESOURCES_LIMIT) {
             val oldest = heldResources.keys.first()
             heldResourceBytes -= heldResources.remove(oldest)?.resource?.resource?.size ?: 0
             evicted.add(oldest)
@@ -554,6 +554,9 @@ internal class SessionReplayRecordWriter(
         private const val DISCARDED_SESSIONS_REMEMBERED = 64
 
         private const val FATES_REMEMBERED = 16
+
+        /** How many distinct images are held, whatever their size: each one also costs its entry. */
+        internal const val RESOURCES_LIMIT = 512
 
         /** The views whose meta and focus a held span may need; one per view, the oldest go first. */
         internal const val VIEW_STARTS_REMEMBERED = 16

@@ -246,6 +246,22 @@ internal class SessionReplayRecordWriterTest {
     }
 
     @Test
+    fun `M tell the recorder to forget an image W write(resource) { more images than held }`() {
+        // Given
+        recordWrites()
+        testedWriter.withhold("s1")
+        repeat(SessionReplayRecordWriter.RESOURCES_LIMIT) {
+            testedWriter.write(resource("img$it", size = 1), "s1") {}
+        }
+
+        // When
+        testedWriter.write(resource("one-more", size = 1), "s1") {}
+
+        // Then
+        assertThat(forgottenResources).containsExactly("img0")
+    }
+
+    @Test
     fun `M tell the recorder to forget an image W write(resource) { evicted over the image budget }`() {
         // Given
         recordWrites()
