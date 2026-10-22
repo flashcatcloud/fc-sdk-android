@@ -47,6 +47,7 @@ import com.datadog.android.rum.internal.domain.event.RumEventMapper
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
 import com.datadog.android.rum.internal.monitor.AdvancedRumMonitor
 import com.datadog.android.rum.internal.monitor.NoOpAdvancedRumMonitor
+import com.datadog.android.rum.internal.remoteconfig.ProcessForegroundCallback
 import com.datadog.android.rum.internal.thread.NoOpScheduledExecutorService
 import com.datadog.android.rum.internal.tracking.NoOpInteractionPredicate
 import com.datadog.android.rum.internal.tracking.NoOpUserActionTrackingStrategy
@@ -924,6 +925,45 @@ internal class RumFeatureTest {
         assertThat(java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started))
             .isLessThan(1_000)
         verify(mockRumScope, never()).withWriteContext(any(), any())
+    }
+
+    @Test
+    fun `M queue nothing W the app goes to the background { no session withheld or watched }`() {
+        // Given - a customer who never turned either switch on
+        val mockRumScope = mock<FeatureScope>()
+        whenever(mockSdkCore.getFeature(Feature.RUM_FEATURE_NAME)) doReturn mockRumScope
+        testedFeature.onInitialize(appContext.mockInstance)
+        val callback = registeredForegroundCallback()
+
+        // When
+        callback.onActivityStarted(mock())
+        callback.onActivityStopped(mock())
+
+        // Then
+        verify(mockRumScope, never()).withWriteContext(any(), any())
+    }
+
+    @Test
+    fun `M flush a waiting release W the app goes to the background { session withheld }`() {
+        // Given
+        val mockRumScope = mock<FeatureScope>()
+        whenever(mockSdkCore.getFeature(Feature.RUM_FEATURE_NAME)) doReturn mockRumScope
+        testedFeature.onInitialize(appContext.mockInstance)
+        testedFeature.withheldEvents?.engage()
+        val callback = registeredForegroundCallback()
+
+        // When
+        callback.onActivityStarted(mock())
+        callback.onActivityStopped(mock())
+
+        // Then
+        verify(mockRumScope).withWriteContext(any(), any())
+    }
+
+    private fun registeredForegroundCallback(): ProcessForegroundCallback {
+        val captor = argumentCaptor<Application.ActivityLifecycleCallbacks>()
+        verify(appContext.mockInstance, atLeastOnce()).registerActivityLifecycleCallbacks(captor.capture())
+        return captor.allValues.filterIsInstance<ProcessForegroundCallback>().single()
     }
 
     @Test

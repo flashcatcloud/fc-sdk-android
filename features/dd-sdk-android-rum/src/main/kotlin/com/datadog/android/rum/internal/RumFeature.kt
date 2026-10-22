@@ -483,7 +483,8 @@ internal class RumFeature(
         (appContext as? Application)?.let { application ->
             val callback = ProcessForegroundCallback(
                 onForeground = {},
-                onBackground = { withRumWriteScope(writer::flushScheduledRelease) }
+                // Nothing is queued for a customer who never turned either switch on.
+                onBackground = { if (writer.mayHaveSessionToSettle()) withRumWriteScope(writer::flushScheduledRelease) }
             )
             application.registerActivityLifecycleCallbacks(callback)
             withheldEventsBackgroundCallback = callback
