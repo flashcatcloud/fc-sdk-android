@@ -480,10 +480,14 @@ internal class RumFeature(
                 )
             }
         )
-        (appContext as? Application)?.let { application ->
+        // Only where on-error capture can be used: switched on here, or by the console.
+        val canBeUsed = configuration.sessionOnError || configuration.sessionReplayOnError ||
+            configuration.remoteConfigurationEnabled
+        (appContext as? Application)?.takeIf { canBeUsed }?.let { application ->
             val callback = ProcessForegroundCallback(
                 onForeground = {},
-                onBackground = { withRumWriteScope(writer::flushScheduledRelease) }
+                // Nothing is queued for a customer who never turned either switch on.
+                onBackground = { if (writer.mayHaveSessionToSettle()) withRumWriteScope(writer::flushScheduledRelease) }
             )
             application.registerActivityLifecycleCallbacks(callback)
             withheldEventsBackgroundCallback = callback
@@ -1092,7 +1096,12 @@ internal class RumFeature(
     )
 
     internal companion object {
-        private const val STOP_DRAIN_WAIT_MS = 2_000L
+        /**
+         * The stop is usually called on the main thread, and the core's own shutdown already waits
+         * up to three seconds: together with the Session Replay's wait this keeps a stop well under
+         * the five seconds of an ANR. A release still queued after it is lost, like any queued event.
+         */
+        private const val STOP_DRAIN_WAIT_MS = 500L
         internal const val STOP_DRAIN_FAILED_MESSAGE =
             "Could not wait for the withheld session to be settled before the SDK stopped."
 

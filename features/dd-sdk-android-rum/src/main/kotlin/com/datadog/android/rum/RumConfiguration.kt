@@ -76,10 +76,14 @@ data class RumConfiguration internal constructor(
          * a new one starts under the new rates. The values set here stay in use until the first
          * settings arrive, and whenever they cannot be reached.
          *
+         * The console's settings also cover [setSessionOnError] and [setSessionReplayOnError]: once
+         * this is enabled, the console can switch either of them on or off whatever was set here.
+         *
          * Disabled by default: left off, the SDK makes no extra request and behaves exactly as it
          * did before this existed.
          *
-         * @param enabled whether the console may set the session sample rate.
+         * @param enabled whether the console may set the session sample rate and the on-error
+         * switches.
          */
         fun setRemoteConfigurationEnabled(enabled: Boolean): Builder {
             rumConfig = rumConfig.copy(remoteConfigurationEnabled = enabled)
@@ -133,6 +137,10 @@ data class RumConfiguration internal constructor(
          * consent but before its minute is uploaded, that minute - and its replay - is still stored,
          * under that consent; nothing collected afterwards joins it. One reported while consent was
          * pending is dropped, like any data collected while consent was pending.
+         *
+         * Whether an error is kept is decided after the event mappers, so with this enabled the
+         * mappers run for the events of every session, not only of the sessions the sample rate
+         * keeps.
          *
          * Disabled by default. With [setRemoteConfigurationEnabled], the console's value wins over
          * this one.

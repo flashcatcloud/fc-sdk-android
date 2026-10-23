@@ -570,7 +570,8 @@ internal class SessionReplayFeature(
         const val RUM_SESSION_RELEASED_BUS_MESSAGE = "rum_session_released"
         const val RUM_SESSION_DISCARDED_BUS_MESSAGE = "rum_session_discarded"
         const val RUM_SESSION_ERRORED_BUS_MESSAGE = "rum_session_errored"
-        private const val STOP_WAIT_MS = 2_000L
+        /** Bounded like RUM's wait at the stop, which is usually called on the main thread. */
+        private const val STOP_WAIT_MS = 500L
         internal const val STOP_WAIT_FAILED_MESSAGE =
             "Could not wait for the held replay to be settled before Session Replay stopped."
 

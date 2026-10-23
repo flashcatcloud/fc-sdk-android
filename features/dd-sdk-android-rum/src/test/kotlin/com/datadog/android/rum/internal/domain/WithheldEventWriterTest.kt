@@ -1287,6 +1287,42 @@ internal class WithheldEventWriterTest {
         assertThat(written).contains("a1")
     }
 
+    @Test
+    fun `M not hold a view over the bound W write() {view of huge attributes}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        val huge = "x".repeat(WithheldEventWriter.VIEWS_BYTES_LIMIT + 1)
+        testedWriter.write(batchWriter, view("v1"), EventType.DEFAULT)
+        testedWriter.write(batchWriter, view("v2", payload = "v2:$huge"), EventType.DEFAULT)
+
+        // When
+        testedWriter.write(batchWriter, error("e1", "v2"), EventType.DEFAULT)
+        scheduled.single().second(batchWriter)
+
+        // Then
+        assertThat(written).containsExactly("v1", "e1")
+    }
+
+    @Test
+    fun `M bound the memory of the views W write() {views of large attributes}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        val large = "x".repeat(WithheldEventWriter.VIEWS_BYTES_LIMIT / 4)
+        repeat(10) {
+            testedWriter.write(batchWriter, view("v$it", payload = "v$it:$large"), EventType.DEFAULT)
+            testedWriter.write(batchWriter, action("a$it", "v$it"), EventType.DEFAULT)
+        }
+
+        // When
+        testedWriter.write(batchWriter, error("e1", "v9"), EventType.DEFAULT)
+        scheduled.single().second(batchWriter)
+
+        // Then - the oldest views go, the current one stays; their details still go
+        assertThat(written.filter { it.contains(':') }.map { it.substringBefore(':') })
+            .containsExactly("v7", "v8", "v9")
+        assertThat(written).contains("e1", "a0", "a9")
+    }
+
     // endregion
 
     @Test
@@ -1391,6 +1427,49 @@ internal class WithheldEventWriterTest {
 
         // Then
         assertThat(written.map(::tagOf)).containsExactly("late")
+    }
+
+    @Test
+    fun `M hold and release W writeWebEvent() {numbers too large for a long}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        val huge = "1e99999999999"
+        val session = "\"session\":{\"id\":\"$sessionId\"}"
+        testedWriter.writeWebEvent(
+            batchWriter,
+            JsonParser.parseString(
+                "{\"tag\":\"wv\",\"type\":\"view\",\"date\":$huge,$session,\"view\":{\"id\":\"web-v1\"}}"
+            ).asJsonObject
+        )
+        testedWriter.writeWebEvent(
+            batchWriter,
+            JsonParser.parseString(
+                "{\"tag\":\"wr\",\"type\":\"resource\",\"date\":1,$session,\"view\":{\"id\":\"web-v1\"}," +
+                    "\"resource\":{\"status_code\":$huge}}"
+            ).asJsonObject
+        )
+
+        // When
+        testedWriter.writeWebEvent(batchWriter, webEvent("we", "error", "web-v1"))
+        scheduled.single().second(batchWriter)
+
+        // Then
+        assertThat(written.map(::tagOf)).containsExactly("wv", "we", "wr")
+    }
+
+    @Test
+    fun `M keep the native view current W writeWebEvent() {WebView view dated in the future}`() {
+        // Given
+        testedWriter.startWithholding(sessionId, batchWriter)
+        testedWriter.writeWebEvent(batchWriter, webEvent("wv", "view", "web-v1", date = Long.MAX_VALUE))
+        testedWriter.write(batchWriter, view("v2", date = System.currentTimeMillis() + 1_000L), EventType.DEFAULT)
+
+        // When - an error hanging from no held view: only the current view goes with it
+        testedWriter.write(batchWriter, error("e1", "elsewhere"), EventType.DEFAULT)
+        scheduled.single().second(batchWriter)
+
+        // Then
+        assertThat(written.map(::tagOf)).containsExactly("v2", "e1")
     }
 
     @Test

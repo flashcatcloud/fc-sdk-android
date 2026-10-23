@@ -47,6 +47,7 @@ import com.datadog.android.rum.internal.domain.event.RumEventMapper
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
 import com.datadog.android.rum.internal.monitor.AdvancedRumMonitor
 import com.datadog.android.rum.internal.monitor.NoOpAdvancedRumMonitor
+import com.datadog.android.rum.internal.remoteconfig.ProcessForegroundCallback
 import com.datadog.android.rum.internal.thread.NoOpScheduledExecutorService
 import com.datadog.android.rum.internal.tracking.NoOpInteractionPredicate
 import com.datadog.android.rum.internal.tracking.NoOpUserActionTrackingStrategy
@@ -96,6 +97,7 @@ import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.atLeast
 import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doNothing
@@ -924,6 +926,77 @@ internal class RumFeatureTest {
         assertThat(java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started))
             .isLessThan(1_000)
         verify(mockRumScope, never()).withWriteContext(any(), any())
+    }
+
+    @Test
+    fun `M queue nothing W the app goes to the background { no session withheld or watched }`() {
+        // Given - switched on, but no session drawn on error yet
+        val mockRumScope = mock<FeatureScope>()
+        whenever(mockSdkCore.getFeature(Feature.RUM_FEATURE_NAME)) doReturn mockRumScope
+        featureWith(onErrorSwitches(sessionOnError = true))
+        testedFeature.onInitialize(appContext.mockInstance)
+        val callback = registeredForegroundCallback()
+
+        // When
+        callback.onActivityStarted(mock())
+        callback.onActivityStopped(mock())
+
+        // Then
+        verify(mockRumScope, never()).withWriteContext(any(), any())
+    }
+
+    @Test
+    fun `M flush a waiting release W the app goes to the background { session withheld }`() {
+        // Given
+        val mockRumScope = mock<FeatureScope>()
+        whenever(mockSdkCore.getFeature(Feature.RUM_FEATURE_NAME)) doReturn mockRumScope
+        featureWith(onErrorSwitches(sessionOnError = true))
+        testedFeature.onInitialize(appContext.mockInstance)
+        testedFeature.withheldEvents?.engage()
+        val callback = registeredForegroundCallback()
+
+        // When
+        callback.onActivityStarted(mock())
+        callback.onActivityStopped(mock())
+
+        // Then
+        verify(mockRumScope).withWriteContext(any(), any())
+    }
+
+    @Test
+    fun `M not watch the app going to the background W onInitialize() { on-error capture cannot be used }`() {
+        // Given - neither switch, and no console that could turn one on
+        featureWith(onErrorSwitches())
+
+        // When
+        testedFeature.onInitialize(appContext.mockInstance)
+
+        // Then
+        val captor = argumentCaptor<Application.ActivityLifecycleCallbacks>()
+        verify(appContext.mockInstance, atLeast(0)).registerActivityLifecycleCallbacks(captor.capture())
+        assertThat(captor.allValues.filterIsInstance<ProcessForegroundCallback>()).isEmpty()
+    }
+
+    private fun onErrorSwitches(sessionOnError: Boolean = false): RumFeature.Configuration =
+        fakeConfiguration.copy(
+            sessionOnError = sessionOnError,
+            sessionReplayOnError = false,
+            remoteConfigurationEnabled = false
+        )
+
+    private fun featureWith(configuration: RumFeature.Configuration) {
+        testedFeature = RumFeature(
+            mockSdkCore,
+            fakeApplicationId.toString(),
+            configuration,
+            lateCrashReporterFactory = { mockLateCrashReporter }
+        )
+    }
+
+    private fun registeredForegroundCallback(): ProcessForegroundCallback {
+        val captor = argumentCaptor<Application.ActivityLifecycleCallbacks>()
+        verify(appContext.mockInstance, atLeastOnce()).registerActivityLifecycleCallbacks(captor.capture())
+        return captor.allValues.filterIsInstance<ProcessForegroundCallback>().single()
     }
 
     @Test
