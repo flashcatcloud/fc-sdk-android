@@ -411,7 +411,7 @@ internal class RumSessionScope(
         // what it still drains belongs to the session it was; any other expires and writes nothing
         // more. An application that does not use on-error capture goes through the upstream path.
         if (!isActive && (isExpired || isTimedOut) && isOnErrorCaptureInUse()) {
-            if (isExpired && !sampledForError && !replayWatched) sessionState = State.EXPIRED
+            if (!sampledForError && !replayWatched) sessionState = State.EXPIRED
             return
         }
 

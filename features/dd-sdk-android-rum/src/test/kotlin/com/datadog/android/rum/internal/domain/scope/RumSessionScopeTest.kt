@@ -2518,6 +2518,33 @@ internal class RumSessionScopeTest {
     }
 
     @Test
+    fun `M expire a stopped session W handleEvent { max duration after StopSession, on-error switch }`() {
+        // Given - the switch is on, but this session was sampled normally and has nothing to settle
+        val withheldEvents = mock<WithheldEventWriter>()
+        fakeDatadogContext = fakeDatadogContext.copy(trackingConsent = TrackingConsent.GRANTED)
+        initializeTestedScope(sampleRate = 100f, withheldEvents = withheldEvents, sessionOnError = true)
+        testedScope.handleEvent(
+            RumRawEvent.SdkInit(true, currentFakeTime()),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        val sessionId = testedScope.sessionId
+        testedScope.handleEvent(RumRawEvent.StopSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // When - interactions prevent inactivity while the stopped session reaches its maximum duration
+        repeat((TEST_MAX_DURATION_MS / (TEST_INACTIVITY_MS / 2)).toInt() + 1) {
+            advanceTimeByMs(TEST_INACTIVITY_MS / 2)
+            testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        }
+
+        // Then - it must not steal the running session's buffer or keep writing past its own lifetime
+        assertThat(testedScope.sessionId).isEqualTo(sessionId)
+        assertThat(testedScope.sessionState).isEqualTo(RumSessionScope.State.EXPIRED)
+        verify(withheldEvents, never()).startWithholding(any(), any())
+    }
+
+    @Test
     fun `M not announce a stopped session to Session Replay W handleEvent { after StopSession }`() {
         // Given - the stopped session keeps draining its views while the next session runs
         initializeTestedScope(100f, withheldEvents = mock { on { mayHaveSessionToSettle() } doReturn true })
