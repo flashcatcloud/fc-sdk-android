@@ -25,7 +25,10 @@ internal data class RumContext(
     val syntheticsResultId: String? = null,
     val viewTimestamp: Long = 0L,
     val viewTimestampOffset: Long = 0L,
-    val hasReplay: Boolean = false
+    val hasReplay: Boolean = false,
+    // FLASHCAT FORK - whether the session is kept only because it reported an error. Read by the
+    // scopes below the session one; not published to the other features.
+    val sampledForError: Boolean = false
 ) {
 
     fun toMap(): Map<String, Any?> {

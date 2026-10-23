@@ -12,6 +12,7 @@ import com.datadog.android.api.feature.Feature
 import com.datadog.android.api.feature.FeatureContextUpdateReceiver
 import com.datadog.android.api.feature.FeatureSdkCore
 import com.datadog.android.core.sampling.Sampler
+import com.datadog.android.privacy.TrackingConsent
 import com.datadog.android.sessionreplay.NoOpSessionReplayInternalCallback
 import com.datadog.android.sessionreplay.SessionReplayConfiguration
 import com.datadog.android.sessionreplay.forge.ForgeConfigurator
@@ -20,6 +21,7 @@ import com.datadog.android.sessionreplay.internal.recorder.NoOpRecorder
 import com.datadog.android.sessionreplay.internal.recorder.Recorder
 import com.datadog.android.sessionreplay.internal.recorder.SessionReplayRecorder
 import com.datadog.android.sessionreplay.internal.storage.NoOpRecordWriter
+import com.datadog.android.sessionreplay.internal.storage.RecordWriter
 import com.datadog.android.sessionreplay.internal.storage.SessionReplayRecordWriter
 import com.datadog.android.sessionreplay.utils.config.ApplicationContextTestConfiguration
 import com.datadog.android.sessionreplay.utils.verifyLog
@@ -41,10 +43,12 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.Mock
+import org.mockito.Mockito.mockingDetails
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.inOrder
@@ -534,6 +538,287 @@ internal class SessionReplayFeatureTest {
         }
         verifyNoMoreInteractions(mockRecorder)
     }
+
+    // region Replay on error
+
+    private fun onErrorMessage(
+        keep: Boolean,
+        eventsOnError: Boolean,
+        replayOnError: Boolean,
+        released: Boolean = false,
+        forced: Boolean = false
+    ) = mapOf(
+        SessionReplayFeature.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
+            SessionReplayFeature.RUM_SESSION_RENEWED_BUS_MESSAGE,
+        SessionReplayFeature.RUM_KEEP_SESSION_BUS_MESSAGE_KEY to keep,
+        SessionReplayFeature.RUM_SESSION_FORCED_BUS_MESSAGE_KEY to forced,
+        SessionReplayFeature.RUM_SESSION_ID_BUS_MESSAGE_KEY to fakeSessionId,
+        SessionReplayFeature.RUM_SESSION_ON_ERROR_BUS_MESSAGE_KEY to eventsOnError,
+        SessionReplayFeature.RUM_REPLAY_ON_ERROR_BUS_MESSAGE_KEY to replayOnError,
+        SessionReplayFeature.RUM_SESSION_RELEASED_BUS_MESSAGE_KEY to released
+    )
+
+    private fun initializeWithWriter(sampledIn: Boolean): RecordWriter {
+        whenever(mockSampler.sample(any())).thenReturn(sampledIn)
+        testedFeature.onInitialize(appContext.mockInstance)
+        testedFeature.stopRecording()
+        val mockWriter = mock<RecordWriter>()
+        testedFeature.dataWriter = mockWriter
+        return mockWriter
+    }
+
+    @Test
+    fun `M record withheld W rum session updated { kept, replay sampled out, replay switch on }`() {
+        // Given
+        val mockWriter = initializeWithWriter(sampledIn = false)
+
+        // When
+        testedFeature.onReceive(onErrorMessage(keep = true, eventsOnError = false, replayOnError = true))
+
+        // Then
+        verify(mockRecorder).resumeRecorders()
+        verify(mockWriter).withhold(fakeSessionId)
+    }
+
+    @Test
+    fun `M not record W rum session updated { kept, replay sampled out, replay switch off }`() {
+        // Given
+        val mockWriter = initializeWithWriter(sampledIn = false)
+
+        // When
+        testedFeature.onReceive(onErrorMessage(keep = true, eventsOnError = false, replayOnError = false))
+
+        // Then
+        verify(mockRecorder, never()).resumeRecorders()
+        verify(mockWriter, never()).withhold(any())
+    }
+
+    @Test
+    fun `M record normally W rum session updated { kept, replay sampled in, replay switch on }`() {
+        // Given
+        val mockWriter = initializeWithWriter(sampledIn = true)
+
+        // When
+        testedFeature.onReceive(onErrorMessage(keep = true, eventsOnError = false, replayOnError = true))
+
+        // Then
+        verify(mockRecorder).resumeRecorders()
+        verify(mockWriter, never()).withhold(any())
+        verify(mockWriter).stopWithholding(fakeSessionId)
+    }
+
+    @Test
+    fun `M hold the sampled replay with the events W rum session updated { events withheld }`() {
+        // Given - the replay draw kept it, but the events are held: so is the replay
+        val mockWriter = initializeWithWriter(sampledIn = true)
+
+        // When
+        testedFeature.onReceive(onErrorMessage(keep = false, eventsOnError = true, replayOnError = false))
+
+        // Then
+        verify(mockRecorder).resumeRecorders()
+        verify(mockWriter).withhold(fakeSessionId)
+    }
+
+    @Test
+    fun `M record withheld W rum session updated { events withheld, replay switch on }`() {
+        // Given
+        val mockWriter = initializeWithWriter(sampledIn = false)
+
+        // When
+        testedFeature.onReceive(onErrorMessage(keep = false, eventsOnError = true, replayOnError = true))
+
+        // Then
+        verify(mockRecorder).resumeRecorders()
+        verify(mockWriter).withhold(fakeSessionId)
+    }
+
+    @Test
+    fun `M not record W rum session updated { events withheld, replay sampled out, switch off }`() {
+        // Given
+        val mockWriter = initializeWithWriter(sampledIn = false)
+
+        // When
+        testedFeature.onReceive(onErrorMessage(keep = false, eventsOnError = true, replayOnError = false))
+
+        // Then
+        verify(mockRecorder, never()).resumeRecorders()
+        verify(mockWriter, never()).withhold(any())
+    }
+
+    @Test
+    fun `M release and keep recording W rum session updated { withheld session released }`() {
+        // Given
+        val mockWriter = initializeWithWriter(sampledIn = false)
+        testedFeature.onReceive(onErrorMessage(keep = false, eventsOnError = true, replayOnError = true))
+
+        // When
+        testedFeature.onReceive(
+            onErrorMessage(keep = true, eventsOnError = true, replayOnError = true, released = true)
+        )
+
+        // Then
+        inOrder(mockWriter) {
+            verify(mockWriter).withhold(fakeSessionId)
+            verify(mockWriter).stopWithholding(fakeSessionId)
+        }
+        verify(mockRecorder).resumeRecorders()
+        verify(mockRecorder, never()).stopRecorders()
+    }
+
+    @Test
+    fun `M release W rum session released { events released }`() {
+        // Given
+        val mockWriter = initializeWithWriter(sampledIn = false)
+        testedFeature.onReceive(onErrorMessage(keep = false, eventsOnError = true, replayOnError = true))
+
+        // When
+        testedFeature.onReceive(
+            mapOf(
+                SessionReplayFeature.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
+                    SessionReplayFeature.RUM_SESSION_RELEASED_BUS_MESSAGE,
+                SessionReplayFeature.RUM_SESSION_ID_BUS_MESSAGE_KEY to fakeSessionId
+            )
+        )
+
+        // Then
+        inOrder(mockWriter) {
+            verify(mockWriter).withhold(fakeSessionId)
+            verify(mockWriter).stopWithholding(fakeSessionId)
+        }
+        verify(mockRecorder, never()).stopRecorders()
+    }
+
+    @Test
+    fun `M release what a past session held W rum session released { another session is current }`() {
+        // Given - the past session's word lands after the next one announced itself
+        val mockWriter = initializeWithWriter(sampledIn = false)
+        testedFeature.onReceive(onErrorMessage(keep = false, eventsOnError = true, replayOnError = true))
+
+        // When
+        testedFeature.onReceive(
+            mapOf(
+                SessionReplayFeature.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
+                    SessionReplayFeature.RUM_SESSION_RELEASED_BUS_MESSAGE,
+                SessionReplayFeature.RUM_SESSION_ID_BUS_MESSAGE_KEY to "past-session"
+            )
+        )
+
+        // Then
+        verify(mockWriter).release("past-session")
+        verify(mockWriter, never()).stopWithholding(any())
+        verify(mockRecorder, never()).stopRecorders()
+    }
+
+    @Test
+    fun `M drop what is held W onConsentUpdated { consent not granted }`() {
+        // Given
+        val mockWriter = initializeWithWriter(sampledIn = false)
+        testedFeature.onReceive(onErrorMessage(keep = false, eventsOnError = true, replayOnError = true))
+
+        // When
+        testedFeature.onConsentUpdated(TrackingConsent.PENDING, TrackingConsent.NOT_GRANTED)
+        testedFeature.onConsentUpdated(TrackingConsent.NOT_GRANTED, TrackingConsent.GRANTED)
+
+        // Then
+        verify(mockWriter).dropForConsent()
+    }
+
+    @Test
+    fun `M expect the release W rum session errored`() {
+        // Given
+        val mockWriter = initializeWithWriter(sampledIn = false)
+        testedFeature.onReceive(onErrorMessage(keep = false, eventsOnError = true, replayOnError = true))
+
+        // When
+        testedFeature.onReceive(
+            mapOf(
+                SessionReplayFeature.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
+                    SessionReplayFeature.RUM_SESSION_ERRORED_BUS_MESSAGE,
+                SessionReplayFeature.RUM_SESSION_ID_BUS_MESSAGE_KEY to fakeSessionId
+            )
+        )
+
+        // Then
+        verify(mockWriter).expectRelease(fakeSessionId)
+    }
+
+    @Test
+    fun `M settle what the writer holds and wait for it W onStop()`() {
+        // Given
+        val mockWriter = initializeWithWriter(sampledIn = false)
+        whenever(mockWriter.stop(any())) doAnswer { it.getArgument<() -> Unit>(0).invoke() }
+
+        // When
+        testedFeature.onStop()
+
+        // Then
+        verify(mockWriter).stop(any())
+        assertThat(testedFeature.dataWriter).isInstanceOf(NoOpRecordWriter::class.java)
+    }
+
+    @Test
+    fun `M throw away what a session held W rum session discarded`() {
+        // Given
+        val mockWriter = initializeWithWriter(sampledIn = false)
+        testedFeature.onReceive(onErrorMessage(keep = false, eventsOnError = true, replayOnError = true))
+
+        // When
+        testedFeature.onReceive(
+            mapOf(
+                SessionReplayFeature.SESSION_REPLAY_BUS_MESSAGE_TYPE_KEY to
+                    SessionReplayFeature.RUM_SESSION_DISCARDED_BUS_MESSAGE,
+                SessionReplayFeature.RUM_SESSION_ID_BUS_MESSAGE_KEY to fakeSessionId
+            )
+        )
+
+        // Then
+        verify(mockWriter).discard(fakeSessionId)
+    }
+
+    @Test
+    fun `M not release W rum session updated { error seen, events not released yet }`() {
+        // Given - the message keeps saying the replay may not go out until the events have
+        val mockWriter = initializeWithWriter(sampledIn = false)
+        testedFeature.onReceive(onErrorMessage(keep = false, eventsOnError = true, replayOnError = true))
+
+        // When
+        testedFeature.onReceive(onErrorMessage(keep = true, eventsOnError = true, replayOnError = true))
+
+        // Then
+        verify(mockWriter, never()).stopWithholding(any())
+    }
+
+    @Test
+    fun `M leave the feature context alone W rum session updated { no on-error mode }`() {
+        // Given
+        whenever(mockSampler.sample(any())).thenReturn(true)
+        testedFeature.onInitialize(appContext.mockInstance)
+        val updatesBefore = mockingDetails(mockSdkCore).invocations.count { it.method.name == "updateFeatureContext" }
+
+        // When
+        testedFeature.onReceive(onErrorMessage(keep = true, eventsOnError = false, replayOnError = false))
+
+        // Then - only the recording flag, as before this existed
+        val updates = mockingDetails(mockSdkCore).invocations.count { it.method.name == "updateFeatureContext" }
+        assertThat(updates - updatesBefore).isEqualTo(1)
+    }
+
+    @Test
+    fun `M release W rum session updated { withheld replay forced }`() {
+        // Given
+        val mockWriter = initializeWithWriter(sampledIn = false)
+        testedFeature.onReceive(onErrorMessage(keep = true, eventsOnError = false, replayOnError = true))
+
+        // When
+        testedFeature.onReceive(onErrorMessage(keep = true, eventsOnError = false, replayOnError = true, forced = true))
+
+        // Then
+        verify(mockWriter).stopWithholding(fakeSessionId)
+        verify(mockRecorder, never()).stopRecorders()
+    }
+
+    // endregion
 
     @Test
     fun `M not startRecording W rum session updated { keep, not forced, sampler drops it }`() {

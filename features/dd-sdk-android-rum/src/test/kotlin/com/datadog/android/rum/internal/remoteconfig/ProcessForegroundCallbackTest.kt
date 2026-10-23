@@ -23,7 +23,7 @@ internal class ProcessForegroundCallbackTest {
     @BeforeEach
     fun setUp() {
         foregroundCount = 0
-        testedCallback = ProcessForegroundCallback { foregroundCount++ }
+        testedCallback = ProcessForegroundCallback(onForeground = { foregroundCount++ })
     }
 
     @Test
@@ -71,5 +71,38 @@ internal class ProcessForegroundCallbackTest {
 
         // Then
         assertThat(foregroundCount).isOne()
+    }
+
+    @Test
+    fun `M report the background W the last started activity stops`() {
+        // Given
+        var backgroundCount = 0
+        testedCallback = ProcessForegroundCallback(onForeground = {}, onBackground = { backgroundCount++ })
+        val first = mock<Activity>()
+        val second = mock<Activity>()
+        testedCallback.onActivityStarted(first)
+        testedCallback.onActivityStarted(second)
+
+        // When
+        testedCallback.onActivityStopped(first)
+        val whileOneIsLeft = backgroundCount
+        testedCallback.onActivityStopped(second)
+
+        // Then
+        assertThat(whileOneIsLeft).isZero()
+        assertThat(backgroundCount).isOne()
+    }
+
+    @Test
+    fun `M report the background W an activity started before registration stops`() {
+        // Given
+        var backgroundCount = 0
+        testedCallback = ProcessForegroundCallback(onForeground = {}, onBackground = { backgroundCount++ })
+
+        // When
+        testedCallback.onActivityStopped(mock<Activity>())
+
+        // Then
+        assertThat(backgroundCount).isOne()
     }
 }

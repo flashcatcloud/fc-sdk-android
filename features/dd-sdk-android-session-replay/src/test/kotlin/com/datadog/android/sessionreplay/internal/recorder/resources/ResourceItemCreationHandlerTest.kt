@@ -19,6 +19,7 @@ import org.junit.jupiter.api.extension.Extensions
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.quality.Strictness
 
@@ -57,6 +58,40 @@ internal class ResourceItemCreationHandlerTest {
             identifier = fakeResourceId,
             resourceData = fakeByteArray
         )
+    }
+
+    @Test
+    fun `M queue item again W queueItem() { forgotten since }`() {
+        // Given
+        val fakeByteArray = fakeResourceId.toByteArray()
+        testedHandler.queueItem(fakeResourceId, fakeByteArray)
+
+        // When
+        testedHandler.forget(listOf(fakeResourceId))
+        val forgotten = testedHandler.isForgotten(fakeResourceId)
+        testedHandler.queueItem(fakeResourceId, fakeByteArray)
+
+        // Then
+        assertThat(forgotten).isTrue
+        assertThat(testedHandler.isForgotten(fakeResourceId)).isFalse
+        verify(mockDataQueueHandler, times(2)).addResourceItem(
+            identifier = fakeResourceId,
+            resourceData = fakeByteArray
+        )
+    }
+
+    @Test
+    fun `M forget the oldest forgotten ids W forget() { over the limit }`() {
+        // Given
+        val ids = List(ResourceItemCreationHandler.FORGOTTEN_RESOURCE_IDS_LIMIT + 1) { "r$it" }
+
+        // When
+        testedHandler.forget(ids)
+
+        // Then
+        assertThat(testedHandler.isForgotten("r0")).isFalse
+        assertThat(testedHandler.isForgotten(ids.last())).isTrue
+        assertThat(testedHandler.forgottenResourceIds).hasSize(ResourceItemCreationHandler.FORGOTTEN_RESOURCE_IDS_LIMIT)
     }
 
     @Test

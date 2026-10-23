@@ -42,9 +42,16 @@ internal class WebViewReplayEventConsumer(
                 val sessionReplayEnabled = sessionReplayFeatureContext?.get(
                     SESSION_REPLAY_ENABLED_KEY
                 ) as? Boolean ?: false
+                // FLASHCAT FORK - the native replay of this session is held in case it reports an
+                // error: nothing of the replay may reach the intake before it does, the web
+                // view's part included.
+                val sessionReplayWithheld = sessionReplayFeatureContext?.get(
+                    SESSION_REPLAY_WITHHELD_KEY
+                ) as? Boolean ?: false
                 if (rumContext != null &&
                     rumContext.sessionState == "TRACKED" &&
-                    sessionReplayEnabled
+                    sessionReplayEnabled &&
+                    !sessionReplayWithheld
                 ) {
                     writeScope {
                         map(event, datadogContext, rumContext)?.let { mappedEvent ->
@@ -102,5 +109,8 @@ internal class WebViewReplayEventConsumer(
             "The bundled web Replay event could not be deserialized"
         internal const val SESSION_REPLAY_ENABLED_KEY =
             "session_replay_is_enabled"
+
+        // FLASHCAT FORK - published by Session Replay while it holds the session's replay on error.
+        internal const val SESSION_REPLAY_WITHHELD_KEY = "session_replay_withheld"
     }
 }

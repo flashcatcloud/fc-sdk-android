@@ -14,6 +14,7 @@ import com.datadog.android.api.InternalLogger
 import com.datadog.android.api.context.DatadogContext
 import com.datadog.android.api.feature.Feature
 import com.datadog.android.api.storage.DataWriter
+import com.datadog.android.api.storage.EventBatchWriter
 import com.datadog.android.api.storage.EventType
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.core.feature.event.ThreadDump
@@ -22,6 +23,7 @@ import com.datadog.android.rum.internal.anr.ANRDetectorRunnable
 import com.datadog.android.rum.internal.anr.ANRException
 import com.datadog.android.rum.internal.anr.AndroidTraceParser
 import com.datadog.android.rum.internal.domain.RumContext
+import com.datadog.android.rum.internal.domain.RumDataWriter
 import com.datadog.android.rum.internal.domain.event.RumEventDeserializer
 import com.datadog.android.rum.internal.domain.scope.toErrorSchemaType
 import com.datadog.android.rum.internal.domain.scope.tryFromSource
@@ -94,11 +96,7 @@ internal class DatadogLateCrashReporter(
                 lastViewEvent
             )
             writeScope {
-                rumWriter.write(it, toSendErrorEvent, EventType.CRASH)
-                if (lastViewEvent.isWithinSessionAvailability) {
-                    val updatedViewEvent = updateViewEvent(lastViewEvent)
-                    rumWriter.write(it, updatedViewEvent, EventType.CRASH)
-                }
+                writeCrash(it, rumWriter, toSendErrorEvent, lastViewEvent)
             }
         }
     }
@@ -155,11 +153,7 @@ internal class DatadogLateCrashReporter(
                     // mark it before creating RUM events, so that we don't handle it again if code crashed after
                     // RUM events are written
                     sdkCore.writeLastFatalAnrSent(anrExitInfo.timestamp)
-                    rumWriter.write(it, toSendErrorEvent, EventType.CRASH)
-                    if (lastViewEvent.isWithinSessionAvailability) {
-                        val updatedViewEvent = updateViewEvent(lastViewEvent)
-                        rumWriter.write(it, updatedViewEvent, EventType.CRASH)
-                    }
+                    writeCrash(it, rumWriter, toSendErrorEvent, lastViewEvent)
                 }
             }
         }
@@ -168,6 +162,32 @@ internal class DatadogLateCrashReporter(
     // endregion
 
     // region Internal
+
+    /**
+     * FLASHCAT FORK - a session kept only on error uploaded nothing before it crashed: its last view
+     * is the only one the intake will ever get, and the session is built out of the first view it
+     * sees. So that view goes first, and only along with a crash that will actually be stored - a
+     * view on its own would be a kept session without the error it was kept for.
+     */
+    @WorkerThread
+    private fun writeCrash(
+        writer: EventBatchWriter,
+        rumWriter: DataWriter<Any>,
+        errorEvent: ErrorEvent,
+        lastViewEvent: ViewEvent
+    ) {
+        val rumDataWriter = rumWriter as? RumDataWriter
+        if (lastViewEvent.isOnlyKnownHere && rumDataWriter != null) {
+            val serializedError = rumDataWriter.serialize(errorEvent) ?: return
+            if (!rumDataWriter.write(writer, updateViewEvent(lastViewEvent), EventType.CRASH)) return
+            rumDataWriter.writeSerialized(writer, serializedError, EventType.CRASH)
+            return
+        }
+        rumWriter.write(writer, errorEvent, EventType.CRASH)
+        if (lastViewEvent.isWithinSessionAvailability || lastViewEvent.isOnlyKnownHere) {
+            rumWriter.write(writer, updateViewEvent(lastViewEvent), EventType.CRASH)
+        }
+    }
 
     @Suppress("LongMethod", "LongParameterList")
     private fun resolveErrorEventFromViewEvent(
@@ -325,6 +345,13 @@ internal class DatadogLateCrashReporter(
 
     private val ViewEvent.sampleRate: Float
         get() = dd.configuration?.sessionSampleRate?.toFloat() ?: 0f
+
+    /**
+     * FLASHCAT FORK - a session kept only on error uploaded nothing before it crashed: the view
+     * written locally is the only one the intake will ever get, however old it is by now.
+     */
+    private val ViewEvent.isOnlyKnownHere: Boolean
+        get() = session.sampledForError == true
 
     private val ViewEvent.isWithinSessionAvailability: Boolean
         get() {

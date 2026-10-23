@@ -23,7 +23,8 @@ internal class RumContextForgeryFactory : ForgeryFactory<RumContext> {
             viewName = forge.aNullable { forge.anAlphaNumericalString() },
             viewUrl = forge.aStringMatching("http(s?)://[a-z]+\\.com/[a-z]+"),
             actionId = forge.aNullable { getForgery<UUID>().toString() },
-            sessionState = forge.aValueFrom(RumSessionScope.State::class.java),
+            // FLASHCAT FORK - a withheld session is set up on purpose by the tests that need one.
+            sessionState = forge.aValueFrom(RumSessionScope.State::class.java, listOf(RumSessionScope.State.WITHHELD)),
             sessionStartReason = forge.aValueFrom(RumSessionScope.StartReason::class.java),
             viewType = forge.aValueFrom(RumViewType::class.java),
             syntheticsTestId = forge.aNullable { forge.anAlphaNumericalString() },

@@ -19,4 +19,10 @@ internal interface Recorder {
     fun resumeRecorders()
 
     fun stopRecorders()
+
+    /**
+     * FLASHCAT FORK - the resources were dropped unsent from the store that held them for a replay
+     * kept on error; they are captured again the next time they are shown.
+     */
+    fun forgetResources(resourceIds: Collection<String>)
 }

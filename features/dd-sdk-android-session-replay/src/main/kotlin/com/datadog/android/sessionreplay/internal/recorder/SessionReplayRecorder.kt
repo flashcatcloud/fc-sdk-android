@@ -276,6 +276,10 @@ internal class SessionReplayRecorder : OnWindowRefreshedCallback, Recorder {
         }
     }
 
+    override fun forgetResources(resourceIds: Collection<String>) {
+        resourceResolver.forgetResources(resourceIds)
+    }
+
     @MainThread
     override fun onWindowsAdded(windows: List<Window>) {
         if (shouldRecord) {

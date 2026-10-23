@@ -76,10 +76,14 @@ data class RumConfiguration internal constructor(
          * a new one starts under the new rates. The values set here stay in use until the first
          * settings arrive, and whenever they cannot be reached.
          *
+         * The console's settings also cover [setSessionOnError] and [setSessionReplayOnError]: once
+         * this is enabled, the console can switch either of them on or off whatever was set here.
+         *
          * Disabled by default: left off, the SDK makes no extra request and behaves exactly as it
          * did before this existed.
          *
-         * @param enabled whether the console may set the session sample rate.
+         * @param enabled whether the console may set the session sample rate and the on-error
+         * switches.
          */
         fun setRemoteConfigurationEnabled(enabled: Boolean): Builder {
             rumConfig = rumConfig.copy(remoteConfigurationEnabled = enabled)
@@ -101,6 +105,73 @@ data class RumConfiguration internal constructor(
          */
         fun setBeforeSampling(callback: BeforeSamplingCallback): Builder {
             rumConfig = rumConfig.copy(beforeSampling = callback)
+            return this
+        }
+
+        /**
+         * Also keep the sessions the session sample rate does not keep, but only those that
+         * report an error.
+         *
+         * Such a session is collected in memory without uploading anything, keeping only its last
+         * minute. If it reports an error, that minute is uploaded and the session carries on like
+         * any collected one; if it ends without one, what it held is thrown away and nothing of it
+         * is ever sent. Its events report a session sample rate of 0 - it stands for itself rather
+         * than for the population a rate would imply - and its view events carry
+         * `session.sampled_for_error`. An error dropped by an event mapper does not count, and
+         * neither does a session whose rate [setBeforeSampling] set to 0.
+         *
+         * A native crash is reported at the next launch with the last view, like for any collected
+         * session, but without the minute leading up to it.
+         *
+         * App launch vitals (time to initial and full display) are not part of such a session:
+         * kept only because it errored, it would skew the launch times of the fleet.
+         *
+         * The release is written one event at a time, views first: an app killed in the middle of
+         * it can leave a kept session whose error never reached storage.
+         *
+         * Events tracked inside a WebView through `WebViewTracking` are held with the session's own,
+         * and an error the web page reports keeps the session like a native one - after the web
+         * SDK's `beforeSend`, and not the web SDK's own errors (`source: agent`).
+         *
+         * If tracking consent is withdrawn after the session reported its error under granted
+         * consent but before its minute is uploaded, that minute - and its replay - is still stored,
+         * under that consent; nothing collected afterwards joins it. One reported while consent was
+         * pending is dropped, like any data collected while consent was pending.
+         *
+         * Whether an error is kept is decided after the event mappers, so with this enabled the
+         * mappers run for the events of every session, not only of the sessions the sample rate
+         * keeps.
+         *
+         * Disabled by default. With [setRemoteConfigurationEnabled], the console's value wins over
+         * this one.
+         *
+         * @param enabled whether to keep the sessions that report an error.
+         */
+        fun setSessionOnError(enabled: Boolean): Builder {
+            rumConfig = rumConfig.copy(sessionOnError = enabled)
+            return this
+        }
+
+        /**
+         * Also keep the replays the Session Replay sample rate does not keep, but only those of
+         * sessions that report an error.
+         *
+         * Such a replay is recorded in memory without uploading anything, keeping only its last
+         * minute; it is uploaded if the session reports an error, and thrown away if it ends
+         * without one. A session kept only through [setSessionOnError] holds its replay until its
+         * events are released, whether or not the replay rate kept it. View events of a session
+         * whose replay is kept this way carry `session.sampled_for_error_replay`.
+         *
+         * WebView content is not recorded while the replay is held, so it is missing from the
+         * released minute. A replay held when the app crashes is lost with the process.
+         *
+         * Needs the Session Replay feature. Disabled by default. With
+         * [setRemoteConfigurationEnabled], the console's value wins over this one.
+         *
+         * @param enabled whether to keep the replays of sessions that report an error.
+         */
+        fun setSessionReplayOnError(enabled: Boolean): Builder {
+            rumConfig = rumConfig.copy(sessionReplayOnError = enabled)
             return this
         }
 

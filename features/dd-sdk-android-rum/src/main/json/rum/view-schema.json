@@ -420,6 +420,16 @@
               "type": "boolean",
               "description": "Whether this session has been sampled for replay",
               "readOnly": true
+            },
+            "sampled_for_error": {
+              "type": "boolean",
+              "description": "FlashCat fork - whether this session was kept only because it reported an error; its detail starts where the withheld buffer reached",
+              "readOnly": true
+            },
+            "sampled_for_error_replay": {
+              "type": "boolean",
+              "description": "FlashCat fork - whether the replay of this session was kept only because the session reported an error",
+              "readOnly": true
             }
           },
           "readOnly": true
