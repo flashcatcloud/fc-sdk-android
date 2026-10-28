@@ -19,4 +19,17 @@ internal interface RecordCallback {
      * @param record as [EnrichedRecord]
      */
     fun onRecordForViewSent(record: EnrichedRecord)
+
+    /**
+     * FLASHCAT FORK - notifies when a record is held rather than sent, because its session's
+     * replay is kept only in case it reports an error.
+     * @param record as [EnrichedRecord]
+     */
+    fun onRecordForViewWithheld(record: EnrichedRecord)
+
+    /**
+     * FLASHCAT FORK - notifies when held records stop being held: sent, or thrown away.
+     * @param records the records no longer held
+     */
+    fun onWithheldRecordsCleared(records: List<EnrichedRecord>)
 }

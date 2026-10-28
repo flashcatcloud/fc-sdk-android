@@ -9,12 +9,60 @@ package com.datadog.android.sessionreplay.internal.storage
 import com.datadog.android.sessionreplay.internal.processor.EnrichedRecord
 
 /**
- * Will persists the serialized EnrichedRecord in the allocated Session Replay caching location.
+ * Writes the records into the storage.
  */
 internal interface RecordWriter {
     /**
-     * Writes the record to disk.
+     * Writes the record into the storage.
      * @param record to write
      */
     fun write(record: EnrichedRecord)
+
+    /**
+     * FLASHCAT FORK - holds the records of this session in memory instead of writing them, until
+     * RUM says with [release] or [discard] what became of the session. What another session still
+     * holds is kept aside for that word.
+     * @param sessionId the RUM session whose replay is kept only if it reports an error
+     */
+    fun withhold(sessionId: String)
+
+    /**
+     * FLASHCAT FORK - the session now current is not held. If it is the session whose records are
+     * held, they are written now: it has been released. Otherwise what another session still holds
+     * is kept aside for RUM's word.
+     * @param sessionId the RUM session now current
+     */
+    fun stopWithholding(sessionId: String)
+
+    /**
+     * FLASHCAT FORK - writes what is held for this session, whether it is still current or has
+     * ended since. Nothing happens if nothing is held for it.
+     * @param sessionId the RUM session whose events were released
+     */
+    fun release(sessionId: String)
+
+    /**
+     * FLASHCAT FORK - throws away what is held for this session, and whatever of it arrives later.
+     * @param sessionId the RUM session that ended without reporting an error
+     */
+    fun discard(sessionId: String)
+
+    /**
+     * FLASHCAT FORK - tracking consent was withdrawn: whatever is held, of any session, is dropped.
+     */
+    fun dropForConsent()
+
+    /**
+     * FLASHCAT FORK - the session reported its error: its replay will be released once its events
+     * are. Noted now so that a stop in between still writes it.
+     * @param sessionId the RUM session that reported an error
+     */
+    fun expectRelease(sessionId: String)
+
+    /**
+     * FLASHCAT FORK - the SDK is stopping: what is held for a session known to be released is
+     * written now, whatever is held for any other session is thrown away.
+     * @param onDone called once that is done, on the storage thread - or at once if there is none
+     */
+    fun stop(onDone: () -> Unit)
 }

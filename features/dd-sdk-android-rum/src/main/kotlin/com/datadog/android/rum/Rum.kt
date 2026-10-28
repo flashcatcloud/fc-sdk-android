@@ -127,6 +127,10 @@ object Rum {
 
         val rumAppStartupTelemetryReporter = RumAppStartupTelemetryReporter.create(sdkCore = sdkCore)
 
+        val handler = Handler(Looper.getMainLooper())
+
+        val withheldEvents = rumFeature.withheldEvents
+
         return DatadogRumMonitor(
             applicationId = rumFeature.applicationId,
             sdkCore = sdkCore,
@@ -137,8 +141,11 @@ object Rum {
             // simply asks again, and there is nothing to ask with when the app did not opt in.
             onSessionDrawn = { rumFeature.remoteConfigController?.onSessionStarted() },
             beforeSampling = rumFeature.configuration.beforeSampling,
-            writer = rumFeature.dataWriter,
-            handler = Handler(Looper.getMainLooper()),
+            writer = withheldEvents ?: rumFeature.dataWriter,
+            withheldEvents = withheldEvents,
+            sessionOnError = rumFeature.configuration.sessionOnError,
+            sessionReplayOnError = rumFeature.configuration.sessionReplayOnError,
+            handler = handler,
             telemetryEventHandler = TelemetryEventHandler(
                 sdkCore = sdkCore,
                 eventSampler = RateBasedSampler(rumFeature.telemetrySampleRate),

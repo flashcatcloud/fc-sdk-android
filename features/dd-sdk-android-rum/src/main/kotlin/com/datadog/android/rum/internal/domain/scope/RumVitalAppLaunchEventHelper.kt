@@ -87,7 +87,11 @@ internal class RumVitalAppLaunchEventHelper(
                 session = VitalAppLaunchEvent.DdSession(
                     sessionPrecondition = rumContext.sessionStartReason.toVitalAppLaunchSessionPrecondition()
                 ),
-                configuration = VitalAppLaunchEvent.Configuration(sessionSampleRate = sampleRate),
+                // FLASHCAT FORK - a session kept only because it errored stands for itself: 0 is
+                // what the intake reads as "one session, do not scale", like its other events report.
+                configuration = VitalAppLaunchEvent.Configuration(
+                    sessionSampleRate = if (rumContext.sampledForError) 0f else sampleRate
+                ),
                 profiling = VitalAppLaunchEvent.Profiling(
                     status = profilingStatus
                 )

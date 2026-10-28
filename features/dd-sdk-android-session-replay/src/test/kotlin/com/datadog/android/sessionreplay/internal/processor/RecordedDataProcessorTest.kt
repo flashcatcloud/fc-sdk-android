@@ -40,6 +40,8 @@ import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.atLeastOnce
+import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -1244,7 +1246,7 @@ internal class RecordedDataProcessorTest {
 
         // Then
         val captor = argumentCaptor<EnrichedResource>()
-        verify(mockResourcesWriter, times(1)).write(captor.capture())
+        verify(mockResourcesWriter, times(1)).write(captor.capture(), eq(fakeRumContext.sessionId), any())
         val capturedResource = captor.allValues[0]
 
         assertThat(capturedResource.resource).isEqualTo(fakeByteArray)
@@ -1264,6 +1266,7 @@ internal class RecordedDataProcessorTest {
         val fakeByteArray = forge.anAlphaNumericalString().toByteArray()
         val fakeResourceItem = createResourceItem(fakeByteArray, usedContext = initialRecordedQueuedItemContext)
         whenever(mockResourceDataStoreManager.isReady()).thenReturn(false)
+        whenever(mockResourcesWriter.write(any(), any(), any())) doAnswer { it.getArgument<() -> Unit>(2).invoke() }
 
         // When
         testedProcessor.processResources(fakeResourceItem)
@@ -1280,12 +1283,29 @@ internal class RecordedDataProcessorTest {
         val fakeByteArray = forge.anAlphaNumericalString().toByteArray()
         val fakeResourceItem = createResourceItem(fakeByteArray, usedContext = initialRecordedQueuedItemContext)
         whenever(mockResourceDataStoreManager.isReady()).thenReturn(true)
+        whenever(mockResourcesWriter.write(any(), any(), any())) doAnswer { it.getArgument<() -> Unit>(2).invoke() }
 
         // When
         testedProcessor.processResources(fakeResourceItem)
 
         // Then
         verify(mockResourceDataStoreManager, times(1)).cacheResourceHash(fakeIdentifier)
+    }
+
+    @Test
+    fun `M not store resource in datastore W processResources { resource not written yet }`(forge: Forge) {
+        // Given - held with a withheld replay: not sent, so not remembered as sent
+        val fakeResourceItem = createResourceItem(
+            forge.anAlphaNumericalString().toByteArray(),
+            usedContext = initialRecordedQueuedItemContext
+        )
+        whenever(mockResourceDataStoreManager.isReady()).thenReturn(true)
+
+        // When
+        testedProcessor.processResources(fakeResourceItem)
+
+        // Then
+        verify(mockResourceDataStoreManager, never()).cacheResourceHash(fakeIdentifier)
     }
 
     @Test

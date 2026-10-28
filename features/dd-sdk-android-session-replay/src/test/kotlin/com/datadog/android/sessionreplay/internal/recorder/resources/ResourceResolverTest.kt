@@ -327,6 +327,37 @@ internal class ResourceResolverTest {
     }
 
     @Test
+    fun `M resolve the drawable again W resolveResourceIdFromDrawable() { cache hit, resource forgotten }`() {
+        // Given
+        whenever(mockBitmapCachesManager.getFromResourceCache(fakeResourceKey)).thenReturn(fakeResourceId)
+        testedResourceResolver.forgetResources(listOf(fakeResourceId))
+
+        // When
+        testedResourceResolver.resolveResourceIdFromDrawable(
+            resources = mockResources,
+            applicationContext = mockApplicationContext,
+            displayMetrics = mockDisplayMetrics,
+            originalDrawable = mockDrawable,
+            drawableCopier = mockDrawableCopier,
+            drawableWidth = mockDrawable.intrinsicWidth,
+            drawableHeight = mockDrawable.intrinsicHeight,
+            customResourceIdCacheKey = null,
+            resourceResolverCallback = mockSerializerCallback
+        )
+
+        // Then
+        verify(mockDrawableUtils).createBitmapOfApproxSizeFromDrawable(
+            drawable = any(),
+            drawableWidth = any(),
+            drawableHeight = any(),
+            displayMetrics = any(),
+            requestedSizeInBytes = anyOrNull(),
+            config = anyOrNull(),
+            bitmapCreationCallback = any()
+        )
+    }
+
+    @Test
     fun `M calculate resourceId W resolveResourceIdFromDrawable() { cache miss }`() {
         // Given
         whenever(mockResourcesLRUCache.get(fakeResourceKey)).thenReturn(null)

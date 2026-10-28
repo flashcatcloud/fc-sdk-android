@@ -47,6 +47,7 @@ import com.datadog.android.rum.internal.debug.RumDebugListener
 import com.datadog.android.rum.internal.domain.InfoProvider
 import com.datadog.android.rum.internal.domain.RumContext
 import com.datadog.android.rum.internal.domain.Time
+import com.datadog.android.rum.internal.domain.WithheldEventWriter
 import com.datadog.android.rum.internal.domain.accessibility.AccessibilitySnapshotManager
 import com.datadog.android.rum.internal.domain.asTime
 import com.datadog.android.rum.internal.domain.battery.BatteryInfo
@@ -109,7 +110,12 @@ internal class DatadogRumMonitor(
     // the only rhythm that can matter. No-op when the app did not opt in.
     private val onSessionDrawn: () -> Unit = {},
     // FLASHCAT FORK - the host application's last word on the draw. Null unless the app set one.
-    private val beforeSampling: BeforeSamplingCallback? = null
+    private val beforeSampling: BeforeSamplingCallback? = null,
+    // FLASHCAT FORK - see `RumConfiguration.Builder.setSessionOnError`. The buffer is also
+    // [writer]; null where there is nothing to buffer with, and then no session is drawn on error.
+    private val withheldEvents: WithheldEventWriter? = null,
+    private val sessionOnError: Boolean = false,
+    private val sessionReplayOnError: Boolean = false
 ) : RumMonitor, AdvancedRumMonitor {
 
     internal var rootScope = RumApplicationScope(
@@ -135,7 +141,10 @@ internal class DatadogRumMonitor(
         insightsCollector = insightsCollector,
         remoteConfig = remoteConfig,
         onSessionDrawn = onSessionDrawn,
-        beforeSampling = beforeSampling
+        beforeSampling = beforeSampling,
+        withheldEvents = withheldEvents,
+        sessionOnError = sessionOnError,
+        sessionReplayOnError = sessionReplayOnError
     )
 
     internal val keepAliveRunnable = Runnable {
@@ -165,7 +174,10 @@ internal class DatadogRumMonitor(
                 ?.getRumContext()
                 ?.let {
                     val sessionId = it.sessionId
+                    // FLASHCAT FORK - a withheld session does not exist at the intake until it
+                    // reports an error, so it has no id to hand out yet.
                     if (it.sessionState == RumSessionScope.State.NOT_TRACKED ||
+                        it.sessionState == RumSessionScope.State.WITHHELD ||
                         sessionId == RumContext.NULL_UUID
                     ) {
                         null

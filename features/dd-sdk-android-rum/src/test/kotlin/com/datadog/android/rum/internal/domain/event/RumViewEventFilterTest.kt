@@ -149,7 +149,8 @@ internal class RumViewEventFilterTest {
                     it.toBytes().contentEquals(viewEvent.metadata)
                 }
             }
-        val expectedResult = batch.filter { !expectedViewEventsToDrop.contains(it) }
+        val expectedResult =
+            placeAtFirstOccurrence(batch, batch.filter { !expectedViewEventsToDrop.contains(it) }, viewEventMetas)
 
         // When
         val result = testedFilter.filterOutRedundantViewEvents(batch)
@@ -191,7 +192,8 @@ internal class RumViewEventFilterTest {
                     it.toBytes().contentEquals(viewEvent.metadata)
                 }
             }
-        val expectedResult = batch.filter { !expectedViewEventsToDrop.contains(it) }
+        val expectedResult =
+            placeAtFirstOccurrence(batch, batch.filter { !expectedViewEventsToDrop.contains(it) }, viewEventMetas)
 
         // When
         val result = testedFilter.filterOutRedundantViewEvents(batch)
@@ -310,4 +312,55 @@ internal class RumViewEventFilterTest {
     private fun RumEventMeta.View.toBytes() = toJson().toString().toByteArray()
 
     // endregion
+
+    @Test
+    fun `M keep views ahead of the events they contain W filterOutRedundantViewEvents() { released, then updated }`() {
+        // Given - a release writes its views first, oldest first; their live updates follow
+        val first = RumEventMeta.View(viewId = "first", documentVersion = 3, hasAccessibility = false)
+        val second = RumEventMeta.View(viewId = "second", documentVersion = 2, hasAccessibility = false)
+        val firstUpdate = first.copy(documentVersion = 5)
+        val secondUpdate = second.copy(documentVersion = 4)
+        listOf(first, second, firstUpdate, secondUpdate).forEach {
+            whenever(mockEventMetaDeserializer.deserialize(it.toBytes())) doReturn it
+        }
+        fun event(name: String, meta: RumEventMeta.View? = null) =
+            RawBatchEvent(data = name.toByteArray(), metadata = meta?.toBytes() ?: ByteArray(0))
+        val batch = listOf(
+            event("first", first),
+            event("second", second),
+            event("error"),
+            event("action"),
+            event("second+", secondUpdate),
+            event("first+", firstUpdate)
+        )
+
+        // When
+        val result = testedFilter.filterOutRedundantViewEvents(batch)
+
+        // Then
+        assertThat(result.map { String(it.data) }).containsExactly("first+", "second+", "error", "action")
+    }
+
+    /**
+     * The kept events, each kept view moved to where its view first occurs in the batch, and
+     * everything else in its own order.
+     */
+    private fun placeAtFirstOccurrence(
+        batch: List<RawBatchEvent>,
+        kept: List<RawBatchEvent>,
+        metas: List<RumEventMeta.View>
+    ): List<RawBatchEvent> {
+        fun metaOf(event: RawBatchEvent) = metas.firstOrNull { it.toBytes().contentEquals(event.metadata) }
+        val keptByView = kept.filter { metaOf(it)?.hasAccessibility == false }.associateBy { metaOf(it)!!.viewId }
+        val placed = mutableSetOf<String>()
+        return batch.mapNotNull { event ->
+            val meta = metaOf(event)
+            when {
+                meta == null -> event
+                meta.hasAccessibility == true -> event.takeIf { it in kept }
+                placed.add(meta.viewId) -> keptByView[meta.viewId]
+                else -> null
+            }
+        }
+    }
 }
