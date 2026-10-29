@@ -7,6 +7,7 @@
 package com.datadog.android.rum
 
 import android.app.ActivityManager
+import android.app.Application
 import android.content.ContentProvider
 import android.content.ContentValues
 import android.content.Context
@@ -21,6 +22,7 @@ import android.util.Log
 class DdRumContentProvider : ContentProvider() {
 
     override fun onCreate(): Boolean {
+        (context?.applicationContext as? Application)?.let { ForegroundStateTracker.register(it) }
         if (processImportance == 0) {
             val manager = context?.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
             val currentProcessId = Process.myPid()

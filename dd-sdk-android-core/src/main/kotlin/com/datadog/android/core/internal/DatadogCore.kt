@@ -18,6 +18,7 @@ import com.datadog.android.api.SdkCore
 import com.datadog.android.api.context.DatadogContext
 import com.datadog.android.api.context.NetworkInfo
 import com.datadog.android.api.context.TimeInfo
+import com.datadog.android.api.context.UserInfo
 import com.datadog.android.api.feature.Feature
 import com.datadog.android.api.feature.FeatureContextUpdateReceiver
 import com.datadog.android.api.feature.FeatureEventReceiver
@@ -96,6 +97,9 @@ internal class DatadogCore(
     internal val featureContextUpdateReceivers: MutableSet<FeatureContextUpdateReceiver> =
         Collections.newSetFromMap(ConcurrentHashMap<FeatureContextUpdateReceiver, Boolean>())
 
+    // Accessed only on contextExecutorService, together with the user info provider.
+    private val userInfoListeners = mutableSetOf<(UserInfo, TrackingConsent) -> Unit>()
+
     // region SdkCore
 
     /** @inheritDoc */
@@ -163,6 +167,7 @@ internal class DatadogCore(
         val extraInfoSnapshot = extraInfo.toMap()
         coreFeature.contextExecutorService.executeSafe("DatadogCore.setUserInfo", internalLogger) {
             coreFeature.userInfoProvider.setUserInfo(id, name, email, extraInfoSnapshot)
+            notifyUserInfoListeners()
         }
     }
 
@@ -180,6 +185,7 @@ internal class DatadogCore(
     override fun clearUserInfo() {
         coreFeature.contextExecutorService.executeSafe("DatadogCore.clearUserInfo", internalLogger) {
             coreFeature.userInfoProvider.clearUserInfo()
+            notifyUserInfoListeners()
         }
     }
 
@@ -345,6 +351,32 @@ internal class DatadogCore(
     override fun setAnonymousId(anonymousId: UUID?) {
         coreFeature.contextExecutorService.executeSafe("DatadogCore.setAnonymousId", internalLogger) {
             coreFeature.userInfoProvider.setAnonymousId(anonymousId?.toString())
+            notifyUserInfoListeners()
+        }
+    }
+
+    override fun addUserInfoListener(listener: (UserInfo, TrackingConsent) -> Unit) {
+        coreFeature.contextExecutorService.executeSafe("DatadogCore.addUserInfoListener", internalLogger) {
+            if (userInfoListeners.add(listener)) {
+                listener(
+                    coreFeature.userInfoProvider.getUserInfo(),
+                    coreFeature.trackingConsentProvider.getConsent()
+                )
+            }
+        }
+    }
+
+    override fun removeUserInfoListener(listener: (UserInfo, TrackingConsent) -> Unit) {
+        coreFeature.contextExecutorService.executeSafe("DatadogCore.removeUserInfoListener", internalLogger) {
+            userInfoListeners.remove(listener)
+        }
+    }
+
+    private fun notifyUserInfoListeners() {
+        if (userInfoListeners.isNotEmpty()) {
+            val snapshot = coreFeature.userInfoProvider.getUserInfo()
+            val consent = coreFeature.trackingConsentProvider.getConsent()
+            userInfoListeners.toList().forEach { it(snapshot, consent) }
         }
     }
 

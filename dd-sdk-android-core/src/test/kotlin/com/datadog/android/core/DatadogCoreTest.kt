@@ -10,6 +10,7 @@ import android.app.Application
 import com.datadog.android.api.InternalLogger
 import com.datadog.android.api.context.NetworkInfo
 import com.datadog.android.api.context.TimeInfo
+import com.datadog.android.api.context.UserInfo
 import com.datadog.android.api.feature.Feature
 import com.datadog.android.api.feature.FeatureContextUpdateReceiver
 import com.datadog.android.api.feature.FeatureEventReceiver
@@ -24,6 +25,7 @@ import com.datadog.android.core.internal.lifecycle.ProcessLifecycleMonitor
 import com.datadog.android.core.internal.net.DefaultFirstPartyHostHeaderTypeResolver
 import com.datadog.android.core.internal.net.info.NetworkInfoProvider
 import com.datadog.android.core.internal.privacy.ConsentProvider
+import com.datadog.android.core.internal.user.DatadogUserInfoProvider
 import com.datadog.android.core.internal.user.MutableUserInfoProvider
 import com.datadog.android.core.thread.FlushableExecutorService
 import com.datadog.android.internal.system.BuildSdkVersionProvider
@@ -221,6 +223,29 @@ internal class DatadogCoreTest {
 
         // Then
         verifyNoInteractions(testedCore.coreFeature.ndkCrashHandler)
+    }
+
+    @Test
+    fun `M notify user snapshots in update order and stop after removal`() {
+        val provider = DatadogUserInfoProvider()
+        testedCore.coreFeature.userInfoProvider = provider
+        val snapshots = mutableListOf<UserInfo>()
+        val listener: (UserInfo, TrackingConsent) -> Unit = { value, _ -> snapshots.add(value) }
+        val anonymousId = UUID.randomUUID()
+
+        testedCore.addUserInfoListener(listener)
+        testedCore.setUserInfo("user-1")
+        testedCore.setAnonymousId(anonymousId)
+        testedCore.addUserProperties(mapOf("ignored" to true))
+        testedCore.clearUserInfo()
+        testedCore.removeUserInfoListener(listener)
+        testedCore.setUserInfo("user-2")
+
+        assertThat(snapshots).hasSize(4)
+        assertThat(snapshots[1].id).isEqualTo("user-1")
+        assertThat(snapshots[2].anonymousId).isEqualTo(anonymousId.toString())
+        assertThat(snapshots[3].id).isNull()
+        assertThat(snapshots[3].anonymousId).isEqualTo(anonymousId.toString())
     }
 
     @Test

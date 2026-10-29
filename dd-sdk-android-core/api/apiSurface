@@ -204,7 +204,11 @@ interface com.datadog.android.api.storage.datastore.DataStoreReadCallback<T: Any
 interface com.datadog.android.api.storage.datastore.DataStoreWriteCallback
   fun onSuccess()
   fun onFailure()
+interface com.datadog.android.core.FeatureDataClearListener
+  fun onClearData()
 interface com.datadog.android.core.InternalSdkCore : com.datadog.android.api.feature.FeatureSdkCore
+  fun addUserInfoListener((com.datadog.android.api.context.UserInfo, com.datadog.android.privacy.TrackingConsent) -> Unit)
+  fun removeUserInfoListener((com.datadog.android.api.context.UserInfo, com.datadog.android.privacy.TrackingConsent) -> Unit)
   val networkInfo: com.datadog.android.api.context.NetworkInfo
   val trackingConsent: com.datadog.android.privacy.TrackingConsent
   val rootStorageDir: java.io.File?

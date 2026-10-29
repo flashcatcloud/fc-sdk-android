@@ -17,6 +17,7 @@ import android.os.Looper
 import androidx.annotation.AnyThread
 import androidx.annotation.RequiresApi
 import com.datadog.android.api.InternalLogger
+import com.datadog.android.api.context.UserInfo
 import com.datadog.android.api.feature.EventWriteScope
 import com.datadog.android.api.feature.Feature
 import com.datadog.android.api.feature.FeatureContextUpdateReceiver
@@ -29,6 +30,7 @@ import com.datadog.android.api.storage.DataWriter
 import com.datadog.android.api.storage.EventBatchWriter
 import com.datadog.android.api.storage.FeatureStorageConfiguration
 import com.datadog.android.api.storage.NoOpDataWriter
+import com.datadog.android.core.FeatureDataClearListener
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.core.feature.event.JvmCrash
 import com.datadog.android.core.internal.utils.executeSafe
@@ -42,12 +44,14 @@ import com.datadog.android.internal.telemetry.InternalTelemetryEvent
 import com.datadog.android.privacy.TrackingConsent
 import com.datadog.android.privacy.TrackingConsentProviderCallback
 import com.datadog.android.rum.BeforeSamplingCallback
+import com.datadog.android.rum.ForegroundStateTracker
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.RumErrorSource
 import com.datadog.android.rum.RumSessionListener
 import com.datadog.android.rum.RumSessionType
 import com.datadog.android.rum.configuration.SlowFramesConfiguration
 import com.datadog.android.rum.configuration.VitalsUpdateFrequency
+import com.datadog.android.rum.internal.active.ActiveBeaconController
 import com.datadog.android.rum.internal.anr.ANRDetectorRunnable
 import com.datadog.android.rum.internal.debug.UiRumDebugListener
 import com.datadog.android.rum.internal.domain.InfoProvider
@@ -150,7 +154,7 @@ internal class RumFeature(
         DatadogLateCrashReporter(it)
     },
     private val buildSdkVersionProvider: BuildSdkVersionProvider = BuildSdkVersionProvider.DEFAULT
-) : StorageBackedFeature, FeatureEventReceiver, TrackingConsentProviderCallback {
+) : StorageBackedFeature, FeatureEventReceiver, TrackingConsentProviderCallback, FeatureDataClearListener {
 
     internal var dataWriter: DataWriter<Any> = NoOpDataWriter()
     internal val initialized = AtomicBoolean(false)
@@ -188,6 +192,9 @@ internal class RumFeature(
     internal var remoteConfigStore: RemoteConfigStore? = null
     internal var remoteConfigController: RemoteConfigController? = null
     private var remoteConfigForegroundCallback: ProcessForegroundCallback? = null
+    private var activeBeaconController: ActiveBeaconController? = null
+    private var activeBeaconForegroundListener: ((Boolean) -> Unit)? = null
+    private var activeBeaconUserListener: ((UserInfo, TrackingConsent) -> Unit)? = null
 
     /**
      * FLASHCAT FORK - where the sessions kept only on error hold their events, see
@@ -374,6 +381,13 @@ internal class RumFeature(
     override fun onStop() {
         sdkCore.removeEventReceiver(name)
 
+        activeBeaconForegroundListener?.let { ForegroundStateTracker.removeListener(it) }
+        activeBeaconForegroundListener = null
+        activeBeaconUserListener?.let { (sdkCore as? InternalSdkCore)?.removeUserInfoListener(it) }
+        activeBeaconUserListener = null
+        activeBeaconController?.stop()
+        activeBeaconController = null
+
         remoteConfigForegroundCallback?.let { (appContext as? Application)?.unregisterActivityLifecycleCallbacks(it) }
         remoteConfigForegroundCallback = null
         remoteConfigController?.stop()
@@ -428,6 +442,10 @@ internal class RumFeature(
 
         GlobalRumMonitor.unregister(sdkCore)
         initialized.set(false)
+    }
+
+    override fun onClearData() {
+        activeBeaconController?.clearData()
     }
 
     // endregion
@@ -576,6 +594,7 @@ internal class RumFeature(
     // FLASHCAT FORK - the withheld events are not in the storage consent governs: what was held
     // under the consent now withdrawn is dropped here, whether or not an event follows to see it.
     override fun onConsentUpdated(previousConsent: TrackingConsent, newConsent: TrackingConsent) {
+        activeBeaconController?.onConsent(newConsent)
         if (newConsent != TrackingConsent.NOT_GRANTED) return
         withheldEvents?.let { writer -> withRumWriteScope { writer.dropHeldForConsent() } }
     }
@@ -1047,6 +1066,71 @@ internal class RumFeature(
         }
     }
 
+    internal fun startActiveBeacon() {
+        val core = sdkCore as? InternalSdkCore ?: return
+        val context = core.getDatadogContext() ?: return
+        val intake = configuration.customEndpointUrl ?: (context.site.intakeEndpoint + RUM_INTAKE_PATH)
+        val processName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            Application.getProcessName() ?: "pid-${android.os.Process.myPid()}"
+        } else {
+            val manager = appContext.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+            manager?.runningAppProcesses?.firstOrNull { it.pid == android.os.Process.myPid() }?.processName
+                ?: "pid-${android.os.Process.myPid()}"
+        }
+        if (!configuration.activeBeaconEnabled) {
+            // A disabled feature cannot hear a later consent withdrawal; remove its old queue now.
+            val name = ActiveBeaconController.storeName(core.name, applicationId, intake, processName)
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    appContext.deleteSharedPreferences(name)
+                } else {
+                    appContext.getSharedPreferences(name, Context.MODE_PRIVATE).edit().clear().apply()
+                }
+            } catch (e: SecurityException) {
+                sdkCore.internalLogger.log(
+                    InternalLogger.Level.WARN,
+                    InternalLogger.Target.MAINTAINER,
+                    { "Unable to clear disabled active beacon storage." },
+                    e
+                )
+            } catch (e: IllegalStateException) {
+                sdkCore.internalLogger.log(
+                    InternalLogger.Level.WARN,
+                    InternalLogger.Target.MAINTAINER,
+                    { "Unable to clear disabled active beacon storage." },
+                    e
+                )
+            }
+            return
+        }
+        try {
+            ActiveBeaconController.buildEndpoint(intake, context.clientToken)
+        } catch (e: IllegalArgumentException) {
+            sdkCore.internalLogger.log(
+                InternalLogger.Level.WARN,
+                InternalLogger.Target.MAINTAINER,
+                { "The active beacon endpoint is invalid; active reporting is disabled." },
+                e
+            )
+            return
+        }
+        val controller = ActiveBeaconController(
+            core, context, appContext, applicationId, intake, configuration.trackAnonymousUser,
+            core.createScheduledExecutorService("rum-active-beacon"), core.createOkHttpCallFactory(), processName
+        )
+        activeBeaconController = controller
+        val listener: (UserInfo, TrackingConsent) -> Unit = controller::onUserInfo
+        activeBeaconUserListener = listener
+        core.addUserInfoListener(listener)
+        controller.start(false)
+        (appContext as? Application)?.let { application ->
+            ForegroundStateTracker.register(application)
+            val foregroundListener: (Boolean) -> Unit = controller::onForeground
+            activeBeaconForegroundListener = foregroundListener
+            ForegroundStateTracker.addListener(foregroundListener)
+        }
+    }
+
     // endregion
 
     internal data class Configuration(
@@ -1092,7 +1176,8 @@ internal class RumFeature(
         val sessionOnError: Boolean = false,
         // FLASHCAT FORK - the same for the replay of a collected session the replay rate does not
         // keep.
-        val sessionReplayOnError: Boolean = false
+        val sessionReplayOnError: Boolean = false,
+        val activeBeaconEnabled: Boolean = true
     )
 
     internal companion object {

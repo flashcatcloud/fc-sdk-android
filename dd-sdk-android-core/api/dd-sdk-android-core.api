@@ -614,7 +614,12 @@ public abstract interface class com/datadog/android/api/storage/datastore/DataSt
 	public abstract fun onSuccess ()V
 }
 
+public abstract interface class com/datadog/android/core/FeatureDataClearListener {
+	public abstract fun onClearData ()V
+}
+
 public abstract interface class com/datadog/android/core/InternalSdkCore : com/datadog/android/api/feature/FeatureSdkCore {
+	public abstract fun addUserInfoListener (Lkotlin/jvm/functions/Function2;)V
 	public abstract fun deleteLastViewEvent ()V
 	public abstract fun getAllFeatures ()Ljava/util/List;
 	public abstract fun getAppStartTimeNs ()J
@@ -628,6 +633,7 @@ public abstract interface class com/datadog/android/core/InternalSdkCore : com/d
 	public abstract fun getRootStorageDir ()Ljava/io/File;
 	public abstract fun getTrackingConsent ()Lcom/datadog/android/privacy/TrackingConsent;
 	public abstract fun isDeveloperModeEnabled ()Z
+	public abstract fun removeUserInfoListener (Lkotlin/jvm/functions/Function2;)V
 	public abstract fun writeLastFatalAnrSent (J)V
 	public abstract fun writeLastViewEvent ([B)V
 }

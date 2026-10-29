@@ -240,3 +240,9 @@ Shadow Plugin 对 Android AAR 的支持有限，推荐方式是：先将这些�
 3. 在 `sample/vendor-lib` 中添加宿主冲突依赖（OkHttp 4.9/4.11/5.0-alpha, Gson 2.8.6/2.10）模拟编译
 4. 宿主集成测试：使用 compileSdk 33 的宿主项目接入修改后的 SDK
 
+
+### 活跃设备上报
+
+RUM 默认启用独立的活跃上报通道。应用在前台且用户已授予数据采集权限时，SDK 在启动、回到前台、授权及用户 ID 变化时发送活跃信号；该信号不受会话采样率和仅错误会话采集配置影响。应用可在 RUM 初始化时调用 `RumConfiguration.Builder(applicationId).setActiveBeaconEnabled(false)` 关闭该通道。
+
+设备数使用 SDK 匿名 ID，卸载重装会产生新的 ID；关闭匿名追踪后不统计活跃设备，但设置了用户 ID 时仍可统计登录用户。登录用户数由 `Datadog.setUserInfo` 提供的 ID 决定，应传入稳定的业务账号 ID。发送失败时仅保留最新一条待补发，并在之后符合条件的前台触发中重试；记录超过 72 小时或撤回授权后丢弃。跨日触发依据设备本地时间，设备时间或时区与服务端不一致时可能影响跨日统计。后端需要部署支持 `/api/v2/rum/active` 的版本。
