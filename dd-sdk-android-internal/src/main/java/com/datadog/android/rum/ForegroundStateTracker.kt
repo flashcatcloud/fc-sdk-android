@@ -8,8 +8,10 @@ package com.datadog.android.rum
 import android.app.Activity
 import android.app.Application
 import android.os.Bundle
+import androidx.annotation.RestrictTo
 
 /** Process-local activity state, registered before the first activity by DdRumContentProvider. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 object ForegroundStateTracker : Application.ActivityLifecycleCallbacks {
     private var registered = false
     private val activities = mutableSetOf<Activity>()

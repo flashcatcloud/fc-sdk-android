@@ -143,6 +143,7 @@ internal class SdkFeature(
 
     @AnyThread
     fun clearAllData() {
+        // FLASHCAT FORK - clear feature data kept outside the regular event storage too.
         (wrappedFeature as? FeatureDataClearListener)?.onClearData()
         storage.dropAll()
         dataStore.clearAllData()

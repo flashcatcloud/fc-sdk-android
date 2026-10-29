@@ -5,7 +5,10 @@
  */
 package com.datadog.android.core
 
+import com.datadog.android.lint.InternalApi
+
 /** Internal hook for feature data kept outside the normal event storage. */
 interface FeatureDataClearListener {
+    @InternalApi
     fun onClearData()
 }

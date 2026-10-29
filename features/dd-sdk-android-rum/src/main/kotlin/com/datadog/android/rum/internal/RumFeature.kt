@@ -6,6 +6,7 @@
 
 package com.datadog.android.rum.internal
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.ActivityManager
 import android.app.Application
@@ -378,6 +379,8 @@ internal class RumFeature(
         oldBatchThreshold = RUM_TTL_24H
     )
 
+    // The internal and RUM artifacts use different Maven groups within the same SDK.
+    @SuppressLint("RestrictedApi")
     override fun onStop() {
         sdkCore.removeEventReceiver(name)
 
@@ -1066,6 +1069,7 @@ internal class RumFeature(
         }
     }
 
+    @SuppressLint("RestrictedApi")
     internal fun startActiveBeacon() {
         val core = sdkCore as? InternalSdkCore ?: return
         val context = core.getDatadogContext() ?: return
@@ -1080,26 +1084,28 @@ internal class RumFeature(
         if (!configuration.activeBeaconEnabled) {
             // A disabled feature cannot hear a later consent withdrawal; remove its old queue now.
             val name = ActiveBeaconController.storeName(core.name, applicationId, intake, processName)
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    appContext.deleteSharedPreferences(name)
-                } else {
-                    appContext.getSharedPreferences(name, Context.MODE_PRIVATE).edit().clear().apply()
+            core.getPersistenceExecutorService().executeSafe("clear disabled active beacon", sdkCore.internalLogger) {
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        appContext.deleteSharedPreferences(name)
+                    } else {
+                        appContext.getSharedPreferences(name, Context.MODE_PRIVATE).edit().clear().apply()
+                    }
+                } catch (e: SecurityException) {
+                    sdkCore.internalLogger.log(
+                        InternalLogger.Level.WARN,
+                        InternalLogger.Target.MAINTAINER,
+                        { "Unable to clear disabled active beacon storage." },
+                        e
+                    )
+                } catch (e: IllegalStateException) {
+                    sdkCore.internalLogger.log(
+                        InternalLogger.Level.WARN,
+                        InternalLogger.Target.MAINTAINER,
+                        { "Unable to clear disabled active beacon storage." },
+                        e
+                    )
                 }
-            } catch (e: SecurityException) {
-                sdkCore.internalLogger.log(
-                    InternalLogger.Level.WARN,
-                    InternalLogger.Target.MAINTAINER,
-                    { "Unable to clear disabled active beacon storage." },
-                    e
-                )
-            } catch (e: IllegalStateException) {
-                sdkCore.internalLogger.log(
-                    InternalLogger.Level.WARN,
-                    InternalLogger.Target.MAINTAINER,
-                    { "Unable to clear disabled active beacon storage." },
-                    e
-                )
             }
             return
         }

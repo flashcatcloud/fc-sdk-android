@@ -21,6 +21,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
+import java.io.File
 import java.io.IOException
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
@@ -46,15 +47,20 @@ internal class ActiveBeaconController(
 ) {
     private val sdkContext = context
     private val endpoint = buildEndpoint(intakeUrl, context.clientToken)
-    private val prefs = try {
-        appContext.getSharedPreferences(
-            storeName(core.name, applicationId, intakeUrl, processName),
-            Context.MODE_PRIVATE
-        )
-    } catch (e: Exception) {
-        log("Active beacon storage is unavailable.", e)
-        null
+
+    // Opening preferences may hit disk; defer it until the worker needs to read/write, or consent is revoked.
+    private val prefs by lazy {
+        try {
+            appContext.getSharedPreferences(
+                storeName(core.name, applicationId, intakeUrl, processName),
+                Context.MODE_PRIVATE
+            )
+        } catch (e: Exception) {
+            log("Active beacon storage is unavailable.", e)
+            null
+        }
     }
+    private val bootId by lazy { readBootId() }
     private val lock = Any()
 
     // Wait for the context-thread snapshot, which is ordered with all consent changes.
@@ -69,6 +75,8 @@ internal class ActiveBeaconController(
     private val sent = mutableSetOf<String>()
     private var generation = 0L
     private var nextAllowedAt = 0L
+    private var midnightGeneration = 0L
+    private var scheduledRateLimitAt = 0L
 
     @Volatile private var pendingInMemory: Pending? = null
 
@@ -109,9 +117,17 @@ internal class ActiveBeaconController(
             if (value != TrackingConsent.GRANTED) {
                 generation++
                 call?.cancel()
+            }
+            if (value == TrackingConsent.NOT_GRANTED) {
                 pendingInMemory = null
                 // Clear synchronously so a stopped executor cannot leave consent-withdrawn data behind.
                 prefs?.edit()?.clear()?.commit()
+            }
+        }
+        if (value == TrackingConsent.NOT_GRANTED) {
+            executor.executeSafe("active revoke", core.internalLogger) {
+                nextAllowedAt = 0L
+                scheduledRateLimitAt = 0L
             }
         }
     }
@@ -126,6 +142,7 @@ internal class ActiveBeaconController(
         executor.executeSafe("active clear", core.internalLogger) {
             sent.clear()
             nextAllowedAt = 0L
+            scheduledRateLimitAt = 0L
         }
     }
 
@@ -150,18 +167,20 @@ internal class ActiveBeaconController(
         val body = buildBody(sdkContext, currentUser()) ?: return
         nextAllowedAt = maxOf(nextAllowedAt, prefs?.getLong("next_allowed", 0) ?: 0)
         if (now < nextAllowedAt) {
-            savePending(body, key, day, now)
+            val pending = readPending(now)
+            if (key !in sent && (pending == null || pending.day != day || pending.identity != key)) {
+                savePending(body, key, day, now)
+            }
+            if (pending != null || key !in sent) scheduleRateLimitRetry(1)
             return
         }
         val pending = readPending(now)
         if (pending != null) {
-            if (pending.day == day && pending.identity == key) {
-                clearPending()
-            } else {
-                if (!send(pending.body, pending.age, pending.identity, pending.day, 0, true)) {
-                    if (eligible()) savePending(body, key, day, now)
-                    return
+            if (!send(pending.body, pending.age, pending.identity, pending.day, 0, true)) {
+                if (eligible() && key !in sent && (pending.day != day || pending.identity != key)) {
+                    savePending(body, key, day, now)
                 }
+                return
             }
         }
         if (!eligible() || key in sent) return
@@ -187,15 +206,21 @@ internal class ActiveBeaconController(
             activeCall = callFactory.newCall(request)
             call = activeCall
         }
+        val requestStartedAt = System.currentTimeMillis()
+        val requestStartedElapsed = SystemClock.elapsedRealtime()
         val result = try {
             activeCall.execute().use { response ->
                 when {
                     response.isSuccessful -> Result.SUCCESS
                     response.code == 429 -> {
-                        nextAllowedAt = retryAfter(response.header("Retry-After"), System.currentTimeMillis())
+                        nextAllowedAt = retryAfter(
+                            response.header("Flashcat-Request-Rate-Limit-Delay"),
+                            response.header("Retry-After"),
+                            System.currentTimeMillis()
+                        )
                         Result.RATE_LIMITED
                     }
-                    response.code in 500..599 -> Result.RETRY
+                    response.code == 408 || response.code in 500..599 -> Result.RETRY
                     else -> Result.PERMANENT
                 }
             }
@@ -219,16 +244,20 @@ internal class ActiveBeaconController(
                     return true
                 }
                 Result.RETRY, Result.RATE_LIMITED -> {
-                    if (!pending) savePending(body, key, day, System.currentTimeMillis() - age)
+                    if (!pending) savePending(body, key, day, requestStartedAt, requestStartedElapsed)
                     if (result == Result.RATE_LIMITED) prefs?.edit()?.putLong("next_allowed", nextAllowedAt)?.apply()
-                    if (result == Result.RETRY && attempt < 2 && foreground) {
-                        val delay = if (attempt == 0) 5L else 60L
-                        executor.scheduleSafe(
-                            "active retry",
-                            delay,
-                            TimeUnit.SECONDS,
-                            core.internalLogger
-                        ) { retry(attempt + 1) }
+                    if (attempt < 2 && foreground) {
+                        if (result == Result.RATE_LIMITED) {
+                            scheduleRateLimitRetry(attempt + 1)
+                        } else {
+                            val delay = TimeUnit.SECONDS.toMillis(if (attempt == 0) 5L else 60L)
+                            executor.scheduleSafe(
+                                "active retry",
+                                delay,
+                                TimeUnit.MILLISECONDS,
+                                core.internalLogger
+                            ) { retry(attempt + 1) }
+                        }
                     }
                     return false
                 }
@@ -236,9 +265,37 @@ internal class ActiveBeaconController(
         }
     }
 
+    private fun scheduleRateLimitRetry(attempt: Int) {
+        val deadline = nextAllowedAt
+        if (scheduledRateLimitAt == deadline) return
+        scheduledRateLimitAt = deadline
+        executor.scheduleSafe(
+            "active rate limit retry",
+            (deadline - System.currentTimeMillis()).coerceAtLeast(1_000),
+            TimeUnit.MILLISECONDS,
+            core.internalLogger
+        ) {
+            if (scheduledRateLimitAt == deadline) {
+                scheduledRateLimitAt = 0L
+                retry(attempt)
+            }
+        }
+    }
+
     private fun retry(attempt: Int) {
         if (!eligible()) return
         val now = System.currentTimeMillis()
+        if (now < nextAllowedAt) {
+            executor.scheduleSafe(
+                "active retry limit",
+                nextAllowedAt - now,
+                TimeUnit.MILLISECONDS,
+                core.internalLogger
+            ) {
+                retry(attempt)
+            }
+            return
+        }
         val pending = readPending(now) ?: return
         send(pending.body, pending.age, pending.identity, pending.day, attempt, true)
     }
@@ -273,51 +330,59 @@ internal class ActiveBeaconController(
             }
         }
     }
-    private var midnightGeneration = 0L
-
     private data class Pending(
         val body: String,
         val identity: String,
         val day: String,
         val createdAt: Long,
         val elapsedAt: Long,
+        val bootId: String?,
         val age: Long = 0
     )
     private fun readPending(now: Long): Pending? {
         pendingInMemory?.let {
-            val age = pendingAge(now, SystemClock.elapsedRealtime(), it.createdAt, it.elapsedAt)
+            val age = pendingAge(now, SystemClock.elapsedRealtime(), it.createdAt, it.elapsedAt, bootId, it.bootId)
             if (age != null) return it.copy(age = age)
             clearPending()
         }
-        val body = prefs?.getString("body", null) ?: return null
-        val created = prefs.getLong("created", 0)
-        val elapsed = prefs.getLong("elapsed", 0)
-        val age = pendingAge(now, SystemClock.elapsedRealtime(), created, elapsed)
+        val storage = prefs ?: return null
+        val body = storage.getString("body", null) ?: return null
+        val created = storage.getLong("created", 0)
+        val elapsed = storage.getLong("elapsed", 0)
+        val storedBootId = storage.getString("boot_id", null)
+        val age = pendingAge(now, SystemClock.elapsedRealtime(), created, elapsed, bootId, storedBootId)
         if (age == null) {
             clearPending()
             return null
         }
         return Pending(
             body,
-            prefs.getString("identity", "") ?: "",
-            prefs.getString("day", "") ?: "",
+            storage.getString("identity", "") ?: "",
+            storage.getString("day", "") ?: "",
             created,
             elapsed,
+            storedBootId,
             age
         )
     }
-    private fun savePending(body: String, identity: String, day: String, created: Long) {
+    private fun savePending(
+        body: String,
+        identity: String,
+        day: String,
+        created: Long,
+        elapsed: Long = SystemClock.elapsedRealtime()
+    ) {
         synchronized(lock) {
             if (stopped || consent != TrackingConsent.GRANTED) return
-            val elapsed = SystemClock.elapsedRealtime()
-            pendingInMemory = Pending(body, identity, day, created, elapsed)
+            pendingInMemory = Pending(body, identity, day, created, elapsed, bootId)
             prefs?.edit()?.putString("body", body)?.putString("identity", identity)?.putString("day", day)
-                ?.putLong("created", created)?.putLong("elapsed", elapsed)?.apply()
+                ?.putLong("created", created)?.putLong("elapsed", elapsed)?.putString("boot_id", bootId)?.apply()
         }
     }
     private fun clearPending() {
         pendingInMemory = null
-        prefs?.edit()?.remove("body")?.remove("identity")?.remove("day")?.remove("created")?.remove("elapsed")?.apply()
+        prefs?.edit()?.remove("body")?.remove("identity")?.remove("day")?.remove("created")?.remove("elapsed")
+            ?.remove("boot_id")?.apply()
     }
     private fun log(message: String, error: Throwable? = null) {
         core.internalLogger.log(InternalLogger.Level.DEBUG, InternalLogger.Target.MAINTAINER, { message }, error)
@@ -334,9 +399,22 @@ internal class ActiveBeaconController(
             return "dd_active_" + digest.joinToString("") { "%02x".format(it) }
         }
         internal fun identity(user: UserInfo): String = (user.anonymousId ?: "") + "\u0000" + (user.id ?: "")
-        internal fun pendingAge(now: Long, elapsed: Long, created: Long, createdElapsed: Long): Long? {
+        internal fun pendingAge(
+            now: Long,
+            elapsed: Long,
+            created: Long,
+            createdElapsed: Long,
+            currentBootId: String?,
+            storedBootId: String?
+        ): Long? {
+            if (createdElapsed > 0 && currentBootId != null &&
+                currentBootId == storedBootId && elapsed >= createdElapsed
+            ) {
+                return (elapsed - createdElapsed).takeIf { it <= MAX_AGE }
+            }
             val wallAge = now - created
             if (wallAge !in 0..MAX_AGE) return null
+            if (currentBootId != null && storedBootId != null && currentBootId != storedBootId) return wallAge
             if (createdElapsed <= 0 || elapsed < createdElapsed) return wallAge // reboot or no monotonic sample
             val monotonicAge = elapsed - createdElapsed
             if (kotlin.math.abs(monotonicAge - wallAge) > TimeUnit.MINUTES.toMillis(2)) return null
@@ -345,15 +423,27 @@ internal class ActiveBeaconController(
         private fun day(now: Long): String = Calendar.getInstance().apply { timeInMillis = now }.let {
             "${it.get(Calendar.YEAR)}-${it.get(Calendar.DAY_OF_YEAR)}"
         }
-        internal fun retryAfter(value: String?, now: Long): Long {
-            value?.toLongOrNull()?.let { return now + TimeUnit.SECONDS.toMillis(it.coerceIn(0, 72 * 60 * 60)) }
+        internal fun retryAfter(flashcat: String?, value: String?, now: Long): Long {
+            flashcat?.toLongOrNull()?.takeIf { it >= 0 }?.let {
+                return now + TimeUnit.SECONDS.toMillis(it.coerceIn(1, 72 * 60 * 60))
+            }
+            value?.toLongOrNull()?.takeIf { it >= 0 }?.let {
+                return now + TimeUnit.SECONDS.toMillis(it.coerceIn(1, 72 * 60 * 60))
+            }
             val date = try {
                 SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US).apply {
                     timeZone = TimeZone.getTimeZone("GMT")
                     isLenient = false
                 }.parse(value ?: "")?.time
             } catch (e: java.text.ParseException) { null }
-            return (date ?: (now + 60_000)).coerceIn(now, now + MAX_AGE)
+            return (date ?: (now + 60_000)).coerceIn(now + 1_000, now + MAX_AGE)
+        }
+        private fun readBootId(): String? = try {
+            File("/proc/sys/kernel/random/boot_id").readText().trim().takeIf { it.isNotEmpty() }
+        } catch (e: IOException) {
+            null
+        } catch (e: SecurityException) {
+            null
         }
         internal fun buildEndpoint(intake: String, token: String): String {
             val url = intake.toHttpUrl()

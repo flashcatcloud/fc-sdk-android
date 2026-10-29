@@ -97,7 +97,7 @@ internal class DatadogCore(
     internal val featureContextUpdateReceivers: MutableSet<FeatureContextUpdateReceiver> =
         Collections.newSetFromMap(ConcurrentHashMap<FeatureContextUpdateReceiver, Boolean>())
 
-    // Accessed only on contextExecutorService, together with the user info provider.
+    // FLASHCAT FORK - accessed only on contextExecutorService, together with the user info provider.
     private val userInfoListeners = mutableSetOf<(UserInfo, TrackingConsent) -> Unit>()
 
     // region SdkCore

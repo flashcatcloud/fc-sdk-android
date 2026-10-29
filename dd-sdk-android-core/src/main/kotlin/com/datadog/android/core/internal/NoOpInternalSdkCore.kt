@@ -46,6 +46,7 @@ import java.util.concurrent.TimeUnit
  */
 internal object NoOpInternalSdkCore : InternalSdkCore {
 
+    // FLASHCAT FORK - user snapshots used by the active beacon.
     override fun addUserInfoListener(listener: (UserInfo, TrackingConsent) -> Unit) = Unit
 
     override fun removeUserInfoListener(listener: (UserInfo, TrackingConsent) -> Unit) = Unit

@@ -22,6 +22,7 @@ import android.util.Log
 class DdRumContentProvider : ContentProvider() {
 
     override fun onCreate(): Boolean {
+        // FLASHCAT FORK - track actual activity state even when RUM is enabled after launch.
         (context?.applicationContext as? Application)?.let { ForegroundStateTracker.register(it) }
         if (processImportance == 0) {
             val manager = context?.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager

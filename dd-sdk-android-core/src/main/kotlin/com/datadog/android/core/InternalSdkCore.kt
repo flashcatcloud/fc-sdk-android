@@ -25,7 +25,7 @@ import java.util.concurrent.ExecutorService
  */
 interface InternalSdkCore : FeatureSdkCore {
 
-    /** Registers a listener on the context thread and delivers the current user snapshot. */
+    /** FLASHCAT FORK - registers a listener on the context thread and delivers the current user snapshot. */
     @InternalApi
     fun addUserInfoListener(listener: (UserInfo, TrackingConsent) -> Unit)
 
