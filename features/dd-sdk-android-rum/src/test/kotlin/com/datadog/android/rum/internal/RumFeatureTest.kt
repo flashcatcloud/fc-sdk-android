@@ -1036,6 +1036,31 @@ internal class RumFeatureTest {
         verify(mockSdkCore, never()).createOkHttpCallFactory(any())
     }
 
+    @Test
+    fun `M keep rum enableable W active beacon setup throws`(@Forgery context: DatadogContext) {
+        featureWith(
+            fakeConfiguration.copy(
+                activeBeaconEnabled = true,
+                customEndpointUrl = "https://example.com/rum",
+                remoteConfigurationEnabled = false
+            )
+        )
+        whenever(mockSdkCore.getDatadogContext()) doReturn context
+        whenever(mockSdkCore.name) doReturn "default"
+        whenever(mockSdkCore.createOkHttpCallFactory(any())) doThrow RuntimeException("boom")
+        testedFeature.onInitialize(appContext.mockInstance)
+        testedFeature.startActiveBeacon()
+        verify(mockSdkCore, never()).addUserInfoListener(any())
+        verify(mockInternalLogger).log(
+            eq(InternalLogger.Level.WARN),
+            eq(InternalLogger.Target.MAINTAINER),
+            any(),
+            anyOrNull(),
+            any(),
+            anyOrNull()
+        )
+    }
+
     private fun registeredForegroundCallback(): ProcessForegroundCallback {
         val captor = argumentCaptor<Application.ActivityLifecycleCallbacks>()
         verify(appContext.mockInstance, atLeastOnce()).registerActivityLifecycleCallbacks(captor.capture())

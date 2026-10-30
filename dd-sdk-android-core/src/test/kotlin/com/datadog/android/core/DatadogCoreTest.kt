@@ -249,6 +249,21 @@ internal class DatadogCoreTest {
     }
 
     @Test
+    fun `M keep notifying remaining listeners W one throws`() {
+        val provider = DatadogUserInfoProvider()
+        testedCore.coreFeature.userInfoProvider = provider
+        val snapshots = mutableListOf<UserInfo>()
+        val failing: (UserInfo, TrackingConsent) -> Unit = { _, _ -> error("boom") }
+        val listener: (UserInfo, TrackingConsent) -> Unit = { value, _ -> snapshots.add(value) }
+
+        testedCore.addUserInfoListener(failing)
+        testedCore.addUserInfoListener(listener)
+        testedCore.setUserInfo("user-1")
+
+        assertThat(snapshots.map { it.id }).contains("user-1")
+    }
+
+    @Test
     fun `M update userInfoProvider W setUserInfo()`(
         @StringForgery(type = StringForgeryType.HEXADECIMAL) id: String,
         @StringForgery name: String,

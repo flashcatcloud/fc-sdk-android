@@ -8,11 +8,13 @@ package com.datadog.android.rum
 import android.app.Activity
 import android.app.Application
 import android.os.Bundle
+import android.util.Log
 import androidx.annotation.RestrictTo
 
 /** Process-local activity state, registered before the first activity by DdRumContentProvider. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 object ForegroundStateTracker : Application.ActivityLifecycleCallbacks {
+    private const val TAG = "DD_ForegroundState"
     private var registered = false
     private val activities = mutableSetOf<Activity>()
     private val listeners = mutableSetOf<(Boolean) -> Unit>()
@@ -28,7 +30,7 @@ object ForegroundStateTracker : Application.ActivityLifecycleCallbacks {
     @Synchronized
     fun addListener(listener: (Boolean) -> Unit) {
         listeners.add(listener)
-        listener(activities.isNotEmpty())
+        notifyListener(listener, activities.isNotEmpty())
     }
 
     @Synchronized
@@ -38,13 +40,13 @@ object ForegroundStateTracker : Application.ActivityLifecycleCallbacks {
     override fun onActivityStarted(activity: Activity) {
         val wasEmpty = activities.isEmpty()
         activities.add(activity)
-        if (wasEmpty && activities.isNotEmpty()) listeners.toList().forEach { it(true) }
+        if (wasEmpty && activities.isNotEmpty()) notifyListeners(true)
     }
 
     @Synchronized
     override fun onActivityStopped(activity: Activity) {
         val removed = activities.remove(activity)
-        if (removed && activities.isEmpty()) listeners.toList().forEach { it(false) }
+        if (removed && activities.isEmpty()) notifyListeners(false)
     }
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
@@ -52,4 +54,17 @@ object ForegroundStateTracker : Application.ActivityLifecycleCallbacks {
     override fun onActivityPaused(activity: Activity) = Unit
     override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
     override fun onActivityDestroyed(activity: Activity) = onActivityStopped(activity)
+
+    private fun notifyListeners(foreground: Boolean) {
+        listeners.toList().forEach { notifyListener(it, foreground) }
+    }
+
+    // A failing listener (active beacon) must not abort the host Activity lifecycle callback.
+    private fun notifyListener(listener: (Boolean) -> Unit, foreground: Boolean) {
+        try {
+            listener(foreground)
+        } catch (e: Exception) {
+            Log.e(TAG, "A foreground listener threw an exception.", e)
+        }
+    }
 }

@@ -31,4 +31,19 @@ internal class ForegroundStateTrackerTest {
         ForegroundStateTracker.removeListener(next)
         assertThat(background).containsExactly(false)
     }
+
+    @Test
+    fun `failing listener does not stop other listeners`() {
+        val activity: Activity = mock()
+        val values = mutableListOf<Boolean>()
+        val failing: (Boolean) -> Unit = { throw IllegalStateException("boom") }
+        val listener: (Boolean) -> Unit = { values.add(it) }
+        ForegroundStateTracker.addListener(failing)
+        ForegroundStateTracker.addListener(listener)
+        ForegroundStateTracker.onActivityStarted(activity)
+        ForegroundStateTracker.onActivityStopped(activity)
+        ForegroundStateTracker.removeListener(failing)
+        ForegroundStateTracker.removeListener(listener)
+        assertThat(values).containsExactly(false, true, false)
+    }
 }

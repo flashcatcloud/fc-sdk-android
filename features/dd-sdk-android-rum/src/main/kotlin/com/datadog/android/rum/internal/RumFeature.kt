@@ -384,12 +384,7 @@ internal class RumFeature(
     override fun onStop() {
         sdkCore.removeEventReceiver(name)
 
-        activeBeaconForegroundListener?.let { ForegroundStateTracker.removeListener(it) }
-        activeBeaconForegroundListener = null
-        activeBeaconUserListener?.let { (sdkCore as? InternalSdkCore)?.removeUserInfoListener(it) }
-        activeBeaconUserListener = null
-        activeBeaconController?.stop()
-        activeBeaconController = null
+        stopActiveBeacon()
 
         remoteConfigForegroundCallback?.let { (appContext as? Application)?.unregisterActivityLifecycleCallbacks(it) }
         remoteConfigForegroundCallback = null
@@ -1069,8 +1064,34 @@ internal class RumFeature(
         }
     }
 
+    // FLASHCAT FORK - the independent active sender must never abort Rum.enable.
     @SuppressLint("RestrictedApi")
     internal fun startActiveBeacon() {
+        try {
+            startActiveBeaconUnsafe()
+        } catch (e: Exception) {
+            stopActiveBeacon()
+            sdkCore.internalLogger.log(
+                InternalLogger.Level.WARN,
+                InternalLogger.Target.MAINTAINER,
+                { "Unable to start the active beacon; active reporting is disabled." },
+                e
+            )
+        }
+    }
+
+    @SuppressLint("RestrictedApi")
+    private fun stopActiveBeacon() {
+        activeBeaconForegroundListener?.let { ForegroundStateTracker.removeListener(it) }
+        activeBeaconForegroundListener = null
+        activeBeaconUserListener?.let { (sdkCore as? InternalSdkCore)?.removeUserInfoListener(it) }
+        activeBeaconUserListener = null
+        activeBeaconController?.stop()
+        activeBeaconController = null
+    }
+
+    @SuppressLint("RestrictedApi")
+    private fun startActiveBeaconUnsafe() {
         val core = sdkCore as? InternalSdkCore ?: return
         val context = core.getDatadogContext() ?: return
         val intake = configuration.customEndpointUrl ?: (context.site.intakeEndpoint + RUM_INTAKE_PATH)
@@ -1120,10 +1141,16 @@ internal class RumFeature(
             )
             return
         }
-        val controller = ActiveBeaconController(
-            core, context, appContext, applicationId, intake, configuration.trackAnonymousUser,
-            core.createScheduledExecutorService("rum-active-beacon"), core.createOkHttpCallFactory(), processName
-        )
+        val executor = core.createScheduledExecutorService("rum-active-beacon")
+        val controller = try {
+            ActiveBeaconController(
+                core, context, appContext, applicationId, intake, configuration.trackAnonymousUser,
+                executor, core.createOkHttpCallFactory(), processName
+            )
+        } catch (e: Exception) {
+            executor.shutdownNow()
+            throw e
+        }
         activeBeaconController = controller
         val listener: (UserInfo, TrackingConsent) -> Unit = controller::onUserInfo
         activeBeaconUserListener = listener

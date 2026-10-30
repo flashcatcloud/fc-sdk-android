@@ -358,7 +358,8 @@ internal class DatadogCore(
     override fun addUserInfoListener(listener: (UserInfo, TrackingConsent) -> Unit) {
         coreFeature.contextExecutorService.executeSafe("DatadogCore.addUserInfoListener", internalLogger) {
             if (userInfoListeners.add(listener)) {
-                listener(
+                deliverUserInfoSnapshot(
+                    listener,
                     coreFeature.userInfoProvider.getUserInfo(),
                     coreFeature.trackingConsentProvider.getConsent()
                 )
@@ -376,7 +377,25 @@ internal class DatadogCore(
         if (userInfoListeners.isNotEmpty()) {
             val snapshot = coreFeature.userInfoProvider.getUserInfo()
             val consent = coreFeature.trackingConsentProvider.getConsent()
-            userInfoListeners.toList().forEach { it(snapshot, consent) }
+            userInfoListeners.toList().forEach { deliverUserInfoSnapshot(it, snapshot, consent) }
+        }
+    }
+
+    // FLASHCAT FORK - a failing active-beacon listener must not abort setUserInfo for the host app.
+    private fun deliverUserInfoSnapshot(
+        listener: (UserInfo, TrackingConsent) -> Unit,
+        snapshot: UserInfo,
+        consent: TrackingConsent
+    ) {
+        try {
+            listener(snapshot, consent)
+        } catch (e: Exception) {
+            internalLogger.log(
+                InternalLogger.Level.ERROR,
+                listOf(InternalLogger.Target.MAINTAINER, InternalLogger.Target.TELEMETRY),
+                { "A user info listener threw an exception." },
+                e
+            )
         }
     }
 
