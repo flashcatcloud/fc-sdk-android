@@ -15,6 +15,7 @@ import android.content.Context
 import android.content.res.Resources
 import com.datadog.android.api.InternalLogger
 import com.datadog.android.api.context.DatadogContext
+import com.datadog.android.api.context.UserInfo
 import com.datadog.android.api.feature.EventWriteScope
 import com.datadog.android.api.feature.Feature
 import com.datadog.android.api.feature.FeatureContextUpdateReceiver
@@ -29,6 +30,7 @@ import com.datadog.android.event.MapperSerializer
 import com.datadog.android.internal.flags.RumFlagEvaluationMessage
 import com.datadog.android.internal.system.BuildSdkVersionProvider
 import com.datadog.android.internal.telemetry.InternalTelemetryEvent
+import com.datadog.android.privacy.TrackingConsent
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.RumErrorSource
 import com.datadog.android.rum.assertj.RumFeatureAssert
@@ -990,6 +992,72 @@ internal class RumFeatureTest {
             fakeApplicationId.toString(),
             configuration,
             lateCrashReporterFactory = { mockLateCrashReporter }
+        )
+    }
+
+    @Test
+    fun `M register and remove active user listener W feature starts and stops`(@Forgery context: DatadogContext) {
+        featureWith(
+            fakeConfiguration.copy(
+                activeBeaconEnabled = true,
+                customEndpointUrl = "https://example.com/rum",
+                remoteConfigurationEnabled = false
+            )
+        )
+        whenever(mockSdkCore.getDatadogContext()) doReturn context
+        whenever(mockSdkCore.name) doReturn "default"
+        whenever(mockSdkCore.createOkHttpCallFactory(any())) doReturn mock()
+        testedFeature.onInitialize(appContext.mockInstance)
+        testedFeature.startActiveBeacon()
+        val listener = argumentCaptor<(UserInfo, TrackingConsent) -> Unit>()
+        verify(mockSdkCore).addUserInfoListener(listener.capture())
+
+        testedFeature.onStop()
+
+        verify(mockSdkCore).removeUserInfoListener(listener.firstValue)
+        verify(mockScheduledExecutorService, atLeastOnce()).shutdownNow()
+    }
+
+    @Test
+    fun `M not start active sender W beacon is disabled`(@Forgery context: DatadogContext) {
+        featureWith(
+            fakeConfiguration.copy(
+                activeBeaconEnabled = false,
+                customEndpointUrl = "https://example.com/rum",
+                remoteConfigurationEnabled = false
+            )
+        )
+        whenever(mockSdkCore.getDatadogContext()) doReturn context
+        whenever(mockSdkCore.name) doReturn "default"
+        whenever(mockSdkCore.getPersistenceExecutorService()) doReturn mock()
+        testedFeature.onInitialize(appContext.mockInstance)
+        testedFeature.startActiveBeacon()
+        verify(mockSdkCore, never()).addUserInfoListener(any())
+        verify(mockSdkCore, never()).createOkHttpCallFactory(any())
+    }
+
+    @Test
+    fun `M keep rum enableable W active beacon setup throws`(@Forgery context: DatadogContext) {
+        featureWith(
+            fakeConfiguration.copy(
+                activeBeaconEnabled = true,
+                customEndpointUrl = "https://example.com/rum",
+                remoteConfigurationEnabled = false
+            )
+        )
+        whenever(mockSdkCore.getDatadogContext()) doReturn context
+        whenever(mockSdkCore.name) doReturn "default"
+        whenever(mockSdkCore.createOkHttpCallFactory(any())) doThrow RuntimeException("boom")
+        testedFeature.onInitialize(appContext.mockInstance)
+        testedFeature.startActiveBeacon()
+        verify(mockSdkCore, never()).addUserInfoListener(any())
+        verify(mockInternalLogger).log(
+            eq(InternalLogger.Level.WARN),
+            eq(InternalLogger.Target.MAINTAINER),
+            any(),
+            anyOrNull(),
+            any(),
+            anyOrNull()
         )
     }
 

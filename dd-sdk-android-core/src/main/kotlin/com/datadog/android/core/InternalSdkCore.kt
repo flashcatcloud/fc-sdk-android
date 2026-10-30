@@ -10,6 +10,7 @@ import androidx.annotation.AnyThread
 import androidx.annotation.WorkerThread
 import com.datadog.android.api.context.DatadogContext
 import com.datadog.android.api.context.NetworkInfo
+import com.datadog.android.api.context.UserInfo
 import com.datadog.android.api.feature.FeatureScope
 import com.datadog.android.api.feature.FeatureSdkCore
 import com.datadog.android.core.internal.net.FirstPartyHostHeaderTypeResolver
@@ -23,6 +24,14 @@ import java.util.concurrent.ExecutorService
  * FOR INTERNAL USAGE ONLY. THIS INTERFACE CONTENT MAY CHANGE WITHOUT NOTICE.
  */
 interface InternalSdkCore : FeatureSdkCore {
+
+    /** FLASHCAT FORK - registers a listener on the context thread and delivers the current user snapshot. */
+    @InternalApi
+    fun addUserInfoListener(listener: (UserInfo, TrackingConsent) -> Unit)
+
+    /** Removes a previously registered user snapshot listener. */
+    @InternalApi
+    fun removeUserInfoListener(listener: (UserInfo, TrackingConsent) -> Unit)
 
     /**
      * Returns current state of network connection.

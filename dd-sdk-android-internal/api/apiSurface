@@ -211,5 +211,16 @@ class com.datadog.android.rum.DdRumContentProvider : android.content.ContentProv
   companion object 
     var processImportance: Int
     var createTimeNs: Long
+object com.datadog.android.rum.ForegroundStateTracker : android.app.Application.ActivityLifecycleCallbacks
+  fun register(android.app.Application)
+  fun addListener((Boolean) -> Unit)
+  fun removeListener((Boolean) -> Unit)
+  override fun onActivityStarted(android.app.Activity)
+  override fun onActivityStopped(android.app.Activity)
+  override fun onActivityCreated(android.app.Activity, android.os.Bundle?)
+  override fun onActivityResumed(android.app.Activity)
+  override fun onActivityPaused(android.app.Activity)
+  override fun onActivitySaveInstanceState(android.app.Activity, android.os.Bundle)
+  override fun onActivityDestroyed(android.app.Activity)
 annotation com.datadog.tools.annotation.NoOpImplementation
   constructor(Boolean = false)
