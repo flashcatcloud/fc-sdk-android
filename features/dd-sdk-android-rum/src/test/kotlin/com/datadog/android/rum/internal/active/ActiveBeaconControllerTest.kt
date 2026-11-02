@@ -22,6 +22,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.json.JSONObject
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
@@ -33,9 +35,13 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.util.Calendar
+import java.util.TimeZone
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
 internal class ActiveBeaconControllerTest {
     private val core: InternalSdkCore = mock()
@@ -57,8 +63,9 @@ internal class ActiveBeaconControllerTest {
         whenever(app.getSharedPreferences(any(), any())).thenReturn(prefs)
         whenever(prefs.edit()).thenReturn(editor)
         whenever(editor.clear()).thenReturn(editor)
+        whenever(editor.commit()).thenReturn(true)
         whenever(editor.remove(any())).thenReturn(editor)
-        whenever(editor.putString(any(), any())).thenReturn(editor)
+        whenever(editor.putString(any(), anyOrNull())).thenReturn(editor)
         whenever(editor.putLong(any(), any())).thenReturn(editor)
         whenever(context.clientToken).thenReturn("token")
         whenever(context.trackingConsent).thenReturn(TrackingConsent.GRANTED)
@@ -111,14 +118,11 @@ internal class ActiveBeaconControllerTest {
         whenever(call.execute()).thenReturn(response(400), response(503))
         controller.start(true)
         controller.onUserInfo(UserInfo(anonymousId, "u1"), TrackingConsent.GRANTED)
-        verify(
-            executor,
-            never()
-        ).schedule(any<Runnable>(), org.mockito.kotlin.eq(5_000L), org.mockito.kotlin.eq(TimeUnit.MILLISECONDS))
+        verify(executor).schedule(any<Runnable>(), any(), eq(TimeUnit.MILLISECONDS)) // Only midnight.
         controller.onUserInfo(UserInfo(anonymousId, "u2"), TrackingConsent.GRANTED)
-        verify(
-            executor
-        ).schedule(any<Runnable>(), org.mockito.kotlin.eq(5_000L), org.mockito.kotlin.eq(TimeUnit.MILLISECONDS))
+        val delays = argumentCaptor<Long>()
+        verify(executor, times(2)).schedule(any<Runnable>(), delays.capture(), eq(TimeUnit.MILLISECONDS))
+        assertThat(delays.lastValue).isBetween(4_000L, 5_000L)
     }
 
     @Test
@@ -171,7 +175,7 @@ internal class ActiveBeaconControllerTest {
     fun `network failure is retried twice and then accepted`() {
         val retries = mutableListOf<Runnable>()
         whenever(executor.schedule(any<Runnable>(), any(), any())).doAnswer {
-            if (it.getArgument<Long>(1) == 5_000L || it.getArgument<Long>(1) == 60_000L) retries.add(it.getArgument(0))
+            if (it.getArgument<Long>(1) in 4_000L..60_000L) retries.add(it.getArgument(0))
             mock<ScheduledFuture<Any>>()
         }
         whenever(call.execute()).thenReturn(response(503), response(503), response(202))
@@ -340,7 +344,7 @@ internal class ActiveBeaconControllerTest {
         verify(call, never()).execute()
         verify(editor, never()).putString(eq("body"), any())
         val delays = argumentCaptor<Long>()
-        verify(executor, times(3)).schedule(any<Runnable>(), delays.capture(), eq(TimeUnit.MILLISECONDS))
+        verify(executor, times(2)).schedule(any<Runnable>(), delays.capture(), eq(TimeUnit.MILLISECONDS))
         assertThat(delays.allValues.count { it in 1_000..60_000 }).isEqualTo(1)
     }
 
@@ -359,7 +363,389 @@ internal class ActiveBeaconControllerTest {
         whenever(call.execute()).thenReturn(response(408))
         controller.start(true)
         controller.onUserInfo(UserInfo(anonymousId, "u1"), TrackingConsent.GRANTED)
-        verify(executor).schedule(any<Runnable>(), eq(5_000L), eq(TimeUnit.MILLISECONDS))
+        val delays = argumentCaptor<Long>()
+        verify(executor, times(2)).schedule(any<Runnable>(), delays.capture(), eq(TimeUnit.MILLISECONDS))
+        assertThat(delays.lastValue).isBetween(4_000L, 5_000L)
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["edit", "commit", "false"])
+    fun `failed deletion never replays old storage and can be retried`(failure: String) {
+        val old = UserInfo(anonymousId, "old")
+        val oldBody = ActiveBeaconController.buildBody(context, old)
+        whenever(prefs.getString(eq("body"), anyOrNull())).thenReturn(oldBody)
+        whenever(prefs.getLong(eq("created"), any())).thenReturn(System.currentTimeMillis() - 3_000)
+        when (failure) {
+            "edit" -> whenever(prefs.edit()).thenThrow(IllegalStateException("storage"))
+            "commit" -> whenever(editor.commit()).thenThrow(IllegalStateException("storage"))
+            else -> whenever(editor.commit()).thenReturn(false)
+        }
+
+        controller.clearData()
+        controller.start(true)
+        controller.onUserInfo(UserInfo(anonymousId, "new"), TrackingConsent.GRANTED)
+
+        val requests = argumentCaptor<Request>()
+        verify(factory).newCall(requests.capture())
+        val body = okio.Buffer().also { requests.firstValue.body!!.writeTo(it) }.readUtf8()
+        assertThat(JSONObject(body).getJSONObject("usr").getString("id")).isEqualTo("new")
+        verify(prefs, never()).getString(eq("body"), anyOrNull())
+
+        // A later explicit clear retries disk deletion even after storage has been disabled.
+        org.mockito.kotlin.doReturn(editor).whenever(prefs).edit()
+        org.mockito.kotlin.doReturn(true).whenever(editor).commit()
+        controller.clearData()
+        verify(prefs, times(2)).edit()
+        verify(editor, times(if (failure == "edit") 1 else 2)).commit()
+    }
+
+    @Test
+    fun `foreground churn retains only one midnight task in the real scheduler`() {
+        val scheduler = ScheduledThreadPoolExecutor(1)
+        val actual = ActiveBeaconController(
+            core, context, app, "app", "https://example.com/api/v2/rum", true, scheduler, factory, "process"
+        )
+        try {
+            actual.start(true)
+            repeat(1_000) {
+                actual.onForeground(false)
+                actual.onForeground(true)
+            }
+            scheduler.submit {}.get(5, TimeUnit.SECONDS)
+            assertThat(scheduler.queue).hasSize(1)
+            actual.stop()
+            assertThat(scheduler.queue).isEmpty()
+        } finally {
+            scheduler.shutdownNow()
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["timezone", "clock"])
+    fun `foreground recomputes changed midnight without retaining canceled tasks`(change: String) {
+        val originalZone = TimeZone.getDefault()
+        val scheduler = ScheduledThreadPoolExecutor(1)
+        var now = 1_767_261_600_000L // 2026-01-01 10:00 UTC
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
+        val actual = ActiveBeaconController(
+            core, context, app, "app", "https://example.com/api/v2/rum", true, scheduler, factory, "process",
+            wallClock = { now }
+        )
+        try {
+            actual.start(true)
+            scheduler.submit {}.get(5, TimeUnit.SECONDS)
+            val original = scheduler.queue.single() as ScheduledFuture<*>
+            assertThat(original.getDelay(TimeUnit.SECONDS)).isBetween(14 * 3600L - 5, 14 * 3600L)
+
+            actual.onForeground(false)
+            scheduler.submit {}.get(5, TimeUnit.SECONDS)
+            if (change == "timezone") {
+                TimeZone.setDefault(TimeZone.getTimeZone("GMT+08:00"))
+            } else {
+                now += TimeUnit.HOURS.toMillis(8)
+            }
+            actual.onForeground(true)
+            scheduler.submit {}.get(5, TimeUnit.SECONDS)
+
+            assertThat(original.isCancelled).isTrue()
+            assertThat(scheduler.queue).hasSize(1)
+            val updated = scheduler.queue.single() as ScheduledFuture<*>
+            assertThat(updated.getDelay(TimeUnit.SECONDS)).isBetween(6 * 3600L - 5, 6 * 3600L)
+            repeat(1_000) {
+                actual.onForeground(false)
+                actual.onForeground(true)
+            }
+            scheduler.submit {}.get(5, TimeUnit.SECONDS)
+            assertThat(scheduler.queue).containsExactly(updated as Runnable)
+            actual.stop()
+            assertThat(scheduler.queue).isEmpty()
+        } finally {
+            scheduler.shutdownNow()
+            TimeZone.setDefault(originalZone)
+        }
+    }
+
+    @Test
+    fun `midnight task rearms after firing and not while stopped`() {
+        controller.start(true)
+        val tasks = argumentCaptor<Runnable>()
+        verify(executor).schedule(tasks.capture(), any(), eq(TimeUnit.MILLISECONDS))
+        tasks.firstValue.run()
+        verify(executor, times(2)).schedule(tasks.capture(), any(), eq(TimeUnit.MILLISECONDS))
+        controller.stop()
+        tasks.lastValue.run()
+        verify(executor, times(2)).schedule(any<Runnable>(), any(), eq(TimeUnit.MILLISECONDS))
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `invalidation between reading pending and creating call discards the old work`(revoke: Boolean) {
+        val old = UserInfo(anonymousId, "old")
+        val oldBody = ActiveBeaconController.buildBody(context, old)
+        whenever(prefs.getString(eq("body"), anyOrNull())).thenReturn(oldBody)
+        whenever(prefs.getString(eq("identity"), any())).thenReturn(ActiveBeaconController.identity(old))
+        whenever(prefs.getLong(eq("created"), any())).thenReturn(System.currentTimeMillis() - 3_000)
+        whenever(editor.commit()).doAnswer {
+            whenever(prefs.getString(eq("body"), anyOrNull())).thenReturn(null)
+            true
+        }
+        controller.start(false)
+        controller.onUserInfo(UserInfo(anonymousId, "current"), TrackingConsent.GRANTED)
+        val queued = ArrayDeque<Runnable>()
+        whenever(executor.execute(any())).doAnswer { queued.add(it.getArgument(0)); Unit }
+        whenever(prefs.getString(eq("day"), any())).doAnswer {
+            // All old payload fields have already been read, but no Call exists to cancel yet.
+            if (revoke) {
+                controller.onConsent(TrackingConsent.NOT_GRANTED)
+                controller.onConsent(TrackingConsent.GRANTED)
+            } else {
+                controller.clearData()
+            }
+            "previous-day"
+        }
+
+        controller.onForeground(true)
+        queued.removeFirst().run()
+        verify(factory, never()).newCall(any())
+        verify(editor, never()).putString(eq("body"), anyOrNull())
+        while (queued.isNotEmpty()) queued.removeFirst().run()
+        controller.onForeground(true)
+        while (queued.isNotEmpty()) queued.removeFirst().run()
+
+        val requests = argumentCaptor<Request>()
+        verify(factory).newCall(requests.capture())
+        val body = okio.Buffer().also { requests.firstValue.body!!.writeTo(it) }.readUtf8()
+        assertThat(JSONObject(body).getJSONObject("usr").getString("id")).isEqualTo("current")
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `old retry cannot claim a new record after clear or withdrawal`(revoke: Boolean) {
+        val retries = ControlledRetries()
+        whenever(call.execute()).thenAnswer { response(503) }
+        retries.controller.start(true)
+        retries.controller.onUserInfo(UserInfo(anonymousId, "old"), TrackingConsent.GRANTED)
+        val stale = retries.active.single()
+        retries.controller.onForeground(false)
+        if (revoke) retries.controller.onConsent(TrackingConsent.NOT_GRANTED) else retries.controller.clearData()
+        retries.controller.onUserInfo(UserInfo(anonymousId, "new"), TrackingConsent.GRANTED)
+        retries.controller.onForeground(true)
+        val taskCount = retries.tasks.size
+
+        stale.runnable.run() // Deliberately invoke the canceled callback, as if already dequeued.
+
+        verify(call, times(2)).execute()
+        assertThat(retries.tasks).hasSize(taskCount)
+        assertThat(retries.active).hasSize(1)
+        retries.runNext()
+        retries.runNext()
+        assertThat(retries.active).isEmpty()
+        val requests = argumentCaptor<Request>()
+        verify(factory, times(4)).newCall(requests.capture())
+        assertThat(requests.allValues.map(::requestUser)).containsExactly("old", "new", "new", "new")
+    }
+
+    @Test
+    fun `replacing pending cancels old rounds and gives the replacement its own retry budget`() {
+        val retries = ControlledRetries()
+        whenever(call.execute()).thenAnswer { response(503) }
+        retries.controller.start(true)
+        retries.controller.onUserInfo(UserInfo(anonymousId, "old"), TrackingConsent.GRANTED)
+        retries.controller.onUserInfo(UserInfo(anonymousId, "new"), TrackingConsent.GRANTED)
+        val stale = retries.tasks.filter { it.cancelled }
+        assertThat(stale).hasSize(2)
+        val taskCount = retries.tasks.size
+        stale.forEach { it.runnable.run() }
+        verify(call, times(2)).execute()
+        assertThat(retries.tasks).hasSize(taskCount)
+
+        repeat(3) {
+            assertThat(retries.active).hasSize(1)
+            retries.runNext()
+        }
+
+        assertThat(retries.active).isEmpty()
+        val requests = argumentCaptor<Request>()
+        verify(factory, times(5)).newCall(requests.capture())
+        assertThat(requests.allValues.map(::requestUser)).containsExactly("old", "old", "new", "new", "new")
+    }
+
+    @Test
+    fun `new foreground round invalidates every older retry`() {
+        val retries = ControlledRetries()
+        whenever(call.execute()).thenAnswer { response(503) }
+        retries.controller.start(true)
+        retries.controller.onUserInfo(UserInfo(anonymousId, "user"), TrackingConsent.GRANTED)
+        repeat(10) {
+            retries.controller.onForeground(false)
+            retries.controller.onForeground(true)
+            assertThat(retries.active).hasSize(1)
+        }
+        val taskCount = retries.tasks.size
+        retries.tasks.filter { it.cancelled }.forEach { it.runnable.run() }
+        verify(call, times(11)).execute()
+        assertThat(retries.tasks).hasSize(taskCount)
+        retries.runNext()
+        retries.runNext()
+        verify(call, times(13)).execute()
+        assertThat(retries.active).isEmpty()
+    }
+
+    @Test
+    fun `network and rate limit share one bounded round including an early limit callback`() {
+        val retries = ControlledRetries()
+        whenever(call.execute()).thenReturn(response(503), response(429, "Retry-After" to "7"), response(503))
+        retries.controller.start(true)
+        retries.controller.onUserInfo(UserInfo(anonymousId, "user"), TrackingConsent.GRANTED)
+        val first = retries.active.single()
+        retries.runNext()
+        val limited = retries.active.single()
+        assertThat(limited.deadline - retries.now).isEqualTo(7_000)
+        first.runnable.run()
+        limited.ran = true
+        limited.runnable.run() // Deadline not reached: reschedule the same attempt, not a new round.
+        limited.runnable.run() // A consumed callback is inert as well.
+        verify(call, times(2)).execute()
+        assertThat(retries.active).hasSize(1)
+        assertThat(retries.active.single().deadline).isEqualTo(limited.deadline)
+        retries.runNext()
+        verify(call, times(3)).execute()
+        assertThat(retries.active).isEmpty()
+    }
+
+    @Test
+    fun `invalidated rate limit response cannot delay a trigger queued before clear reset`() {
+        val retries = ControlledRetries()
+        val queued = ArrayDeque<Runnable>()
+        whenever(executor.execute(any())).doAnswer { queued.add(it.getArgument(0)); Unit }
+        var calls = 0
+        whenever(call.execute()).doAnswer {
+            if (calls++ == 0) {
+                // Worker is inside the old HTTP call. A new identity is queued before clear's
+                // worker reset, while clear synchronously invalidates this in-flight generation.
+                retries.controller.onUserInfo(UserInfo(anonymousId, "new"), TrackingConsent.GRANTED)
+                retries.controller.clearData()
+                response(429, "Retry-After" to "3600")
+            } else {
+                response(202)
+            }
+        }
+        retries.controller.start(true)
+        retries.controller.onUserInfo(UserInfo(anonymousId, "old"), TrackingConsent.GRANTED)
+        queued.removeFirst().run() // start, before the worker receives user info
+        queued.removeFirst().run() // old HTTP request; queues new user, then clear reset
+        assertThat(queued).hasSize(2)
+        verify(call).execute()
+
+        queued.removeFirst().run() // new user must not see the invalidated 429's one-hour delay
+
+        val requests = argumentCaptor<Request>()
+        verify(factory, times(2)).newCall(requests.capture())
+        assertThat(requests.allValues.map(::requestUser)).containsExactly("old", "new")
+        verify(editor, never()).putLong(eq("next_allowed"), any())
+        verify(executor).schedule(any<Runnable>(), any(), eq(TimeUnit.MILLISECONDS)) // midnight only
+        queued.removeFirst().run()
+        assertThat(queued).isEmpty()
+        assertThat(retries.active).isEmpty()
+    }
+
+    @Test
+    fun `background transition before call admission prevents a new request`() {
+        val scheduler = ScheduledThreadPoolExecutor(1)
+        val actual = ActiveBeaconController(
+            core, context, app, "app", "https://example.com/api/v2/rum", true, scheduler, factory, "process"
+        )
+        val readingPending = CountDownLatch(1)
+        val continueReading = CountDownLatch(1)
+        val worker = AtomicReference<Thread>()
+        try {
+            actual.start(false)
+            actual.onUserInfo(UserInfo(anonymousId, "user"), TrackingConsent.GRANTED)
+            scheduler.submit {}.get(5, TimeUnit.SECONDS)
+            whenever(prefs.getString(eq("body"), anyOrNull())).doAnswer {
+                worker.set(Thread.currentThread())
+                readingPending.countDown()
+                check(continueReading.await(5, TimeUnit.SECONDS))
+                null
+            }
+            actual.onForeground(true)
+            assertThat(readingPending.await(5, TimeUnit.SECONDS)).isTrue()
+            val stateLock = ActiveBeaconController::class.java.getDeclaredField("lock").apply {
+                isAccessible = true
+            }.get(actual)
+            synchronized(stateLock) {
+                continueReading.countDown()
+                // The worker passed send's first eligible check and is waiting to create the Call.
+                val timeout = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
+                while (worker.get().state != Thread.State.BLOCKED && System.nanoTime() < timeout) {
+                    Thread.yield()
+                }
+                assertThat(worker.get().state).isEqualTo(Thread.State.BLOCKED)
+                val blocked = worker.get().stackTrace.first()
+                assertThat(blocked.className).isEqualTo(ActiveBeaconController::class.java.name)
+                assertThat(blocked.methodName).isEqualTo("send")
+                verify(factory, never()).newCall(any())
+                actual.onForeground(false)
+            }
+            scheduler.submit {}.get(5, TimeUnit.SECONDS)
+            verify(factory, never()).newCall(any())
+
+            actual.onForeground(true)
+            scheduler.submit {}.get(5, TimeUnit.SECONDS)
+            verify(call).execute()
+        } finally {
+            continueReading.countDown()
+            actual.stop()
+        }
+    }
+
+    @Test
+    fun `request admitted in foreground may complete after background transition`() {
+        whenever(call.execute()).doAnswer {
+            controller.onForeground(false)
+            response(202)
+        }
+        controller.start(true)
+        controller.onUserInfo(UserInfo(anonymousId, "user"), TrackingConsent.GRANTED)
+        controller.onForeground(true)
+        verify(call).execute()
+        verify(call, never()).cancel()
+    }
+
+    private fun requestUser(request: Request): String =
+        JSONObject(okio.Buffer().also { request.body!!.writeTo(it) }.readUtf8()).getJSONObject("usr").getString("id")
+
+    private class RetryTask(val runnable: Runnable, val deadline: Long) {
+        var cancelled = false
+        var ran = false
+    }
+
+    private inner class ControlledRetries {
+        var now = java.time.Instant.parse("2026-01-01T10:00:00Z").toEpochMilli()
+        val tasks = mutableListOf<RetryTask>()
+        val active: List<RetryTask> get() = tasks.filter { !it.cancelled && !it.ran }
+        val controller: ActiveBeaconController
+
+        init {
+            whenever(executor.schedule(any<Runnable>(), any(), any())).doAnswer {
+                val task = RetryTask(it.getArgument(0), now + it.getArgument<Long>(1))
+                val future = mock<ScheduledFuture<Any>>()
+                whenever(future.cancel(any())).doAnswer { task.cancelled = true; true }
+                if (it.getArgument<Long>(1) <= 60_000) tasks.add(task)
+                future
+            }
+            controller = ActiveBeaconController(
+                core, context, app, "app", "https://example.com/api/v2/rum", true, executor, factory, "process",
+                wallClock = { now }
+            )
+        }
+
+        fun runNext() {
+            val task = active.single()
+            now = maxOf(now, task.deadline)
+            task.ran = true
+            task.runnable.run()
+        }
     }
 
     private fun response(code: Int, header: Pair<String, String>? = null): Response = Response.Builder().request(

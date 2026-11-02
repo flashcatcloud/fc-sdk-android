@@ -592,7 +592,16 @@ internal class RumFeature(
     // FLASHCAT FORK - the withheld events are not in the storage consent governs: what was held
     // under the consent now withdrawn is dropped here, whether or not an event follows to see it.
     override fun onConsentUpdated(previousConsent: TrackingConsent, newConsent: TrackingConsent) {
-        activeBeaconController?.onConsent(newConsent)
+        try {
+            activeBeaconController?.onConsent(newConsent)
+        } catch (e: Exception) {
+            sdkCore.internalLogger.log(
+                InternalLogger.Level.WARN,
+                InternalLogger.Target.MAINTAINER,
+                { "Unable to update active beacon consent; continuing regular consent handling." },
+                e
+            )
+        }
         if (newConsent != TrackingConsent.NOT_GRANTED) return
         withheldEvents?.let { writer -> withRumWriteScope { writer.dropHeldForConsent() } }
     }

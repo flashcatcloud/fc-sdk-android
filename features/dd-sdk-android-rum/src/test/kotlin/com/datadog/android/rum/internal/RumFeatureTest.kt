@@ -12,6 +12,7 @@ import android.app.Application
 import android.app.ApplicationExitInfo
 import android.content.ContentResolver
 import android.content.Context
+import android.content.SharedPreferences
 import android.content.res.Resources
 import com.datadog.android.api.InternalLogger
 import com.datadog.android.api.context.DatadogContext
@@ -39,6 +40,7 @@ import com.datadog.android.rum.internal.RumFeature.Companion.SLOW_FRAMES_MONITOR
 import com.datadog.android.rum.internal.RumFeature.Companion.SLOW_FRAMES_MONITORING_ENABLED_MESSAGE
 import com.datadog.android.rum.internal.domain.InfoProvider
 import com.datadog.android.rum.internal.domain.RumDataWriter
+import com.datadog.android.rum.internal.domain.WithheldEventWriter
 import com.datadog.android.rum.internal.domain.accessibility.DefaultAccessibilityReader
 import com.datadog.android.rum.internal.domain.accessibility.DefaultAccessibilitySnapshotManager
 import com.datadog.android.rum.internal.domain.accessibility.NoOpAccessibilityReader
@@ -1059,6 +1061,40 @@ internal class RumFeatureTest {
             any(),
             anyOrNull()
         )
+    }
+
+    @Test
+    fun `M drop withheld data W active consent storage throws`(@Forgery context: DatadogContext) {
+        featureWith(
+            fakeConfiguration.copy(
+                activeBeaconEnabled = true,
+                customEndpointUrl = "https://example.com/rum",
+                remoteConfigurationEnabled = false
+            )
+        )
+        val prefs = mock<SharedPreferences>()
+        whenever(prefs.edit()).thenThrow(IllegalStateException("active storage"))
+        whenever(appContext.mockInstance.getSharedPreferences(any(), any())) doReturn prefs
+        whenever(mockSdkCore.getDatadogContext()) doReturn context
+        whenever(mockSdkCore.name) doReturn "default"
+        whenever(mockSdkCore.createOkHttpCallFactory(any())) doReturn mock()
+        val scope = mock<FeatureScope>()
+        whenever(mockSdkCore.getFeature(Feature.RUM_FEATURE_NAME)) doReturn scope
+        whenever(scope.withWriteContext(any(), any())) doAnswer {
+            val callback = it.getArgument<(DatadogContext, EventWriteScope) -> Unit>(it.arguments.lastIndex)
+            callback(context, object : EventWriteScope {
+                override fun invoke(block: (EventBatchWriter) -> Unit) = block(mock())
+            })
+        }
+        testedFeature.onInitialize(appContext.mockInstance)
+        testedFeature.startActiveBeacon()
+        val withheld = mock<WithheldEventWriter>()
+        testedFeature.withheldEvents = withheld
+
+        testedFeature.onConsentUpdated(TrackingConsent.GRANTED, TrackingConsent.NOT_GRANTED)
+
+        verify(prefs).edit()
+        verify(withheld).dropHeldForConsent()
     }
 
     private fun registeredForegroundCallback(): ProcessForegroundCallback {
