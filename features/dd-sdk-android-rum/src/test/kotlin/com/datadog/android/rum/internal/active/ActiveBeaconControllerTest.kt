@@ -199,6 +199,7 @@ internal class ActiveBeaconControllerTest {
         controller.onForeground(false)
         queued.toList().forEach { it.run() }
         verify(factory, never()).newCall(any())
+        verify(editor, never()).putString(eq("body"), anyOrNull())
     }
 
     @Test
@@ -244,31 +245,7 @@ internal class ActiveBeaconControllerTest {
 
     @Test
     fun `failed beacon survives restart with pending consent and is delivered after grant`() {
-        val entries = mutableMapOf<String, Any>()
-        whenever(prefs.getString(any(), anyOrNull())).doAnswer {
-            entries[it.getArgument<String>(0)] as? String ?: it.getArgument<String?>(1)
-        }
-        whenever(prefs.getLong(any(), any())).doAnswer {
-            entries[it.getArgument<String>(0)] as? Long ?: it.getArgument<Long>(1)
-        }
-        whenever(editor.putString(any(), anyOrNull())).doAnswer {
-            val key = it.getArgument<String>(0)
-            val value = it.getArgument<String?>(1)
-            if (value == null) entries.remove(key) else entries[key] = value
-            editor
-        }
-        whenever(editor.putLong(any(), any())).doAnswer {
-            entries[it.getArgument<String>(0)] = it.getArgument<Long>(1)
-            editor
-        }
-        whenever(editor.remove(any())).doAnswer {
-            entries.remove(it.getArgument<String>(0))
-            editor
-        }
-        whenever(editor.clear()).doAnswer {
-            entries.clear()
-            editor
-        }
+        val entries = memoryPreferences()
         whenever(call.execute()).thenReturn(response(503), response(202))
         val user = UserInfo(anonymousId, "u1")
         controller.start(true)
@@ -650,7 +627,8 @@ internal class ActiveBeaconControllerTest {
     }
 
     @Test
-    fun `background transition before call admission prevents a new request`() {
+    fun `background transition before call admission persists the beacon for the next process`() {
+        val entries = memoryPreferences()
         val scheduler = ScheduledThreadPoolExecutor(1)
         val actual = ActiveBeaconController(
             core, context, app, "app", "https://example.com/api/v2/rum", true, scheduler, factory, "process"
@@ -666,7 +644,7 @@ internal class ActiveBeaconControllerTest {
                 worker.set(Thread.currentThread())
                 readingPending.countDown()
                 check(continueReading.await(5, TimeUnit.SECONDS))
-                null
+                entries["body"] as? String
             }
             actual.onForeground(true)
             assertThat(readingPending.await(5, TimeUnit.SECONDS)).isTrue()
@@ -690,9 +668,18 @@ internal class ActiveBeaconControllerTest {
             scheduler.submit {}.get(5, TimeUnit.SECONDS)
             verify(factory, never()).newCall(any())
 
-            actual.onForeground(true)
-            scheduler.submit {}.get(5, TimeUnit.SECONDS)
+            assertThat(JSONObject(entries["body"] as String).getJSONObject("usr").getString("id"))
+                .isEqualTo("user")
+            actual.stop()
+            val restarted = ActiveBeaconController(
+                core, context, app, "app", "https://example.com/api/v2/rum", true, executor, factory, "process"
+            )
+            restarted.start(false)
+            restarted.onUserInfo(UserInfo(anonymousId, "user"), TrackingConsent.GRANTED)
+            verify(factory, never()).newCall(any())
+            restarted.onForeground(true)
             verify(call).execute()
+            assertThat(entries).doesNotContainKey("body")
         } finally {
             continueReading.countDown()
             actual.stop()
@@ -710,6 +697,117 @@ internal class ActiveBeaconControllerTest {
         controller.onForeground(true)
         verify(call).execute()
         verify(call, never()).cancel()
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = [202, 503])
+    fun `backgrounding while replay is in flight preserves the current foreground snapshot`(oldStatus: Int) {
+        val entries = memoryPreferences()
+        var now = System.currentTimeMillis()
+        val startedAt = now
+        val current = UserInfo(anonymousId, "new")
+        entries["body"] = ActiveBeaconController.buildBody(context, UserInfo(anonymousId, "old"))!!
+        entries["identity"] = "old-key"
+        entries["day"] = "previous-day"
+        entries["created"] = now - 3_000
+        val actual = ActiveBeaconController(
+            core, context, app, "app", "https://example.com/api/v2/rum", true, executor, factory, "process",
+            wallClock = { now }
+        )
+        whenever(call.execute()).doAnswer {
+            actual.onForeground(false)
+            now += 10_000 // Time spent waiting for the old beacon must not change the new activity's age.
+            response(oldStatus)
+        }
+
+        actual.start(true)
+        actual.onUserInfo(current, TrackingConsent.GRANTED)
+
+        verify(call).execute() // Only the old replay was admitted before backgrounding.
+        assertThat(JSONObject(entries["body"] as String).getJSONObject("usr").getString("id")).isEqualTo("new")
+        assertThat(entries).containsEntry("created", startedAt)
+        verify(executor).schedule(any<Runnable>(), any(), any()) // Initial midnight task only; no background retry.
+        actual.stop()
+
+        whenever(call.execute()).thenReturn(response(202))
+        val restarted = ActiveBeaconController(
+            core, context, app, "app", "https://example.com/api/v2/rum", true, executor, factory, "process",
+            wallClock = { now }
+        )
+        restarted.start(false)
+        restarted.onUserInfo(current, TrackingConsent.GRANTED)
+        verify(call).execute()
+        restarted.onForeground(true)
+        val requests = argumentCaptor<Request>()
+        verify(factory, times(2)).newCall(requests.capture())
+        assertThat(requests.allValues.map(::requestUser)).containsExactly("old", "new")
+        val replay = JSONObject(okio.Buffer().also { requests.lastValue.body!!.writeTo(it) }.readUtf8())
+        assertThat(replay.getLong("age_ms")).isGreaterThan(0)
+        assertThat(entries).doesNotContainKey("body")
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["pending", "withdrawn", "regranted", "clear", "stop"])
+    fun `background deferral cannot restore a snapshot invalidated during replay`(invalidation: String) {
+        val entries = memoryPreferences()
+        entries["body"] = ActiveBeaconController.buildBody(context, UserInfo(anonymousId, "old"))!!
+        entries["identity"] = "old-key"
+        entries["day"] = "previous-day"
+        entries["created"] = System.currentTimeMillis() - 3_000
+        whenever(call.execute()).doAnswer {
+            controller.onForeground(false)
+            when (invalidation) {
+                "pending" -> controller.onConsent(TrackingConsent.PENDING)
+                "withdrawn" -> controller.onConsent(TrackingConsent.NOT_GRANTED)
+                "regranted" -> {
+                    controller.onConsent(TrackingConsent.NOT_GRANTED)
+                    controller.onConsent(TrackingConsent.GRANTED)
+                }
+                "clear" -> controller.clearData()
+                "stop" -> controller.stop()
+            }
+            response(503)
+        }
+
+        controller.start(true)
+        controller.onUserInfo(UserInfo(anonymousId, "new"), TrackingConsent.GRANTED)
+
+        verify(call).execute()
+        verify(editor, never()).putString(eq("body"), anyOrNull())
+        if (invalidation == "pending" || invalidation == "stop") {
+            assertThat(JSONObject(entries["body"] as String).getJSONObject("usr").getString("id")).isEqualTo("old")
+        } else {
+            assertThat(entries).doesNotContainKey("body")
+        }
+    }
+
+    private fun memoryPreferences(): MutableMap<String, Any> {
+        val entries = mutableMapOf<String, Any>()
+        whenever(prefs.getString(any(), anyOrNull())).doAnswer {
+            entries[it.getArgument<String>(0)] as? String ?: it.getArgument<String?>(1)
+        }
+        whenever(prefs.getLong(any(), any())).doAnswer {
+            entries[it.getArgument<String>(0)] as? Long ?: it.getArgument<Long>(1)
+        }
+        whenever(editor.putString(any(), anyOrNull())).doAnswer {
+            val key = it.getArgument<String>(0)
+            val value = it.getArgument<String?>(1)
+            if (value == null) entries.remove(key) else entries[key] = value
+            editor
+        }
+        whenever(editor.putLong(any(), any())).doAnswer {
+            entries[it.getArgument<String>(0)] = it.getArgument<Long>(1)
+            editor
+        }
+        whenever(editor.remove(any())).doAnswer {
+            entries.remove(it.getArgument<String>(0))
+            editor
+        }
+        whenever(editor.clear()).doAnswer {
+            entries.clear()
+            editor
+        }
+        return entries
     }
 
     private fun requestUser(request: Request): String =

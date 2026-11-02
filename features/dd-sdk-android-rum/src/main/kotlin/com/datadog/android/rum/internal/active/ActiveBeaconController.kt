@@ -176,9 +176,12 @@ internal class ActiveBeaconController(
     }
 
     private fun trigger() {
-        if (!eligible()) return
-        val workGeneration = synchronized(lock) { generation }
+        val workGeneration = synchronized(lock) {
+            if (!eligible()) return
+            generation
+        }
         val now = wallClock()
+        val elapsed = SystemClock.elapsedRealtime()
         val day = day(now)
         if (sentDay != day) {
             sentDay = day
@@ -190,7 +193,7 @@ internal class ActiveBeaconController(
         if (now < nextAllowedAt) {
             val pending = readPending(now)
             if (key !in sent && (pending == null || pending.day != day || pending.identity != key)) {
-                savePending(body, key, day, now, expectedGeneration = workGeneration)
+                savePending(body, key, day, now, elapsed, workGeneration)
             }
             if (pending != null || key !in sent) scheduleRetry(0, nextAllowedAt, workGeneration)
             return
@@ -203,16 +206,25 @@ internal class ActiveBeaconController(
         val pending = readPending(now)
         if (pending != null) {
             if (!send(pending.body, pending.age, pending.identity, pending.day, 0, true, workGeneration)) {
-                if (eligible() && key !in sent && (pending.day != day || pending.identity != key)) {
-                    savePending(body, key, day, now, expectedGeneration = workGeneration)
+                if (key !in sent && (pending.day != day || pending.identity != key)) {
+                    savePending(body, key, day, now, elapsed, workGeneration)
                     // The one-record queue now contains a beacon that has not been attempted yet.
-                    scheduleRetry(0, maxOf(nextAllowedAt, now + 5_000), workGeneration)
+                    if (foreground) scheduleRetry(0, maxOf(nextAllowedAt, now + 5_000), workGeneration)
                 }
                 return
             }
         }
-        if (!eligible() || key in sent) return
-        send(body, 0, key, day, 0, false, workGeneration)
+        if (key in sent) return
+        if (!send(body, 0, key, day, 0, false, workGeneration)) {
+            synchronized(lock) {
+                // This snapshot was captured while eligible in the foreground. Keep it if only
+                // backgrounding prevented admission, without resetting an existing failure's age.
+                val saved = pendingInMemory
+                if (!foreground && (saved == null || saved.identity != key || saved.day != day)) {
+                    savePending(body, key, day, now, elapsed, workGeneration)
+                }
+            }
+        }
     }
 
     /** Returns true when it is safe to continue with a newer beacon. */
@@ -250,8 +262,6 @@ internal class ActiveBeaconController(
         var responseRetryAt = 0L
         val result = try {
             activeCall.execute().use { response ->
-                // Temporary observability for staging beacon tests (DD_LOG).
-                log("Active beacon $endpoint -> ${response.code}")
                 when {
                     response.isSuccessful -> Result.SUCCESS
                     response.code == 429 -> {
@@ -267,7 +277,6 @@ internal class ActiveBeaconController(
                 }
             }
         } catch (e: IOException) {
-            log("Active beacon network error.", e)
             Result.RETRY
         } finally {
             synchronized(lock) { if (call === activeCall) call = null }
