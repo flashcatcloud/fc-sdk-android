@@ -187,7 +187,8 @@ internal class ActiveBeaconControllerTest {
     }
 
     @Test
-    fun `queued foreground notification cannot send after background transition`() {
+    fun `queued foreground notification is kept but not sent after background transition`() {
+        val entries = memoryPreferences()
         val queued = mutableListOf<Runnable>()
         whenever(executor.execute(any())).doAnswer {
             queued.add(it.getArgument(0))
@@ -199,7 +200,115 @@ internal class ActiveBeaconControllerTest {
         controller.onForeground(false)
         queued.toList().forEach { it.run() }
         verify(factory, never()).newCall(any())
-        verify(editor, never()).putString(eq("body"), anyOrNull())
+        assertThat(JSONObject(entries["body"] as String).getJSONObject("usr").getString("id")).isEqualTo("u1")
+    }
+
+    @Test
+    fun `account switched while an old request blocks the worker is kept after backgrounding`() {
+        val entries = memoryPreferences()
+        var now = System.currentTimeMillis()
+        val switchedAt = now + 1_000
+        val queued = ArrayDeque<Runnable>()
+        whenever(executor.execute(any())).doAnswer {
+            queued.add(it.getArgument(0))
+            Unit
+        }
+        val actual = ActiveBeaconController(
+            core, context, app, "app", "https://example.com/api/v2/rum", true, executor, factory, "process",
+            wallClock = { now }
+        )
+        whenever(call.execute()).doAnswer {
+            now = switchedAt
+            actual.onUserInfo(UserInfo(anonymousId, "B"), TrackingConsent.GRANTED)
+            actual.onForeground(false)
+            now += 10_000
+            response(202)
+        }
+
+        actual.start(true)
+        actual.onUserInfo(UserInfo(anonymousId, "A"), TrackingConsent.GRANTED)
+        while (queued.isNotEmpty()) queued.removeFirst().run()
+
+        val requests = argumentCaptor<Request>()
+        verify(factory).newCall(requests.capture())
+        assertThat(requestUser(requests.lastValue)).isEqualTo("A")
+        assertThat(JSONObject(entries["body"] as String).getJSONObject("usr").getString("id")).isEqualTo("B")
+        assertThat(entries).containsEntry("created", switchedAt)
+
+        whenever(call.execute()).thenReturn(response(202))
+        actual.onForeground(true)
+        while (queued.isNotEmpty()) queued.removeFirst().run()
+        verify(factory, times(2)).newCall(requests.capture())
+        assertThat(requestUser(requests.lastValue)).isEqualTo("B")
+        assertThat(entries).doesNotContainKey("body")
+    }
+
+    @Test
+    fun `foreground notification does not wait for a lock held during storage work`() {
+        val queued = mutableListOf<Runnable>()
+        whenever(executor.execute(any())).doAnswer {
+            queued.add(it.getArgument(0))
+            Unit
+        }
+        val stateLock = ActiveBeaconController::class.java.getDeclaredField("lock").apply {
+            isAccessible = true
+        }.get(controller)
+        val holding = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val holder = Thread {
+            synchronized(stateLock) {
+                holding.countDown()
+                release.await(5, TimeUnit.SECONDS)
+            }
+        }
+        holder.start()
+        try {
+            assertThat(holding.await(5, TimeUnit.SECONDS)).isTrue()
+            val notified = CountDownLatch(1)
+            Thread {
+                controller.onForeground(true)
+                notified.countDown()
+            }.start()
+            assertThat(notified.await(1, TimeUnit.SECONDS)).isTrue()
+            assertThat(queued).hasSize(1)
+        } finally {
+            release.countDown()
+            holder.join(5_000)
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["pending", "withdrawn", "regranted", "clear", "pendingAtLogin"])
+    fun `queued account switch is dropped when invalidated before the worker resumes`(invalidation: String) {
+        val entries = memoryPreferences()
+        val queued = ArrayDeque<Runnable>()
+        whenever(executor.execute(any())).doAnswer {
+            queued.add(it.getArgument(0))
+            Unit
+        }
+        whenever(call.execute()).doAnswer {
+            val loginConsent = if (invalidation == "pendingAtLogin") TrackingConsent.PENDING else TrackingConsent.GRANTED
+            controller.onUserInfo(UserInfo(anonymousId, "B"), loginConsent)
+            controller.onForeground(false)
+            when (invalidation) {
+                "pending" -> controller.onConsent(TrackingConsent.PENDING)
+                "withdrawn" -> controller.onConsent(TrackingConsent.NOT_GRANTED)
+                "regranted" -> {
+                    controller.onConsent(TrackingConsent.NOT_GRANTED)
+                    controller.onConsent(TrackingConsent.GRANTED)
+                }
+                "clear" -> controller.clearData()
+                "pendingAtLogin" -> controller.onConsent(TrackingConsent.GRANTED)
+            }
+            response(202)
+        }
+
+        controller.start(true)
+        controller.onUserInfo(UserInfo(anonymousId, "A"), TrackingConsent.GRANTED)
+        while (queued.isNotEmpty()) queued.removeFirst().run()
+
+        verify(call).execute()
+        assertThat(entries).doesNotContainKey("body")
     }
 
     @Test

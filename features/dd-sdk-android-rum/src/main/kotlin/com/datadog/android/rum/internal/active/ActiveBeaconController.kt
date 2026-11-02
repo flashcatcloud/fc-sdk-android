@@ -81,7 +81,7 @@ internal class ActiveBeaconController(
     private var user = context.userInfo
     private var sentDay = ""
     private val sent = mutableSetOf<String>()
-    private var generation = 0L
+    @Volatile private var generation = 0L
     private var nextAllowedAt = 0L
     private var midnightTask: ScheduledFuture<*>? = null
     private var midnightDeadline = 0L
@@ -101,33 +101,45 @@ internal class ActiveBeaconController(
 
     fun start(isForeground: Boolean) {
         foreground = isForeground
+        val request = captureRequest()
         executor.executeSafe("active start", core.internalLogger) {
-            trigger()
+            trigger(request)
             scheduleMidnight()
         }
     }
 
     fun onForeground(value: Boolean) {
         foreground = value
+        if (!value) return
+        val request = captureRequest()
         executor.executeSafe("active foreground", core.internalLogger) {
-            if (value && foreground) {
-                trigger()
-                scheduleMidnight()
-            }
+            trigger(request)
+            scheduleMidnight()
         }
     }
 
     fun onUserInfo(value: UserInfo, currentConsent: TrackingConsent) {
         updateConsent(currentConsent)
+        val request = captureRequest()
         executor.executeSafe("active user", core.internalLogger) {
             user = value
-            trigger()
+            trigger(request)
         }
     }
 
     fun onConsent(value: TrackingConsent) {
         updateConsent(value)
-        if (value == TrackingConsent.GRANTED) executor.executeSafe("active consent", core.internalLogger) { trigger() }
+        if (value != TrackingConsent.GRANTED) return
+        val request = captureRequest()
+        executor.executeSafe("active consent", core.internalLogger) { trigger(request) }
+    }
+
+    // The worker also runs blocking requests, so a trigger may only execute after the app has left.
+    // Lock-free: called on the main thread, while lock holders may be doing storage I/O. Read generation
+    // before consent; consent is written before generation++, so a stale pair always fails savePending.
+    private fun captureRequest(): TriggerRequest {
+        val capturedGeneration = generation
+        return TriggerRequest(foreground, consent, capturedGeneration, wallClock(), SystemClock.elapsedRealtime())
     }
 
     private fun updateConsent(value: TrackingConsent) {
@@ -175,9 +187,14 @@ internal class ActiveBeaconController(
         executor.shutdownNow()
     }
 
-    private fun trigger() {
+    private fun trigger(request: TriggerRequest) {
+        val inForeground = foreground
+        if (!inForeground) {
+            if (request.foreground) deferQueuedTrigger(request)
+            return
+        }
         val workGeneration = synchronized(lock) {
-            if (!eligible()) return
+            if (!eligible(inForeground)) return
             generation
         }
         val now = wallClock()
@@ -225,6 +242,19 @@ internal class ActiveBeaconController(
                 }
             }
         }
+    }
+
+    // Requested in the foreground, but it waited behind earlier work until the app had left: keep the
+    // snapshot of that moment for replay, unless consent or clearAllData invalidated it meanwhile.
+    private fun deferQueuedTrigger(request: TriggerRequest) {
+        if (request.consent != TrackingConsent.GRANTED || !hasIdentity()) return
+        val day = day(request.wallTime)
+        val key = identity(currentUser())
+        if (day == sentDay && key in sent) return
+        val body = buildBody(sdkContext, currentUser()) ?: return
+        val pending = readPending(wallClock())
+        if (pending != null && pending.identity == key && pending.day == day) return
+        savePending(body, key, day, request.wallTime, request.elapsed, request.generation)
     }
 
     /** Returns true when it is safe to continue with a newer beacon. */
@@ -356,8 +386,10 @@ internal class ActiveBeaconController(
         send(pending.body, pending.age, pending.identity, pending.day, attempt, true, workGeneration)
     }
 
-    private fun eligible(): Boolean = !stopped && foreground && consent == TrackingConsent.GRANTED &&
-        (!trackAnonymous || !user.anonymousId.isNullOrEmpty()) &&
+    private fun eligible(inForeground: Boolean = foreground): Boolean =
+        !stopped && inForeground && consent == TrackingConsent.GRANTED && hasIdentity()
+
+    private fun hasIdentity(): Boolean = (!trackAnonymous || !user.anonymousId.isNullOrEmpty()) &&
         (!currentUser().anonymousId.isNullOrEmpty() || !user.id.isNullOrEmpty())
 
     private fun currentUser(): UserInfo = if (trackAnonymous) user else user.copy(anonymousId = null)
@@ -391,11 +423,18 @@ internal class ActiveBeaconController(
             if (stamp != midnightGeneration) return@scheduleSafe
             midnightTask = null
             if (foreground && !stopped) {
-                trigger()
+                trigger(captureRequest())
                 scheduleMidnight()
             }
         }
     }
+    private class TriggerRequest(
+        val foreground: Boolean,
+        val consent: TrackingConsent,
+        val generation: Long,
+        val wallTime: Long,
+        val elapsed: Long
+    )
     private data class Pending(
         val body: String,
         val identity: String,
