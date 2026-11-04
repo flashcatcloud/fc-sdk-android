@@ -207,6 +207,18 @@ internal class CrashBeaconTest {
     }
 
     @Test
+    fun `M send a crash type W payload() { anonymous exception class }`() {
+        val anonymous = object : IllegalStateException("anonymous") {}
+        val rumContext = RumContext.fromFeatureContext(
+            fakeDatadogContext.featuresContext[Feature.RUM_FEATURE_NAME].orEmpty()
+        )
+
+        val body = JSONObject(testedBeacon.payload(fakeDatadogContext, rumContext, anonymous, "m", 1L, 0L))
+
+        assertThat(body.getString("crash_type")).isEqualTo(anonymous.javaClass.name).isNotEmpty()
+    }
+
+    @Test
     fun `M count front and visible apps only W isUserVisible()`() {
         assertThat(CrashBeacon.isUserVisible(100)).isTrue // IMPORTANCE_FOREGROUND
         assertThat(CrashBeacon.isUserVisible(200)).isTrue // IMPORTANCE_VISIBLE (split screen, PiP)

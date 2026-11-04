@@ -235,7 +235,9 @@ internal class CrashBeacon(
             put("application_id", applicationId)
             put("launch_time", date - timeSinceAppStartMs)
             put("date", date)
-            put("crash_type", throwable.javaClass.canonicalName ?: throwable.javaClass.simpleName)
+            // An anonymous or local class has no canonical name and an empty simple name; the intake
+            // requires a crash type, so fall back to the binary name.
+            put("crash_type", throwable.javaClass.canonicalName ?: throwable.javaClass.name)
             put("crash_message", message.take(MAX_MESSAGE_LENGTH))
             put("session_id", rumContext.sessionId)
             putOpt("view_id", rumContext.viewId)
