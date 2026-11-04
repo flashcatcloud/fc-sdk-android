@@ -137,6 +137,9 @@ internal class NdkCrashBeacon(
 
     override fun onActivityStarted(activity: Activity) {
         scheduler.cancel(recheck)
+        // Already armed for the foreground (the usual case: navigating between activities, or the
+        // first activity after setup): nothing to do on the main thread.
+        if (foregroundHint) return
         foregroundHint = true
         rearm()
     }

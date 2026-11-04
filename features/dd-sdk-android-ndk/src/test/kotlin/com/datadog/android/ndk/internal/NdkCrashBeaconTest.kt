@@ -153,6 +153,16 @@ internal class NdkCrashBeaconTest {
     }
 
     @Test
+    fun `M do no arming work W an activity starts { already armed for the foreground }`() {
+        testedBeacon.start(mockApplication)
+        val armsAfterStart = fakeNative.arms.size
+
+        testedBeacon.onActivityStarted(mock())
+
+        assertThat(fakeNative.arms).hasSize(armsAfterStart)
+    }
+
+    @Test
     fun `M stay armed through a rotation W the activity stops then starts again`() {
         testedBeacon.start(mockApplication)
         fakeScheduler.cancelAll()
