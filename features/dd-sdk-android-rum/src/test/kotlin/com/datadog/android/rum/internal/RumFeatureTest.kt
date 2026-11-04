@@ -1284,6 +1284,7 @@ internal class RumFeatureTest {
             eq(fakeThreads),
             any(),
             isNull(),
+            isNull(),
             isNull()
         )
         verifySlowFramesListenerLogMessage()
@@ -1323,10 +1324,41 @@ internal class RumFeatureTest {
                 eq(fakeThreads),
                 any(),
                 eq(crashId),
-                capture()
+                capture(),
+                isNull()
             )
             assertThat(firstValue.status).isEqualTo(CrashBeacon.STATUS_SKIPPED)
         }
+        beaconExecutor.shutdownNow()
+    }
+
+    @Test
+    fun `M skip unfiltered beacons W onInitialize() { custom error mapper }`(
+        @Forgery fakeDatadogContext: DatadogContext
+    ) {
+        val errorMapper: EventMapper<ErrorEvent> = mock()
+        testedFeature = RumFeature(
+            mockSdkCore,
+            fakeApplicationId.toString(),
+            fakeConfiguration.copy(errorEventMapper = errorMapper),
+            lateCrashReporterFactory = { mockLateCrashReporter }
+        )
+        whenever(mockSdkCore.getDatadogContext(any())) doReturn fakeDatadogContext
+        val beaconExecutor = Executors.newSingleThreadExecutor()
+        whenever(mockSdkCore.createSingleThreadExecutorService("rum-crash-beacon")) doReturn beaconExecutor
+        whenever(mockSdkCore.createOkHttpCallFactory(any())) doReturn mock()
+        testedFeature.onInitialize(appContext.mockInstance)
+
+        val result = checkNotNull(testedFeature.crashBeacon).send(
+            datadogContext = { error("No raw context may be read") },
+            throwable = IllegalStateException("private message"),
+            message = "private message",
+            crashTimeMs = 1_000_000L,
+            timeSinceAppStartMs = 1_000L
+        )
+
+        assertThat(result?.beacon?.status).isEqualTo(CrashBeacon.STATUS_SKIPPED)
+        verify(errorMapper, never()).map(any())
         beaconExecutor.shutdownNow()
     }
 

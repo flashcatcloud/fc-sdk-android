@@ -4566,6 +4566,7 @@ internal class RumViewScopeTest {
     ) {
         // Given
         val beacon = ErrorEvent.Beacon(status = "sent", duration = fakeBeaconDuration)
+        val crashDate = 1_793_750_460_000L
         fakeEvent = RumRawEvent.AddError(
             message,
             RumErrorSource.SOURCE,
@@ -4575,7 +4576,9 @@ internal class RumViewScopeTest {
             threads = threads,
             attributes = emptyMap(),
             errorId = fakeCrashId.toString(),
-            beacon = beacon
+            beacon = beacon,
+            crashDate = crashDate,
+            timeSinceAppStartNs = TimeUnit.MILLISECONDS.toNanos(120_000L)
         )
 
         // When
@@ -4587,6 +4590,8 @@ internal class RumViewScopeTest {
             val error = firstValue as ErrorEvent
             assertThat(error.error.id).isEqualTo(fakeCrashId.toString())
             assertThat(error.error.beacon).isEqualTo(beacon)
+            assertThat(error.date).isEqualTo(crashDate)
+            assertThat(error.date - checkNotNull(error.error.timeSinceAppStart)).isEqualTo(crashDate - 120_000L)
         }
     }
 

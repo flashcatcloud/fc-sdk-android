@@ -10,6 +10,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.datadog.android.api.InternalLogger
 import com.datadog.android.api.context.DatadogContext
+import com.datadog.android.rum.internal.crash.CrashBeacon
 import java.util.concurrent.TimeUnit
 
 /**
@@ -61,14 +62,17 @@ internal class RemoteConfigStore(
 
     fun sessionReplayOnError(): Boolean? = readSwitch(sessionReplayOnErrorKey())
 
-    // FLASHCAT FORK - crash beacon switches, read on every crash rather than once per session: a
-    // console that turns beacons off has to reach a process that is already running.
-    fun crashBeaconEnabled(): Boolean? = readSwitch(crashBeaconEnabledKey())
+    // Load on SDK initialization, never on the crashing thread. The same object is updated on
+    // remote responses, so an already-running beacon reads only volatile in-memory fields.
+    val crashBeaconConfiguration = CrashBeacon.Configuration(
+        enabled = readSwitch(crashBeaconEnabledKey()),
+        timeoutMs = preferences?.getInt(crashBeaconTimeoutKey(), ABSENT_TIMEOUT_MS)
+            ?.takeUnless { it == ABSENT_TIMEOUT_MS }
+    )
 
-    fun crashBeaconTimeoutMs(): Int? {
-        val stored = preferences?.getInt(crashBeaconTimeoutKey(), ABSENT_TIMEOUT_MS) ?: ABSENT_TIMEOUT_MS
-        return if (stored == ABSENT_TIMEOUT_MS) null else stored
-    }
+    fun crashBeaconEnabled(): Boolean? = crashBeaconConfiguration.enabled
+
+    fun crashBeaconTimeoutMs(): Int? = crashBeaconConfiguration.timeoutMs
 
     /**
      * Reads one committed preferences snapshot. A session must use the same response for its
@@ -141,6 +145,8 @@ internal class RemoteConfigStore(
      * knob back to the value the app was initialised with.
      */
     fun store(values: RemoteConfigValues) {
+        crashBeaconConfiguration.enabled = values.crashBeaconEnabled
+        crashBeaconConfiguration.timeoutMs = values.crashBeaconTimeoutMs
         val editor = preferences?.edit() ?: return
         write(editor, sessionKey(), values.sessionSampleRate)
         write(editor, sessionOnErrorKey(), values.sessionOnError)

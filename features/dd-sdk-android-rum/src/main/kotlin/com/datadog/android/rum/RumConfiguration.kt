@@ -186,6 +186,9 @@ data class RumConfiguration internal constructor(
          * Sent only when the app is in the foreground, tracking consent is granted, and the session
          * is tracked. Enabled by default. The console can turn it off remotely, whatever this says.
          *
+         * When a custom [setErrorEventMapper] is configured, beacons are skipped: the full error
+         * still passes through that mapper before upload, and no unfiltered data is sent early.
+         *
          * @param enabled whether to send crash beacons.
          */
         fun setCrashBeaconEnabled(enabled: Boolean): Builder {
@@ -333,6 +336,9 @@ data class RumConfiguration internal constructor(
         /**
          * Sets the [EventMapper] for the RUM [ErrorEvent]. You can use this interface implementation
          * to modify the [ErrorEvent] attributes before serialisation.
+         *
+         * FLASHCAT FORK - configuring a custom mapper skips crash beacons, so their immediate
+         * requests cannot bypass this mapper's filtering. Full crash reports remain enabled.
          *
          * @param eventMapper the [EventMapper] implementation.
          */

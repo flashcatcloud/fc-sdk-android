@@ -554,7 +554,8 @@ internal class DatadogRumMonitor(
         threads: List<ThreadDump>,
         eventTime: Time,
         errorId: String?,
-        beacon: ErrorEvent.Beacon?
+        beacon: ErrorEvent.Beacon?,
+        crashDate: Long?
     ) {
         val now = eventTime
         val timeSinceAppStartNs = now.nanoTime - sdkCore.appStartTimeNs
@@ -570,7 +571,8 @@ internal class DatadogRumMonitor(
                 eventTime = now,
                 attributes = emptyMap(),
                 errorId = errorId,
-                beacon = beacon
+                beacon = beacon,
+                crashDate = crashDate
             )
         )
     }

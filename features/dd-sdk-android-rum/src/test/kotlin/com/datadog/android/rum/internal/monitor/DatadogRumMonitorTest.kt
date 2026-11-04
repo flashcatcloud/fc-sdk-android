@@ -1141,7 +1141,7 @@ internal class DatadogRumMonitorTest {
         whenever(mockSdkCore.appStartTimeNs) doReturn appStartTimeNs
 
         // When
-        testedMonitor.addCrash(message, source, throwable, threads = emptyList())
+        testedMonitor.addCrash(message, source, throwable, threads = emptyList(), crashDate = 1_793_750_460_000L)
 
         // Then
         argumentCaptor<RumRawEvent> {
@@ -1159,6 +1159,7 @@ internal class DatadogRumMonitorTest {
             assertThat(event.isFatal).isTrue
             assertThat(event.sourceType).isEqualTo(RumErrorSourceType.ANDROID)
             assertThat(event.timeSinceAppStartNs).isEqualTo(event.eventTime.nanoTime - appStartTimeNs)
+            assertThat(event.crashDate).isEqualTo(1_793_750_460_000L)
             assertThat(event.attributes).isEmpty()
         }
         verifyNoMoreInteractions(mockWriter)
