@@ -1364,12 +1364,7 @@ internal class RumFeatureTest {
             fakeConfiguration.copy(errorEventMapper = NoOpEventMapper()),
             lateCrashReporterFactory = { mockLateCrashReporter }
         )
-        // A session RUM does not track skips the request, which keeps this test off the network.
-        whenever(mockSdkCore.getDatadogContext(any())) doReturn fakeDatadogContext.copy(
-            featuresContext = mapOf(
-                Feature.RUM_FEATURE_NAME to RumContext(sessionState = RumSessionScope.State.NOT_TRACKED).toMap()
-            )
-        )
+        whenever(mockSdkCore.getDatadogContext(any())) doReturn fakeDatadogContext
         val beaconExecutor = Executors.newSingleThreadExecutor()
         whenever(mockSdkCore.createSingleThreadExecutorService("rum-crash-beacon")) doReturn beaconExecutor
         whenever(mockSdkCore.createOkHttpCallFactory(any())) doReturn mock()
@@ -1394,7 +1389,9 @@ internal class RumFeatureTest {
         )
 
         // Then
-        assertThat(seenIds).containsExactly(crashId)
+        // Not visible to the user here (no app process state in a unit test): skipped on the
+        // crashed thread, before an id is needed.
+        assertThat(seenIds).isEmpty()
         assertThat(result).isEqualTo(Triple(crashId, CrashBeacon.STATUS_SKIPPED, 0L))
         beaconExecutor.shutdownNow()
     }

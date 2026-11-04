@@ -52,7 +52,8 @@ internal class NdkCrashBeaconTest {
 
     private val fakeNative = FakeNative()
     private val sentToRum = mutableListOf<Map<*, *>>()
-    private var foreground = true
+    private var visible = true
+    private val fakeScheduler = FakeScheduler()
 
     // What RUM answers when asked to arm: null for "never calls back".
     private var rumArm: Pair<Boolean, Int>? = true to 1_000
@@ -78,7 +79,8 @@ internal class NdkCrashBeaconTest {
             appStartTimeMs = 1_000L,
             native = fakeNative,
             clock = { 5_000L },
-            isProcessInForeground = { foreground }
+            isProcessUserVisible = { visible },
+            scheduler = fakeScheduler
         )
     }
 
@@ -108,15 +110,6 @@ internal class NdkCrashBeaconTest {
     }
 
     @Test
-    fun `M disarm W start() { background }`() {
-        foreground = false
-
-        testedBeacon.start(mockApplication)
-
-        assertThat(fakeNative.arms.last().first).isFalse
-    }
-
-    @Test
     fun `M disarm W start() { RUM has beacons off }`() {
         rumArm = false to 1_000
 
@@ -126,38 +119,85 @@ internal class NdkCrashBeaconTest {
     }
 
     @Test
-    fun `M disarm W start() { no RUM }`() {
+    fun `M stay armed W start() { RUM not registered yet }`() {
+        // The beacon thread asks RUM again at the crash; arming must not wait for RUM.
         whenever(mockSdkCore.getFeature(Feature.RUM_FEATURE_NAME)) doReturn null
 
         testedBeacon.start(mockApplication)
 
-        assertThat(fakeNative.arms.last()).isEqualTo(false to NdkCrashBeacon.DEFAULT_TIMEOUT_MS)
+        assertThat(fakeNative.arms.last()).isEqualTo(true to NdkCrashBeacon.DEFAULT_TIMEOUT_MS)
     }
 
     @Test
-    fun `M arm and disarm W activities start and stop`() {
-        foreground = false
+    fun `M disarm a moment after start W start() { process with no activity, not visible }`() {
+        visible = false
         testedBeacon.start(mockApplication)
-        val activity = mock<Activity>()
-
-        testedBeacon.onActivityStarted(activity)
         assertThat(fakeNative.arms.last().first).isTrue
 
-        testedBeacon.onActivityStopped(activity)
+        fakeScheduler.runPending()
+
         assertThat(fakeNative.arms.last().first).isFalse
     }
 
     @Test
-    fun `M disarm W the first activity stops { set up in Application onCreate }`() {
-        // Application.onCreate: the process already reads as foreground, no activity started yet.
+    fun `M stay armed W A starts B then A stops { SDK set up from activity A }`() {
+        // A was never seen starting; B starts before A stops, as Android orders them.
         testedBeacon.start(mockApplication)
+        fakeScheduler.cancelAll()
+
+        testedBeacon.onActivityStarted(mock())
+        testedBeacon.onActivityStopped(mock())
+        fakeScheduler.runPending()
+
+        assertThat(fakeNative.arms.last().first).isTrue
+    }
+
+    @Test
+    fun `M stay armed through a rotation W the activity stops then starts again`() {
+        testedBeacon.start(mockApplication)
+        fakeScheduler.cancelAll()
         val activity = mock<Activity>()
 
+        testedBeacon.onActivityStopped(activity)
         testedBeacon.onActivityStarted(activity)
+
+        assertThat(fakeScheduler.pending).isEmpty()
         assertThat(fakeNative.arms.last().first).isTrue
+    }
+
+    @Test
+    fun `M disarm once the app has left, and arm again W HOME then back`() {
+        testedBeacon.start(mockApplication)
+        fakeScheduler.cancelAll()
+        val activity = mock<Activity>()
 
         testedBeacon.onActivityStopped(activity)
+        visible = false
+        fakeScheduler.runPending()
         assertThat(fakeNative.arms.last().first).isFalse
+
+        visible = true
+        testedBeacon.onActivityStarted(activity)
+        assertThat(fakeNative.arms.last().first).isTrue
+    }
+
+    @Test
+    fun `M stay armed W the system cannot be asked`() {
+        val beacon = NdkCrashBeacon(
+            mockSdkCore,
+            tempDir,
+            1_000L,
+            fakeNative,
+            { 5_000L },
+            { throw SecurityException("no") },
+            fakeScheduler
+        )
+        testedBeacon = beacon
+        beacon.start(mockApplication)
+
+        fakeScheduler.runPending()
+
+        assertThat(fakeNative.arms.last().first).isTrue
     }
 
     @Test
@@ -206,7 +246,7 @@ internal class NdkCrashBeaconTest {
     @Test
     fun `M refuse a second native beacon W start() { another one is running }`() {
         testedBeacon.start(mockApplication)
-        val other = NdkCrashBeacon(mockSdkCore, tempDir, 1_000L, FakeNative(), { 5_000L }, { true })
+        val other = NdkCrashBeacon(mockSdkCore, tempDir, 1_000L, FakeNative(), { 5_000L }, { true }, FakeScheduler())
 
         assertThat(other.start(mockApplication)).isFalse
 
@@ -254,6 +294,25 @@ internal class NdkCrashBeaconTest {
         assertThat(listOf(4, 5, 6, 7, 8, 11).map(NdkCrashBeacon::signalName))
             .containsExactly("SIGILL", "SIGTRAP", "SIGABRT", "SIGBUS", "SIGFPE", "SIGSEGV")
         assertThat(NdkCrashBeacon.signalName(31)).isEqualTo("SIGNAL 31")
+    }
+
+    private class FakeScheduler : NdkCrashBeacon.Scheduler {
+        val pending = mutableListOf<Runnable>()
+        override fun schedule(task: Runnable, delayMs: Long) {
+            pending += task
+        }
+
+        override fun cancel(task: Runnable) {
+            pending.remove(task)
+        }
+
+        fun cancelAll() = pending.clear()
+
+        fun runPending() {
+            val tasks = pending.toList()
+            pending.clear()
+            tasks.forEach { it.run() }
+        }
     }
 
     private class FakeNative : NdkCrashBeacon.Native {

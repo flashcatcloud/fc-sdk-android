@@ -10,11 +10,12 @@ import android.app.Activity
 import android.app.ActivityManager
 import android.app.Application
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import com.datadog.android.api.InternalLogger
 import com.datadog.android.api.feature.Feature
 import com.datadog.android.api.feature.FeatureSdkCore
 import java.io.File
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -40,17 +41,27 @@ internal class NdkCrashBeacon(
     private val appStartTimeMs: Long,
     private val native: Native = JniNative,
     private val clock: () -> Long = System::currentTimeMillis,
-    private val isProcessInForeground: () -> Boolean = ::processImportanceIsForeground
+    private val isProcessUserVisible: () -> Boolean = ::processImportanceIsUserVisible,
+    private val scheduler: Scheduler = MainThreadScheduler()
 ) : Application.ActivityLifecycleCallbacks {
 
-    private val startedActivities = AtomicInteger(0)
-
+    /**
+     * A hint, not the rule: the beacon thread applies the real foreground rule at the crash, the
+     * one JVM crashes use. The hint only spares a crash that is certainly in the background the
+     * round trip to that thread, so it errs towards armed - a missed foreground beacon is a lost
+     * crash count, a needless round trip costs a few milliseconds.
+     */
     @Volatile
-    private var inForeground = false
+    private var foregroundHint = true
     private var application: Application? = null
     private var thread: Thread? = null
 
-    /** Returns false, leaving nothing behind, when the native side cannot be prepared. */
+    /** Looks again once the app may have left the foreground. */
+    private val recheck = Runnable {
+        foregroundHint = safeIsProcessUserVisible()
+        rearm()
+    }
+
     /**
      * Returns false, leaving nothing behind, when the beacon cannot be set up: the native side
      * cannot be prepared, no thread can be started, or another SDK instance already has the
@@ -74,16 +85,19 @@ internal class NdkCrashBeacon(
             ACTIVE.set(null)
             return false
         }
-        inForeground = safeIsProcessInForeground()
+        foregroundHint = true
         this.application = application
         application?.registerActivityLifecycleCallbacks(this)
         rearm()
+        // A process with no activity (a service, a receiver) is never told it is in the background.
+        scheduler.schedule(recheck, RECHECK_DELAY_MS)
         return true
     }
 
     fun stop() {
         application?.unregisterActivityLifecycleCallbacks(this)
         application = null
+        scheduler.cancel(recheck)
         // Wakes the thread with no crash, which ends it. Waiting for it before letting another
         // beacon start keeps the two from taking each other's wake-up.
         native.uninstall()
@@ -99,11 +113,15 @@ internal class NdkCrashBeacon(
     // region Arming
 
     /**
-     * Whether a crash now wakes the beacon thread. Kept in a flag the signal handler can read, since
-     * it can ask nothing itself: the app is in the foreground, and RUM has beacons on.
+     * Whether a crash now wakes the beacon thread, kept in a flag the signal handler can read since
+     * it can ask nothing itself. Armed unless the app is certainly in the background or RUM says
+     * beacons are off; without an answer from RUM (not registered yet), armed: the beacon thread
+     * still asks RUM at the crash. Synchronized, so two callers cannot apply stale states out of
+     * order.
      */
+    @Synchronized
     internal fun rearm() {
-        var enabled = false
+        var enabled = true
         var timeoutMs = DEFAULT_TIMEOUT_MS
         sendToRum(
             mapOf(
@@ -114,26 +132,23 @@ internal class NdkCrashBeacon(
                 }
             )
         )
-        native.arm(enabled && inForeground, timeoutMs)
+        native.arm(enabled && foregroundHint, timeoutMs)
     }
 
     override fun onActivityStarted(activity: Activity) {
-        if (startedActivities.incrementAndGet() == 1) {
-            inForeground = true
-            rearm()
-        }
+        scheduler.cancel(recheck)
+        foregroundHint = true
+        rearm()
     }
 
+    /**
+     * No counting: an app that set the SDK up from an activity never saw that activity start, and
+     * a count would go wrong. Whether the app really left is asked of the system a moment later,
+     * once A-starts-B and rotations have settled, and any start in between cancels the question.
+     */
     override fun onActivityStopped(activity: Activity) {
-        // Floored at zero: an activity started before this was registered stops without having
-        // been counted. Counting it in at start instead would be wrong in the common case: the SDK
-        // is set up in Application.onCreate, where the process already reads as foreground but no
-        // activity has started yet - the app would then never be seen leaving the foreground.
-        if (startedActivities.get() > 0) startedActivities.decrementAndGet()
-        if (startedActivities.get() == 0) {
-            inForeground = false
-            rearm()
-        }
+        scheduler.cancel(recheck)
+        scheduler.schedule(recheck, RECHECK_DELAY_MS)
     }
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
@@ -205,10 +220,28 @@ internal class NdkCrashBeacon(
         sdkCore.getFeature(Feature.RUM_FEATURE_NAME)?.sendEvent(event)
     }
 
-    private fun safeIsProcessInForeground(): Boolean = try {
-        isProcessInForeground()
+    private fun safeIsProcessUserVisible(): Boolean = try {
+        isProcessUserVisible()
     } catch (@Suppress("TooGenericExceptionCaught") e: RuntimeException) {
-        false
+        // Unknown: stay armed, the beacon thread decides at the crash.
+        true
+    }
+
+    /** Delayed work on the main thread, behind an interface so the arming can be tested. */
+    internal interface Scheduler {
+        fun schedule(task: Runnable, delayMs: Long)
+        fun cancel(task: Runnable)
+    }
+
+    private class MainThreadScheduler : Scheduler {
+        private val handler by lazy { Handler(Looper.getMainLooper()) }
+        override fun schedule(task: Runnable, delayMs: Long) {
+            handler.postDelayed(task, delayMs)
+        }
+
+        override fun cancel(task: Runnable) {
+            handler.removeCallbacks(task)
+        }
     }
 
     /** The native side, behind an interface so the Java side can be tested without it. */
@@ -237,6 +270,9 @@ internal class NdkCrashBeacon(
         internal const val DEFAULT_TIMEOUT_MS = 1_000
         private const val STOP_WAIT_MS = 500L
 
+        // Long enough for A-starts-B and a rotation to deliver the next start.
+        private const val RECHECK_DELAY_MS = 1_000L
+
         /** The native beacon is one per process, like the signal handler it hooks into. */
         private val ACTIVE = AtomicReference<NdkCrashBeacon?>(null)
 
@@ -256,10 +292,12 @@ internal class NdkCrashBeacon(
 
         internal fun signalName(signal: Int): String = SIGNAL_NAMES[signal] ?: "SIGNAL $signal"
 
-        private fun processImportanceIsForeground(): Boolean {
+        /** The same rule as JVM crash beacons: in front, or visible in split screen or PiP. */
+        private fun processImportanceIsUserVisible(): Boolean {
             val info = ActivityManager.RunningAppProcessInfo()
             ActivityManager.getMyMemoryState(info)
-            return info.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+            return info.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND ||
+                info.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE
         }
 
         @JvmStatic
