@@ -56,7 +56,7 @@ internal class CrashBeacon(
     private val internalLogger: InternalLogger,
     /** Updated outside the crash handler; reading these values cannot wait on preferences. */
     private val configuration: Configuration,
-    /** Whether the process is in the foreground right now. */
+    /** Whether the app is in the foreground right now, see [isUserVisible]. */
     private val isInForeground: () -> Boolean,
     private val hasCustomErrorEventMapper: Boolean = false,
     private val clock: () -> Long = { TimeUnit.NANOSECONDS.toMillis(System.nanoTime()) }
@@ -125,6 +125,11 @@ internal class CrashBeacon(
         // The full ErrorEvent is mapped later, on the persistence thread. Calling the user's
         // mapper twice, or with a partial event, cannot preserve its filtering semantics.
         if (hasCustomErrorEventMapper) return Result(ErrorEvent.Beacon(STATUS_SKIPPED, 0L), null)
+        // Decided here, on the crashed thread, before anything is submitted: a background crash, or
+        // one the console turned beacons off for, must not wait on the beacon thread at all.
+        if (configuration.enabled == false || !safeIsInForeground()) {
+            return Result(ErrorEvent.Beacon(STATUS_SKIPPED, 0L), null)
+        }
         val start = clock()
         try {
             onCrashId(crashId)
@@ -209,6 +214,13 @@ internal class CrashBeacon(
         return post(body, timeoutMs)
     }
 
+    @Suppress("TooGenericExceptionCaught")
+    private fun safeIsInForeground(): Boolean = try {
+        isInForeground()
+    } catch (e: Throwable) {
+        false
+    }
+
     private fun post(body: String, timeoutMs: Long): String {
         val request = Request.Builder()
             .url(url)
@@ -284,6 +296,15 @@ internal class CrashBeacon(
         internal const val STATUS_SKIPPED = "skipped"
 
         internal const val DEFAULT_TIMEOUT_MS = 1_000
+
+        /**
+         * The foreground rule of crash beacons, the same for JVM and native crashes: a process the
+         * user can see - in front, or visible in split screen or picture in picture. A foreground
+         * service alone does not count: there is no screen the user saw crash.
+         */
+        fun isUserVisible(importance: Int): Boolean =
+            importance == android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND ||
+                importance == android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE
         private const val MIN_TIMEOUT_MS = 500
         private const val MAX_TIMEOUT_MS = 2_000
         private const val CALL_TIMEOUT_MARGIN_MS = 100L
