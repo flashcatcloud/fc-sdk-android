@@ -933,7 +933,7 @@ internal class RumFeature(
             timeSinceAppStartMs = timeSinceAppStartMs,
             onCrashId = onCrashId
         ) ?: return
-        onResult(beacon.crashId, result.status, result.duration ?: 0L)
+        onResult(beacon.crashId, result.beacon.status, result.beacon.duration ?: 0L)
     }
 
     private fun addJvmCrash(crashEvent: JvmCrash.Rum) {
@@ -965,7 +965,8 @@ internal class RumFeature(
             crashEvent.threads,
             eventTime = now,
             errorId = beacon?.crashId?.takeIf { beaconResult != null },
-            beacon = beaconResult
+            beacon = beaconResult?.beacon,
+            crashDate = beaconResult?.crashDate
         )
     }
 
@@ -1088,8 +1089,8 @@ internal class RumFeature(
             callFactory = sdkCore.createOkHttpCallFactory(),
             executor = sdkCore.createSingleThreadExecutorService("rum-crash-beacon"),
             internalLogger = sdkCore.internalLogger,
-            remoteEnabled = { remoteConfigStore?.crashBeaconEnabled() },
-            remoteTimeoutMs = { remoteConfigStore?.crashBeaconTimeoutMs() },
+            configuration = remoteConfigStore?.crashBeaconConfiguration ?: CrashBeacon.Configuration(),
+            hasCustomErrorEventMapper = configuration.errorEventMapper !is NoOpEventMapper<*>,
             isInForeground = {
                 val info = ActivityManager.RunningAppProcessInfo()
                 ActivityManager.getMyMemoryState(info)

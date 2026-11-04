@@ -46,7 +46,8 @@ internal interface AdvancedRumMonitor : RumMonitor, AdvancedNetworkRumMonitor {
         // under, and what became of it.
         eventTime: Time = Time(),
         errorId: String? = null,
-        beacon: ErrorEvent.Beacon? = null
+        beacon: ErrorEvent.Beacon? = null,
+        crashDate: Long? = null
     )
 
     fun eventSent(viewId: String, event: StorageEvent)

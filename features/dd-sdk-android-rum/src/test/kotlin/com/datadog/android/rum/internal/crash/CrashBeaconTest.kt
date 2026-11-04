@@ -70,8 +70,7 @@ internal class CrashBeaconTest {
 
     private lateinit var executor: ExecutorService
 
-    private var remoteEnabled: Boolean? = null
-    private var remoteTimeoutMs: Int? = null
+    private val configuration = CrashBeacon.Configuration()
     private var inForeground = true
 
     private val fakeRumContext = RumContext(
@@ -80,7 +79,9 @@ internal class CrashBeaconTest {
         viewId = "0b6e3c4a-1d2e-4f5a-8b9c-0d1e2f3a4b5c",
         viewName = "CheckoutActivity",
         viewUrl = "com.example.CheckoutActivity",
-        sessionState = RumSessionScope.State.TRACKED
+        sessionState = RumSessionScope.State.TRACKED,
+        isSessionActive = true,
+        viewTimestampOffset = 120_000L
     )
 
     private lateinit var testedBeacon: CrashBeacon
@@ -100,8 +101,7 @@ internal class CrashBeaconTest {
             callFactory = mockCallFactory,
             executor = executor,
             internalLogger = mockInternalLogger,
-            remoteEnabled = { remoteEnabled },
-            remoteTimeoutMs = { remoteTimeoutMs },
+            configuration = configuration,
             isInForeground = { inForeground }
         )
     }
@@ -129,7 +129,7 @@ internal class CrashBeaconTest {
     @Test
     fun `M send the crash id and the launch the late report will carry W send()`() {
         whenever(mockCall.execute()) doReturn response(202)
-        val offset = fakeDatadogContext.time.serverTimeOffsetMs
+        val offset = fakeRumContext.viewTimestampOffset
 
         send(crashTimeMs = 1_000_000L, timeSinceAppStartMs = 4_000L)
 
@@ -173,7 +173,7 @@ internal class CrashBeaconTest {
             release.await(5, TimeUnit.SECONDS)
             response(202)
         }
-        remoteTimeoutMs = 200
+        configuration.timeoutMs = 500
 
         val start = System.nanoTime()
         val result = send()
@@ -193,7 +193,7 @@ internal class CrashBeaconTest {
 
     @Test
     fun `M skip it W send() { console turned beacons off }`() {
-        remoteEnabled = false
+        configuration.enabled = false
 
         assertSkipped()
     }
@@ -250,7 +250,7 @@ internal class CrashBeaconTest {
     @Test
     fun `M stop waiting at the timeout W send() { reading the context blocks }`() {
         val release = CountDownLatch(1)
-        remoteTimeoutMs = 200
+        configuration.timeoutMs = 500
 
         val start = System.nanoTime()
         val result = send(readContext = {
@@ -283,7 +283,7 @@ internal class CrashBeaconTest {
             )
         )
 
-        assertThat(result.status).isEqualTo(CrashBeacon.STATUS_SENT)
+        assertThat(result.beacon.status).isEqualTo(CrashBeacon.STATUS_SENT)
         assertThat(seen).containsExactly(testedBeacon.crashId)
     }
 
@@ -300,7 +300,7 @@ internal class CrashBeaconTest {
             )
         )
 
-        assertThat(result.status).isEqualTo(CrashBeacon.STATUS_FAILED)
+        assertThat(result.beacon.status).isEqualTo(CrashBeacon.STATUS_FAILED)
         verify(mockCallFactory, never()).newCall(any())
     }
 
@@ -308,8 +308,8 @@ internal class CrashBeaconTest {
     fun `M arm with the console's switch and wait W armState()`() {
         assertThat(testedBeacon.armState()).isEqualTo(true to CrashBeacon.DEFAULT_TIMEOUT_MS)
 
-        remoteEnabled = false
-        remoteTimeoutMs = 1500
+        configuration.enabled = false
+        configuration.timeoutMs = 1500
 
         assertThat(testedBeacon.armState()).isEqualTo(false to 1500)
     }
@@ -318,6 +318,163 @@ internal class CrashBeaconTest {
     fun `M draw one crash id per process W crashId`() {
         assertThat(testedBeacon.crashId).isEqualTo(testedBeacon.crashId)
         assertThat(testedBeacon.crashId).matches("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$")
+    }
+
+    @Test
+    fun `M send the first crash of a withheld session W send()`() {
+        fakeDatadogContext = fakeDatadogContext.copy(
+            featuresContext = mapOf(
+                Feature.RUM_FEATURE_NAME to fakeRumContext.copy(sessionState = RumSessionScope.State.WITHHELD).toMap()
+            )
+        )
+        whenever(mockCall.execute()) doReturn response(202)
+
+        assertThat(send().status).isEqualTo(CrashBeacon.STATUS_SENT)
+        verify(mockCallFactory).newCall(any())
+    }
+
+    @Test
+    fun `M skip an expired session W send()`() {
+        fakeDatadogContext = fakeDatadogContext.copy(
+            featuresContext = mapOf(
+                Feature.RUM_FEATURE_NAME to fakeRumContext.copy(sessionState = RumSessionScope.State.EXPIRED).toMap()
+            )
+        )
+
+        assertSkipped()
+    }
+
+    @Test
+    fun `M skip a stopped withheld session W send()`() {
+        fakeDatadogContext = fakeDatadogContext.copy(
+            featuresContext = mapOf(
+                Feature.RUM_FEATURE_NAME to fakeRumContext.copy(
+                    sessionState = RumSessionScope.State.WITHHELD,
+                    isSessionActive = false
+                ).toMap()
+            )
+        )
+
+        assertSkipped()
+    }
+
+    @Test
+    fun `M never read or send unfiltered context W send() { custom error mapper }`() {
+        testedBeacon = CrashBeacon(
+            url = "https://rum.example.com/api/v2/rum/crash",
+            applicationId = "app-id",
+            callFactory = mockCallFactory,
+            executor = executor,
+            internalLogger = mockInternalLogger,
+            configuration = configuration,
+            isInForeground = { true },
+            hasCustomErrorEventMapper = true
+        )
+
+        val result = send(readContext = { error("Must not read unfiltered context") })
+
+        assertThat(result.status).isEqualTo(CrashBeacon.STATUS_SKIPPED)
+        assertThat(result.duration).isZero()
+        verify(mockCallFactory, never()).newCall(any())
+    }
+
+    @Test
+    fun `M keep the launch day after clock sync W send() { view offset differs from current offset }`() {
+        // Device crash at 2026-11-04 00:01 UTC; the process started two minutes earlier.
+        val crashTimeMs = 1_793_750_460_000L
+        val timeSinceAppStartMs = 120_000L
+        fakeDatadogContext = fakeDatadogContext.copy(
+            time = fakeDatadogContext.time.copy(serverTimeOffsetMs = 120_000L),
+            featuresContext = mapOf(
+                Feature.RUM_FEATURE_NAME to fakeRumContext.copy(viewTimestampOffset = 0L).toMap()
+            )
+        )
+        whenever(mockCall.execute()) doReturn response(202)
+
+        val result = checkNotNull(
+            testedBeacon.send(
+                { fakeDatadogContext },
+                "java.lang.IllegalStateException",
+                "boom",
+                crashTimeMs,
+                timeSinceAppStartMs
+            )
+        )
+
+        val body = argumentCaptor<Request>().run {
+            verify(mockCallFactory).newCall(capture())
+            JSONObject(Buffer().also { firstValue.body!!.writeTo(it) }.readUtf8())
+        }
+        assertThat(result.crashDate).isEqualTo(crashTimeMs)
+        assertThat(body.getLong("date")).isEqualTo(result.crashDate)
+        assertThat(body.getLong("launch_time")).isEqualTo(crashTimeMs - timeSinceAppStartMs)
+    }
+
+    @Test
+    fun `M freeze the fallback date W send() { no active view }`() {
+        fakeDatadogContext = fakeDatadogContext.copy(
+            time = fakeDatadogContext.time.copy(serverTimeOffsetMs = 120_000L),
+            featuresContext = mapOf(
+                Feature.RUM_FEATURE_NAME to fakeRumContext.copy(viewId = null).toMap()
+            )
+        )
+        whenever(mockCall.execute()) doReturn response(202)
+
+        val result = checkNotNull(
+            testedBeacon.send({ fakeDatadogContext }, "java.lang.IllegalStateException", "boom", 1_000_000L, 4_000L)
+        )
+
+        assertThat(result.crashDate).isEqualTo(1_120_000L)
+    }
+
+    @Test
+    fun `M keep the dispatched date W send() { request times out }`() {
+        val release = CountDownLatch(1)
+        configuration.timeoutMs = 500
+        whenever(mockCall.execute()) doAnswer {
+            release.await(5, TimeUnit.SECONDS)
+            response(202)
+        }
+
+        val result = try {
+            checkNotNull(
+                testedBeacon.send(
+                    { fakeDatadogContext },
+                    "java.lang.IllegalStateException",
+                    "boom",
+                    1_000_000L,
+                    4_000L
+                )
+            )
+        } finally {
+            release.countDown()
+        }
+
+        assertThat(result.beacon.status).isEqualTo(CrashBeacon.STATUS_TIMEOUT)
+        assertThat(result.crashDate).isEqualTo(1_000_000L + fakeRumContext.viewTimestampOffset)
+        verify(mockCallFactory).newCall(any())
+    }
+
+    @Test
+    fun `M send nothing after the wait expires W send() { context ignores interruption }`() {
+        val release = CountDownLatch(1)
+        configuration.timeoutMs = 500
+        val result = send(readContext = {
+            while (release.count > 0) {
+                try {
+                    release.await()
+                } catch (_: InterruptedException) {
+                    // Simulate an SDK context read which cannot be cancelled.
+                }
+            }
+            fakeDatadogContext
+        })
+        release.countDown()
+        executor.shutdown()
+        assertThat(executor.awaitTermination(2, TimeUnit.SECONDS)).isTrue
+
+        assertThat(result.status).isEqualTo(CrashBeacon.STATUS_TIMEOUT)
+        verify(mockCallFactory, never()).newCall(any())
     }
 
     // region Internal
@@ -334,7 +491,7 @@ internal class CrashBeaconTest {
             crashTimeMs = crashTimeMs,
             timeSinceAppStartMs = timeSinceAppStartMs
         )
-    )
+    ).beacon
 
     private fun assertSkipped() {
         val result = send()

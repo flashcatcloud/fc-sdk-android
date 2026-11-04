@@ -753,7 +753,7 @@ internal open class RumViewScope(
 
             ErrorEvent(
                 buildId = datadogContext.appBuildId,
-                date = event.eventTime.timestamp + serverTimeOffsetInMs,
+                date = event.crashDate ?: (event.eventTime.timestamp + serverTimeOffsetInMs),
                 featureFlags = ErrorEvent.Context(eventFeatureFlags),
                 error = ErrorEvent.Error(
                     id = event.errorId ?: UUID.randomUUID().toString(),

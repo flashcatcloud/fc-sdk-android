@@ -116,7 +116,9 @@ internal sealed class RumRawEvent {
         val timeSinceAppStartNs: Long? = null,
         // FLASHCAT FORK - set for a JVM crash: the crash beacon's id, and what became of it.
         val errorId: String? = null,
-        val beacon: ErrorEvent.Beacon? = null
+        val beacon: ErrorEvent.Beacon? = null,
+        // Already corrected by the offset used by the beacon; do not apply the view offset again.
+        val crashDate: Long? = null
     ) : RumRawEvent()
 
     internal data class ResourceSent(
