@@ -891,20 +891,18 @@ internal class RumFeature(
         val now = Time()
         val beacon = crashBeacon
         val internalCore = sdkCore as? InternalSdkCore
+        // Nothing about the beacon may keep the crash from being written and handed on to the
+        // previous handler: any failure here just means no beacon.
+
+        @Suppress("TooGenericExceptionCaught")
         val beaconResult = if (beacon == null || internalCore == null) {
             null
         } else {
-            beacon.send(
-                datadogContext = {
-                    internalCore.getDatadogContext(
-                        withFeatureContexts = setOf(Feature.RUM_FEATURE_NAME)
-                    )
-                },
-                throwable = crashEvent.throwable,
-                message = crashEvent.message,
-                crashTimeMs = now.timestamp,
-                timeSinceAppStartMs = TimeUnit.NANOSECONDS.toMillis(now.nanoTime - internalCore.appStartTimeNs)
-            )
+            try {
+                sendJvmCrashBeacon(beacon, internalCore, crashEvent, now)
+            } catch (e: Throwable) {
+                null
+            }
         }
         monitor.addCrash(
             crashEvent.message,
@@ -917,6 +915,21 @@ internal class RumFeature(
             crashDate = beaconResult?.crashDate
         )
     }
+
+    private fun sendJvmCrashBeacon(
+        beacon: CrashBeacon,
+        internalCore: InternalSdkCore,
+        crashEvent: JvmCrash.Rum,
+        now: Time
+    ) = beacon.send(
+        datadogContext = {
+            internalCore.getDatadogContext(withFeatureContexts = setOf(Feature.RUM_FEATURE_NAME))
+        },
+        throwable = crashEvent.throwable,
+        message = crashEvent.message,
+        crashTimeMs = now.timestamp,
+        timeSinceAppStartMs = TimeUnit.NANOSECONDS.toMillis(now.nanoTime - internalCore.appStartTimeNs)
+    )
 
     private fun addLoggerError(loggerErrorEvent: Map<*, *>) {
         val throwable = loggerErrorEvent[EVENT_THROWABLE_PROPERTY] as? Throwable

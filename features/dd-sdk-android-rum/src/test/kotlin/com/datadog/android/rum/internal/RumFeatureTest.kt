@@ -26,6 +26,7 @@ import com.datadog.android.core.feature.event.JvmCrash
 import com.datadog.android.core.feature.event.ThreadDump
 import com.datadog.android.event.EventMapper
 import com.datadog.android.event.MapperSerializer
+import com.datadog.android.event.NoOpEventMapper
 import com.datadog.android.internal.flags.RumFlagEvaluationMessage
 import com.datadog.android.internal.system.BuildSdkVersionProvider
 import com.datadog.android.internal.telemetry.InternalTelemetryEvent
@@ -1359,6 +1360,46 @@ internal class RumFeatureTest {
 
         assertThat(result?.beacon?.status).isEqualTo(CrashBeacon.STATUS_SKIPPED)
         verify(errorMapper, never()).map(any())
+        beaconExecutor.shutdownNow()
+    }
+
+    @Test
+    fun `M still add the crash W onReceive() { JVM crash event, beacon throws before sending }`(
+        @Forgery fakeThreads: List<ThreadDump>,
+        @Forgery fakeDatadogContext: DatadogContext,
+        forge: Forge
+    ) {
+        // Given
+        testedFeature = RumFeature(
+            mockSdkCore,
+            fakeApplicationId.toString(),
+            fakeConfiguration.copy(errorEventMapper = NoOpEventMapper()),
+            lateCrashReporterFactory = { mockLateCrashReporter }
+        )
+        whenever(mockSdkCore.getDatadogContext(any())) doReturn fakeDatadogContext
+        val beaconExecutor = Executors.newSingleThreadExecutor()
+        whenever(mockSdkCore.createSingleThreadExecutorService("rum-crash-beacon")) doReturn beaconExecutor
+        whenever(mockSdkCore.createOkHttpCallFactory(any())) doReturn mock()
+        testedFeature.onInitialize(appContext.mockInstance)
+        checkNotNull(testedFeature.crashBeacon)
+        whenever(mockSdkCore.appStartTimeNs) doThrow IllegalStateException("broken core")
+        val fakeThrowable = forge.aThrowable()
+        val fakeMessage = forge.anAlphabeticalString()
+
+        // When
+        testedFeature.onReceive(JvmCrash.Rum(message = fakeMessage, throwable = fakeThrowable, threads = fakeThreads))
+
+        // Then
+        verify(mockRumMonitor).addCrash(
+            eq(fakeMessage),
+            eq(RumErrorSource.SOURCE),
+            eq(fakeThrowable),
+            eq(fakeThreads),
+            any(),
+            isNull(),
+            isNull(),
+            isNull()
+        )
         beaconExecutor.shutdownNow()
     }
 
