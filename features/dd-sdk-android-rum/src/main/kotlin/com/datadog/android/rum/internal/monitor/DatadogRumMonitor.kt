@@ -68,6 +68,7 @@ import com.datadog.android.rum.internal.startup.RumTTIDInfo
 import com.datadog.android.rum.internal.vitals.VitalMonitor
 import com.datadog.android.rum.metric.interactiontonextview.LastInteractionIdentifier
 import com.datadog.android.rum.metric.networksettled.InitialResourceIdentifier
+import com.datadog.android.rum.model.ErrorEvent
 import com.datadog.android.rum.resource.ResourceId
 import com.datadog.android.telemetry.internal.TelemetryEventHandler
 import java.util.Locale
@@ -550,9 +551,13 @@ internal class DatadogRumMonitor(
         message: String,
         source: RumErrorSource,
         throwable: Throwable,
-        threads: List<ThreadDump>
+        threads: List<ThreadDump>,
+        eventTime: Time,
+        errorId: String?,
+        beacon: ErrorEvent.Beacon?,
+        crashDate: Long?
     ) {
-        val now = Time()
+        val now = eventTime
         val timeSinceAppStartNs = now.nanoTime - sdkCore.appStartTimeNs
         handleEvent(
             RumRawEvent.AddError(
@@ -564,7 +569,10 @@ internal class DatadogRumMonitor(
                 threads = threads,
                 timeSinceAppStartNs = timeSinceAppStartNs,
                 eventTime = now,
-                attributes = emptyMap()
+                attributes = emptyMap(),
+                errorId = errorId,
+                beacon = beacon,
+                crashDate = crashDate
             )
         )
     }

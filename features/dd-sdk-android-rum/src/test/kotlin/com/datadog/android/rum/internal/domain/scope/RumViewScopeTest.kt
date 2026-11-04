@@ -4557,6 +4557,45 @@ internal class RumViewScopeTest {
     }
 
     @Test
+    fun `M write the crash under the beacon's id W handleEvent(AddError) {isFatal=true, beacon sent}`(
+        @StringForgery message: String,
+        @Forgery throwable: Throwable,
+        @Forgery threads: List<ThreadDump>,
+        @Forgery fakeCrashId: UUID,
+        @LongForgery(min = 0L) fakeBeaconDuration: Long
+    ) {
+        // Given
+        val beacon = ErrorEvent.Beacon(status = "sent", duration = fakeBeaconDuration)
+        val crashDate = 1_793_750_460_000L
+        fakeEvent = RumRawEvent.AddError(
+            message,
+            RumErrorSource.SOURCE,
+            throwable,
+            stacktrace = null,
+            isFatal = true,
+            threads = threads,
+            attributes = emptyMap(),
+            errorId = fakeCrashId.toString(),
+            beacon = beacon,
+            crashDate = crashDate,
+            timeSinceAppStartNs = TimeUnit.MILLISECONDS.toNanos(120_000L)
+        )
+
+        // When
+        testedScope.handleEvent(fakeEvent, fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        argumentCaptor<Any> {
+            verify(mockWriter, times(2)).write(eq(mockEventBatchWriter), capture(), eq(EventType.CRASH))
+            val error = firstValue as ErrorEvent
+            assertThat(error.error.id).isEqualTo(fakeCrashId.toString())
+            assertThat(error.error.beacon).isEqualTo(beacon)
+            assertThat(error.date).isEqualTo(crashDate)
+            assertThat(error.date - checkNotNull(error.error.timeSinceAppStart)).isEqualTo(crashDate - 120_000L)
+        }
+    }
+
+    @Test
     fun `M send event W handleEvent(AddError) {isFatal=true}`(
         @StringForgery message: String,
         @Forgery source: RumErrorSource,

@@ -331,6 +331,24 @@
               "type": "integer",
               "description": "Time since application start when error happened (in milliseconds)",
               "readOnly": true
+            },
+            "beacon": {
+              "type": "object",
+              "description": "FlashCat fork - what became of the crash beacon sent while this crash took the process down",
+              "required": ["status"],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "description": "Whether the intake accepted the beacon, or why it did not: sent, timeout, failed or skipped",
+                  "readOnly": true
+                },
+                "duration": {
+                  "type": "integer",
+                  "description": "How long the beacon took (in milliseconds)",
+                  "readOnly": true
+                }
+              },
+              "readOnly": true
             }
           },
           "readOnly": true

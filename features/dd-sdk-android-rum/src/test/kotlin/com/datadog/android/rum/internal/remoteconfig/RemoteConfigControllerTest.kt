@@ -172,6 +172,32 @@ internal class RemoteConfigControllerTest {
         verify(store).store(RemoteConfigValues(null, 3, ttlSeconds = 300L))
     }
 
+    @Test
+    fun `M store the crash beacon switch and wait W apply()`() {
+        testedController.apply(body(rum = """"crashBeaconEnabled":false,"crashBeaconTimeoutMs":1500"""))
+
+        verify(store).store(
+            RemoteConfigValues(
+                null,
+                3,
+                ttlSeconds = 300L,
+                crashBeaconEnabled = false,
+                crashBeaconTimeoutMs = 1500
+            )
+        )
+    }
+
+    @Test
+    fun `M leave the crash beacon wait absent W apply() { out of range, fractional or not a number }`() {
+        listOf("499", "2001", "1000.5", "\"1000\"", "true").forEach { value ->
+            clearInvocations(store)
+
+            testedController.apply(body(rum = """"crashBeaconTimeoutMs":$value"""))
+
+            verify(store).store(RemoteConfigValues(null, 3, ttlSeconds = 300L))
+        }
+    }
+
     // region activation
 
     @Test

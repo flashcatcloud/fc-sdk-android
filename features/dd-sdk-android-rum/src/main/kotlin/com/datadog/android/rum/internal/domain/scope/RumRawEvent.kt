@@ -20,6 +20,7 @@ import com.datadog.android.rum.internal.domain.event.ResourceTiming
 import com.datadog.android.rum.internal.startup.RumStartupScenario
 import com.datadog.android.rum.internal.startup.RumTTIDInfo
 import com.datadog.android.rum.model.ActionEvent
+import com.datadog.android.rum.model.ErrorEvent
 
 internal sealed class RumRawEvent {
 
@@ -112,7 +113,12 @@ internal sealed class RumRawEvent {
         val type: String? = null,
         val sourceType: RumErrorSourceType = RumErrorSourceType.ANDROID,
         val threads: List<ThreadDump>,
-        val timeSinceAppStartNs: Long? = null
+        val timeSinceAppStartNs: Long? = null,
+        // FLASHCAT FORK - set for a JVM crash: the crash beacon's id, and what became of it.
+        val errorId: String? = null,
+        val beacon: ErrorEvent.Beacon? = null,
+        // Already corrected by the offset used by the beacon; do not apply the view offset again.
+        val crashDate: Long? = null
     ) : RumRawEvent()
 
     internal data class ResourceSent(
