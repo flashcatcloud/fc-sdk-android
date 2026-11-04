@@ -56,7 +56,7 @@ internal class CrashBeacon(
     private val internalLogger: InternalLogger,
     /** Updated outside the crash handler; reading these values cannot wait on preferences. */
     private val configuration: Configuration,
-    /** Whether the process is in the foreground right now. */
+    /** Whether the app is in the foreground right now, see [isUserVisible]. */
     private val isInForeground: () -> Boolean,
     private val hasCustomErrorEventMapper: Boolean = false,
     private val clock: () -> Long = { TimeUnit.NANOSECONDS.toMillis(System.nanoTime()) }
@@ -108,9 +108,16 @@ internal class CrashBeacon(
         // The full ErrorEvent is mapped later, on the persistence thread. Calling the user's
         // mapper twice, or with a partial event, cannot preserve its filtering semantics.
         if (hasCustomErrorEventMapper) return Result(ErrorEvent.Beacon(STATUS_SKIPPED, 0L), null)
+        // Decided here, on the crashed thread, before anything is submitted: a background crash, or
+        // one the console turned beacons off for, must not wait on the beacon thread at all.
+        if (configuration.enabled == false || !safeIsInForeground()) {
+            return Result(ErrorEvent.Beacon(STATUS_SKIPPED, 0L), null)
+        }
         val start = clock()
-        val timeoutMs = (configuration.timeoutMs?.takeIf { it in MIN_TIMEOUT_MS..MAX_TIMEOUT_MS }
-            ?: DEFAULT_TIMEOUT_MS).toLong()
+        val timeoutMs = (
+            configuration.timeoutMs?.takeIf { it in MIN_TIMEOUT_MS..MAX_TIMEOUT_MS }
+                ?: DEFAULT_TIMEOUT_MS
+            ).toLong()
         val dispatch = AtomicReference<Dispatch>(Dispatch.Pending)
         var future: Future<String>? = null
         val status = try {
@@ -167,8 +174,10 @@ internal class CrashBeacon(
         if (configuration.enabled == false ||
             datadogContext.trackingConsent != TrackingConsent.GRANTED ||
             !rumContext.isSessionActive ||
-            (rumContext.sessionState != RumSessionScope.State.TRACKED &&
-                rumContext.sessionState != RumSessionScope.State.WITHHELD) ||
+            (
+                rumContext.sessionState != RumSessionScope.State.TRACKED &&
+                    rumContext.sessionState != RumSessionScope.State.WITHHELD
+                ) ||
             !isInForeground()
         ) {
             return STATUS_SKIPPED
@@ -182,6 +191,13 @@ internal class CrashBeacon(
         val body = payload(datadogContext, rumContext, throwable, message, date, timeSinceAppStartMs)
         if (!dispatch.compareAndSet(Dispatch.Pending, Dispatch.Ready(date))) return STATUS_TIMEOUT
         return post(body, timeoutMs)
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    private fun safeIsInForeground(): Boolean = try {
+        isInForeground()
+    } catch (e: Throwable) {
+        false
     }
 
     private fun post(body: String, timeoutMs: Long): String {
@@ -259,6 +275,15 @@ internal class CrashBeacon(
         internal const val STATUS_SKIPPED = "skipped"
 
         internal const val DEFAULT_TIMEOUT_MS = 1_000
+
+        /**
+         * The foreground rule of crash beacons, the same for JVM and native crashes: a process the
+         * user can see - in front, or visible in split screen or picture in picture. A foreground
+         * service alone does not count: there is no screen the user saw crash.
+         */
+        fun isUserVisible(importance: Int): Boolean =
+            importance == android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND ||
+                importance == android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE
         private const val MIN_TIMEOUT_MS = 500
         private const val MAX_TIMEOUT_MS = 2_000
         private const val CALL_TIMEOUT_MARGIN_MS = 100L

@@ -185,6 +185,36 @@ internal class CrashBeaconTest {
     }
 
     @Test
+    fun `M skip at once without the beacon thread W send() { background, context read would block }`() {
+        inForeground = false
+        val start = System.nanoTime()
+
+        val result = checkNotNull(
+            testedBeacon.send(
+                datadogContext = {
+                    Thread.sleep(60_000)
+                    fakeDatadogContext
+                },
+                throwable = IllegalStateException("boom"),
+                message = "boom",
+                crashTimeMs = 1_000_000L,
+                timeSinceAppStartMs = 4_000L
+            )
+        )
+
+        assertThat(result.beacon.status).isEqualTo(CrashBeacon.STATUS_SKIPPED)
+        assertThat(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start)).isLessThan(200L)
+    }
+
+    @Test
+    fun `M count front and visible apps only W isUserVisible()`() {
+        assertThat(CrashBeacon.isUserVisible(100)).isTrue // IMPORTANCE_FOREGROUND
+        assertThat(CrashBeacon.isUserVisible(200)).isTrue // IMPORTANCE_VISIBLE (split screen, PiP)
+        assertThat(CrashBeacon.isUserVisible(125)).isFalse // IMPORTANCE_FOREGROUND_SERVICE
+        assertThat(CrashBeacon.isUserVisible(400)).isFalse // IMPORTANCE_CACHED
+    }
+
+    @Test
     fun `M skip it W send() { app in the background }`() {
         inForeground = false
 

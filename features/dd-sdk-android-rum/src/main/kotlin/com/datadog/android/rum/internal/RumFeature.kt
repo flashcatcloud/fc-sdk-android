@@ -1055,7 +1055,7 @@ internal class RumFeature(
             isInForeground = {
                 val info = ActivityManager.RunningAppProcessInfo()
                 ActivityManager.getMyMemoryState(info)
-                info.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+                CrashBeacon.isUserVisible(info.importance)
             }
         )
     }
