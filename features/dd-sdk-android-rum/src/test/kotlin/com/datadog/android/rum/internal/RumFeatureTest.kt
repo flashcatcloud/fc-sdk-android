@@ -1430,6 +1430,46 @@ internal class RumFeatureTest {
     }
 
     @Test
+    fun `M still add the crash W onReceive() { JVM crash event, beacon throws before sending }`(
+        @Forgery fakeThreads: List<ThreadDump>,
+        @Forgery fakeDatadogContext: DatadogContext,
+        forge: Forge
+    ) {
+        // Given
+        testedFeature = RumFeature(
+            mockSdkCore,
+            fakeApplicationId.toString(),
+            fakeConfiguration.copy(errorEventMapper = NoOpEventMapper()),
+            lateCrashReporterFactory = { mockLateCrashReporter }
+        )
+        whenever(mockSdkCore.getDatadogContext(any())) doReturn fakeDatadogContext
+        val beaconExecutor = Executors.newSingleThreadExecutor()
+        whenever(mockSdkCore.createSingleThreadExecutorService("rum-crash-beacon")) doReturn beaconExecutor
+        whenever(mockSdkCore.createOkHttpCallFactory(any())) doReturn mock()
+        testedFeature.onInitialize(appContext.mockInstance)
+        checkNotNull(testedFeature.crashBeacon)
+        whenever(mockSdkCore.appStartTimeNs) doThrow IllegalStateException("broken core")
+        val fakeThrowable = forge.aThrowable()
+        val fakeMessage = forge.anAlphabeticalString()
+
+        // When
+        testedFeature.onReceive(JvmCrash.Rum(message = fakeMessage, throwable = fakeThrowable, threads = fakeThreads))
+
+        // Then
+        verify(mockRumMonitor).addCrash(
+            eq(fakeMessage),
+            eq(RumErrorSource.SOURCE),
+            eq(fakeThrowable),
+            eq(fakeThreads),
+            any(),
+            isNull(),
+            isNull(),
+            isNull()
+        )
+        beaconExecutor.shutdownNow()
+    }
+
+    @Test
     fun `M prepare no beacon W onInitialize() { beacon turned off at init }`() {
         // Given
         testedFeature = RumFeature(
