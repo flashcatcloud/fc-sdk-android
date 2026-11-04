@@ -57,6 +57,8 @@ internal class NdkCrashBeacon(
             start()
         }
         inForeground = safeIsProcessInForeground()
+        // The activity that makes the process foreground started before this could count it.
+        startedActivities.set(if (inForeground) 1 else 0)
         this.application = application
         application?.registerActivityLifecycleCallbacks(this)
         rearm()
@@ -156,8 +158,14 @@ internal class NdkCrashBeacon(
         )
     }
 
+    /**
+     * Replaces the file whole: the process can be killed at any moment of a write, and a truncated
+     * file would lose the id the beacon was sent under.
+     */
     private fun writeResult(crashId: String, status: String, durationMs: Long) {
-        File(directory, RESULT_FILE_NAME).writeText("$crashId $status $durationMs")
+        val partial = File(directory, "$RESULT_FILE_NAME.partial")
+        partial.writeText("$crashId $status $durationMs")
+        check(partial.renameTo(File(directory, RESULT_FILE_NAME))) { "Unable to record the crash beacon" }
     }
 
     // endregion

@@ -108,7 +108,7 @@ internal class CrashBeacon(
      * @param crashTimeMs the crash time on the device clock, the one the crash is written with.
      * @param timeSinceAppStartMs the crash time since the process started, as written with the crash.
      * @param onCrashId called with [crashId] before anything is sent, for a crash whose report is
-     * written after the beacon and has to know the id first.
+     * written after the beacon and has to know the id first. If it throws, nothing is sent.
      */
     @Suppress("TooGenericExceptionCaught", "LongParameterList")
     fun send(
@@ -124,7 +124,10 @@ internal class CrashBeacon(
         try {
             onCrashId(crashId)
         } catch (e: Throwable) {
+            // The report would not carry the id a sent beacon counted the crash under: one crash
+            // would be counted twice. Better not to send.
             logFailure(e)
+            return ErrorEvent.Beacon(status = STATUS_FAILED, duration = clock() - start)
         }
         val timeoutMs = try {
             (remoteTimeoutMs() ?: DEFAULT_TIMEOUT_MS).toLong()

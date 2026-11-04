@@ -19,31 +19,55 @@ volatile sig_atomic_t crash_beacon_installed = 0;
 
 static volatile sig_atomic_t armed = 0;
 static volatile sig_atomic_t timeout_ms = 1000;
-/* The signal the beacon was woken for; 0 until a crash. */
-static volatile sig_atomic_t crash_signal = 0;
+/* The signal the beacon was woken for; 0 until a crash claims the beacon. Accessed atomically. */
+static int crash_signal = 0;
+/* The beacon thread, once it waits: a crash on it must let the crashed thread it serves go on. */
+static volatile pid_t beacon_tid = 0;
 
+/*
+ * Created once and never closed: a crash may be using them at any moment, and a closed descriptor
+ * can be reused by anything. Uninstalling wakes the beacon thread instead, with no crash claimed.
+ */
 static int wake_fds[2] = {-1, -1};
 static int done_fds[2] = {-1, -1};
 
-static void close_pipe(int fds[2]) {
-    if (fds[0] >= 0) close(fds[0]);
-    if (fds[1] >= 0) close(fds[1]);
-    fds[0] = -1;
-    fds[1] = -1;
+static bool create_pipes(void) {
+    if (wake_fds[0] >= 0) {
+        return true;
+    }
+    int wake[2];
+    int done[2];
+    if (pipe2(wake, O_CLOEXEC) != 0) {
+        return false;
+    }
+    if (pipe2(done, O_CLOEXEC) != 0) {
+        close(wake[0]);
+        close(wake[1]);
+        return false;
+    }
+    done_fds[0] = done[0];
+    done_fds[1] = done[1];
+    wake_fds[0] = wake[0];
+    wake_fds[1] = wake[1];
+    return true;
+}
+
+static bool write_byte(int fd) {
+    const char byte = 1;
+    ssize_t n;
+    do {
+        n = write(fd, &byte, 1);
+    } while (n < 0 && errno == EINTR);
+    return n == 1;
 }
 
 bool crash_beacon_install(void) {
     if (crash_beacon_installed) {
         return true;
     }
-    if (pipe2(wake_fds, O_CLOEXEC) != 0) {
+    if (!create_pipes()) {
         return false;
     }
-    if (pipe2(done_fds, O_CLOEXEC) != 0) {
-        close_pipe(wake_fds);
-        return false;
-    }
-    crash_signal = 0;
     crash_beacon_installed = 1;
     return true;
 }
@@ -54,8 +78,8 @@ void crash_beacon_uninstall(void) {
     }
     crash_beacon_installed = 0;
     armed = 0;
-    close_pipe(wake_fds);
-    close_pipe(done_fds);
+    // No crash is claimed, so the beacon thread wakes up to nothing and ends.
+    write_byte(wake_fds[1]);
 }
 
 void crash_beacon_arm(bool should_arm, int wait_ms) {
@@ -64,24 +88,21 @@ void crash_beacon_arm(bool should_arm, int wait_ms) {
 }
 
 int crash_beacon_wait_for_crash(void) {
+    beacon_tid = gettid();
     char byte;
     ssize_t n;
     do {
         n = read(wake_fds[0], &byte, 1);
     } while (n < 0 && errno == EINTR);
-    return n == 1 ? (int) crash_signal : 0;
+    return n == 1 ? __atomic_load_n(&crash_signal, __ATOMIC_SEQ_CST) : 0;
 }
 
 void crash_beacon_finish(void) {
-    const char byte = 1;
-    ssize_t n;
-    do {
-        n = write(done_fds[1], &byte, 1);
-    } while (n < 0 && errno == EINTR);
+    write_byte(done_fds[1]);
 }
 
 bool crash_beacon_is_sending(void) {
-    return crash_signal != 0;
+    return __atomic_load_n(&crash_signal, __ATOMIC_SEQ_CST) != 0;
 }
 
 static long elapsed_ms(const struct timespec *since) {
@@ -91,13 +112,16 @@ static long elapsed_ms(const struct timespec *since) {
 }
 
 void crash_beacon_on_crash(int signum) {
-    if (!crash_beacon_installed || !armed || crash_signal != 0) {
+    if (!crash_beacon_installed || !armed) {
         return;
     }
-    crash_signal = signum;
-
-    const char byte = 1;
-    if (write(wake_fds[1], &byte, 1) != 1) {
+    // One beacon per process: the first crash to get here claims it.
+    if (__atomic_exchange_n(&crash_signal, signum, __ATOMIC_SEQ_CST) != 0) {
+        return;
+    }
+    if (!write_byte(wake_fds[1])) {
+        // Nothing woke up, so nothing is under way: later crashes must not wait on it.
+        __atomic_store_n(&crash_signal, 0, __ATOMIC_SEQ_CST);
         return;
     }
 
@@ -119,7 +143,11 @@ void crash_beacon_on_crash(int signum) {
 }
 
 void crash_beacon_park(void) {
-    crash_beacon_finish();
+    // Only the beacon thread releases the crashed thread: it was the one it waited for. Any other
+    // thread just stays out of the way while the first crash ends the process.
+    if (gettid() == beacon_tid) {
+        crash_beacon_finish();
+    }
     for (;;) {
         pause();
     }

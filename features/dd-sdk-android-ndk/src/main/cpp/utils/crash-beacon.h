@@ -27,10 +27,10 @@ extern "C" {
 /* 1 once the beacon pipes exist; the only state the signal handler reads when the beacon is off. */
 extern volatile sig_atomic_t crash_beacon_installed;
 
-/* Creates the pipes. Returns false, and leaves the beacon off, when they cannot be created. */
+/* Creates the pipes, once. Returns false, and leaves the beacon off, when they cannot be. */
 bool crash_beacon_install(void);
 
-/* Closes the pipes, which ends the beacon thread's wait. */
+/* Turns the beacon off and ends the beacon thread's wait. The pipes stay open, see crash-beacon.c. */
 void crash_beacon_uninstall(void);
 
 /* Whether a crash now wakes the beacon thread, and how long the crashed thread waits for it. */
@@ -49,9 +49,9 @@ bool crash_beacon_is_sending(void);
 void crash_beacon_on_crash(int signum);
 
 /*
- * Signal handler, for a crash while a beacon is under way - most likely on the beacon thread
- * itself. Lets the first crash go on and parks this thread for good: the first crash's report is
- * kept, and the first crash ends the process.
+ * Signal handler, for a crash while a beacon is under way. Parks this thread for good, so the first
+ * crash's report is kept and the first crash ends the process; a crash on the beacon thread itself
+ * also lets the first crash go on at once instead of waiting out the timeout.
  */
 void crash_beacon_park(void);
 

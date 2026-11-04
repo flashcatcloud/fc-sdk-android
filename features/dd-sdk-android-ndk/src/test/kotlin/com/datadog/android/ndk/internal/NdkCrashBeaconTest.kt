@@ -141,6 +141,18 @@ internal class NdkCrashBeaconTest {
     }
 
     @Test
+    fun `M stay armed W start() then another activity comes and goes { already in the foreground }`() {
+        // The activity that made the process foreground started before the beacon was there.
+        testedBeacon.start(mockApplication)
+        val second = mock<Activity>()
+
+        testedBeacon.onActivityStarted(second)
+        testedBeacon.onActivityStopped(second)
+
+        assertThat(fakeNative.arms.last().first).isTrue
+    }
+
+    @Test
     fun `M ask RUM for the beacon and record its id first W send()`() {
         testedBeacon.send(11)
 

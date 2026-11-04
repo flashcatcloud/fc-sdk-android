@@ -288,6 +288,23 @@ internal class CrashBeaconTest {
     }
 
     @Test
+    fun `M send nothing W send() { the crash id cannot be recorded }`() {
+        val result = checkNotNull(
+            testedBeacon.send(
+                datadogContext = { fakeDatadogContext },
+                crashType = "SIGSEGV",
+                message = "NDK crash detected with signal: SIGSEGV",
+                crashTimeMs = 1_000_000L,
+                timeSinceAppStartMs = 4_000L,
+                onCrashId = { throw java.io.IOException("disk full") }
+            )
+        )
+
+        assertThat(result.status).isEqualTo(CrashBeacon.STATUS_FAILED)
+        verify(mockCallFactory, never()).newCall(any())
+    }
+
+    @Test
     fun `M arm with the console's switch and wait W armState()`() {
         assertThat(testedBeacon.armState()).isEqualTo(true to CrashBeacon.DEFAULT_TIMEOUT_MS)
 
