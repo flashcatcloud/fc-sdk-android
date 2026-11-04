@@ -79,8 +79,13 @@ internal class NdkCrashReportsFeature(
             appStartTimeMs
         )
         if (crashBeaconEnabled) {
-            crashBeacon = NdkCrashBeacon(sdkCore, ndkCrashesDirs, appStartTimeMs)
-                .takeIf { it.start(appContext as? Application) }
+            // Best effort: whatever goes wrong, native crashes are still reported as before.
+            crashBeacon = try {
+                NdkCrashBeacon(sdkCore, ndkCrashesDirs, appStartTimeMs)
+                    .takeIf { it.start(appContext as? Application) }
+            } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
+                null
+            }
         }
     }
 

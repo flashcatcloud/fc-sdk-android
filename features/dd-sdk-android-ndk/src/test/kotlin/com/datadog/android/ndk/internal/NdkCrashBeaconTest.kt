@@ -13,6 +13,7 @@ import com.datadog.android.api.feature.Feature
 import com.datadog.android.api.feature.FeatureScope
 import com.datadog.android.api.feature.FeatureSdkCore
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -79,6 +80,12 @@ internal class NdkCrashBeaconTest {
             clock = { 5_000L },
             isProcessInForeground = { foreground }
         )
+    }
+
+    @AfterEach
+    fun `tear down`() {
+        // The native beacon is one per process: never leave it held for the next test.
+        testedBeacon.stop()
     }
 
     @Test
@@ -184,6 +191,41 @@ internal class NdkCrashBeaconTest {
     }
 
     @Test
+    fun `M serve a later crash too W a crash the process survived`() {
+        testedBeacon.start(mockApplication)
+
+        fakeNative.crash(11)
+        assertThat(fakeNative.finishes.poll(5, TimeUnit.SECONDS)).isNotNull
+        fakeNative.crash(6)
+        assertThat(fakeNative.finishes.poll(5, TimeUnit.SECONDS)).isNotNull
+
+        assertThat(sentToRum.filter { it["type"] == NdkCrashBeacon.SEND_EVENT_TYPE }.map { it["crashType"] })
+            .containsExactly("SIGSEGV", "SIGABRT")
+    }
+
+    @Test
+    fun `M refuse a second native beacon W start() { another one is running }`() {
+        testedBeacon.start(mockApplication)
+        val other = NdkCrashBeacon(mockSdkCore, tempDir, 1_000L, FakeNative(), { 5_000L }, { true })
+
+        assertThat(other.start(mockApplication)).isFalse
+
+        testedBeacon.stop()
+        assertThat(other.start(mockApplication)).isTrue
+        other.stop()
+    }
+
+    @Test
+    fun `M end its thread before returning W stop()`() {
+        testedBeacon.start(mockApplication)
+        val thread = Thread.getAllStackTraces().keys.single { it.name == NdkCrashBeacon.THREAD_NAME }
+
+        testedBeacon.stop()
+
+        assertThat(thread.isAlive).isFalse
+    }
+
+    @Test
     fun `M let the crashed thread go on W a crash wakes the thread { RUM throws }`() {
         whenever(mockRumFeature.sendEvent(any())) doAnswer {
             if ((it.getArgument<Map<*, *>>(0))["type"] == NdkCrashBeacon.SEND_EVENT_TYPE) {
@@ -219,6 +261,7 @@ internal class NdkCrashBeaconTest {
         val arms = mutableListOf<Pair<Boolean, Int>>()
         var uninstalled = false
         val finished = CountDownLatch(1)
+        val finishes = LinkedBlockingQueue<Unit>()
         private val crashes = LinkedBlockingQueue<Int>()
 
         fun crash(signal: Int) = crashes.put(signal)
@@ -234,7 +277,10 @@ internal class NdkCrashBeaconTest {
         }
 
         override fun waitForCrash(): Int = crashes.take()
-        override fun finish() = finished.countDown()
+        override fun finish() {
+            finished.countDown()
+            finishes.put(Unit)
+        }
     }
 
     private companion object {

@@ -48,6 +48,9 @@ bool crash_beacon_is_sending(void);
 /* Signal handler: wakes the beacon thread and waits for it, within the timeout. */
 void crash_beacon_on_crash(int signum);
 
+/* Signal handler: the crash was survived (the previous handler returned); a later one starts afresh. */
+void crash_beacon_reset(void);
+
 /*
  * Signal handler, for a crash while a beacon is under way. Parks this thread for good, so the first
  * crash's report is kept and the first crash ends the process; a crash on the beacon thread itself

@@ -187,6 +187,11 @@ void handle_signal(int signum, siginfo_t *info, void *user_context) {
     // calling the prev handler (sigaction) with this signum.
     uninstall_handlers();
     invoke_previous_handler(signum, info, user_context);
+
+    // FLASHCAT FORK - reached only when the previous handler let the process live on.
+    if (crash_beacon_installed) {
+        crash_beacon_reset();
+    }
 }
 
 bool configure_signal_stack() {

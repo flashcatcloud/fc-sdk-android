@@ -68,6 +68,7 @@ bool crash_beacon_install(void) {
     if (!create_pipes()) {
         return false;
     }
+    __atomic_store_n(&crash_signal, 0, __ATOMIC_SEQ_CST);
     crash_beacon_installed = 1;
     return true;
 }
@@ -140,6 +141,10 @@ void crash_beacon_on_crash(int signum) {
             return;
         }
     }
+}
+
+void crash_beacon_reset(void) {
+    __atomic_store_n(&crash_signal, 0, __ATOMIC_SEQ_CST);
 }
 
 void crash_beacon_park(void) {

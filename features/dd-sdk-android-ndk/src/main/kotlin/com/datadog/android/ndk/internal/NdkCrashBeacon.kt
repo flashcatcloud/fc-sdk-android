@@ -15,6 +15,7 @@ import com.datadog.android.api.feature.Feature
 import com.datadog.android.api.feature.FeatureSdkCore
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * FLASHCAT FORK - the crash beacon of native crashes, on the Java side.
@@ -50,11 +51,28 @@ internal class NdkCrashBeacon(
     private var thread: Thread? = null
 
     /** Returns false, leaving nothing behind, when the native side cannot be prepared. */
+    /**
+     * Returns false, leaving nothing behind, when the beacon cannot be set up: the native side
+     * cannot be prepared, no thread can be started, or another SDK instance already has the
+     * process's native beacon (the signal handler is one per process).
+     */
+    @Suppress("TooGenericExceptionCaught", "ReturnCount")
     fun start(application: Application?): Boolean {
-        if (!native.install()) return false
-        thread = Thread(::waitForCrash, THREAD_NAME).apply {
-            isDaemon = true
-            start()
+        if (!ACTIVE.compareAndSet(null, this)) return false
+        if (!native.install()) {
+            ACTIVE.set(null)
+            return false
+        }
+        thread = try {
+            Thread(::waitForCrashes, THREAD_NAME).apply {
+                isDaemon = true
+                start()
+            }
+        } catch (e: Throwable) {
+            // Out of threads or memory: no beacon, and nothing thrown into the app's init.
+            native.uninstall()
+            ACTIVE.set(null)
+            return false
         }
         inForeground = safeIsProcessInForeground()
         this.application = application
@@ -66,9 +84,16 @@ internal class NdkCrashBeacon(
     fun stop() {
         application?.unregisterActivityLifecycleCallbacks(this)
         application = null
-        // Closing the pipes ends the thread's wait.
+        // Wakes the thread with no crash, which ends it. Waiting for it before letting another
+        // beacon start keeps the two from taking each other's wake-up.
         native.uninstall()
+        try {
+            thread?.join(STOP_WAIT_MS)
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
         thread = null
+        ACTIVE.compareAndSet(this, null)
     }
 
     // region Arming
@@ -121,20 +146,26 @@ internal class NdkCrashBeacon(
 
     // region Beacon thread
 
-    private fun waitForCrash() {
-        val signal = native.waitForCrash()
-        if (signal <= 0) return
-        try {
-            send(signal)
-        } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
-            sdkCore.internalLogger.log(
-                InternalLogger.Level.WARN,
-                InternalLogger.Target.MAINTAINER,
-                { SEND_FAILED_MESSAGE },
-                e
-            )
-        } finally {
-            native.finish()
+    /**
+     * Serves crashes until the beacon is stopped. A crash normally ends the process, but one the
+     * previous handler recovers from must not leave a later crash waiting for a thread that is gone.
+     */
+    private fun waitForCrashes() {
+        while (true) {
+            val signal = native.waitForCrash()
+            if (signal <= 0) return
+            try {
+                send(signal)
+            } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
+                sdkCore.internalLogger.log(
+                    InternalLogger.Level.WARN,
+                    InternalLogger.Target.MAINTAINER,
+                    { SEND_FAILED_MESSAGE },
+                    e
+                )
+            } finally {
+                native.finish()
+            }
         }
     }
 
@@ -204,6 +235,10 @@ internal class NdkCrashBeacon(
         internal const val RESULT_FILE_NAME = "crash_beacon"
         internal const val STATUS_TIMEOUT = "timeout"
         internal const val DEFAULT_TIMEOUT_MS = 1_000
+        private const val STOP_WAIT_MS = 500L
+
+        /** The native beacon is one per process, like the signal handler it hooks into. */
+        private val ACTIVE = AtomicReference<NdkCrashBeacon?>(null)
 
         // The message the late crash report carries, see DatadogNdkCrashHandler.LOG_CRASH_MSG.
         private const val CRASH_MESSAGE = "NDK crash detected with signal: %s"
