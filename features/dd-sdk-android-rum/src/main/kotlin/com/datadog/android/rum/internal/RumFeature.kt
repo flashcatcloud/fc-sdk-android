@@ -977,7 +977,8 @@ internal class RumFeature(
         datadogContext = {
             internalCore.getDatadogContext(withFeatureContexts = setOf(Feature.RUM_FEATURE_NAME))
         },
-        crashType = crashEvent.throwable.javaClass.let { it.canonicalName ?: it.simpleName },
+        // An anonymous or local class has no canonical name and an empty simple name.
+        crashType = crashEvent.throwable.javaClass.let { it.canonicalName ?: it.name },
         message = crashEvent.message,
         crashTimeMs = now.timestamp,
         timeSinceAppStartMs = TimeUnit.NANOSECONDS.toMillis(now.nanoTime - internalCore.appStartTimeNs)
