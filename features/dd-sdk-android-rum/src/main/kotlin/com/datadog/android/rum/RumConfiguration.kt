@@ -176,6 +176,24 @@ data class RumConfiguration internal constructor(
         }
 
         /**
+         * FLASHCAT FORK - Sets whether a crash in the foreground sends a crash beacon.
+         *
+         * The beacon is a few hundred bytes without stack, sent while the crash ends the process, so
+         * the crash is counted even if the app is never opened again. The full report still follows
+         * on the next launch, under the same id. The crashed thread waits for the beacon at most one
+         * second before the crash goes on to the previous handler.
+         *
+         * Sent only when the app is in the foreground, tracking consent is granted, and the session
+         * is tracked. Enabled by default. The console can turn it off remotely, whatever this says.
+         *
+         * @param enabled whether to send crash beacons.
+         */
+        fun setCrashBeaconEnabled(enabled: Boolean): Builder {
+            rumConfig = rumConfig.copy(crashBeaconEnabled = enabled)
+            return this
+        }
+
+        /**
          * Whether to collect accessibility attributes - this is disabled by default.
          *
          * @param enabled whether collecting accessibility attributes is enabled or not.

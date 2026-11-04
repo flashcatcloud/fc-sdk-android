@@ -382,8 +382,26 @@ internal class RemoteConfigController(
         return RemoteConfigValues(
             sessionSampleRate = readRate(rum),
             sessionOnError = readSwitch(rum, FIELD_SESSION_ON_ERROR),
-            sessionReplayOnError = readSwitch(rum, FIELD_SESSION_REPLAY_ON_ERROR)
+            sessionReplayOnError = readSwitch(rum, FIELD_SESSION_REPLAY_ON_ERROR),
+            crashBeaconEnabled = readSwitch(rum, FIELD_CRASH_BEACON_ENABLED),
+            crashBeaconTimeoutMs = readCrashBeaconTimeout(rum)
         )
+    }
+
+    /**
+     * FLASHCAT FORK - the crash beacon wait, in whole milliseconds within 500..2000. Anything else is
+     * dropped like a rate out of range, and the beacon keeps its default wait: a crash must never
+     * wait on a number we cannot trust.
+     */
+    private fun readCrashBeaconTimeout(rum: JSONObject): Int? {
+        val raw = rum.opt(FIELD_CRASH_BEACON_TIMEOUT_MS) as? Number ?: return null
+        val value = raw.toDouble()
+        @Suppress("UnsafeThirdPartyFunctionCall") // the value is a finite whole number within range
+        return if (value in MIN_CRASH_BEACON_TIMEOUT_MS..MAX_CRASH_BEACON_TIMEOUT_MS && value == Math.floor(value)) {
+            value.toInt()
+        } else {
+            null
+        }
     }
 
     /**
@@ -519,6 +537,10 @@ internal class RemoteConfigController(
         private const val FIELD_SESSION_SAMPLE_RATE = "sessionSampleRate"
         private const val FIELD_SESSION_ON_ERROR = "sessionOnError"
         private const val FIELD_SESSION_REPLAY_ON_ERROR = "sessionReplayOnError"
+        private const val FIELD_CRASH_BEACON_ENABLED = "crashBeaconEnabled"
+        private const val FIELD_CRASH_BEACON_TIMEOUT_MS = "crashBeaconTimeoutMs"
+        private const val MIN_CRASH_BEACON_TIMEOUT_MS = 500.0
+        private const val MAX_CRASH_BEACON_TIMEOUT_MS = 2000.0
 
         private val EMPTY_VALUES = RemoteConfigValues(null)
 

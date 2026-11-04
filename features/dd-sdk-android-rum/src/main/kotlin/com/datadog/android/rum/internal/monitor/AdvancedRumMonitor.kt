@@ -13,8 +13,10 @@ import com.datadog.android.rum.RumErrorSource
 import com.datadog.android.rum.RumMonitor
 import com.datadog.android.rum.RumPerformanceMetric
 import com.datadog.android.rum.internal.debug.RumDebugListener
+import com.datadog.android.rum.internal.domain.Time
 import com.datadog.android.rum.internal.startup.RumStartupScenario
 import com.datadog.android.rum.internal.startup.RumTTIDInfo
+import com.datadog.android.rum.model.ErrorEvent
 import com.datadog.tools.annotation.NoOpImplementation
 
 /**
@@ -34,11 +36,17 @@ internal interface AdvancedRumMonitor : RumMonitor, AdvancedNetworkRumMonitor {
 
     fun addSessionReplaySkippedFrame()
 
+    @Suppress("LongParameterList")
     fun addCrash(
         message: String,
         source: RumErrorSource,
         throwable: Throwable,
-        threads: List<ThreadDump>
+        threads: List<ThreadDump>,
+        // FLASHCAT FORK - the crash beacon: the time it was sent for, the id it counted the crash
+        // under, and what became of it.
+        eventTime: Time = Time(),
+        errorId: String? = null,
+        beacon: ErrorEvent.Beacon? = null
     )
 
     fun eventSent(viewId: String, event: StorageEvent)

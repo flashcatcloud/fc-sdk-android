@@ -49,9 +49,11 @@ import com.datadog.android.rum.RumSessionType
 import com.datadog.android.rum.configuration.SlowFramesConfiguration
 import com.datadog.android.rum.configuration.VitalsUpdateFrequency
 import com.datadog.android.rum.internal.anr.ANRDetectorRunnable
+import com.datadog.android.rum.internal.crash.CrashBeacon
 import com.datadog.android.rum.internal.debug.UiRumDebugListener
 import com.datadog.android.rum.internal.domain.InfoProvider
 import com.datadog.android.rum.internal.domain.RumDataWriter
+import com.datadog.android.rum.internal.domain.Time
 import com.datadog.android.rum.internal.domain.WithheldEventWriter
 import com.datadog.android.rum.internal.domain.accessibility.AccessibilityInfo
 import com.datadog.android.rum.internal.domain.accessibility.AccessibilitySnapshotManager
@@ -186,6 +188,9 @@ internal class RumFeature(
      * nothing — no storage, no request, no behaviour change — for everyone who has not asked for it.
      */
     internal var remoteConfigStore: RemoteConfigStore? = null
+
+    // FLASHCAT FORK - null when the init configuration turns crash beacons off.
+    internal var crashBeacon: CrashBeacon? = null
     internal var remoteConfigController: RemoteConfigController? = null
     private var remoteConfigForegroundCallback: ProcessForegroundCallback? = null
 
@@ -308,6 +313,8 @@ internal class RumFeature(
 
         startRemoteConfiguration(appContext)
 
+        crashBeacon = createCrashBeacon()
+
         registerTrackingStrategies(appContext)
 
         sessionListener = configuration.sessionListener
@@ -379,6 +386,8 @@ internal class RumFeature(
         remoteConfigController?.stop()
         remoteConfigController = null
         remoteConfigStore = null
+        crashBeacon?.shutdown()
+        crashBeacon = null
 
         withheldEventsBackgroundCallback?.let { (appContext as? Application)?.unregisterActivityLifecycleCallbacks(it) }
         withheldEventsBackgroundCallback = null
@@ -876,11 +885,35 @@ internal class RumFeature(
     }
 
     private fun addJvmCrash(crashEvent: JvmCrash.Rum) {
-        (GlobalRumMonitor.get(sdkCore) as? AdvancedRumMonitor)?.addCrash(
+        val monitor = GlobalRumMonitor.get(sdkCore) as? AdvancedRumMonitor ?: return
+        // FLASHCAT FORK - one time for the beacon and the crash: the intake recovers the launch of
+        // the written crash from its date and time since app start, and must find the beacon's.
+        val now = Time()
+        val beacon = crashBeacon
+        val internalCore = sdkCore as? InternalSdkCore
+        val beaconResult = if (beacon == null || internalCore == null) {
+            null
+        } else {
+            beacon.send(
+                datadogContext = {
+                    internalCore.getDatadogContext(
+                        withFeatureContexts = setOf(Feature.RUM_FEATURE_NAME)
+                    )
+                },
+                throwable = crashEvent.throwable,
+                message = crashEvent.message,
+                crashTimeMs = now.timestamp,
+                timeSinceAppStartMs = TimeUnit.NANOSECONDS.toMillis(now.nanoTime - internalCore.appStartTimeNs)
+            )
+        }
+        monitor.addCrash(
             crashEvent.message,
             RumErrorSource.SOURCE,
             crashEvent.throwable,
-            crashEvent.threads
+            crashEvent.threads,
+            eventTime = now,
+            errorId = beacon?.crashId?.takeIf { beaconResult != null },
+            beacon = beaconResult
         )
     }
 
@@ -989,6 +1022,31 @@ internal class RumFeature(
     }
 
     /**
+     * FLASHCAT FORK - prepares the crash beacon, so a crash only has to send it. Best-effort like
+     * the remote configuration: without the SDK context, crashes are reported on the next launch
+     * only, as before.
+     */
+    private fun createCrashBeacon(): CrashBeacon? {
+        if (!configuration.crashBeaconEnabled) return null
+        val context = (sdkCore as? InternalSdkCore)?.getDatadogContext() ?: return null
+        val intakeUrl = configuration.customEndpointUrl ?: (context.site.intakeEndpoint + RUM_INTAKE_PATH)
+        return CrashBeacon(
+            url = CrashBeacon.buildUrl(intakeUrl, context.clientToken),
+            applicationId = applicationId,
+            callFactory = sdkCore.createOkHttpCallFactory(),
+            executor = sdkCore.createSingleThreadExecutorService("rum-crash-beacon"),
+            internalLogger = sdkCore.internalLogger,
+            remoteEnabled = { remoteConfigStore?.crashBeaconEnabled() },
+            remoteTimeoutMs = { remoteConfigStore?.crashBeaconTimeoutMs() },
+            isInForeground = {
+                val info = ActivityManager.RunningAppProcessInfo()
+                ActivityManager.getMyMemoryState(info)
+                info.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+            }
+        )
+    }
+
+    /**
      * FLASHCAT FORK - begins keeping the console's configuration fresh.
      *
      * Everything about it is best-effort: if the SDK context is not readable yet, or storage is
@@ -1092,7 +1150,9 @@ internal class RumFeature(
         val sessionOnError: Boolean = false,
         // FLASHCAT FORK - the same for the replay of a collected session the replay rate does not
         // keep.
-        val sessionReplayOnError: Boolean = false
+        val sessionReplayOnError: Boolean = false,
+        // FLASHCAT FORK - crash beacon, on by default.
+        val crashBeaconEnabled: Boolean = true
     )
 
     internal companion object {

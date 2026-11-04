@@ -61,6 +61,15 @@ internal class RemoteConfigStore(
 
     fun sessionReplayOnError(): Boolean? = readSwitch(sessionReplayOnErrorKey())
 
+    // FLASHCAT FORK - crash beacon switches, read on every crash rather than once per session: a
+    // console that turns beacons off has to reach a process that is already running.
+    fun crashBeaconEnabled(): Boolean? = readSwitch(crashBeaconEnabledKey())
+
+    fun crashBeaconTimeoutMs(): Int? {
+        val stored = preferences?.getInt(crashBeaconTimeoutKey(), ABSENT_TIMEOUT_MS) ?: ABSENT_TIMEOUT_MS
+        return if (stored == ABSENT_TIMEOUT_MS) null else stored
+    }
+
     /**
      * Reads one committed preferences snapshot. A session must use the same response for its
      * sampling rate, custom values and reported version, even if another response arrives during
@@ -73,6 +82,8 @@ internal class RemoteConfigStore(
             sessionSampleRate = (stored[sessionKey()] as? Float)?.takeUnless { it == ABSENT },
             sessionOnError = stored[sessionOnErrorKey()] as? Boolean,
             sessionReplayOnError = stored[sessionReplayOnErrorKey()] as? Boolean,
+            crashBeaconEnabled = stored[crashBeaconEnabledKey()] as? Boolean,
+            crashBeaconTimeoutMs = (stored[crashBeaconTimeoutKey()] as? Int)?.takeUnless { it == ABSENT_TIMEOUT_MS },
             version = (stored[versionKey()] as? Int)?.takeUnless { it == ABSENT_VERSION },
             custom = stored[customKey()] as? String,
             etag = stored[etagKey()] as? String,
@@ -134,6 +145,12 @@ internal class RemoteConfigStore(
         write(editor, sessionKey(), values.sessionSampleRate)
         write(editor, sessionOnErrorKey(), values.sessionOnError)
         write(editor, sessionReplayOnErrorKey(), values.sessionReplayOnError)
+        write(editor, crashBeaconEnabledKey(), values.crashBeaconEnabled)
+        if (values.crashBeaconTimeoutMs == null) {
+            editor.remove(crashBeaconTimeoutKey())
+        } else {
+            editor.putInt(crashBeaconTimeoutKey(), values.crashBeaconTimeoutMs)
+        }
         // Kept even when there are no rates — that is what "remote configuration is off, use your
         // own settings" looks like — so the console can still see this client is up to date with
         // the change that turned them off.
@@ -259,6 +276,10 @@ internal class RemoteConfigStore(
 
     private fun sessionReplayOnErrorKey() = "$storeKey$SUFFIX_SESSION_REPLAY_ON_ERROR"
 
+    private fun crashBeaconEnabledKey() = "$storeKey$SUFFIX_CRASH_BEACON_ENABLED"
+
+    private fun crashBeaconTimeoutKey() = "$storeKey$SUFFIX_CRASH_BEACON_TIMEOUT_MS"
+
     private fun versionKey() = "$storeKey$SUFFIX_VERSION"
 
     private fun customKey() = "$storeKey$SUFFIX_CUSTOM"
@@ -301,6 +322,9 @@ internal class RemoteConfigStore(
         private const val ABSENT = -1f
         private const val ABSENT_VERSION = -1
 
+        // A beacon wait is 500..2000 ms, so a negative sentinel cannot collide with a stored value.
+        private const val ABSENT_TIMEOUT_MS = -1
+
         // A ttl is a positive number of seconds, so a non-positive sentinel cannot collide with a
         // stored value.
         private const val ABSENT_TTL = -1L
@@ -311,6 +335,8 @@ internal class RemoteConfigStore(
         private const val SUFFIX_SESSION_SAMPLE_RATE = ".sessionSampleRate"
         private const val SUFFIX_SESSION_ON_ERROR = ".sessionOnError"
         private const val SUFFIX_SESSION_REPLAY_ON_ERROR = ".sessionReplayOnError"
+        private const val SUFFIX_CRASH_BEACON_ENABLED = ".crashBeaconEnabled"
+        private const val SUFFIX_CRASH_BEACON_TIMEOUT_MS = ".crashBeaconTimeoutMs"
         private const val SUFFIX_VERSION = ".version"
         private const val SUFFIX_CUSTOM = ".custom"
         private const val SUFFIX_ETAG = ".etag"
@@ -322,6 +348,8 @@ internal class RemoteConfigStore(
             SUFFIX_SESSION_SAMPLE_RATE,
             SUFFIX_SESSION_ON_ERROR,
             SUFFIX_SESSION_REPLAY_ON_ERROR,
+            SUFFIX_CRASH_BEACON_ENABLED,
+            SUFFIX_CRASH_BEACON_TIMEOUT_MS,
             SUFFIX_VERSION,
             SUFFIX_CUSTOM,
             SUFFIX_ETAG,
@@ -407,5 +435,9 @@ internal data class RemoteConfigValues(
     /** Whether a session the rate does not keep is kept on error; null leaves the init value. */
     val sessionOnError: Boolean? = null,
     /** Whether a replay the replay rate does not keep is kept on error; null leaves the init value. */
-    val sessionReplayOnError: Boolean? = null
+    val sessionReplayOnError: Boolean? = null,
+    /** FLASHCAT FORK - false stops crash beacons; null leaves the init value. */
+    val crashBeaconEnabled: Boolean? = null,
+    /** FLASHCAT FORK - how long a crash waits for its beacon, 500..2000 ms; null keeps the default. */
+    val crashBeaconTimeoutMs: Int? = null
 )

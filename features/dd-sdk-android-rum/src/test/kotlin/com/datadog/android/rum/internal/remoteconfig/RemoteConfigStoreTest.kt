@@ -158,6 +158,22 @@ internal class RemoteConfigStoreTest {
     }
 
     @Test
+    fun `M keep the crash beacon switch and wait W store() then read`() {
+        val store = testedStore()
+        store.store(RemoteConfigValues(0f, 1, crashBeaconEnabled = false, crashBeaconTimeoutMs = 1500))
+
+        assertThat(testedStore().crashBeaconEnabled()).isFalse
+        assertThat(testedStore().crashBeaconTimeoutMs()).isEqualTo(1500)
+        assertThat(testedStore().snapshot().crashBeaconTimeoutMs).isEqualTo(1500)
+
+        // A later response that omits them hands them back to the defaults.
+        store.store(RemoteConfigValues(0f, 2))
+
+        assertThat(testedStore().crashBeaconEnabled()).isNull()
+        assertThat(testedStore().crashBeaconTimeoutMs()).isNull()
+    }
+
+    @Test
     fun `M return absent values W snapshot before the first response`() {
         assertThat(testedStore().snapshot()).isEqualTo(RemoteConfigValues(null))
     }
