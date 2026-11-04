@@ -12,6 +12,7 @@ import android.os.SystemClock
 import com.datadog.android.api.InternalLogger
 import com.datadog.android.api.context.DatadogContext
 import com.datadog.android.api.context.UserInfo
+import com.datadog.android.api.net.RequestFactory
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.core.internal.utils.executeSafe
 import com.datadog.android.core.internal.utils.scheduleSafe
@@ -54,7 +55,7 @@ internal class ActiveBeaconController(
     private val wallClock: () -> Long = System::currentTimeMillis
 ) {
     private val sdkContext = context
-    private val endpoint = buildEndpoint(intakeUrl, context.clientToken)
+    private val endpoint = buildEndpoint(intakeUrl)
 
     // Opening preferences may hit disk; defer it until the worker needs to read/write, or consent is revoked.
     private val prefs by lazy {
@@ -99,15 +100,6 @@ internal class ActiveBeaconController(
         (executor as? ScheduledThreadPoolExecutor)?.removeOnCancelPolicy = true
     }
 
-    fun start(isForeground: Boolean) {
-        foreground = isForeground
-        val request = captureRequest()
-        executor.executeSafe("active start", core.internalLogger) {
-            trigger(request)
-            scheduleMidnight()
-        }
-    }
-
     fun onForeground(value: Boolean) {
         foreground = value
         if (!value) return
@@ -144,6 +136,13 @@ internal class ActiveBeaconController(
 
     private fun updateConsent(value: TrackingConsent) {
         synchronized(lock) {
+            // Every setUserInfo repeats the consent. Nothing is written without GRANTED, so a repeated
+            // non-granted value only needs work when the previous deletion failed.
+            if (value == consent && value != TrackingConsent.GRANTED &&
+                (value == TrackingConsent.PENDING || storageUsable)
+            ) {
+                return
+            }
             consent = value
             if (value != TrackingConsent.GRANTED) {
                 generation++
@@ -275,7 +274,9 @@ internal class ActiveBeaconController(
             if (pending) clearPending()
             return true
         }
-        val request = Request.Builder().url(endpoint).post(bytes.toRequestBody(JSON)).build()
+        val request = Request.Builder().url(endpoint)
+            .header(RequestFactory.HEADER_API_KEY, sdkContext.clientToken)
+            .post(bytes.toRequestBody(JSON)).build()
         val version: Long
         val activeCall: Call
         synchronized(lock) {
@@ -584,19 +585,16 @@ internal class ActiveBeaconController(
         } catch (e: SecurityException) {
             null
         }
-        internal fun buildEndpoint(intake: String, token: String): String {
+        internal fun buildEndpoint(intake: String): String {
             val url = intake.toHttpUrl()
             val forwarded = url.queryParameter("ddforward")
             if (forwarded != null) {
                 val parts = forwarded.split('?', limit = 2)
                 val path = parts[0].trimEnd('/') + "/active"
                 val target = if (parts.size == 2) "$path?${parts[1]}" else path
-                return url.newBuilder().setQueryParameter("ddforward", target)
-                    .setQueryParameter("client_token", token).build().toString()
+                return url.newBuilder().setQueryParameter("ddforward", target).build().toString()
             }
-            return url.newBuilder().encodedPath(url.encodedPath.trimEnd('/') + "/active")
-                .setQueryParameter("client_token", token)
-                .build().toString()
+            return url.newBuilder().encodedPath(url.encodedPath.trimEnd('/') + "/active").build().toString()
         }
         internal fun buildBody(context: DatadogContext, user: UserInfo): String? {
             // Byte bounds leave room for JSON escaping and age_ms while matching Doris column limits.

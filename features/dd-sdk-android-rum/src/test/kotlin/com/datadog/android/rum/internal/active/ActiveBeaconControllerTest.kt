@@ -92,7 +92,7 @@ internal class ActiveBeaconControllerTest {
 
     @Test
     fun `waits for anonymous id and sends each user combination once`() {
-        controller.start(true)
+        controller.onForeground(true)
         controller.onUserInfo(UserInfo(id = "u1"), TrackingConsent.GRANTED)
         verify(factory, never()).newCall(any())
         controller.onUserInfo(UserInfo(anonymousId, "u1"), TrackingConsent.GRANTED)
@@ -103,7 +103,7 @@ internal class ActiveBeaconControllerTest {
 
     @Test
     fun `consent and foreground gate requests`() {
-        controller.start(false)
+        controller.onForeground(false)
         controller.onUserInfo(UserInfo(anonymousId, "u1"), TrackingConsent.GRANTED)
         controller.onConsent(TrackingConsent.NOT_GRANTED)
         controller.onForeground(true)
@@ -116,7 +116,7 @@ internal class ActiveBeaconControllerTest {
     @Test
     fun `permanent errors do not retry while server errors do`() {
         whenever(call.execute()).thenReturn(response(400), response(503))
-        controller.start(true)
+        controller.onForeground(true)
         controller.onUserInfo(UserInfo(anonymousId, "u1"), TrackingConsent.GRANTED)
         verify(executor).schedule(any<Runnable>(), any(), eq(TimeUnit.MILLISECONDS)) // Only midnight.
         controller.onUserInfo(UserInfo(anonymousId, "u2"), TrackingConsent.GRANTED)
@@ -137,17 +137,40 @@ internal class ActiveBeaconControllerTest {
     }
 
     @Test
-    fun `endpoint preserves string proxy and encodes token`() {
-        assertThat(ActiveBeaconController.buildEndpoint("https://example.com/api/v2/rum/", "a+b"))
-            .isEqualTo("https://example.com/api/v2/rum/active?client_token=a%2Bb")
-        val url = ActiveBeaconController.buildEndpoint("https://example.com/proxy?ddforward=%2Fapi%2Fv2%2Frum", "token")
-        assertThat(url).contains("ddforward=%2Fapi%2Fv2%2Frum%2Factive")
+    fun `endpoint preserves string proxy and keeps the token out of the url`() {
+        assertThat(ActiveBeaconController.buildEndpoint("https://example.com/api/v2/rum/"))
+            .isEqualTo("https://example.com/api/v2/rum/active")
+        val url = ActiveBeaconController.buildEndpoint("https://example.com/proxy?ddforward=%2Fapi%2Fv2%2Frum")
+        assertThat(url).isEqualTo("https://example.com/proxy?ddforward=%2Fapi%2Fv2%2Frum%2Factive")
+    }
+
+    @Test
+    fun `client token is sent in the api key header`() {
+        controller.onForeground(true)
+        controller.onUserInfo(UserInfo(anonymousId, "u1"), TrackingConsent.GRANTED)
+        val request = argumentCaptor<Request>()
+        verify(factory).newCall(request.capture())
+        assertThat(request.lastValue.header("DD-API-KEY")).isEqualTo("token")
+        assertThat(request.lastValue.url.queryParameter("client_token")).isNull()
+    }
+
+    @Test
+    fun `repeated withheld consent clears storage once unless the deletion failed`() {
+        controller.onUserInfo(UserInfo(anonymousId, "u1"), TrackingConsent.NOT_GRANTED)
+        controller.onUserInfo(UserInfo(anonymousId, "u2"), TrackingConsent.NOT_GRANTED)
+        controller.onConsent(TrackingConsent.NOT_GRANTED)
+        verify(editor, times(1)).commit()
+
+        whenever(editor.commit()).thenReturn(false)
+        controller.clearData()
+        controller.onUserInfo(UserInfo(anonymousId, "u3"), TrackingConsent.NOT_GRANTED)
+        verify(editor, times(3)).commit()
     }
 
     @Test
     fun `rate limit honors backend delay and schedules bounded retry`() {
         whenever(call.execute()).thenReturn(response(429, "Flashcat-Request-Rate-Limit-Delay" to "7"))
-        controller.start(true)
+        controller.onForeground(true)
         controller.onUserInfo(UserInfo(anonymousId, "u1"), TrackingConsent.GRANTED)
         verify(editor).putLong(eq("next_allowed"), any())
         val delays = argumentCaptor<Long>()
@@ -179,7 +202,7 @@ internal class ActiveBeaconControllerTest {
             mock<ScheduledFuture<Any>>()
         }
         whenever(call.execute()).thenReturn(response(503), response(503), response(202))
-        controller.start(true)
+        controller.onForeground(true)
         controller.onUserInfo(UserInfo(anonymousId, "u1"), TrackingConsent.GRANTED)
         retries.removeAt(0).run()
         retries.removeAt(0).run()
@@ -194,7 +217,7 @@ internal class ActiveBeaconControllerTest {
             queued.add(it.getArgument(0))
             Unit
         }
-        controller.start(false)
+        controller.onForeground(false)
         controller.onUserInfo(UserInfo(anonymousId, "u1"), TrackingConsent.GRANTED)
         controller.onForeground(true)
         controller.onForeground(false)
@@ -225,7 +248,7 @@ internal class ActiveBeaconControllerTest {
             response(202)
         }
 
-        actual.start(true)
+        actual.onForeground(true)
         actual.onUserInfo(UserInfo(anonymousId, "A"), TrackingConsent.GRANTED)
         while (queued.isNotEmpty()) queued.removeFirst().run()
 
@@ -303,7 +326,7 @@ internal class ActiveBeaconControllerTest {
             response(202)
         }
 
-        controller.start(true)
+        controller.onForeground(true)
         controller.onUserInfo(UserInfo(anonymousId, "A"), TrackingConsent.GRANTED)
         while (queued.isNotEmpty()) queued.removeFirst().run()
 
@@ -318,7 +341,7 @@ internal class ActiveBeaconControllerTest {
         whenever(prefs.getString(eq("identity"), any())).thenReturn("old-key")
         whenever(prefs.getString(eq("day"), any())).thenReturn("old-day")
         whenever(prefs.getLong(eq("created"), any())).thenReturn(System.currentTimeMillis() - 3_000)
-        controller.start(true)
+        controller.onForeground(true)
         controller.onUserInfo(UserInfo(anonymousId, "new"), TrackingConsent.GRANTED)
         val requests = argumentCaptor<Request>()
         verify(factory, times(2)).newCall(requests.capture())
@@ -340,7 +363,7 @@ internal class ActiveBeaconControllerTest {
             prefs.getString(eq("day"), any())
         ).thenReturn("${cal.get(Calendar.YEAR)}-${cal.get(Calendar.DAY_OF_YEAR)}")
         whenever(prefs.getLong(eq("created"), any())).thenReturn(System.currentTimeMillis() - 3_000)
-        controller.start(true)
+        controller.onForeground(true)
         controller.onUserInfo(value, TrackingConsent.PENDING)
         verify(editor, never()).clear()
         verify(factory, never()).newCall(any())
@@ -357,7 +380,7 @@ internal class ActiveBeaconControllerTest {
         val entries = memoryPreferences()
         whenever(call.execute()).thenReturn(response(503), response(202))
         val user = UserInfo(anonymousId, "u1")
-        controller.start(true)
+        controller.onForeground(true)
         controller.onUserInfo(user, TrackingConsent.GRANTED)
         assertThat(entries).containsKey("body")
         controller.stop()
@@ -365,7 +388,7 @@ internal class ActiveBeaconControllerTest {
         val restarted = ActiveBeaconController(
             core, context, app, "app", "https://example.com/api/v2/rum", true, executor, factory, "process"
         )
-        restarted.start(true)
+        restarted.onForeground(true)
         entries["next_allowed"] = 0L
         restarted.onUserInfo(user, TrackingConsent.PENDING)
         assertThat(entries).containsKey("body")
@@ -379,7 +402,7 @@ internal class ActiveBeaconControllerTest {
     @Test
     fun `already sent user cannot replace a rate limited pending user`() {
         whenever(call.execute()).thenReturn(response(202), response(429))
-        controller.start(true)
+        controller.onForeground(true)
         controller.onUserInfo(UserInfo(anonymousId, "u1"), TrackingConsent.GRANTED)
         controller.onUserInfo(UserInfo(anonymousId, "u2"), TrackingConsent.GRANTED)
         controller.onUserInfo(UserInfo(anonymousId, "u1"), TrackingConsent.GRANTED)
@@ -396,7 +419,7 @@ internal class ActiveBeaconControllerTest {
     @Test
     fun `failed pending user is retained when current user was already sent`() {
         whenever(call.execute()).thenReturn(response(202), response(503))
-        controller.start(true)
+        controller.onForeground(true)
         val current = UserInfo(anonymousId, "u1")
         controller.onUserInfo(current, TrackingConsent.GRANTED)
         val pendingBody = ActiveBeaconController.buildBody(context, UserInfo(anonymousId, "u2"))!!
@@ -424,7 +447,7 @@ internal class ActiveBeaconControllerTest {
         )
         whenever(prefs.getString(eq("day"), any())).thenReturn(today)
         whenever(prefs.getLong(eq("created"), any())).thenReturn(now - 3_000)
-        controller.start(true)
+        controller.onForeground(true)
         controller.onUserInfo(UserInfo(anonymousId, "u1"), TrackingConsent.GRANTED)
         controller.onForeground(true)
         verify(call, never()).execute()
@@ -437,7 +460,7 @@ internal class ActiveBeaconControllerTest {
     @Test
     fun `consent withdrawal clears the in memory rate limit`() {
         whenever(call.execute()).thenReturn(response(429), response(202))
-        controller.start(true)
+        controller.onForeground(true)
         controller.onUserInfo(UserInfo(anonymousId, "u1"), TrackingConsent.GRANTED)
         controller.onConsent(TrackingConsent.NOT_GRANTED)
         controller.onConsent(TrackingConsent.GRANTED)
@@ -447,7 +470,7 @@ internal class ActiveBeaconControllerTest {
     @Test
     fun `http timeout is retried`() {
         whenever(call.execute()).thenReturn(response(408))
-        controller.start(true)
+        controller.onForeground(true)
         controller.onUserInfo(UserInfo(anonymousId, "u1"), TrackingConsent.GRANTED)
         val delays = argumentCaptor<Long>()
         verify(executor, times(2)).schedule(any<Runnable>(), delays.capture(), eq(TimeUnit.MILLISECONDS))
@@ -468,7 +491,7 @@ internal class ActiveBeaconControllerTest {
         }
 
         controller.clearData()
-        controller.start(true)
+        controller.onForeground(true)
         controller.onUserInfo(UserInfo(anonymousId, "new"), TrackingConsent.GRANTED)
 
         val requests = argumentCaptor<Request>()
@@ -492,7 +515,7 @@ internal class ActiveBeaconControllerTest {
             core, context, app, "app", "https://example.com/api/v2/rum", true, scheduler, factory, "process"
         )
         try {
-            actual.start(true)
+            actual.onForeground(true)
             repeat(1_000) {
                 actual.onForeground(false)
                 actual.onForeground(true)
@@ -518,7 +541,7 @@ internal class ActiveBeaconControllerTest {
             wallClock = { now }
         )
         try {
-            actual.start(true)
+            actual.onForeground(true)
             scheduler.submit {}.get(5, TimeUnit.SECONDS)
             val original = scheduler.queue.single() as ScheduledFuture<*>
             assertThat(original.getDelay(TimeUnit.SECONDS)).isBetween(14 * 3600L - 5, 14 * 3600L)
@@ -553,7 +576,7 @@ internal class ActiveBeaconControllerTest {
 
     @Test
     fun `midnight task rearms after firing and not while stopped`() {
-        controller.start(true)
+        controller.onForeground(true)
         val tasks = argumentCaptor<Runnable>()
         verify(executor).schedule(tasks.capture(), any(), eq(TimeUnit.MILLISECONDS))
         tasks.firstValue.run()
@@ -575,7 +598,7 @@ internal class ActiveBeaconControllerTest {
             whenever(prefs.getString(eq("body"), anyOrNull())).thenReturn(null)
             true
         }
-        controller.start(false)
+        controller.onForeground(false)
         controller.onUserInfo(UserInfo(anonymousId, "current"), TrackingConsent.GRANTED)
         val queued = ArrayDeque<Runnable>()
         whenever(executor.execute(any())).doAnswer { queued.add(it.getArgument(0)); Unit }
@@ -609,7 +632,7 @@ internal class ActiveBeaconControllerTest {
     fun `old retry cannot claim a new record after clear or withdrawal`(revoke: Boolean) {
         val retries = ControlledRetries()
         whenever(call.execute()).thenAnswer { response(503) }
-        retries.controller.start(true)
+        retries.controller.onForeground(true)
         retries.controller.onUserInfo(UserInfo(anonymousId, "old"), TrackingConsent.GRANTED)
         val stale = retries.active.single()
         retries.controller.onForeground(false)
@@ -635,7 +658,7 @@ internal class ActiveBeaconControllerTest {
     fun `replacing pending cancels old rounds and gives the replacement its own retry budget`() {
         val retries = ControlledRetries()
         whenever(call.execute()).thenAnswer { response(503) }
-        retries.controller.start(true)
+        retries.controller.onForeground(true)
         retries.controller.onUserInfo(UserInfo(anonymousId, "old"), TrackingConsent.GRANTED)
         retries.controller.onUserInfo(UserInfo(anonymousId, "new"), TrackingConsent.GRANTED)
         val stale = retries.tasks.filter { it.cancelled }
@@ -660,7 +683,7 @@ internal class ActiveBeaconControllerTest {
     fun `new foreground round invalidates every older retry`() {
         val retries = ControlledRetries()
         whenever(call.execute()).thenAnswer { response(503) }
-        retries.controller.start(true)
+        retries.controller.onForeground(true)
         retries.controller.onUserInfo(UserInfo(anonymousId, "user"), TrackingConsent.GRANTED)
         repeat(10) {
             retries.controller.onForeground(false)
@@ -681,7 +704,7 @@ internal class ActiveBeaconControllerTest {
     fun `network and rate limit share one bounded round including an early limit callback`() {
         val retries = ControlledRetries()
         whenever(call.execute()).thenReturn(response(503), response(429, "Retry-After" to "7"), response(503))
-        retries.controller.start(true)
+        retries.controller.onForeground(true)
         retries.controller.onUserInfo(UserInfo(anonymousId, "user"), TrackingConsent.GRANTED)
         val first = retries.active.single()
         retries.runNext()
@@ -716,7 +739,7 @@ internal class ActiveBeaconControllerTest {
                 response(202)
             }
         }
-        retries.controller.start(true)
+        retries.controller.onForeground(true)
         retries.controller.onUserInfo(UserInfo(anonymousId, "old"), TrackingConsent.GRANTED)
         queued.removeFirst().run() // start, before the worker receives user info
         queued.removeFirst().run() // old HTTP request; queues new user, then clear reset
@@ -746,7 +769,7 @@ internal class ActiveBeaconControllerTest {
         val continueReading = CountDownLatch(1)
         val worker = AtomicReference<Thread>()
         try {
-            actual.start(false)
+            actual.onForeground(false)
             actual.onUserInfo(UserInfo(anonymousId, "user"), TrackingConsent.GRANTED)
             scheduler.submit {}.get(5, TimeUnit.SECONDS)
             whenever(prefs.getString(eq("body"), anyOrNull())).doAnswer {
@@ -783,7 +806,7 @@ internal class ActiveBeaconControllerTest {
             val restarted = ActiveBeaconController(
                 core, context, app, "app", "https://example.com/api/v2/rum", true, executor, factory, "process"
             )
-            restarted.start(false)
+            restarted.onForeground(false)
             restarted.onUserInfo(UserInfo(anonymousId, "user"), TrackingConsent.GRANTED)
             verify(factory, never()).newCall(any())
             restarted.onForeground(true)
@@ -801,7 +824,7 @@ internal class ActiveBeaconControllerTest {
             controller.onForeground(false)
             response(202)
         }
-        controller.start(true)
+        controller.onForeground(true)
         controller.onUserInfo(UserInfo(anonymousId, "user"), TrackingConsent.GRANTED)
         controller.onForeground(true)
         verify(call).execute()
@@ -829,7 +852,7 @@ internal class ActiveBeaconControllerTest {
             response(oldStatus)
         }
 
-        actual.start(true)
+        actual.onForeground(true)
         actual.onUserInfo(current, TrackingConsent.GRANTED)
 
         verify(call).execute() // Only the old replay was admitted before backgrounding.
@@ -843,7 +866,7 @@ internal class ActiveBeaconControllerTest {
             core, context, app, "app", "https://example.com/api/v2/rum", true, executor, factory, "process",
             wallClock = { now }
         )
-        restarted.start(false)
+        restarted.onForeground(false)
         restarted.onUserInfo(current, TrackingConsent.GRANTED)
         verify(call).execute()
         restarted.onForeground(true)
@@ -878,7 +901,7 @@ internal class ActiveBeaconControllerTest {
             response(503)
         }
 
-        controller.start(true)
+        controller.onForeground(true)
         controller.onUserInfo(UserInfo(anonymousId, "new"), TrackingConsent.GRANTED)
 
         verify(call).execute()

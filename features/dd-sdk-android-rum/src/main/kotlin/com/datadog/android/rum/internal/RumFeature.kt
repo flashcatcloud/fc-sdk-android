@@ -1140,7 +1140,7 @@ internal class RumFeature(
             return
         }
         try {
-            ActiveBeaconController.buildEndpoint(intake, context.clientToken)
+            ActiveBeaconController.buildEndpoint(intake)
         } catch (e: IllegalArgumentException) {
             sdkCore.internalLogger.log(
                 InternalLogger.Level.WARN,
@@ -1164,7 +1164,7 @@ internal class RumFeature(
         val listener: (UserInfo, TrackingConsent) -> Unit = controller::onUserInfo
         activeBeaconUserListener = listener
         core.addUserInfoListener(listener)
-        controller.start(false)
+        // addListener delivers the current state, which starts the first trigger in the foreground.
         (appContext as? Application)?.let { application ->
             ForegroundStateTracker.register(application)
             val foregroundListener: (Boolean) -> Unit = controller::onForeground

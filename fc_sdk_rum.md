@@ -251,23 +251,23 @@ RUM 默认启用独立的活跃上报通道。应用在前台且用户已授予�
 
 使用 `RumConfiguration.Builder.useCustomEndpoint(...)` 设置自定义 RUM 地址（内部配置项为 `customEndpointUrl`）时，代理必须同时转发普通事件和活跃上报。活跃上报默认开启，仅让后端支持接口还不够，客户网关也需要配置对应路由。
 
-对于不带 `ddforward` 的地址，SDK 在路径末尾追加 `/active`，并添加 `client_token` 查询参数。例如配置 `https://gw.customer.com/rum-proxy` 时：
+对于不带 `ddforward` 的地址，SDK 在路径末尾追加 `/active`。例如配置 `https://gw.customer.com/rum-proxy` 时：
 
 | SDK 请求 | 客户网关应转发到的后端路径 |
 |---|---|
 | `POST /rum-proxy` | `/api/v2/rum` |
 | `POST /rum-proxy/active` | `/api/v2/rum/active` |
 
-代理应保留请求方法、JSON 请求体、`Content-Type` 和包括 `client_token` 在内的查询参数，并透传后端响应状态码；限流时还应透传 `Flashcat-Request-Rate-Limit-Delay` 或 `Retry-After` 响应头。不要在排障日志中记录含 client token 的完整请求 URL。
+与普通事件一样，client token 通过 `DD-API-KEY` 请求头发送。代理应保留请求方法、JSON 请求体、`Content-Type`、`DD-API-KEY` 请求头和查询参数，并透传后端响应状态码；限流时还应透传 `Flashcat-Request-Rate-Limit-Delay` 或 `Retry-After` 响应头。
 
-对于带 `ddforward` 的地址，外层代理路径保持不变，SDK 将 `ddforward` 指定的目标路径追加 `/active`。例如 `https://gw.customer.com/proxy?ddforward=%2Fapi%2Fv2%2Frum` 的活跃上报仍请求 `/proxy`，其 `ddforward` 目标变为 `/api/v2/rum/active`，并添加 `client_token` 查询参数。代理的目标白名单或转发规则需要允许这个目标。
+对于带 `ddforward` 的地址，外层代理路径保持不变，SDK 将 `ddforward` 指定的目标路径追加 `/active`。例如 `https://gw.customer.com/proxy?ddforward=%2Fapi%2Fv2%2Frum` 的活跃上报仍请求 `/proxy`，其 `ddforward` 目标变为 `/api/v2/rum/active`。代理的目标白名单或转发规则需要允许这个目标。
 
 如果网关只精确匹配普通事件路径，新增的活跃路径可能返回 404。SDK 将 404 视为永久失败，不保存该条补发，只记录一条内部 DEBUG 拒绝日志；若请求对应当天的身份组合，会在本进程内将其记为当天已处理，后续同组合触发不再发送。普通 RUM 事件能上传不能证明活跃通道已打通。
 
 #### 私有化升级检查
 
 1. 部署支持 `/api/v2/rum/active` 的后端及其配套数据表。
-2. 在客户实际使用的网关上增加上述活跃上报路由或 `ddforward` 目标放行规则，确认 POST、查询参数、请求体、响应状态和限流响应头均能透传；在发布新版客户端前完成此配置。
+2. 在客户实际使用的网关上增加上述活跃上报路由或 `ddforward` 目标放行规则，确认 POST、`DD-API-KEY` 请求头、查询参数、请求体、响应状态和限流响应头均能透传；在发布新版客户端前完成此配置。
 3. 通过该网关运行已授权的测试 App，验证冷启动及切换账号时的活跃请求得到后端 202，且不是网关返回的 404、登录页面或伪造成功响应。202 仅说明接口接受请求，还需要核对 `t_active_devices` 中对应测试设备/账号的 `source=ping` 记录和统计结果。
 4. 后端和网关验证通过后，升级客户端 SDK。如果暂时无法开通活跃路径，可显式设置 `setActiveBeaconEnabled(false)` 暂停该通道；此时没有独立活跃上报，不能以普通事件上传成功代替此项验收。
 

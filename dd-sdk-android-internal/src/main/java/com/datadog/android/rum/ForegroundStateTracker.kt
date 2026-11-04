@@ -10,13 +10,19 @@ import android.app.Application
 import android.os.Bundle
 import android.util.Log
 import androidx.annotation.RestrictTo
+import java.util.Collections
+import java.util.WeakHashMap
 
 /** Process-local activity state, registered before the first activity by DdRumContentProvider. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 object ForegroundStateTracker : Application.ActivityLifecycleCallbacks {
     private const val TAG = "DD_ForegroundState"
     private var registered = false
-    private val activities = mutableSetOf<Activity>()
+
+    // Weak, so the process-wide object never keeps an activity alive. Membership (unlike a counter) ignores
+    // the stop of an activity started before registration while another one is still visible.
+    private val started: MutableSet<Activity> = Collections.newSetFromMap(WeakHashMap())
+    private var foreground = false
     private val listeners = mutableSetOf<(Boolean) -> Unit>()
 
     @Synchronized
@@ -30,7 +36,7 @@ object ForegroundStateTracker : Application.ActivityLifecycleCallbacks {
     @Synchronized
     fun addListener(listener: (Boolean) -> Unit) {
         listeners.add(listener)
-        notifyListener(listener, activities.isNotEmpty())
+        notifyListener(listener, foreground)
     }
 
     @Synchronized
@@ -38,22 +44,28 @@ object ForegroundStateTracker : Application.ActivityLifecycleCallbacks {
 
     @Synchronized
     override fun onActivityStarted(activity: Activity) {
-        val wasEmpty = activities.isEmpty()
-        activities.add(activity)
-        if (wasEmpty && activities.isNotEmpty()) notifyListeners(true)
+        started.add(activity)
+        if (!foreground) {
+            foreground = true
+            notifyListeners(true)
+        }
     }
 
     @Synchronized
     override fun onActivityStopped(activity: Activity) {
-        val removed = activities.remove(activity)
-        if (removed && activities.isEmpty()) notifyListeners(false)
+        val removed = started.remove(activity)
+        // A rotation stops the old activity before the new one starts; it is not a background transition.
+        if (removed && started.isEmpty() && foreground && !activity.isChangingConfigurations) {
+            foreground = false
+            notifyListeners(false)
+        }
     }
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
     override fun onActivityResumed(activity: Activity) = Unit
     override fun onActivityPaused(activity: Activity) = Unit
     override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
-    override fun onActivityDestroyed(activity: Activity) = onActivityStopped(activity)
+    override fun onActivityDestroyed(activity: Activity) = Unit
 
     private fun notifyListeners(foreground: Boolean) {
         listeners.toList().forEach { notifyListener(it, foreground) }

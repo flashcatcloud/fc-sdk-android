@@ -10,6 +10,7 @@ import com.datadog.android.rum.ForegroundStateTracker
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
 internal class ForegroundStateTrackerTest {
     @Test
@@ -30,6 +31,37 @@ internal class ForegroundStateTrackerTest {
         ForegroundStateTracker.addListener(next)
         ForegroundStateTracker.removeListener(next)
         assertThat(background).containsExactly(false)
+    }
+
+    @Test
+    fun `rotation is not reported as a background transition`() {
+        val old: Activity = mock()
+        val recreated: Activity = mock()
+        whenever(old.isChangingConfigurations).thenReturn(true)
+        val values = mutableListOf<Boolean>()
+        val listener: (Boolean) -> Unit = { values.add(it) }
+        ForegroundStateTracker.addListener(listener)
+        ForegroundStateTracker.onActivityStarted(old)
+        ForegroundStateTracker.onActivityStopped(old)
+        ForegroundStateTracker.onActivityDestroyed(old)
+        ForegroundStateTracker.onActivityStarted(recreated)
+        ForegroundStateTracker.onActivityStopped(recreated)
+        ForegroundStateTracker.removeListener(listener)
+        assertThat(values).containsExactly(false, true, false)
+    }
+
+    @Test
+    fun `stop of an activity started before registration keeps a visible activity in the foreground`() {
+        val early: Activity = mock()
+        val visible: Activity = mock()
+        val values = mutableListOf<Boolean>()
+        val listener: (Boolean) -> Unit = { values.add(it) }
+        ForegroundStateTracker.addListener(listener)
+        ForegroundStateTracker.onActivityStarted(visible)
+        ForegroundStateTracker.onActivityStopped(early)
+        ForegroundStateTracker.onActivityStopped(visible)
+        ForegroundStateTracker.removeListener(listener)
+        assertThat(values).containsExactly(false, true, false)
     }
 
     @Test
