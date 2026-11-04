@@ -6,6 +6,7 @@
 
 package com.datadog.android.rum.internal.crash
 
+import android.net.TrafficStats
 import com.datadog.android.api.InternalLogger
 import com.datadog.android.api.context.DatadogContext
 import com.datadog.android.api.feature.Feature
@@ -249,6 +250,9 @@ internal class CrashBeacon(
             .url(url)
             .post(body.toRequestBody(JSON_MEDIA_TYPE))
             .build()
+        // Tagged like the uploads: an untagged socket is a StrictMode violation in the host app.
+        @Suppress("UnsafeThirdPartyFunctionCall") // only records a tag for this thread
+        TrafficStats.setThreadStatsTag(Thread.currentThread().id.toInt())
         val call = callFactory.newCall(request)
         // A little under the crashed thread's wait, so the outcome is known before it stops waiting.
         call.timeout().timeout(maxOf(MIN_CALL_TIMEOUT_MS, timeoutMs - CALL_TIMEOUT_MARGIN_MS), TimeUnit.MILLISECONDS)
