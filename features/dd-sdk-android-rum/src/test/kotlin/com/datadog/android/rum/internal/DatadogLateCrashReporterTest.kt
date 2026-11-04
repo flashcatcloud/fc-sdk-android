@@ -261,7 +261,8 @@ internal class DatadogLateCrashReporterTest {
                 "lastViewEvent" to fakeViewEventJson,
                 "crashId" to fakeCrashId,
                 "beaconStatus" to "sent",
-                "beaconDuration" to 105L
+                "beaconDuration" to 105L,
+                "crashDate" to 1_700_000_000_123L
             ),
             mockRumWriter
         )
@@ -273,6 +274,7 @@ internal class DatadogLateCrashReporterTest {
             assertThat(error.error.id).isEqualTo(fakeCrashId)
             assertThat(error.error.beacon).isEqualTo(ErrorEvent.Beacon(status = "sent", duration = 105L))
             assertThat(error.error.timeSinceAppStart).isEqualTo(4_000L)
+            assertThat(error.date).isEqualTo(1_700_000_000_123L)
         }
     }
 

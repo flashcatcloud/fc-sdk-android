@@ -925,13 +925,19 @@ internal class RumFeature(
         @Suppress("UNCHECKED_CAST")
         val onResult = event["onResult"] as? (String, String, Long) -> Unit ?: return
 
+        @Suppress("UNCHECKED_CAST")
+        val onDispatch = event["onDispatch"] as? (Long) -> Unit ?: {}
+
         val result = beacon.send(
             datadogContext = { internalCore.getDatadogContext(withFeatureContexts = setOf(Feature.RUM_FEATURE_NAME)) },
             crashType = crashType,
             message = message,
             crashTimeMs = crashTimeMs,
             timeSinceAppStartMs = timeSinceAppStartMs,
-            onCrashId = onCrashId
+            onCrashId = onCrashId,
+            onDispatch = onDispatch,
+            // The signal handler started waiting before this thread was even woken.
+            waitMarginMs = NATIVE_WAIT_MARGIN_MS
         ) ?: return
         onResult(beacon.crashId, result.beacon.status, result.beacon.duration ?: 0L)
     }
@@ -1244,6 +1250,7 @@ internal class RumFeature(
         // FLASHCAT FORK - sent by the NDK feature, see NdkCrashBeacon.
         internal const val NDK_CRASH_BEACON_ARM_MESSAGE_TYPE = "ndk_crash_beacon_arm"
         internal const val NDK_CRASH_BEACON_MESSAGE_TYPE = "ndk_crash_beacon"
+        private const val NATIVE_WAIT_MARGIN_MS = 250L
         internal const val LOGGER_ERROR_BUS_MESSAGE_TYPE = "logger_error"
         internal const val LOGGER_ERROR_WITH_STACK_TRACE_MESSAGE_TYPE = "logger_error_with_stacktrace"
         internal const val WEB_VIEW_INGESTED_NOTIFICATION_MESSAGE_TYPE = "web_view_ingested_notification"

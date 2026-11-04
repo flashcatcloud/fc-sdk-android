@@ -210,13 +210,23 @@ internal class NdkCrashBeaconTest {
         assertThat(event["crashTimeMs"]).isEqualTo(5_000L)
         assertThat(event["timeSinceAppStartMs"]).isEqualTo(4_000L)
 
+        val file = File(tempDir, NdkCrashBeacon.RESULT_FILE_NAME)
         @Suppress("UNCHECKED_CAST")
         (event["onCrashId"] as (String) -> Unit)(CRASH_ID)
-        assertThat(File(tempDir, NdkCrashBeacon.RESULT_FILE_NAME).readText()).isEqualTo("$CRASH_ID timeout 0")
+        assertThat(file.readText()).isEqualTo("$CRASH_ID timeout 0 5000 0")
+
+        @Suppress("UNCHECKED_CAST")
+        (event["onDispatch"] as (Long) -> Unit)(5_120L)
+        assertThat(file.readText()).isEqualTo("$CRASH_ID timeout 0 5000 5120")
 
         @Suppress("UNCHECKED_CAST")
         (event["onResult"] as (String, String, Long) -> Unit)(CRASH_ID, "sent", 105L)
-        assertThat(File(tempDir, NdkCrashBeacon.RESULT_FILE_NAME).readText()).isEqualTo("$CRASH_ID sent 105")
+        assertThat(file.readText()).isEqualTo("$CRASH_ID sent 105 5000 5120")
+
+        // A dispatch reported after the outcome must not undo it.
+        @Suppress("UNCHECKED_CAST")
+        (event["onDispatch"] as (Long) -> Unit)(9_999L)
+        assertThat(file.readText()).isEqualTo("$CRASH_ID sent 105 5000 5120")
     }
 
     @Test

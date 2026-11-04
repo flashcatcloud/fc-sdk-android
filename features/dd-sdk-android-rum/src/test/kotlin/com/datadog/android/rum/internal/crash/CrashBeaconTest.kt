@@ -295,6 +295,28 @@ internal class CrashBeaconTest {
     }
 
     @Test
+    fun `M hand out the beacon's date before the request leaves W send() { onDispatch }`() {
+        val dispatched = mutableListOf<Long>()
+        whenever(mockCall.execute()) doAnswer {
+            assertThat(dispatched).hasSize(1)
+            response(202)
+        }
+
+        val result = checkNotNull(
+            testedBeacon.send(
+                datadogContext = { fakeDatadogContext },
+                crashType = "SIGSEGV",
+                message = "NDK crash detected with signal: SIGSEGV",
+                crashTimeMs = 1_000_000L,
+                timeSinceAppStartMs = 4_000L,
+                onDispatch = { dispatched += it }
+            )
+        )
+
+        assertThat(dispatched).containsExactly(result.crashDate)
+    }
+
+    @Test
     fun `M hand out the crash id before sending W send() { onCrashId }`() {
         val seen = mutableListOf<String>()
         whenever(mockCall.execute()) doAnswer {

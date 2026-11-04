@@ -187,6 +187,7 @@ internal class NdkCrashBeacon(
     internal fun send(signal: Int) {
         val crashTimeMs = clock()
         val signalName = signalName(signal)
+        val record = ResultRecord(crashTimeMs)
         sendToRum(
             mapOf(
                 "type" to SEND_EVENT_TYPE,
@@ -194,24 +195,55 @@ internal class NdkCrashBeacon(
                 "message" to CRASH_MESSAGE.format(signalName),
                 "crashTimeMs" to crashTimeMs,
                 "timeSinceAppStartMs" to crashTimeMs - appStartTimeMs,
-                // Written before the beacon goes out, as an unanswered one, and rewritten with
-                // the outcome when there is one.
-                "onCrashId" to { crashId: String -> writeResult(crashId, STATUS_TIMEOUT, 0L) },
+                // Written before the beacon goes out, as an unanswered one, again with the date the
+                // beacon is sent under, and a last time with the outcome when there is one.
+                "onCrashId" to { crashId: String -> record.id(crashId) },
+                "onDispatch" to { date: Long -> record.dispatched(date) },
                 "onResult" to { crashId: String, status: String, durationMs: Long ->
-                    writeResult(crashId, status, durationMs)
+                    record.outcome(crashId, status, durationMs)
                 }
             )
         )
     }
 
     /**
-     * Replaces the file whole: the process can be killed at any moment of a write, and a truncated
-     * file would lose the id the beacon was sent under.
+     * The `crash_beacon` file of one crash: `<crash id> <status> <duration ms> <crash time ms>
+     * <beacon date>`, the date 0 until the beacon is dispatched. The crash time lets the next launch
+     * check the file belongs to the crash report it reads. Written from two threads (the beacon's
+     * and this one), serialized, and never again once the outcome is in.
      */
-    private fun writeResult(crashId: String, status: String, durationMs: Long) {
-        val partial = File(directory, "$RESULT_FILE_NAME.partial")
-        partial.writeText("$crashId $status $durationMs")
-        check(partial.renameTo(File(directory, RESULT_FILE_NAME))) { "Unable to record the crash beacon" }
+    private inner class ResultRecord(private val crashTimeMs: Long) {
+        private var crashId: String? = null
+        private var date = 0L
+        private var final = false
+
+        @Synchronized
+        fun id(crashId: String) {
+            this.crashId = crashId
+            write(crashId, STATUS_TIMEOUT, 0L)
+        }
+
+        @Synchronized
+        fun dispatched(date: Long) {
+            this.date = date
+            crashId?.takeUnless { final }?.let { write(it, STATUS_TIMEOUT, 0L) }
+        }
+
+        @Synchronized
+        fun outcome(crashId: String, status: String, durationMs: Long) {
+            write(crashId, status, durationMs)
+            final = true
+        }
+
+        /**
+         * Replaces the file whole: the process can be killed at any moment of a write, and a
+         * truncated file would lose the id the beacon was sent under.
+         */
+        private fun write(crashId: String, status: String, durationMs: Long) {
+            val partial = File(directory, "$RESULT_FILE_NAME.partial")
+            partial.writeText("$crashId $status $durationMs $crashTimeMs $date")
+            check(partial.renameTo(File(directory, RESULT_FILE_NAME))) { "Unable to record the crash beacon" }
+        }
     }
 
     // endregion

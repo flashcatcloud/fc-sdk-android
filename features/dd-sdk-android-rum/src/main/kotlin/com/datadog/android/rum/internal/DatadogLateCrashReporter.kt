@@ -76,6 +76,9 @@ internal class DatadogLateCrashReporter(
         val beacon = (event["beaconStatus"] as? String)?.let {
             ErrorEvent.Beacon(status = it, duration = event["beaconDuration"] as? Long)
         }
+        // The date the beacon was sent under: the intake derives the launch day of both from their
+        // dates, and this launch's clock offset may not be the crashed process's.
+        val crashDate = event["crashDate"] as? Long
 
         if (timestamp == null || signalName == null || stacktrace == null ||
             errorLogMessage == null || lastViewEvent == null
@@ -104,7 +107,10 @@ internal class DatadogLateCrashReporter(
                 if (crashId == null) {
                     errorEvent
                 } else {
-                    errorEvent.copy(error = errorEvent.error.copy(id = crashId, beacon = beacon))
+                    errorEvent.copy(
+                        date = crashDate ?: errorEvent.date,
+                        error = errorEvent.error.copy(id = crashId, beacon = beacon)
+                    )
                 }
             }
             writeScope {

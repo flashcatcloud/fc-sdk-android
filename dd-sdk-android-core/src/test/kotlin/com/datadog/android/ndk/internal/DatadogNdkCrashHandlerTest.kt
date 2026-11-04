@@ -32,6 +32,7 @@ import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.firstValue
@@ -197,7 +198,8 @@ internal class DatadogNdkCrashHandlerTest {
     fun `M read the crash beacon record W prepareData()`() {
         // Given
         fakeNdkCacheDir.mkdirs()
-        File(fakeNdkCacheDir, DatadogNdkCrashHandler.CRASH_BEACON_FILE_NAME).writeText("$FAKE_CRASH_ID sent 105")
+        File(fakeNdkCacheDir, DatadogNdkCrashHandler.CRASH_BEACON_FILE_NAME)
+            .writeText("$FAKE_CRASH_ID sent 105 1700000000000 1700000000123")
 
         // When
         testedHandler.prepareData()
@@ -205,13 +207,21 @@ internal class DatadogNdkCrashHandlerTest {
         captureRunnable.firstValue.run()
 
         // Then
-        assertThat(testedHandler.lastCrashBeacon).isEqualTo(CrashBeaconRecord(FAKE_CRASH_ID, "sent", 105L))
+        assertThat(testedHandler.lastCrashBeacon)
+            .isEqualTo(CrashBeaconRecord(FAKE_CRASH_ID, "sent", 105L, 1_700_000_000_000L, 1_700_000_000_123L))
         assertThat(fakeNdkCacheDir).isEmptyDirectory
     }
 
     @Test
     fun `M read no crash beacon record W CrashBeaconRecord parse() { not one }`() {
-        listOf("", "garbage", "$FAKE_CRASH_ID sent", "NOT-A-UUID sent 1", "$FAKE_CRASH_ID sent x").forEach {
+        listOf(
+            "",
+            "garbage",
+            "$FAKE_CRASH_ID sent 1 2",
+            "NOT-A-UUID sent 1 2 3",
+            "$FAKE_CRASH_ID sent x 2 3",
+            "$FAKE_CRASH_ID sent 1 2 x"
+        ).forEach {
             assertThat(CrashBeaconRecord.parse(it)).describedAs(it).isNull()
         }
     }
@@ -324,7 +334,8 @@ internal class DatadogNdkCrashHandlerTest {
         val fakeViewEvent = forge.aFakeViewEvent()
         testedHandler.lastNdkCrashLog = fakeNdkCrashLog
         testedHandler.lastRumViewEvent = fakeViewEvent.toJson()
-        testedHandler.lastCrashBeacon = CrashBeaconRecord(FAKE_CRASH_ID, "timeout", 915L)
+        testedHandler.lastCrashBeacon =
+            CrashBeaconRecord(FAKE_CRASH_ID, "timeout", 915L, fakeNdkCrashLog.timestamp + 40L, 1_234L)
 
         // When
         testedHandler.handleNdkCrash(mockSdkCore)
@@ -345,10 +356,34 @@ internal class DatadogNdkCrashHandlerTest {
                 "lastViewEvent" to fakeViewEvent.toJson(),
                 "crashId" to FAKE_CRASH_ID,
                 "beaconStatus" to "timeout",
-                "beaconDuration" to 915L
+                "beaconDuration" to 915L,
+                "crashDate" to 1_234L
             )
         )
         assertThat(testedHandler.lastCrashBeacon).isNull()
+    }
+
+    @Test
+    fun `M send RUM event under its own id W handleNdkCrash() { record of another crash }`(forge: Forge) {
+        // Given
+        // A process survived a crash and crashed again later, unarmed: the record is the first's.
+        val fakeViewEvent = forge.aFakeViewEvent()
+        testedHandler.lastNdkCrashLog = fakeNdkCrashLog
+        testedHandler.lastRumViewEvent = fakeViewEvent.toJson()
+        testedHandler.lastCrashBeacon =
+            CrashBeaconRecord(FAKE_CRASH_ID, "sent", 90L, fakeNdkCrashLog.timestamp - 60_000L, 1_234L)
+
+        // When
+        testedHandler.handleNdkCrash(mockSdkCore)
+
+        // Then
+        verify(mockExecutorService).execute(captureRunnable.capture())
+        captureRunnable.firstValue.run()
+        argumentCaptor<Map<*, *>> {
+            verify(mockRumFeatureScope).sendEvent(capture())
+            assertThat(firstValue.keys.map { it.toString() })
+                .doesNotContain("crashId", "beaconStatus", "beaconDuration", "crashDate")
+        }
     }
 
     @Test

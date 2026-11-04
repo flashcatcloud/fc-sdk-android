@@ -112,6 +112,17 @@ static long elapsed_ms(const struct timespec *since) {
     return (now.tv_sec - since->tv_sec) * 1000L + (now.tv_nsec - since->tv_nsec) / 1000000L;
 }
 
+/* Drops an answer left over from a crash the process survived, so it cannot end this wait early. */
+static void drain_done_pipe(void) {
+    char byte;
+    struct pollfd done = {.fd = done_fds[0], .events = POLLIN, .revents = 0};
+    while (poll(&done, 1, 0) > 0 && (done.revents & POLLIN)) {
+        if (read(done_fds[0], &byte, 1) != 1) {
+            return;
+        }
+    }
+}
+
 void crash_beacon_on_crash(int signum) {
     if (!crash_beacon_installed || !armed) {
         return;
@@ -120,6 +131,7 @@ void crash_beacon_on_crash(int signum) {
     if (__atomic_exchange_n(&crash_signal, signum, __ATOMIC_SEQ_CST) != 0) {
         return;
     }
+    drain_done_pipe();
     if (!write_byte(wake_fds[1])) {
         // Nothing woke up, so nothing is under way: later crashes must not wait on it.
         __atomic_store_n(&crash_signal, 0, __ATOMIC_SEQ_CST);

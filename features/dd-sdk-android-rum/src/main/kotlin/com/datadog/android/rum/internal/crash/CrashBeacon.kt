@@ -111,6 +111,11 @@ internal class CrashBeacon(
      * @param timeSinceAppStartMs the crash time since the process started, as written with the crash.
      * @param onCrashId called with [crashId] before anything is sent, for a crash whose report is
      * written after the beacon and has to know the id first. If it throws, nothing is sent.
+     * @param onDispatch called on the beacon thread with the beacon's corrected date just before the
+     * request leaves, for a report written later that must carry the same date (the intake merges
+     * the two by the launch day it derives from it).
+     * @param waitMarginMs taken off the wait, for a caller that itself waits on a clock that
+     * started earlier (the native signal handler) and must learn the outcome before it stops.
      */
     @Suppress("TooGenericExceptionCaught", "LongParameterList", "ReturnCount")
     fun send(
@@ -119,7 +124,9 @@ internal class CrashBeacon(
         message: String,
         crashTimeMs: Long,
         timeSinceAppStartMs: Long,
-        onCrashId: (String) -> Unit = {}
+        onCrashId: (String) -> Unit = {},
+        onDispatch: (Long) -> Unit = {},
+        waitMarginMs: Long = 0L
     ): Result? {
         if (!claimed.compareAndSet(false, true)) return null
         // The full ErrorEvent is mapped later, on the persistence thread. Calling the user's
@@ -138,14 +145,23 @@ internal class CrashBeacon(
             // would be counted twice. Better not to send.
             return Result(ErrorEvent.Beacon(status = STATUS_FAILED, duration = clock() - start), null)
         }
-        val timeoutMs = timeoutMs()
+        val timeoutMs = (timeoutMs() - waitMarginMs).coerceAtLeast(MIN_CALL_TIMEOUT_MS)
         val dispatch = AtomicReference<Dispatch>(Dispatch.Pending)
         var future: Future<String>? = null
         val status = try {
             @Suppress("UnsafeThirdPartyFunctionCall") // every failure is caught below
             val submitted = executor.submit<String> {
                 try {
-                    attempt(datadogContext, crashType, message, crashTimeMs, timeSinceAppStartMs, timeoutMs, dispatch)
+                    attempt(
+                        datadogContext,
+                        crashType,
+                        message,
+                        crashTimeMs,
+                        timeSinceAppStartMs,
+                        timeoutMs,
+                        dispatch,
+                        onDispatch
+                    )
                 } catch (e: Throwable) {
                     // Logging belongs inside the bound too: a logger can itself wait on SDK state.
                     internalLogger.log(
@@ -184,7 +200,8 @@ internal class CrashBeacon(
         crashTimeMs: Long,
         timeSinceAppStartMs: Long,
         timeoutMs: Long,
-        dispatch: AtomicReference<Dispatch>
+        dispatch: AtomicReference<Dispatch>,
+        onDispatch: (Long) -> Unit
     ): String {
         val datadogContext = readContext() ?: return STATUS_FAILED
         val rumContext = RumContext.fromFeatureContext(
@@ -211,6 +228,12 @@ internal class CrashBeacon(
         val date = crashTimeMs + offset
         val body = payload(datadogContext, rumContext, crashType, message, date, timeSinceAppStartMs)
         if (!dispatch.compareAndSet(Dispatch.Pending, Dispatch.Ready(date))) return STATUS_TIMEOUT
+        @Suppress("TooGenericExceptionCaught")
+        try {
+            onDispatch(date)
+        } catch (e: Throwable) {
+            // Only the day the report lands on is at stake, and only around midnight.
+        }
         return post(body, timeoutMs)
     }
 

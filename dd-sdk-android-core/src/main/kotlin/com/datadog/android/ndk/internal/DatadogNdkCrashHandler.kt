@@ -151,11 +151,12 @@ internal class DatadogNdkCrashHandler(
                     "stacktrace" to ndkCrashLog.stacktrace,
                     "message" to errorLogMessage,
                     "lastViewEvent" to lastViewEvent
-                ) + lastCrashBeacon?.let {
+                ) + lastCrashBeacon?.takeIf { it.belongsTo(ndkCrashLog) }?.let {
                     mapOf(
                         "crashId" to it.crashId,
                         "beaconStatus" to it.status,
-                        "beaconDuration" to it.durationMs
+                        "beaconDuration" to it.durationMs,
+                        "crashDate" to it.date.takeIf { date -> date > 0L }
                     )
                 }.orEmpty()
             )
@@ -249,22 +250,37 @@ internal class DatadogNdkCrashHandler(
 
 /**
  * FLASHCAT FORK - what the beacon thread of a native crash wrote beside its report:
- * `<crash id> <status> <duration ms>`.
+ * `<crash id> <status> <duration ms> <crash time ms> <beacon date>`, the date 0 when the beacon
+ * was never dispatched.
  */
 internal data class CrashBeaconRecord(
     val crashId: String,
     val status: String,
-    val durationMs: Long
+    val durationMs: Long,
+    val crashTimeMs: Long,
+    val date: Long
 ) {
+    /**
+     * Whether this record was written for that crash report: a process that survived a crash and
+     * crashed again later, unarmed, leaves the first crash's record beside the second's report.
+     */
+    fun belongsTo(crashLog: NdkCrashLog): Boolean =
+        kotlin.math.abs(crashLog.timestamp - crashTimeMs) <= MATCH_WINDOW_MS
+
     internal companion object {
+        // The beacon thread reads its clock right after the signal handler wrote the report.
+        private const val MATCH_WINDOW_MS = 10_000L
+
         private val UUID_PATTERN = Regex("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$")
 
         /** Null for anything else: the report then keeps an id of its own, as before. */
         fun parse(text: String): CrashBeaconRecord? {
             val parts = text.trim().split(' ')
-            if (parts.size != 3 || !UUID_PATTERN.matches(parts[0])) return null
+            if (parts.size != 5 || !UUID_PATTERN.matches(parts[0])) return null
             val duration = parts[2].toLongOrNull() ?: return null
-            return CrashBeaconRecord(parts[0], parts[1], duration)
+            val crashTimeMs = parts[3].toLongOrNull() ?: return null
+            val date = parts[4].toLongOrNull() ?: return null
+            return CrashBeaconRecord(parts[0], parts[1], duration, crashTimeMs, date)
         }
     }
 }
