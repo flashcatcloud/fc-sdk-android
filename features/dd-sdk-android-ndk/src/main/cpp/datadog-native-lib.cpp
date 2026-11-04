@@ -14,6 +14,7 @@
 
 #include "android/log.h"
 #include "backtrace-handler.h"
+#include "crash-beacon.h"
 #include "datetime-utils.h"
 #include "file-utils.h"
 #include "signal-monitor.h"
@@ -160,4 +161,41 @@ Java_com_datadog_android_ndk_internal_NdkCrashReportsFeature_updateTrackingConse
         jobject /* this */,
         jint consent) {
     update_tracking_consent(consent);
+}
+// FLASHCAT FORK - crash beacon bindings, see crash-beacon.h.
+extern "C" JNIEXPORT jboolean JNICALL
+Java_com_datadog_android_ndk_internal_NdkCrashBeacon_installNative(
+        JNIEnv *env,
+        jobject /* this */) {
+    return crash_beacon_install() ? JNI_TRUE : JNI_FALSE;
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_datadog_android_ndk_internal_NdkCrashBeacon_uninstallNative(
+        JNIEnv *env,
+        jobject /* this */) {
+    crash_beacon_uninstall();
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_datadog_android_ndk_internal_NdkCrashBeacon_armNative(
+        JNIEnv *env,
+        jobject /* this */,
+        jboolean armed,
+        jint timeout_ms) {
+    crash_beacon_arm(armed == JNI_TRUE, (int) timeout_ms);
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_com_datadog_android_ndk_internal_NdkCrashBeacon_waitForCrashNative(
+        JNIEnv *env,
+        jobject /* this */) {
+    return (jint) crash_beacon_wait_for_crash();
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_datadog_android_ndk_internal_NdkCrashBeacon_finishNative(
+        JNIEnv *env,
+        jobject /* this */) {
+    crash_beacon_finish();
 }

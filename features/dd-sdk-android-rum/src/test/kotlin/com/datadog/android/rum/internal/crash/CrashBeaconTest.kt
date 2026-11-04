@@ -224,7 +224,7 @@ internal class CrashBeaconTest {
 
         val second = testedBeacon.send(
             datadogContext = { fakeDatadogContext },
-            throwable = IllegalStateException("again"),
+            crashType = "java.lang.IllegalStateException",
             message = "again",
             crashTimeMs = 2_000_000L,
             timeSinceAppStartMs = 5_000L
@@ -265,6 +265,39 @@ internal class CrashBeaconTest {
     }
 
     @Test
+    fun `M hand out the crash id before sending W send() { onCrashId }`() {
+        val seen = mutableListOf<String>()
+        whenever(mockCall.execute()) doAnswer {
+            assertThat(seen).containsExactly(testedBeacon.crashId)
+            response(202)
+        }
+
+        val result = checkNotNull(
+            testedBeacon.send(
+                datadogContext = { fakeDatadogContext },
+                crashType = "SIGSEGV",
+                message = "NDK crash detected with signal: SIGSEGV",
+                crashTimeMs = 1_000_000L,
+                timeSinceAppStartMs = 4_000L,
+                onCrashId = { seen += it }
+            )
+        )
+
+        assertThat(result.status).isEqualTo(CrashBeacon.STATUS_SENT)
+        assertThat(seen).containsExactly(testedBeacon.crashId)
+    }
+
+    @Test
+    fun `M arm with the console's switch and wait W armState()`() {
+        assertThat(testedBeacon.armState()).isEqualTo(true to CrashBeacon.DEFAULT_TIMEOUT_MS)
+
+        remoteEnabled = false
+        remoteTimeoutMs = 1500
+
+        assertThat(testedBeacon.armState()).isEqualTo(false to 1500)
+    }
+
+    @Test
     fun `M draw one crash id per process W crashId`() {
         assertThat(testedBeacon.crashId).isEqualTo(testedBeacon.crashId)
         assertThat(testedBeacon.crashId).matches("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$")
@@ -279,7 +312,7 @@ internal class CrashBeaconTest {
     ) = checkNotNull(
         testedBeacon.send(
             datadogContext = readContext,
-            throwable = IllegalStateException("boom"),
+            crashType = IllegalStateException::class.java.canonicalName!!,
             message = "boom",
             crashTimeMs = crashTimeMs,
             timeSinceAppStartMs = timeSinceAppStartMs

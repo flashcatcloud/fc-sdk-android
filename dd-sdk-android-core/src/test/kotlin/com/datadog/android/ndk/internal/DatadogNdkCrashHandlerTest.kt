@@ -193,6 +193,29 @@ internal class DatadogNdkCrashHandlerTest {
         assertThat(fakeNdkCacheDir).isEmptyDirectory
     }
 
+    @Test
+    fun `M read the crash beacon record W prepareData()`() {
+        // Given
+        fakeNdkCacheDir.mkdirs()
+        File(fakeNdkCacheDir, DatadogNdkCrashHandler.CRASH_BEACON_FILE_NAME).writeText("$FAKE_CRASH_ID sent 105")
+
+        // When
+        testedHandler.prepareData()
+        verify(mockExecutorService).execute(captureRunnable.capture())
+        captureRunnable.firstValue.run()
+
+        // Then
+        assertThat(testedHandler.lastCrashBeacon).isEqualTo(CrashBeaconRecord(FAKE_CRASH_ID, "sent", 105L))
+        assertThat(fakeNdkCacheDir).isEmptyDirectory
+    }
+
+    @Test
+    fun `M read no crash beacon record W CrashBeaconRecord parse() { not one }`() {
+        listOf("", "garbage", "$FAKE_CRASH_ID sent", "NOT-A-UUID sent 1", "$FAKE_CRASH_ID sent x").forEach {
+            assertThat(CrashBeaconRecord.parse(it)).describedAs(it).isNull()
+        }
+    }
+
     // endregion
 
     // region handleNdkCrash / Logs
@@ -296,6 +319,39 @@ internal class DatadogNdkCrashHandlerTest {
     }
 
     @Test
+    fun `M send RUM event under the beacon's id W handleNdkCrash() { crash beacon record }`(forge: Forge) {
+        // Given
+        val fakeViewEvent = forge.aFakeViewEvent()
+        testedHandler.lastNdkCrashLog = fakeNdkCrashLog
+        testedHandler.lastRumViewEvent = fakeViewEvent.toJson()
+        testedHandler.lastCrashBeacon = CrashBeaconRecord(FAKE_CRASH_ID, "timeout", 915L)
+
+        // When
+        testedHandler.handleNdkCrash(mockSdkCore)
+
+        // Then
+        verify(mockExecutorService).execute(captureRunnable.capture())
+        captureRunnable.firstValue.run()
+        verify(mockRumFeatureScope).sendEvent(
+            mapOf(
+                "type" to "ndk_crash",
+                "sourceType" to "ndk",
+                "timestamp" to fakeNdkCrashLog.timestamp,
+                "timeSinceAppStartMs" to fakeNdkCrashLog.timeSinceAppStartMs,
+                "signalName" to fakeNdkCrashLog.signalName,
+                "stacktrace" to fakeNdkCrashLog.stacktrace,
+                "message" to DatadogNdkCrashHandler.LOG_CRASH_MSG
+                    .format(Locale.US, fakeNdkCrashLog.signalName),
+                "lastViewEvent" to fakeViewEvent.toJson(),
+                "crashId" to FAKE_CRASH_ID,
+                "beaconStatus" to "timeout",
+                "beaconDuration" to 915L
+            )
+        )
+        assertThat(testedHandler.lastCrashBeacon).isNull()
+    }
+
+    @Test
     fun `M send RUM event W handleNdkCrash() { override native source type } `(forge: Forge) {
         // Given
         val handler = DatadogNdkCrashHandler(
@@ -387,4 +443,8 @@ internal class DatadogNdkCrashHandlerTest {
     )
 
     // endregion
+
+    private companion object {
+        const val FAKE_CRASH_ID = "6a1f0c2e-3b4d-4e5f-8a9b-0c1d2e3f4a5b"
+    }
 }

@@ -75,6 +75,17 @@ internal class CrashBeacon(
         (executor as? ThreadPoolExecutor)?.prestartCoreThread()
     }
 
+    /**
+     * Whether beacons are on as far as the console says, and how long a crash waits for one: what a
+     * native crash, which cannot ask at the crash, is armed with ahead of it.
+     */
+    @Suppress("TooGenericExceptionCaught")
+    fun armState(): Pair<Boolean, Int> = try {
+        (remoteEnabled() != false) to (remoteTimeoutMs() ?: DEFAULT_TIMEOUT_MS)
+    } catch (e: Throwable) {
+        false to DEFAULT_TIMEOUT_MS
+    }
+
     /** Stops the beacon thread with the SDK. */
     fun shutdown() {
         executor.shutdownNow()
@@ -93,19 +104,28 @@ internal class CrashBeacon(
      * no beacon.
      *
      * @param datadogContext reads the SDK context, with the RUM feature context, at the crash.
+     * @param crashType the exception class, or the signal name of a native crash.
      * @param crashTimeMs the crash time on the device clock, the one the crash is written with.
      * @param timeSinceAppStartMs the crash time since the process started, as written with the crash.
+     * @param onCrashId called with [crashId] before anything is sent, for a crash whose report is
+     * written after the beacon and has to know the id first.
      */
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught", "LongParameterList")
     fun send(
         datadogContext: () -> DatadogContext?,
-        throwable: Throwable,
+        crashType: String,
         message: String,
         crashTimeMs: Long,
-        timeSinceAppStartMs: Long
+        timeSinceAppStartMs: Long,
+        onCrashId: (String) -> Unit = {}
     ): ErrorEvent.Beacon? {
         if (!claimed.compareAndSet(false, true)) return null
         val start = clock()
+        try {
+            onCrashId(crashId)
+        } catch (e: Throwable) {
+            logFailure(e)
+        }
         val timeoutMs = try {
             (remoteTimeoutMs() ?: DEFAULT_TIMEOUT_MS).toLong()
         } catch (e: Throwable) {
@@ -114,7 +134,7 @@ internal class CrashBeacon(
         val status = try {
             @Suppress("UnsafeThirdPartyFunctionCall") // every failure is caught below
             val future: Future<String> = executor.submit<String> {
-                attempt(datadogContext, throwable, message, crashTimeMs, timeSinceAppStartMs, timeoutMs)
+                attempt(datadogContext, crashType, message, crashTimeMs, timeSinceAppStartMs, timeoutMs)
             }
             @Suppress("UnsafeThirdPartyFunctionCall") // every failure is caught below
             future.get(timeoutMs, TimeUnit.MILLISECONDS)
@@ -133,7 +153,7 @@ internal class CrashBeacon(
     @Suppress("ReturnCount", "LongParameterList")
     private fun attempt(
         readContext: () -> DatadogContext?,
-        throwable: Throwable,
+        crashType: String,
         message: String,
         crashTimeMs: Long,
         timeSinceAppStartMs: Long,
@@ -152,7 +172,7 @@ internal class CrashBeacon(
         ) {
             return STATUS_SKIPPED
         }
-        val body = payload(datadogContext, rumContext, throwable, message, crashTimeMs, timeSinceAppStartMs)
+        val body = payload(datadogContext, rumContext, crashType, message, crashTimeMs, timeSinceAppStartMs)
         return post(body, timeoutMs)
     }
 
@@ -177,7 +197,7 @@ internal class CrashBeacon(
     internal fun payload(
         datadogContext: DatadogContext,
         rumContext: RumContext,
-        throwable: Throwable,
+        crashType: String,
         message: String,
         crashTimeMs: Long,
         timeSinceAppStartMs: Long
@@ -193,7 +213,7 @@ internal class CrashBeacon(
             put("application_id", applicationId)
             put("launch_time", date - timeSinceAppStartMs)
             put("date", date)
-            put("crash_type", throwable.javaClass.canonicalName ?: throwable.javaClass.simpleName)
+            put("crash_type", crashType)
             put("crash_message", message.take(MAX_MESSAGE_LENGTH))
             put("session_id", rumContext.sessionId)
             putOpt("view_id", rumContext.viewId)

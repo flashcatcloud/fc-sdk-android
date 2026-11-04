@@ -1331,6 +1331,65 @@ internal class RumFeatureTest {
     }
 
     @Test
+    fun `M disarm the native crash beacon W onReceive() { arm request, beacon turned off at init }`() {
+        // Given
+        testedFeature.onInitialize(appContext.mockInstance)
+        var armed: Pair<Boolean, Int>? = null
+
+        // When
+        testedFeature.onReceive(
+            mapOf(
+                "type" to RumFeature.NDK_CRASH_BEACON_ARM_MESSAGE_TYPE,
+                "onArm" to { enabled: Boolean, timeoutMs: Int -> armed = enabled to timeoutMs }
+            )
+        )
+
+        // Then
+        assertThat(testedFeature.crashBeacon).isNull()
+        assertThat(armed).isEqualTo(false to CrashBeacon.DEFAULT_TIMEOUT_MS)
+    }
+
+    @Test
+    fun `M send the native crash beacon under the crash id W onReceive() { beacon request }`(
+        @Forgery fakeDatadogContext: DatadogContext
+    ) {
+        // Given
+        // A session RUM does not track skips the request, which keeps this test off the network.
+        whenever(mockSdkCore.getDatadogContext(any())) doReturn fakeDatadogContext.copy(
+            featuresContext = mapOf(
+                Feature.RUM_FEATURE_NAME to RumContext(sessionState = RumSessionScope.State.NOT_TRACKED).toMap()
+            )
+        )
+        val beaconExecutor = Executors.newSingleThreadExecutor()
+        whenever(mockSdkCore.createSingleThreadExecutorService("rum-crash-beacon")) doReturn beaconExecutor
+        whenever(mockSdkCore.createOkHttpCallFactory(any())) doReturn mock()
+        testedFeature.onInitialize(appContext.mockInstance)
+        val crashId = checkNotNull(testedFeature.crashBeacon).crashId
+        val seenIds = mutableListOf<String>()
+        var result: Triple<String, String, Long>? = null
+
+        // When
+        testedFeature.onReceive(
+            mapOf(
+                "type" to RumFeature.NDK_CRASH_BEACON_MESSAGE_TYPE,
+                "crashType" to "SIGSEGV",
+                "message" to "NDK crash detected with signal: SIGSEGV",
+                "crashTimeMs" to 5_000L,
+                "timeSinceAppStartMs" to 4_000L,
+                "onCrashId" to { id: String -> seenIds += id },
+                "onResult" to { id: String, status: String, durationMs: Long ->
+                    result = Triple(id, status, durationMs)
+                }
+            )
+        )
+
+        // Then
+        assertThat(seenIds).containsExactly(crashId)
+        assertThat(result).isEqualTo(Triple(crashId, CrashBeacon.STATUS_SKIPPED, 0L))
+        beaconExecutor.shutdownNow()
+    }
+
+    @Test
     fun `M prepare no beacon W onInitialize() { beacon turned off at init }`() {
         // Given
         testedFeature = RumFeature(

@@ -19,6 +19,7 @@
 #include <unistd.h>
 
 #include "backtrace-handler.h"
+#include "crash-beacon.h"
 #include "datadog-native-lib.h"
 
 static const char *LOG_TAG = "DatadogNdkCrashReporter";
@@ -148,6 +149,12 @@ void uninstall_handlers() {
 }
 
 void handle_signal(int signum, siginfo_t *info, void *user_context) {
+    // FLASHCAT FORK - a crash while the crash beacon of an earlier one is under way keeps that
+    // earlier crash's report and lets it end the process. Only reachable with the beacon on.
+    if (crash_beacon_installed && crash_beacon_is_sending()) {
+        crash_beacon_park();
+    }
+
     const size_t signals_array_size = handled_signals_size();
     for (int i = 0; i < signals_array_size; i++) {
         const int signal = handled_signals[i].signal_value;
@@ -169,6 +176,11 @@ void handle_signal(int signum, siginfo_t *info, void *user_context) {
 
             break;
         }
+    }
+
+    // FLASHCAT FORK - the report is written: hand over to the crash beacon, within its timeout.
+    if (crash_beacon_installed) {
+        crash_beacon_on_crash(signum);
     }
 
     // We need to uninstall our custom handlers otherwise we will go in a continuous loop when

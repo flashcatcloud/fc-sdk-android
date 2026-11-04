@@ -6,6 +6,7 @@
 
 package com.datadog.android.ndk.internal
 
+import android.app.Application
 import android.content.Context
 import com.datadog.android.api.InternalLogger
 import com.datadog.android.api.feature.Feature
@@ -24,9 +25,12 @@ import java.util.concurrent.TimeUnit
  * NDK crashes to our logs dashboard.
  */
 internal class NdkCrashReportsFeature(
-    private val sdkCore: FeatureSdkCore
+    private val sdkCore: FeatureSdkCore,
+    // FLASHCAT FORK - off unless the app turned it on; off, nothing about the beacon is created.
+    private val crashBeaconEnabled: Boolean = false
 ) : Feature, TrackingConsentProviderCallback {
     private var nativeLibraryLoaded = false
+    internal var crashBeacon: NdkCrashBeacon? = null
 
     override val name: String = Feature.NDK_CRASH_REPORTS_FEATURE_NAME
 
@@ -68,17 +72,24 @@ internal class NdkCrashReportsFeature(
         val nowElapsedNs = sdkCore.timeProvider.getDeviceElapsedTimeNanos()
         val appStartTimestamp =
             TimeUnit.MILLISECONDS.toNanos(nowMs) - nowElapsedNs + sdkCore.appStartTimeNs
+        val appStartTimeMs = TimeUnit.NANOSECONDS.toMillis(appStartTimestamp)
         registerSignalHandler(
             ndkCrashesDirs.absolutePath,
             consentToInt(internalSdkCore.trackingConsent),
-            TimeUnit.NANOSECONDS.toMillis(appStartTimestamp)
+            appStartTimeMs
         )
+        if (crashBeaconEnabled) {
+            crashBeacon = NdkCrashBeacon(sdkCore, ndkCrashesDirs, appStartTimeMs)
+                .takeIf { it.start(appContext as? Application) }
+        }
     }
 
     override fun onStop() {
         if (!nativeLibraryLoaded) {
             return
         }
+        crashBeacon?.stop()
+        crashBeacon = null
         unregisterSignalHandler()
     }
 

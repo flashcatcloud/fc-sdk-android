@@ -54,6 +54,7 @@ import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
@@ -235,6 +236,43 @@ internal class DatadogLateCrashReporterTest {
                 .hasVersion(fakeViewEvent.dd.documentVersion + 1)
                 .hasCrashCount((fakeViewEvent.view.crash?.count ?: 0) + 1)
                 .isActive(false)
+        }
+    }
+
+    @Test
+    fun `M write the crash under the beacon's id W handleNdkCrashEvent() { crash beacon record }`(
+        @LongForgery(min = 1) fakeTimestamp: Long,
+        @Forgery viewEvent: ViewEvent
+    ) {
+        // Given
+        val fakeViewEvent = viewEvent.copy(date = fakeCurrentTimeMs)
+        val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
+        whenever(mockRumEventDeserializer.deserialize(fakeViewEventJson)).doReturn(fakeViewEvent)
+        val fakeCrashId = "6a1f0c2e-3b4d-4e5f-8a9b-0c1d2e3f4a5b"
+
+        // When
+        testedHandler.handleNdkCrashEvent(
+            mapOf(
+                "timestamp" to fakeTimestamp,
+                "timeSinceAppStartMs" to 4_000L,
+                "signalName" to "SIGSEGV",
+                "stacktrace" to "stack",
+                "message" to "NDK crash detected with signal: SIGSEGV",
+                "lastViewEvent" to fakeViewEventJson,
+                "crashId" to fakeCrashId,
+                "beaconStatus" to "sent",
+                "beaconDuration" to 105L
+            ),
+            mockRumWriter
+        )
+
+        // Then
+        argumentCaptor<Any> {
+            verify(mockRumWriter, atLeastOnce()).write(eq(mockEventBatchWriter), capture(), eq(EventType.CRASH))
+            val error = allValues.filterIsInstance<ErrorEvent>().single()
+            assertThat(error.error.id).isEqualTo(fakeCrashId)
+            assertThat(error.error.beacon).isEqualTo(ErrorEvent.Beacon(status = "sent", duration = 105L))
+            assertThat(error.error.timeSinceAppStart).isEqualTo(4_000L)
         }
     }
 

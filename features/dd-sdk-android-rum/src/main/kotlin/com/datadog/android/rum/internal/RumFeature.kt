@@ -667,6 +667,10 @@ internal class RumFeature(
             NDK_CRASH_BUS_MESSAGE_TYPE ->
                 lateCrashEventHandler.handleNdkCrashEvent(event, dataWriter)
 
+            NDK_CRASH_BEACON_ARM_MESSAGE_TYPE -> armNdkCrashBeacon(event)
+
+            NDK_CRASH_BEACON_MESSAGE_TYPE -> sendNdkCrashBeacon(event)
+
             LOGGER_ERROR_BUS_MESSAGE_TYPE -> addLoggerError(event)
             LOGGER_ERROR_WITH_STACK_TRACE_MESSAGE_TYPE -> addLoggerErrorWithStacktrace(event)
             WEB_VIEW_INGESTED_NOTIFICATION_MESSAGE_TYPE -> {
@@ -884,6 +888,54 @@ internal class RumFeature(
         anrDetectorRunnable = detectorRunnable
     }
 
+    /**
+     * FLASHCAT FORK - a native crash cannot ask anything at the crash, so the NDK feature arms its
+     * signal handler ahead of it with what RUM says: beacons are off without RUM's own, or when the
+     * console turned them off.
+     */
+    private fun armNdkCrashBeacon(event: Map<*, *>) {
+        @Suppress("UNCHECKED_CAST")
+        val onArm = event["onArm"] as? (Boolean, Int) -> Unit ?: return
+        val beacon = crashBeacon
+        if (beacon == null) {
+            onArm(false, CrashBeacon.DEFAULT_TIMEOUT_MS)
+        } else {
+            val (enabled, timeoutMs) = beacon.armState()
+            onArm(enabled, timeoutMs)
+        }
+    }
+
+    /**
+     * FLASHCAT FORK - sends the beacon of a native crash, on the NDK feature's beacon thread while
+     * the crashed thread waits. The crash report was written first, so its id goes back through
+     * `onCrashId` before anything is sent, and the outcome through `onResult`.
+     */
+    @Suppress("ReturnCount")
+    private fun sendNdkCrashBeacon(event: Map<*, *>) {
+        val beacon = crashBeacon ?: return
+        val internalCore = sdkCore as? InternalSdkCore ?: return
+        val crashType = event["crashType"] as? String ?: return
+        val message = event["message"] as? String ?: return
+        val crashTimeMs = event["crashTimeMs"] as? Long ?: return
+        val timeSinceAppStartMs = event["timeSinceAppStartMs"] as? Long ?: return
+
+        @Suppress("UNCHECKED_CAST")
+        val onCrashId = event["onCrashId"] as? (String) -> Unit ?: return
+
+        @Suppress("UNCHECKED_CAST")
+        val onResult = event["onResult"] as? (String, String, Long) -> Unit ?: return
+
+        val result = beacon.send(
+            datadogContext = { internalCore.getDatadogContext(withFeatureContexts = setOf(Feature.RUM_FEATURE_NAME)) },
+            crashType = crashType,
+            message = message,
+            crashTimeMs = crashTimeMs,
+            timeSinceAppStartMs = timeSinceAppStartMs,
+            onCrashId = onCrashId
+        ) ?: return
+        onResult(beacon.crashId, result.status, result.duration ?: 0L)
+    }
+
     private fun addJvmCrash(crashEvent: JvmCrash.Rum) {
         val monitor = GlobalRumMonitor.get(sdkCore) as? AdvancedRumMonitor ?: return
         // FLASHCAT FORK - one time for the beacon and the crash: the intake recovers the launch of
@@ -900,7 +952,7 @@ internal class RumFeature(
                         withFeatureContexts = setOf(Feature.RUM_FEATURE_NAME)
                     )
                 },
-                throwable = crashEvent.throwable,
+                crashType = crashEvent.throwable.javaClass.let { it.canonicalName ?: it.simpleName },
                 message = crashEvent.message,
                 crashTimeMs = now.timestamp,
                 timeSinceAppStartMs = TimeUnit.NANOSECONDS.toMillis(now.nanoTime - internalCore.appStartTimeNs)
@@ -1173,6 +1225,10 @@ internal class RumFeature(
         internal const val WEB_VIEW_SESSION_ID_KEY = "sessionId"
 
         internal const val NDK_CRASH_BUS_MESSAGE_TYPE = "ndk_crash"
+
+        // FLASHCAT FORK - sent by the NDK feature, see NdkCrashBeacon.
+        internal const val NDK_CRASH_BEACON_ARM_MESSAGE_TYPE = "ndk_crash_beacon_arm"
+        internal const val NDK_CRASH_BEACON_MESSAGE_TYPE = "ndk_crash_beacon"
         internal const val LOGGER_ERROR_BUS_MESSAGE_TYPE = "logger_error"
         internal const val LOGGER_ERROR_WITH_STACK_TRACE_MESSAGE_TYPE = "logger_error_with_stacktrace"
         internal const val WEB_VIEW_INGESTED_NOTIFICATION_MESSAGE_TYPE = "web_view_ingested_notification"
