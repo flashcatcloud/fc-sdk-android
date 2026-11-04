@@ -57,8 +57,6 @@ internal class NdkCrashBeacon(
             start()
         }
         inForeground = safeIsProcessInForeground()
-        // The activity that makes the process foreground started before this could count it.
-        startedActivities.set(if (inForeground) 1 else 0)
         this.application = application
         application?.registerActivityLifecycleCallbacks(this)
         rearm()
@@ -103,7 +101,9 @@ internal class NdkCrashBeacon(
 
     override fun onActivityStopped(activity: Activity) {
         // Floored at zero: an activity started before this was registered stops without having
-        // been counted.
+        // been counted. Counting it in at start instead would be wrong in the common case: the SDK
+        // is set up in Application.onCreate, where the process already reads as foreground but no
+        // activity has started yet - the app would then never be seen leaving the foreground.
         if (startedActivities.get() > 0) startedActivities.decrementAndGet()
         if (startedActivities.get() == 0) {
             inForeground = false
