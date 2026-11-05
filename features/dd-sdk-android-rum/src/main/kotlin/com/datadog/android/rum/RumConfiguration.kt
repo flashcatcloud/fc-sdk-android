@@ -180,11 +180,13 @@ data class RumConfiguration internal constructor(
          *
          * The beacon is a few hundred bytes without stack, sent while the crash ends the process, so
          * the crash is counted even if the app is never opened again. The full report still follows
-         * on the next launch, under the same id. The crashed thread waits for the beacon at most one
-         * second before the crash goes on to the previous handler.
+         * on the next launch, under the same id. The full crash is persisted before networking.
+         * Persistence confirmation and the beacon share a one-second budget by default (remote
+         * configuration: 0.5 to 2 seconds), before handing off to the previous crash handler.
          *
          * Sent only when the app is in the foreground, tracking consent is granted, and the session
-         * is tracked. Enabled by default. The console can turn it off remotely, whatever this says.
+         * is tracked. Disabled by default; enable explicitly with this setter. The console can
+         * turn it off remotely, but cannot override a locally disabled beacon.
          *
          * When a custom [setErrorEventMapper] is configured, beacons are skipped: the full error
          * still passes through that mapper before upload, and no unfiltered data is sent early.

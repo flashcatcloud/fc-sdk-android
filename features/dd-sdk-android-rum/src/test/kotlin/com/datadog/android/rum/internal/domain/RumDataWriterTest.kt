@@ -96,6 +96,24 @@ internal class RumDataWriterTest {
     }
 
     @Test
+    fun `M acknowledge only successful disk writes W writeSerialized crash`() {
+        val acknowledged = mutableListOf<RawBatchEvent>()
+        val writer = RumDataWriter(
+            mockSerializer,
+            mockEventMetaSerializer,
+            rumMonitor.mockSdkCore,
+            onCrashWritten = { acknowledged += it }
+        )
+        val event = RawBatchEvent(fakeSerializedData)
+        whenever(mockEventBatchWriter.write(event, null, EventType.CRASH)) doReturn false
+        assertThat(writer.writeSerialized(mockEventBatchWriter, event, EventType.CRASH)).isFalse()
+        assertThat(acknowledged).isEmpty()
+        whenever(mockEventBatchWriter.write(event, null, EventType.CRASH)) doReturn true
+        assertThat(writer.writeSerialized(mockEventBatchWriter, event, EventType.CRASH)).isTrue()
+        assertThat(acknowledged).containsExactly(event)
+    }
+
+    @Test
     fun `M write data W write()`(
         forge: Forge
     ) {

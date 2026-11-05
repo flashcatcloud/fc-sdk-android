@@ -50,6 +50,7 @@ import com.datadog.android.rum.configuration.SlowFramesConfiguration
 import com.datadog.android.rum.configuration.VitalsUpdateFrequency
 import com.datadog.android.rum.internal.anr.ANRDetectorRunnable
 import com.datadog.android.rum.internal.crash.CrashBeacon
+import com.datadog.android.rum.internal.crash.JvmCrashPersistence
 import com.datadog.android.rum.internal.debug.UiRumDebugListener
 import com.datadog.android.rum.internal.domain.InfoProvider
 import com.datadog.android.rum.internal.domain.RumDataWriter
@@ -132,6 +133,7 @@ import com.datadog.android.rum.tracking.ViewAttributesProvider
 import com.datadog.android.rum.tracking.ViewTrackingStrategy
 import com.datadog.android.telemetry.model.TelemetryConfigurationEvent
 import com.google.gson.JsonObject
+import java.io.File
 import java.util.Locale
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
@@ -191,6 +193,11 @@ internal class RumFeature(
 
     // FLASHCAT FORK - null when the init configuration turns crash beacons off.
     internal var crashBeacon: CrashBeacon? = null
+    internal val jvmCrashPersistence = JvmCrashPersistence {
+        (sdkCore as? InternalSdkCore)?.rootStorageDir?.let {
+            File(it, "jvm-crash-beacon/$applicationId")
+        }
+    }
     internal var remoteConfigController: RemoteConfigController? = null
     private var remoteConfigForegroundCallback: ProcessForegroundCallback? = null
 
@@ -371,7 +378,8 @@ internal class RumFeature(
             viewEventFilter = RumViewEventFilter(
                 eventMetaDeserializer = RumEventMetaDeserializer(sdkCore.internalLogger)
             ),
-            internalLogger = sdkCore.internalLogger
+            internalLogger = sdkCore.internalLogger,
+            enrichCrash = jvmCrashPersistence::enrich
         )
     }
 
@@ -631,7 +639,8 @@ internal class RumFeature(
                 RumEventSerializer(sdkCore.internalLogger)
             ),
             eventMetaSerializer = RumEventMetaSerializer(),
-            sdkCore = sdkCore
+            sdkCore = sdkCore,
+            onCrashWritten = jvmCrashPersistence::onWritten
         )
     }
 
@@ -950,53 +959,76 @@ internal class RumFeature(
         onResult(beacon.crashId, result.beacon.status, result.beacon.duration ?: 0L)
     }
 
+    @Suppress("TooGenericExceptionCaught")
     private fun addJvmCrash(crashEvent: JvmCrash.Rum) {
         val monitor = GlobalRumMonitor.get(sdkCore) as? AdvancedRumMonitor ?: return
-        // FLASHCAT FORK - one time for the beacon and the crash: the intake recovers the launch of
-        // the written crash from its date and time since app start, and must find the beacon's.
         val now = Time()
         val beacon = crashBeacon
-        val internalCore = sdkCore as? InternalSdkCore
-        // Nothing about the beacon may keep the crash from being written and handed on to the
-        // previous handler: any failure here just means no beacon.
-
-        @Suppress("TooGenericExceptionCaught")
-        val beaconResult = if (beacon == null || internalCore == null) {
-            null
+        val reservation = beacon?.reserve()
+        val pending = if (beacon != null && reservation != null) {
+            jvmCrashPersistence.begin(beacon.crashId, beacon.timeoutMs())
         } else {
-            try {
-                sendJvmCrashBeacon(beacon, internalCore, crashEvent, now)
-            } catch (e: Throwable) {
-                null
-            }
+            null
         }
-        monitor.addCrash(
-            crashEvent.message,
-            RumErrorSource.SOURCE,
-            crashEvent.throwable,
-            crashEvent.threads,
-            eventTime = now,
-            errorId = beacon?.crashId?.takeIf { beaconResult != null },
-            beacon = beaconResult?.beacon,
-            crashDate = beaconResult?.crashDate
-        )
+        var result: CrashBeacon.Result? = null
+        try {
+            // Enqueue the complete crash FIRST, with a stable id. Merely enqueueing is not proof
+            // of persistence: onWritten observes the actual batch writer's successful return.
+            monitor.addCrash(
+                crashEvent.message,
+                RumErrorSource.SOURCE,
+                crashEvent.throwable,
+                crashEvent.threads,
+                eventTime = now,
+                errorId = pending?.id
+            )
+            if (pending == null || beacon == null) return
+            val report = pending.awaitReport() ?: return
+            val internalCore = sdkCore as? InternalSdkCore ?: return
+            val error = report.getAsJsonObject("error")
+            val reportContext = JvmCrashPersistence.rumContext(report)
+            result = beacon.send(
+                datadogContext = {
+                    internalCore.getDatadogContext()?.let { context ->
+                        context.copy(
+                            featuresContext = context.featuresContext +
+                                (Feature.RUM_FEATURE_NAME to reportContext.toMap())
+                        )
+                    }
+                },
+                crashType = crashEvent.throwable.javaClass.let { it.canonicalName ?: it.name },
+                message = crashEvent.message,
+                crashTimeMs = now.timestamp,
+                timeSinceAppStartMs = error.get("time_since_app_start").asLong,
+                waitTimeoutMs = (pending.remainingMs() - JVM_BEACON_RESULT_MARGIN_MS).coerceAtLeast(0),
+                reservation = reservation,
+                persistedDate = report.get("date").asLong
+            )
+        } catch (_: Throwable) {
+            // Never enqueue another copy. A failed/slow write skips networking; a failed beacon
+            // cannot remove the complete report already written by normal RUM persistence.
+        } finally {
+            if (pending != null) finishJvmCrash(pending, result?.beacon)
+        }
     }
 
-    private fun sendJvmCrashBeacon(
-        beacon: CrashBeacon,
-        internalCore: InternalSdkCore,
-        crashEvent: JvmCrash.Rum,
-        now: Time
-    ) = beacon.send(
-        datadogContext = {
-            internalCore.getDatadogContext(withFeatureContexts = setOf(Feature.RUM_FEATURE_NAME))
-        },
-        // An anonymous or local class has no canonical name and an empty simple name.
-        crashType = crashEvent.throwable.javaClass.let { it.canonicalName ?: it.name },
-        message = crashEvent.message,
-        crashTimeMs = now.timestamp,
-        timeSinceAppStartMs = TimeUnit.NANOSECONDS.toMillis(now.nanoTime - internalCore.appStartTimeNs)
-    )
+    @Suppress("TooGenericExceptionCaught")
+    private fun finishJvmCrash(pending: JvmCrashPersistence.Pending, result: ErrorEvent.Beacon?) {
+        if (result == null) {
+            jvmCrashPersistence.finish(pending, null)
+            return
+        }
+        try {
+            // Outcome I/O uses the existing worker and the remaining budget too. A slow disk must
+            // not block the crashed thread indefinitely after the HTTP timeout has already elapsed.
+            (sdkCore as InternalSdkCore).getPersistenceExecutorService().execute {
+                jvmCrashPersistence.finish(pending, result)
+            }
+            pending.finished.await(pending.remainingMs(), TimeUnit.MILLISECONDS)
+        } catch (_: Throwable) {
+            jvmCrashPersistence.finish(pending, null)
+        }
+    }
 
     private fun addLoggerError(loggerErrorEvent: Map<*, *>) {
         val throwable = loggerErrorEvent[EVENT_THROWABLE_PROPERTY] as? Throwable
@@ -1233,8 +1265,8 @@ internal class RumFeature(
         // FLASHCAT FORK - the same for the replay of a collected session the replay rate does not
         // keep.
         val sessionReplayOnError: Boolean = false,
-        // FLASHCAT FORK - crash beacon, on by default.
-        val crashBeaconEnabled: Boolean = true
+        // FLASHCAT FORK - crash beacon, opt-in for both JVM and native crashes.
+        val crashBeaconEnabled: Boolean = false
     )
 
     internal companion object {
@@ -1255,6 +1287,8 @@ internal class RumFeature(
         internal const val WEB_VIEW_SESSION_ID_KEY = "sessionId"
 
         internal const val NDK_CRASH_BUS_MESSAGE_TYPE = "ndk_crash"
+
+        private const val JVM_BEACON_RESULT_MARGIN_MS = 100L
 
         // FLASHCAT FORK - sent by the NDK feature, see NdkCrashBeacon.
         internal const val NDK_CRASH_BEACON_ARM_MESSAGE_TYPE = "ndk_crash_beacon_arm"

@@ -20,7 +20,8 @@ import com.datadog.android.rum.model.ViewEvent
 internal class RumDataWriter(
     internal val eventSerializer: Serializer<Any>,
     private val eventMetaSerializer: Serializer<RumEventMeta>,
-    private val sdkCore: InternalSdkCore
+    private val sdkCore: InternalSdkCore,
+    private val onCrashWritten: (RawBatchEvent) -> Unit = {}
 ) : DataWriter<Any> {
 
     // region DataWriter
@@ -75,7 +76,9 @@ internal class RumDataWriter(
     @WorkerThread
     internal fun writeSerialized(writer: EventBatchWriter, batchEvent: RawBatchEvent, eventType: EventType): Boolean {
         synchronized(this) {
-            return writer.write(batchEvent, null, eventType)
+            val written = writer.write(batchEvent, null, eventType)
+            if (written && eventType == EventType.CRASH) onCrashWritten(batchEvent)
+            return written
         }
     }
 

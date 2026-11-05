@@ -40,10 +40,9 @@ import java.util.concurrent.atomic.AtomicReference
  * became of the beacon in `error.beacon`. The intake merges the two by that id.
  *
  * A JVM crash reaches us from an uncaught exception handler. It can use ordinary JVM code, but
- * reading SDK state can still block. Preparation and sending therefore run on the beacon thread,
- * before the crash is written, which lets the written crash carry the beacon's outcome.
- * The wait is bounded, so a beacon that hangs costs the crash at
- * most the configured timeout before it goes on to be written and handed to the previous handler.
+ * reading SDK state can still block. Sending runs on the beacon thread after the JVM report has
+ * been persisted. Its outcome is saved separately and attached when the report is uploaded.
+ * The wait is bounded; networking must never delay saving the full crash report.
  *
  * The request runs on a thread created at startup: a crash caused by running out of memory or
  * threads must not depend on creating one.
@@ -86,8 +85,15 @@ internal class CrashBeacon(
         return enabled to timeoutMs().toInt()
     }
 
-    private fun timeoutMs(): Long =
+    internal fun timeoutMs(): Long =
         (configuration.timeoutMs?.takeIf { it in MIN_TIMEOUT_MS..MAX_TIMEOUT_MS } ?: DEFAULT_TIMEOUT_MS).toLong()
+
+    /** Reserve before persisting a JVM crash, so concurrent Java/native crashes cannot share its id. */
+    fun reserve(): Reservation? = if (claimed.compareAndSet(false, true)) Reservation(this) else null
+
+    internal class Reservation internal constructor(internal val owner: CrashBeacon) {
+        internal val used = AtomicBoolean(false)
+    }
 
     /** Stops the beacon thread with the SDK. */
     fun shutdown() {
@@ -96,7 +102,7 @@ internal class CrashBeacon(
 
     /**
      * Sends the beacon of the crash happening now, waits for it within the timeout, and tells what
-     * became of it. The crash is then written under [crashId].
+     * became of it. The recoverable crash report must already be persisted under [crashId].
      *
      * The crashed thread only submits and waits: reading the SDK context, deciding whether to send,
      * building and sending the request all run on the beacon thread, inside the bound. Nothing here
@@ -117,7 +123,9 @@ internal class CrashBeacon(
      * the two by the launch day it derives from it).
      * @param waitMarginMs taken off the wait, for a caller that itself waits on a clock that
      * started earlier (the native signal handler) and must learn the outcome before it stops.
-     * @param waitTimeoutMs remaining native wait, from the configuration frozen for this crash.
+     * @param waitTimeoutMs remaining wait, from the configuration frozen for this crash.
+     * @param reservation the JVM crash's id reservation, made before persisting the full report.
+     * @param persistedDate the JVM report's already persisted date, immune to later clock/view changes.
      */
     @Suppress("TooGenericExceptionCaught", "LongParameterList", "ReturnCount")
     fun send(
@@ -129,11 +137,14 @@ internal class CrashBeacon(
         onCrashId: (String) -> Unit = {},
         onDispatch: (Long) -> Unit = {},
         waitMarginMs: Long = 0L,
-        waitTimeoutMs: Long? = null
+        waitTimeoutMs: Long? = null,
+        reservation: Reservation? = null,
+        persistedDate: Long? = null
     ): Result? {
-        if (!claimed.compareAndSet(false, true)) return null
-        // The full ErrorEvent is mapped later, on the persistence thread. Calling the user's
-        // mapper twice, or with a partial event, cannot preserve its filtering semantics.
+        val claim = reservation ?: reserve() ?: return null
+        if (claim.owner !== this || !claim.used.compareAndSet(false, true)) return null
+        // A native ErrorEvent is mapped on the next launch; JVM events are already mapped.
+        // Keep the shared opt-out for custom mappers: never send an unfiltered partial event.
         if (hasCustomErrorEventMapper) return Result(ErrorEvent.Beacon(STATUS_SKIPPED, 0L), null)
         // Decided here, on the crashed thread, before anything is submitted: a background crash, or
         // one the console turned beacons off for, must not wait on the beacon thread at all.
@@ -164,7 +175,8 @@ internal class CrashBeacon(
                         timeSinceAppStartMs,
                         timeoutMs,
                         dispatch,
-                        onDispatch
+                        onDispatch,
+                        persistedDate
                     )
                 } catch (e: Throwable) {
                     // Logging belongs inside the bound too: a logger can itself wait on SDK state.
@@ -205,7 +217,8 @@ internal class CrashBeacon(
         timeSinceAppStartMs: Long,
         timeoutMs: Long,
         dispatch: AtomicReference<Dispatch>,
-        onDispatch: (Long) -> Unit
+        onDispatch: (Long) -> Unit,
+        persistedDate: Long?
     ): String {
         val datadogContext = readContext() ?: return STATUS_FAILED
         val rumContext = RumContext.fromFeatureContext(
@@ -229,7 +242,7 @@ internal class CrashBeacon(
         } else {
             datadogContext.time.serverTimeOffsetMs
         }
-        val date = crashTimeMs + offset
+        val date = persistedDate ?: (crashTimeMs + offset)
         val body = payload(datadogContext, rumContext, crashType, message, date, timeSinceAppStartMs)
         // Persist the date before claiming dispatch. Failure must stop the request, just like an
         // id write failure. If persistence outlives the wait, the CAS prevents a late request.

@@ -35,7 +35,8 @@ object NdkCrashReports {
      * The beacon is a few hundred bytes without stack, sent once the crash report is written and
      * before the crash goes on to the previous handler, so the crash is counted even if the app is
      * never opened again. The crashed thread waits for it at most one second (the RUM remote
-     * configuration can set 0.5 to 2 seconds). It needs RUM, with its crash beacon on.
+     * configuration can set 0.5 to 2 seconds). RUM crash beacons are also off by default;
+     * explicitly call `RumConfiguration.Builder.setCrashBeaconEnabled(true)` as well.
      *
      * Off by default. Off, native crashes are handled exactly as with [enable].
      *
