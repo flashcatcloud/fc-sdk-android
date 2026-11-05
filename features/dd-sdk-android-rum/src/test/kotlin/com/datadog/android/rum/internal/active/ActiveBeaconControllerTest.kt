@@ -280,7 +280,7 @@ internal class ActiveBeaconControllerTest {
         val holding = CountDownLatch(1)
         val release = CountDownLatch(1)
         val holder = Thread {
-            synchronized(stateLock) {
+            synchronized(checkNotNull(stateLock)) {
                 holding.countDown()
                 release.await(5, TimeUnit.SECONDS)
             }
@@ -918,7 +918,7 @@ internal class ActiveBeaconControllerTest {
             val stateLock = ActiveBeaconController::class.java.getDeclaredField("lock").apply {
                 isAccessible = true
             }.get(actual)
-            synchronized(stateLock) {
+            synchronized(checkNotNull(stateLock)) {
                 continueReading.countDown()
                 // The worker passed send's first eligible check and is waiting to create the Call.
                 val timeout = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
