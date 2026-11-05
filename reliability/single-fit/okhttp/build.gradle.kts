@@ -76,7 +76,16 @@ unMock {
     keep("com.android.internal.util.FastPrintWriter")
     keep("dalvik.system.BlockGuard")
     keep("dalvik.system.CloseGuard")
-    keepStartingWith("android.os")
+    // Keep the JVM-compatible looper/parcel implementation; Process needs Android's libcore.
+    keep("android.os.BaseBundle")
+    keep("android.os.Bundle")
+    keep("android.os.Parcel")
+    keep("android.os.Handler")
+    keep("android.os.IMessenger")
+    keep("android.os.Looper")
+    keep("android.os.Message")
+    keep("android.os.MessageQueue")
+    keep("android.os.SystemProperties")
     keepStartingWith("android.util.")
     keepStartingWith("org.json")
 }
