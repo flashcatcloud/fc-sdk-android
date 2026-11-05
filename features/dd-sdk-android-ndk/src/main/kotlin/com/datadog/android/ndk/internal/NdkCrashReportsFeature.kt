@@ -10,6 +10,7 @@ import android.app.Application
 import android.content.Context
 import com.datadog.android.api.InternalLogger
 import com.datadog.android.api.feature.Feature
+import com.datadog.android.api.feature.FeatureEventReceiver
 import com.datadog.android.api.feature.FeatureSdkCore
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.internal.utils.allowThreadDiskReads
@@ -28,7 +29,7 @@ internal class NdkCrashReportsFeature(
     private val sdkCore: FeatureSdkCore,
     // FLASHCAT FORK - off unless the app turned it on; off, nothing about the beacon is created.
     private val crashBeaconEnabled: Boolean = false
-) : Feature, TrackingConsentProviderCallback {
+) : Feature, TrackingConsentProviderCallback, FeatureEventReceiver {
     private var nativeLibraryLoaded = false
     internal var crashBeacon: NdkCrashBeacon? = null
 
@@ -81,11 +82,20 @@ internal class NdkCrashReportsFeature(
         if (crashBeaconEnabled) {
             // Best effort: whatever goes wrong, native crashes are still reported as before.
             crashBeacon = try {
-                NdkCrashBeacon(sdkCore, ndkCrashesDirs, appStartTimeMs)
+                NdkCrashBeacon(sdkCore, ndkCrashesDirs)
                     .takeIf { it.start(appContext as? Application) }
             } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
                 null
             }
+        }
+        sdkCore.setEventReceiver(name, this)
+        // Covers a RUM/config update concurrent with our initialization, before the receiver existed.
+        crashBeacon?.rearm()
+    }
+
+    override fun onReceive(event: Any) {
+        if ((event as? Map<*, *>)?.get("type") == "ndk_crash_beacon_config_changed") {
+            crashBeacon?.rearm()
         }
     }
 
@@ -93,6 +103,7 @@ internal class NdkCrashReportsFeature(
         if (!nativeLibraryLoaded) {
             return
         }
+        sdkCore.removeEventReceiver(name)
         crashBeacon?.stop()
         crashBeacon = null
         unregisterSignalHandler()

@@ -37,10 +37,7 @@ internal class NdkCrashBeacon(
     private val sdkCore: FeatureSdkCore,
     /** The NDK crash reports directory, where the crash report is written. */
     private val directory: File,
-    /** The process start, on the clock the crash report is timed with. */
-    private val appStartTimeMs: Long,
     private val native: Native = JniNative,
-    private val clock: () -> Long = System::currentTimeMillis,
     private val isProcessUserVisible: () -> Boolean = ::processImportanceIsUserVisible,
     private val scheduler: Scheduler = MainThreadScheduler()
 ) : Application.ActivityLifecycleCallbacks {
@@ -170,10 +167,9 @@ internal class NdkCrashBeacon(
      */
     private fun waitForCrashes() {
         while (true) {
-            val signal = native.waitForCrash()
-            if (signal <= 0) return
+            val crash = native.waitForCrash() ?: return
             try {
-                send(signal)
+                send(crash)
             } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
                 sdkCore.internalLogger.log(
                     InternalLogger.Level.WARN,
@@ -187,17 +183,20 @@ internal class NdkCrashBeacon(
         }
     }
 
-    internal fun send(signal: Int) {
-        val crashTimeMs = clock()
-        val signalName = signalName(signal)
-        val record = ResultRecord(crashTimeMs)
+    internal fun send(crash: NativeCrash) {
+        // A recovered process may crash again: never leave its earlier beacon beside a new report.
+        val previous = File(directory, RESULT_FILE_NAME)
+        check(!previous.exists() || previous.delete()) { "Unable to discard the previous crash beacon" }
+        val signalName = signalName(crash.signal)
+        val record = ResultRecord(crash.timestampMs)
         sendToRum(
             mapOf(
                 "type" to SEND_EVENT_TYPE,
                 "crashType" to signalName,
                 "message" to CRASH_MESSAGE.format(signalName),
-                "crashTimeMs" to crashTimeMs,
-                "timeSinceAppStartMs" to crashTimeMs - appStartTimeMs,
+                "crashTimeMs" to crash.timestampMs,
+                "timeSinceAppStartMs" to crash.timeSinceAppStartMs,
+                "waitTimeoutMs" to crash.remainingWaitMs,
                 // Written before the beacon goes out, as an unanswered one, again with the date the
                 // beacon is sent under, and a last time with the outcome when there is one.
                 "onCrashId" to { crashId: String -> record.id(crashId) },
@@ -228,8 +227,10 @@ internal class NdkCrashBeacon(
 
         @Synchronized
         fun dispatched(date: Long) {
+            check(!final) { "Crash beacon wait already finished" }
+            val id = checkNotNull(crashId)
+            write(id, STATUS_TIMEOUT, 0L, date)
             this.date = date
-            crashId?.takeUnless { final }?.let { write(it, STATUS_TIMEOUT, 0L) }
         }
 
         @Synchronized
@@ -242,9 +243,9 @@ internal class NdkCrashBeacon(
          * Replaces the file whole: the process can be killed at any moment of a write, and a
          * truncated file would lose the id the beacon was sent under.
          */
-        private fun write(crashId: String, status: String, durationMs: Long) {
+        private fun write(crashId: String, status: String, durationMs: Long, beaconDate: Long = date) {
             val partial = File(directory, "$RESULT_FILE_NAME.partial")
-            partial.writeText("$crashId $status $durationMs $crashTimeMs $date")
+            partial.writeText("$crashId $status $durationMs $crashTimeMs $beaconDate")
             check(partial.renameTo(File(directory, RESULT_FILE_NAME))) { "Unable to record the crash beacon" }
         }
     }
@@ -279,12 +280,20 @@ internal class NdkCrashBeacon(
         }
     }
 
+    /** Captured from the native report; never recomputed from the Java thread's clock. */
+    internal data class NativeCrash(
+        val signal: Int,
+        val timestampMs: Long,
+        val timeSinceAppStartMs: Long,
+        val remainingWaitMs: Long
+    )
+
     /** The native side, behind an interface so the Java side can be tested without it. */
     internal interface Native {
         fun install(): Boolean
         fun uninstall()
         fun arm(armed: Boolean, timeoutMs: Int)
-        fun waitForCrash(): Int
+        fun waitForCrash(): NativeCrash?
         fun finish()
     }
 
@@ -292,7 +301,9 @@ internal class NdkCrashBeacon(
         override fun install() = installNative()
         override fun uninstall() = uninstallNative()
         override fun arm(armed: Boolean, timeoutMs: Int) = armNative(armed, timeoutMs)
-        override fun waitForCrash() = waitForCrashNative()
+        override fun waitForCrash(): NativeCrash? = waitForCrashNative()?.let {
+            NativeCrash(it[0].toInt(), it[1], it[2], it[3])
+        }
         override fun finish() = finishNative()
     }
 
@@ -345,7 +356,7 @@ internal class NdkCrashBeacon(
         private external fun armNative(armed: Boolean, timeoutMs: Int)
 
         @JvmStatic
-        private external fun waitForCrashNative(): Int
+        private external fun waitForCrashNative(): LongArray?
 
         @JvmStatic
         private external fun finishNative()

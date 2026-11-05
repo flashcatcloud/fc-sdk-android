@@ -117,6 +117,7 @@ internal class CrashBeacon(
      * the two by the launch day it derives from it).
      * @param waitMarginMs taken off the wait, for a caller that itself waits on a clock that
      * started earlier (the native signal handler) and must learn the outcome before it stops.
+     * @param waitTimeoutMs remaining native wait, from the configuration frozen for this crash.
      */
     @Suppress("TooGenericExceptionCaught", "LongParameterList", "ReturnCount")
     fun send(
@@ -127,7 +128,8 @@ internal class CrashBeacon(
         timeSinceAppStartMs: Long,
         onCrashId: (String) -> Unit = {},
         onDispatch: (Long) -> Unit = {},
-        waitMarginMs: Long = 0L
+        waitMarginMs: Long = 0L,
+        waitTimeoutMs: Long? = null
     ): Result? {
         if (!claimed.compareAndSet(false, true)) return null
         // The full ErrorEvent is mapped later, on the persistence thread. Calling the user's
@@ -146,7 +148,8 @@ internal class CrashBeacon(
             // would be counted twice. Better not to send.
             return Result(ErrorEvent.Beacon(status = STATUS_FAILED, duration = clock() - start), null)
         }
-        val timeoutMs = (timeoutMs() - waitMarginMs).coerceAtLeast(MIN_CALL_TIMEOUT_MS)
+        val timeoutMs = ((waitTimeoutMs ?: timeoutMs()) - waitMarginMs).coerceAtLeast(0L)
+        if (timeoutMs == 0L) return Result(ErrorEvent.Beacon(STATUS_TIMEOUT, clock() - start), null)
         val dispatch = AtomicReference<Dispatch>(Dispatch.Pending)
         var future: Future<String>? = null
         val status = try {
@@ -228,13 +231,10 @@ internal class CrashBeacon(
         }
         val date = crashTimeMs + offset
         val body = payload(datadogContext, rumContext, crashType, message, date, timeSinceAppStartMs)
+        // Persist the date before claiming dispatch. Failure must stop the request, just like an
+        // id write failure. If persistence outlives the wait, the CAS prevents a late request.
+        onDispatch(date)
         if (!dispatch.compareAndSet(Dispatch.Pending, Dispatch.Ready(date))) return STATUS_TIMEOUT
-        @Suppress("TooGenericExceptionCaught")
-        try {
-            onDispatch(date)
-        } catch (e: Throwable) {
-            // Only the day the report lands on is at stake, and only around midnight.
-        }
         return post(body, timeoutMs)
     }
 

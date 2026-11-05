@@ -322,6 +322,7 @@ internal class RumFeature(
         initRumAppStartupDetector()
 
         sdkCore.setEventReceiver(name, this)
+        notifyNdkCrashBeacon()
 
         initialized.set(true)
     }
@@ -893,6 +894,12 @@ internal class RumFeature(
      * signal handler ahead of it with what RUM says: beacons are off without RUM's own, or when the
      * console turned them off.
      */
+    private fun notifyNdkCrashBeacon() {
+        sdkCore.getFeature(Feature.NDK_CRASH_REPORTS_FEATURE_NAME)?.sendEvent(
+            mapOf("type" to "ndk_crash_beacon_config_changed")
+        )
+    }
+
     private fun armNdkCrashBeacon(event: Map<*, *>) {
         @Suppress("UNCHECKED_CAST")
         val onArm = event["onArm"] as? (Boolean, Int) -> Unit ?: return
@@ -937,7 +944,8 @@ internal class RumFeature(
             onCrashId = onCrashId,
             onDispatch = onDispatch,
             // The signal handler started waiting before this thread was even woken.
-            waitMarginMs = NATIVE_WAIT_MARGIN_MS
+            waitMarginMs = NATIVE_WAIT_MARGIN_MS,
+            waitTimeoutMs = event["waitTimeoutMs"] as? Long
         ) ?: return
         onResult(beacon.crashId, result.beacon.status, result.beacon.duration ?: 0L)
     }
@@ -1139,7 +1147,8 @@ internal class RumFeature(
                 intakeUrl = intakeUrl,
                 applicationId = applicationId
             ),
-            internalLogger = sdkCore.internalLogger
+            internalLogger = sdkCore.internalLogger,
+            onCrashBeaconConfigurationChanged = ::notifyNdkCrashBeacon
         )
         remoteConfigStore = store
 

@@ -13,6 +13,7 @@ import com.datadog.android.api.feature.Feature
 import com.datadog.android.api.feature.FeatureScope
 import com.datadog.android.api.feature.FeatureSdkCore
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -76,9 +77,7 @@ internal class NdkCrashBeaconTest {
         testedBeacon = NdkCrashBeacon(
             sdkCore = mockSdkCore,
             directory = tempDir,
-            appStartTimeMs = 1_000L,
             native = fakeNative,
-            clock = { 5_000L },
             isProcessUserVisible = { visible },
             scheduler = fakeScheduler
         )
@@ -196,9 +195,7 @@ internal class NdkCrashBeaconTest {
         val beacon = NdkCrashBeacon(
             mockSdkCore,
             tempDir,
-            1_000L,
             fakeNative,
-            { 5_000L },
             { throw SecurityException("no") },
             fakeScheduler
         )
@@ -212,7 +209,7 @@ internal class NdkCrashBeaconTest {
 
     @Test
     fun `M ask RUM for the beacon and record its id first W send()`() {
-        testedBeacon.send(11)
+        testedBeacon.send(NdkCrashBeacon.NativeCrash(11, 5_000L, 4_000L, 900L))
 
         val event = sentToRum.single { it["type"] == NdkCrashBeacon.SEND_EVENT_TYPE }
         assertThat(event["crashType"]).isEqualTo("SIGSEGV")
@@ -235,7 +232,8 @@ internal class NdkCrashBeaconTest {
 
         // A dispatch reported after the outcome must not undo it.
         @Suppress("UNCHECKED_CAST")
-        (event["onDispatch"] as (Long) -> Unit)(9_999L)
+        assertThatThrownBy { (event["onDispatch"] as (Long) -> Unit)(9_999L) }
+            .isInstanceOf(IllegalStateException::class.java)
         assertThat(file.readText()).isEqualTo("$CRASH_ID sent 105 5000 5120")
     }
 
@@ -266,7 +264,7 @@ internal class NdkCrashBeaconTest {
     @Test
     fun `M refuse a second native beacon W start() { another one is running }`() {
         testedBeacon.start(mockApplication)
-        val other = NdkCrashBeacon(mockSdkCore, tempDir, 1_000L, FakeNative(), { 5_000L }, { true }, FakeScheduler())
+        val other = NdkCrashBeacon(mockSdkCore, tempDir, FakeNative(), { true }, FakeScheduler())
 
         assertThat(other.start(mockApplication)).isFalse
 
@@ -316,6 +314,46 @@ internal class NdkCrashBeaconTest {
         assertThat(NdkCrashBeacon.signalName(31)).isEqualTo("SIGNAL 31")
     }
 
+    @Test
+    fun `M rearm without an activity transition W remote configuration notification`() {
+        rumArm = false to 1_000
+        testedBeacon.start(mockApplication)
+        val feature = NdkCrashReportsFeature(mockSdkCore)
+        feature.crashBeacon = testedBeacon
+
+        rumArm = true to 2_000
+        feature.onReceive(mapOf("type" to "ndk_crash_beacon_config_changed"))
+
+        assertThat(fakeNative.arms.last()).isEqualTo(true to 2_000)
+        rumArm = false to 500
+        feature.onReceive(mapOf("type" to "ndk_crash_beacon_config_changed"))
+        assertThat(fakeNative.arms.last()).isEqualTo(false to 500)
+    }
+
+    @Test
+    fun `M discard the previous result W a later crash has no beacon`() {
+        val file = File(tempDir, NdkCrashBeacon.RESULT_FILE_NAME)
+        file.writeText("$CRASH_ID sent 100 4999 5119")
+
+        testedBeacon.send(NdkCrashBeacon.NativeCrash(11, 5_000L, 4_000L, 900L))
+
+        // RUM did not invoke any callbacks, as when the process beacon has already been claimed.
+        assertThat(file).doesNotExist()
+    }
+
+    @Test
+    fun `M preserve the native launch time across midnight W send()`() {
+        val launchTime = TimeUnit.DAYS.toMillis(20_000L) - 20L
+        val crashTime = launchTime + 5_000L
+        testedBeacon.send(NdkCrashBeacon.NativeCrash(11, crashTime, 5_000L, 700L))
+
+        val event = sentToRum.single { it["type"] == NdkCrashBeacon.SEND_EVENT_TYPE }
+        assertThat(event["crashTimeMs"]).isEqualTo(crashTime)
+        assertThat((event["crashTimeMs"] as Long) - (event["timeSinceAppStartMs"] as Long))
+            .isEqualTo(launchTime)
+        assertThat(event["waitTimeoutMs"]).isEqualTo(700L)
+    }
+
     private class FakeScheduler : NdkCrashBeacon.Scheduler {
         val pending = mutableListOf<Runnable>()
         override fun schedule(task: Runnable, delayMs: Long) {
@@ -355,7 +393,9 @@ internal class NdkCrashBeaconTest {
             arms += armed to timeoutMs
         }
 
-        override fun waitForCrash(): Int = crashes.take()
+        override fun waitForCrash(): NdkCrashBeacon.NativeCrash? = crashes.take().takeIf { it > 0 }?.let {
+            NdkCrashBeacon.NativeCrash(it, 5_000L, 4_000L, 900L)
+        }
         override fun finish() {
             finished.countDown()
             finishes.put(Unit)

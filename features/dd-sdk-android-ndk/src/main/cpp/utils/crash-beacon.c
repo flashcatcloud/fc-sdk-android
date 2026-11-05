@@ -17,10 +17,15 @@
 
 volatile sig_atomic_t crash_beacon_installed = 0;
 
-static volatile sig_atomic_t armed = 0;
-static volatile sig_atomic_t timeout_ms = 1000;
+/* Publish enabled and timeout together; one crash freezes one configuration. */
+static int arm_state = 1000 << 1;
+static int claimed_arm_state = 0;
+static int64_t report_time_ms = 0;
+static int64_t report_uptime_ms = 0;
+static struct timespec wait_started;
 /* The signal the beacon was woken for; 0 until a crash claims the beacon. Accessed atomically. */
 static int crash_signal = 0;
+static int owner_tid = 0;
 /* The beacon thread, once it waits: a crash on it must let the crashed thread it serves go on. */
 static volatile pid_t beacon_tid = 0;
 
@@ -69,6 +74,7 @@ bool crash_beacon_install(void) {
         return false;
     }
     __atomic_store_n(&crash_signal, 0, __ATOMIC_SEQ_CST);
+    __atomic_store_n(&owner_tid, 0, __ATOMIC_SEQ_CST);
     crash_beacon_installed = 1;
     return true;
 }
@@ -78,14 +84,14 @@ void crash_beacon_uninstall(void) {
         return;
     }
     crash_beacon_installed = 0;
-    armed = 0;
+    __atomic_store_n(&arm_state, 1000 << 1, __ATOMIC_SEQ_CST);
     // No crash is claimed, so the beacon thread wakes up to nothing and ends.
     write_byte(wake_fds[1]);
 }
 
 void crash_beacon_arm(bool should_arm, int wait_ms) {
-    timeout_ms = wait_ms;
-    armed = should_arm ? 1 : 0;
+    if (wait_ms < 500 || wait_ms > 2000) wait_ms = 1000;
+    __atomic_store_n(&arm_state, (wait_ms << 1) | (should_arm ? 1 : 0), __ATOMIC_SEQ_CST);
 }
 
 int crash_beacon_wait_for_crash(void) {
@@ -102,9 +108,28 @@ void crash_beacon_finish(void) {
     write_byte(done_fds[1]);
 }
 
-bool crash_beacon_is_sending(void) {
-    return __atomic_load_n(&crash_signal, __ATOMIC_SEQ_CST) != 0;
+bool crash_beacon_try_claim(int signum) {
+    int expected = 0;
+    if (!__atomic_compare_exchange_n(&owner_tid, &expected, gettid(), false,
+                                    __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)) return false;
+    __atomic_store_n(&crash_signal, signum, __ATOMIC_SEQ_CST);
+    claimed_arm_state = __atomic_load_n(&arm_state, __ATOMIC_SEQ_CST);
+    report_time_ms = 0;
+    report_uptime_ms = 0;
+    return true;
 }
+
+bool crash_beacon_is_owner(void) {
+    return __atomic_load_n(&owner_tid, __ATOMIC_SEQ_CST) == gettid();
+}
+
+void crash_beacon_record_report(int64_t timestamp_ms, int64_t uptime_ms) {
+    report_time_ms = timestamp_ms;
+    report_uptime_ms = uptime_ms;
+}
+
+int64_t crash_beacon_report_time(void) { return report_time_ms; }
+int64_t crash_beacon_report_uptime(void) { return report_uptime_ms; }
 
 static long elapsed_ms(const struct timespec *since) {
     struct timespec now;
@@ -123,26 +148,24 @@ static void drain_done_pipe(void) {
     }
 }
 
-void crash_beacon_on_crash(int signum) {
-    if (!crash_beacon_installed || !armed) {
-        return;
-    }
-    // One beacon per process: the first crash to get here claims it.
-    if (__atomic_exchange_n(&crash_signal, signum, __ATOMIC_SEQ_CST) != 0) {
-        return;
-    }
+int crash_beacon_remaining_wait_ms(void) {
+    const long remaining = (claimed_arm_state >> 1) - elapsed_ms(&wait_started);
+    return remaining > 0 ? (int) remaining : 0;
+}
+
+void crash_beacon_on_crash(void) {
+    // Only the owner reaches here, and only a successfully written report may send a beacon.
+    if (!(claimed_arm_state & 1) || report_time_ms == 0) return;
     drain_done_pipe();
+    clock_gettime(CLOCK_MONOTONIC, &wait_started);
     if (!write_byte(wake_fds[1])) {
         // Nothing woke up, so nothing is under way: later crashes must not wait on it.
         __atomic_store_n(&crash_signal, 0, __ATOMIC_SEQ_CST);
         return;
     }
 
-    struct timespec start;
-    clock_gettime(CLOCK_MONOTONIC, &start);
-    const long wait_ms = timeout_ms;
     for (;;) {
-        const long remaining = wait_ms - elapsed_ms(&start);
+        const long remaining = crash_beacon_remaining_wait_ms();
         if (remaining <= 0) {
             return;
         }
@@ -157,6 +180,7 @@ void crash_beacon_on_crash(int signum) {
 
 void crash_beacon_reset(void) {
     __atomic_store_n(&crash_signal, 0, __ATOMIC_SEQ_CST);
+    __atomic_store_n(&owner_tid, 0, __ATOMIC_SEQ_CST);
 }
 
 void crash_beacon_park(void) {

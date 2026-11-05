@@ -1334,6 +1334,16 @@ internal class RumFeatureTest {
     }
 
     @Test
+    fun `M notify native when RUM is ready W onInitialize()`() {
+        val nativeFeature = mock<com.datadog.android.api.feature.FeatureScope>()
+        whenever(mockSdkCore.getFeature(Feature.NDK_CRASH_REPORTS_FEATURE_NAME)) doReturn nativeFeature
+
+        testedFeature.onInitialize(appContext.mockInstance)
+
+        verify(nativeFeature).sendEvent(mapOf("type" to "ndk_crash_beacon_config_changed"))
+    }
+
+    @Test
     fun `M disarm the native crash beacon W onReceive() { arm request, beacon turned off at init }`() {
         // Given
         testedFeature.onInitialize(appContext.mockInstance)

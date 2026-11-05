@@ -96,7 +96,7 @@ void write_crash_report(int signum,
     }
 
     // serialize the log
-    const string file_path = main_context.storage_dir.append("/").append(crash_log_filename);
+    const string file_path = main_context.storage_dir + "/" + crash_log_filename;
     const uint64_t timestamp = time_since_epoch();
     const std::string serialized_log = serialize_crash_report(signum, timestamp, signal_name, error_message, error_stacktrace);
 
@@ -107,6 +107,9 @@ void write_crash_report(int signum,
         logs_file_output_stream << serialized_log.c_str();
     }
     logs_file_output_stream.close();
+    if (crash_beacon_installed && !logs_file_output_stream.fail()) {
+        crash_beacon_record_report(timestamp, timestamp - global_app_start_time_millis);
+    }
     pthread_mutex_unlock(&handler_mutex);
 }
 
@@ -186,11 +189,17 @@ Java_com_datadog_android_ndk_internal_NdkCrashBeacon_armNative(
     crash_beacon_arm(armed == JNI_TRUE, (int) timeout_ms);
 }
 
-extern "C" JNIEXPORT jint JNICALL
+extern "C" JNIEXPORT jlongArray JNICALL
 Java_com_datadog_android_ndk_internal_NdkCrashBeacon_waitForCrashNative(
         JNIEnv *env,
         jobject /* this */) {
-    return (jint) crash_beacon_wait_for_crash();
+    const int signal = crash_beacon_wait_for_crash();
+    if (signal == 0) return nullptr;
+    const jlong values[] = {signal, crash_beacon_report_time(), crash_beacon_report_uptime(),
+                           crash_beacon_remaining_wait_ms()};
+    jlongArray result = env->NewLongArray(4);
+    if (result != nullptr) env->SetLongArrayRegion(result, 0, 4, values);
+    return result;
 }
 
 extern "C" JNIEXPORT void JNICALL

@@ -38,6 +38,26 @@ internal class RemoteConfigStoreTest {
             .thenReturn(preferences)
     }
 
+    @Test
+    fun `M publish new beacon settings before notifying native W store()`() {
+        val observed = mutableListOf<Pair<Boolean?, Int?>>()
+        lateinit var store: RemoteConfigStore
+        store = RemoteConfigStore(
+            appContext,
+            STORE_KEY,
+            mock<InternalLogger>(),
+            onCrashBeaconConfigurationChanged = {
+                observed += store.crashBeaconEnabled() to store.crashBeaconTimeoutMs()
+            }
+        )
+
+        store.store(RemoteConfigValues(null, 1, crashBeaconEnabled = false, crashBeaconTimeoutMs = 500))
+        store.store(RemoteConfigValues(null, 2, crashBeaconEnabled = true, crashBeaconTimeoutMs = 2_000))
+        store.store(RemoteConfigValues(null, 3))
+
+        assertThat(observed).containsExactly(false to 500, true to 2_000, null to null)
+    }
+
     // region store key
 
     @Test

@@ -27,6 +27,7 @@ internal class RemoteConfigStore(
     appContext: Context,
     private val storeKey: String,
     private val internalLogger: InternalLogger,
+    private val onCrashBeaconConfigurationChanged: () -> Unit = {},
     /**
      * Wall clock, deliberately not [android.os.SystemClock.elapsedRealtime]: an entry's age has to
      * survive the process ending and the device rebooting, which is exactly what an elapsed-time
@@ -147,6 +148,7 @@ internal class RemoteConfigStore(
     fun store(values: RemoteConfigValues) {
         crashBeaconConfiguration.enabled = values.crashBeaconEnabled
         crashBeaconConfiguration.timeoutMs = values.crashBeaconTimeoutMs
+        onCrashBeaconConfigurationChanged()
         val editor = preferences?.edit() ?: return
         write(editor, sessionKey(), values.sessionSampleRate)
         write(editor, sessionOnErrorKey(), values.sessionOnError)

@@ -335,7 +335,7 @@ internal class DatadogNdkCrashHandlerTest {
         testedHandler.lastNdkCrashLog = fakeNdkCrashLog
         testedHandler.lastRumViewEvent = fakeViewEvent.toJson()
         testedHandler.lastCrashBeacon =
-            CrashBeaconRecord(FAKE_CRASH_ID, "timeout", 915L, fakeNdkCrashLog.timestamp + 40L, 1_234L)
+            CrashBeaconRecord(FAKE_CRASH_ID, "timeout", 915L, fakeNdkCrashLog.timestamp, 1_234L)
 
         // When
         testedHandler.handleNdkCrash(mockSdkCore)
@@ -371,7 +371,7 @@ internal class DatadogNdkCrashHandlerTest {
         testedHandler.lastNdkCrashLog = fakeNdkCrashLog
         testedHandler.lastRumViewEvent = fakeViewEvent.toJson()
         testedHandler.lastCrashBeacon =
-            CrashBeaconRecord(FAKE_CRASH_ID, "sent", 90L, fakeNdkCrashLog.timestamp - 60_000L, 1_234L)
+            CrashBeaconRecord(FAKE_CRASH_ID, "sent", 90L, fakeNdkCrashLog.timestamp - 1L, 1_234L)
 
         // When
         testedHandler.handleNdkCrash(mockSdkCore)

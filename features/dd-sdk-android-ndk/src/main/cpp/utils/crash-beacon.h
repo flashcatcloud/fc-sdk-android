@@ -19,6 +19,7 @@
 
 #include <signal.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,11 +43,19 @@ int crash_beacon_wait_for_crash(void);
 /* Beacon thread: tells the crashed thread it may go on. */
 void crash_beacon_finish(void);
 
-/* Signal handler: whether a beacon is already under way, i.e. this is a second crash. */
-bool crash_beacon_is_sending(void);
+/* Claim before unwinding or writing. A losing thread must not touch the report or handler chain. */
+bool crash_beacon_try_claim(int signum);
+/* A recursive fault while unwinding must never park the owner itself. */
+bool crash_beacon_is_owner(void);
+
+/* The exact time pair of the successfully written native report, published before waking Java. */
+void crash_beacon_record_report(int64_t timestamp_ms, int64_t uptime_ms);
+int64_t crash_beacon_report_time(void);
+int64_t crash_beacon_report_uptime(void);
+int crash_beacon_remaining_wait_ms(void);
 
 /* Signal handler: wakes the beacon thread and waits for it, within the timeout. */
-void crash_beacon_on_crash(int signum);
+void crash_beacon_on_crash(void);
 
 /* Signal handler: the crash was survived (the previous handler returned); a later one starts afresh. */
 void crash_beacon_reset(void);

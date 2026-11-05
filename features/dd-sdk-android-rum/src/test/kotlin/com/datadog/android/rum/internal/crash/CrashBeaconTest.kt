@@ -531,6 +531,81 @@ internal class CrashBeaconTest {
 
     // region Internal
 
+    @Test
+    fun `M stop before HTTP W send() { dispatch date cannot be persisted }`() {
+        val result = checkNotNull(
+            testedBeacon.send(
+                { fakeDatadogContext }, "SIGSEGV", "native crash", 5_000L, 4_000L,
+                onDispatch = { throw IOException("disk full") }
+            )
+        )
+
+        assertThat(result.beacon.status).isEqualTo(CrashBeacon.STATUS_FAILED)
+        assertThat(result.crashDate).isNull()
+        verify(mockCallFactory, never()).newCall(any())
+    }
+
+    @Test
+    fun `M stop before HTTP W send() { dispatch persistence outlives native wait }`() {
+        val release = CountDownLatch(1)
+        val result = try {
+            checkNotNull(
+                testedBeacon.send(
+                    { fakeDatadogContext }, "SIGSEGV", "native crash", 5_000L, 4_000L,
+                    onDispatch = {
+                        while (release.count > 0) {
+                            try {
+                                release.await()
+                            } catch (_: InterruptedException) {
+                                // Disk IO may outlive interruption.
+                            }
+                        }
+                    },
+                    waitTimeoutMs = 100L
+                )
+            )
+        } finally {
+            release.countDown()
+        }
+        executor.shutdown()
+        assertThat(executor.awaitTermination(2, TimeUnit.SECONDS)).isTrue
+
+        assertThat(result.beacon.status).isEqualTo(CrashBeacon.STATUS_TIMEOUT)
+        assertThat(result.crashDate).isNull()
+        verify(mockCallFactory, never()).newCall(any())
+    }
+
+    @Test
+    fun `M use the frozen native budget W send() { remote timeout changed }`() {
+        configuration.timeoutMs = 2_000
+        whenever(mockCall.execute()) doReturn response(202)
+
+        val result = checkNotNull(
+            testedBeacon.send(
+                { fakeDatadogContext }, "SIGSEGV", "native crash", 5_000L, 4_000L,
+                waitMarginMs = 250L,
+                waitTimeoutMs = 500L
+            )
+        )
+
+        assertThat(result.beacon.status).isEqualTo(CrashBeacon.STATUS_SENT)
+        assertThat(mockCall.timeout().timeoutNanos()).isEqualTo(TimeUnit.MILLISECONDS.toNanos(150L))
+    }
+
+    @Test
+    fun `M send nothing W send() { native wait already exhausted }`() {
+        val result = checkNotNull(
+            testedBeacon.send(
+                { fakeDatadogContext }, "SIGSEGV", "native crash", 5_000L, 4_000L,
+                waitMarginMs = 250L,
+                waitTimeoutMs = 200L
+            )
+        )
+
+        assertThat(result.beacon.status).isEqualTo(CrashBeacon.STATUS_TIMEOUT)
+        verify(mockCallFactory, never()).newCall(any())
+    }
+
     private fun send(
         crashTimeMs: Long = 1_000_000L,
         timeSinceAppStartMs: Long = 4_000L,

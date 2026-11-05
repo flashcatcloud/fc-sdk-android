@@ -265,12 +265,9 @@ internal data class CrashBeaconRecord(
      * crashed again later, unarmed, leaves the first crash's record beside the second's report.
      */
     fun belongsTo(crashLog: NdkCrashLog): Boolean =
-        kotlin.math.abs(crashLog.timestamp - crashTimeMs) <= MATCH_WINDOW_MS
+        crashLog.timestamp == crashTimeMs
 
     internal companion object {
-        // The beacon thread reads its clock right after the signal handler wrote the report.
-        private const val MATCH_WINDOW_MS = 10_000L
-
         private val UUID_PATTERN = Regex("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$")
 
         /** Null for anything else: the report then keeps an id of its own, as before. */
