@@ -359,7 +359,7 @@ internal class ActiveBeaconControllerTest {
         val old = ActiveBeaconController.buildBody(context, value)!!
         val cal = Calendar.getInstance()
         whenever(prefs.getString(eq("body"), anyOrNull())).thenReturn(old)
-        whenever(prefs.getString(eq("identity"), any())).thenReturn(ActiveBeaconController.identity(value))
+        whenever(prefs.getString(eq("identity"), any())).thenReturn(ActiveBeaconController.identity("1.0", 0, value))
         whenever(
             prefs.getString(eq("day"), any())
         ).thenReturn("${cal.get(Calendar.YEAR)}-${cal.get(Calendar.DAY_OF_YEAR)}")
@@ -425,6 +425,32 @@ internal class ActiveBeaconControllerTest {
         verify(call, times(3)).execute()
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = ["version", "versionCode"])
+    fun `same day upgrade is reported again for the new version`(change: String) {
+        memoryPreferences()
+        val user = UserInfo(anonymousId, "u1")
+        controller.onForeground(true)
+        controller.onUserInfo(user, TrackingConsent.GRANTED)
+        controller.stop()
+
+        val sameVersion = newController()
+        sameVersion.onForeground(true)
+        sameVersion.onUserInfo(user, TrackingConsent.GRANTED)
+        sameVersion.stop()
+        verify(call, times(1)).execute()
+
+        if (change == "version") {
+            whenever(context.version).thenReturn("1.1")
+        } else {
+            whenever(context.versionCode).thenReturn(2)
+        }
+        val upgraded = newController()
+        upgraded.onForeground(true)
+        upgraded.onUserInfo(user, TrackingConsent.GRANTED)
+        verify(call, times(2)).execute()
+    }
+
     @Test
     fun `next local day expires persisted identities`() {
         val entries = memoryPreferences()
@@ -447,7 +473,7 @@ internal class ActiveBeaconControllerTest {
         verify(call, times(3)).execute()
         val identities = JSONArray(entries["sent_identities"] as String)
         assertThat(identities.length()).isEqualTo(1)
-        assertThat(identities.getString(0)).isEqualTo(ActiveBeaconController.identity(user))
+        assertThat(identities.getString(0)).isEqualTo(ActiveBeaconController.identity("1.0", 0, user))
     }
 
     @ParameterizedTest
@@ -544,11 +570,11 @@ internal class ActiveBeaconControllerTest {
         verify(
             editor,
             times(1)
-        ).putString(eq("identity"), eq(ActiveBeaconController.identity(UserInfo(anonymousId, "u2"))))
+        ).putString(eq("identity"), eq(ActiveBeaconController.identity("1.0", 0, UserInfo(anonymousId, "u2"))))
         verify(
             editor,
             never()
-        ).putString(eq("identity"), eq(ActiveBeaconController.identity(UserInfo(anonymousId, "u1"))))
+        ).putString(eq("identity"), eq(ActiveBeaconController.identity("1.0", 0, UserInfo(anonymousId, "u1"))))
     }
 
     @Test
@@ -561,7 +587,7 @@ internal class ActiveBeaconControllerTest {
         whenever(prefs.getString(eq("body"), anyOrNull())).thenReturn(pendingBody)
         whenever(
             prefs.getString(eq("identity"), any())
-        ).thenReturn(ActiveBeaconController.identity(UserInfo(anonymousId, "u2")))
+        ).thenReturn(ActiveBeaconController.identity("1.0", 0, UserInfo(anonymousId, "u2")))
         whenever(prefs.getString(eq("day"), any())).thenReturn("previous-day")
         whenever(prefs.getLong(eq("created"), any())).thenReturn(System.currentTimeMillis() - 3_000)
         controller.onForeground(true)
@@ -578,7 +604,7 @@ internal class ActiveBeaconControllerTest {
         whenever(prefs.getLong(eq("next_allowed"), any())).thenReturn(now + 60_000)
         whenever(prefs.getString(eq("body"), anyOrNull())).thenReturn(pendingBody)
         whenever(prefs.getString(eq("identity"), any())).thenReturn(
-            ActiveBeaconController.identity(UserInfo(anonymousId, "u1"))
+            ActiveBeaconController.identity("1.0", 0, UserInfo(anonymousId, "u1"))
         )
         whenever(prefs.getString(eq("day"), any())).thenReturn(today)
         whenever(prefs.getLong(eq("created"), any())).thenReturn(now - 3_000)
@@ -727,7 +753,7 @@ internal class ActiveBeaconControllerTest {
         val old = UserInfo(anonymousId, "old")
         val oldBody = ActiveBeaconController.buildBody(context, old)
         whenever(prefs.getString(eq("body"), anyOrNull())).thenReturn(oldBody)
-        whenever(prefs.getString(eq("identity"), any())).thenReturn(ActiveBeaconController.identity(old))
+        whenever(prefs.getString(eq("identity"), any())).thenReturn(ActiveBeaconController.identity("1.0", 0, old))
         whenever(prefs.getLong(eq("created"), any())).thenReturn(System.currentTimeMillis() - 3_000)
         whenever(editor.commit()).doAnswer {
             whenever(prefs.getString(eq("body"), anyOrNull())).thenReturn(null)
