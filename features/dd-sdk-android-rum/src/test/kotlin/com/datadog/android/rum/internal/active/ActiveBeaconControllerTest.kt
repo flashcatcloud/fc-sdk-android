@@ -19,6 +19,7 @@ import okhttp3.Request
 import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.assertj.core.api.Assertions.assertThat
+import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -398,6 +399,140 @@ internal class ActiveBeaconControllerTest {
         verify(call, times(2)).execute()
         assertThat(entries).doesNotContainKey("body")
     }
+
+    @ParameterizedTest
+    @ValueSource(ints = [202, 400])
+    fun `handled identities survive same day restart and account switches`(status: Int) {
+        memoryPreferences()
+        whenever(call.execute()).thenAnswer { response(status) }
+        val first = UserInfo(anonymousId, "u1")
+        val second = UserInfo(anonymousId, "u2")
+        controller.onForeground(true)
+        controller.onUserInfo(first, TrackingConsent.GRANTED)
+        controller.onUserInfo(second, TrackingConsent.GRANTED)
+        controller.stop()
+
+        val restarted = newController()
+        restarted.onForeground(true)
+        restarted.onUserInfo(first, TrackingConsent.PENDING)
+        restarted.onConsent(TrackingConsent.GRANTED)
+        restarted.onUserInfo(second, TrackingConsent.GRANTED)
+        restarted.onForeground(false)
+        restarted.onForeground(true)
+        verify(call, times(2)).execute()
+
+        restarted.onUserInfo(UserInfo(anonymousId, "u3"), TrackingConsent.GRANTED)
+        verify(call, times(3)).execute()
+    }
+
+    @Test
+    fun `next local day expires persisted identities`() {
+        val entries = memoryPreferences()
+        var now = Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, 12) }.timeInMillis
+        val first = newController { now }
+        val user = UserInfo(anonymousId, "u1")
+        first.onForeground(true)
+        first.onUserInfo(user, TrackingConsent.GRANTED)
+        first.onUserInfo(UserInfo(anonymousId, "u2"), TrackingConsent.GRANTED)
+        first.stop()
+        now = Calendar.getInstance().apply {
+            timeInMillis = now
+            add(Calendar.DAY_OF_YEAR, 1)
+        }.timeInMillis
+
+        val restarted = newController { now }
+        restarted.onForeground(true)
+        restarted.onUserInfo(user, TrackingConsent.GRANTED)
+        restarted.onForeground(true)
+        verify(call, times(3)).execute()
+        val identities = JSONArray(entries["sent_identities"] as String)
+        assertThat(identities.length()).isEqualTo(1)
+        assertThat(identities.getString(0)).isEqualTo(ActiveBeaconController.identity(user))
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `withdrawal and clear reset sent identities in memory and storage`(revoke: Boolean) {
+        val entries = memoryPreferences()
+        val user = UserInfo(anonymousId, "u1")
+        controller.onForeground(true)
+        controller.onUserInfo(user, TrackingConsent.GRANTED)
+        controller.onForeground(false)
+        if (revoke) controller.onConsent(TrackingConsent.NOT_GRANTED) else controller.clearData()
+        assertThat(entries).isEmpty()
+        controller.onConsent(TrackingConsent.GRANTED)
+        controller.onForeground(true)
+        verify(call, times(2)).execute()
+
+        controller.onForeground(false)
+        if (revoke) controller.onConsent(TrackingConsent.NOT_GRANTED) else controller.clearData()
+        controller.stop()
+        val restarted = newController()
+        restarted.onForeground(true)
+        restarted.onUserInfo(user, TrackingConsent.GRANTED)
+        verify(call, times(3)).execute()
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `invalidated success cannot restore persisted sent identities`(revoke: Boolean) {
+        val entries = memoryPreferences()
+        whenever(call.execute()).doAnswer {
+            if (revoke) controller.onConsent(TrackingConsent.NOT_GRANTED) else controller.clearData()
+            response(202)
+        }
+        controller.onForeground(true)
+        controller.onUserInfo(UserInfo(anonymousId, "u1"), TrackingConsent.GRANTED)
+        verify(call).execute()
+        assertThat(entries).isEmpty()
+    }
+
+    @Test
+    fun `restart followed by backgrounding does not defer an already sent identity`() {
+        val entries = memoryPreferences()
+        val user = UserInfo(anonymousId, "u1")
+        controller.onForeground(true)
+        controller.onUserInfo(user, TrackingConsent.GRANTED)
+        controller.stop()
+        val restarted = newController()
+        restarted.onUserInfo(user, TrackingConsent.GRANTED)
+        val queued = ArrayDeque<Runnable>()
+        whenever(executor.execute(any())).doAnswer { queued.add(it.getArgument(0)); Unit }
+
+        restarted.onForeground(true)
+        restarted.onForeground(false)
+        while (queued.isNotEmpty()) queued.removeFirst().run()
+        assertThat(entries).doesNotContainKey("body")
+        restarted.onForeground(true)
+        while (queued.isNotEmpty()) queued.removeFirst().run()
+        verify(call).execute()
+    }
+
+    @Test
+    fun `persisted sent marker prevents replay if pending deletion was interrupted`() {
+        val entries = memoryPreferences()
+        val user = UserInfo(anonymousId, "u1")
+        whenever(call.execute()).thenReturn(response(503), response(202))
+        controller.onForeground(true)
+        controller.onUserInfo(user, TrackingConsent.GRANTED)
+        val pending = entries.toMap()
+        controller.onForeground(true)
+        assertThat(entries).doesNotContainKey("body")
+        // Simulate process death after persisting success, before removing the old pending snapshot.
+        entries.putAll(pending)
+        controller.stop()
+
+        val restarted = newController()
+        restarted.onForeground(true)
+        restarted.onUserInfo(user, TrackingConsent.GRANTED)
+        verify(call, times(2)).execute()
+        assertThat(entries).doesNotContainKey("body")
+    }
+
+    private fun newController(wallClock: () -> Long = System::currentTimeMillis): ActiveBeaconController =
+        ActiveBeaconController(
+            core, context, app, "app", "https://example.com/api/v2/rum", true, executor, factory, "process", wallClock
+        )
 
     @Test
     fun `already sent user cannot replace a rate limited pending user`() {

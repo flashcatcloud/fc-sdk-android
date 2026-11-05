@@ -22,6 +22,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
@@ -36,8 +37,8 @@ import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 
 /**
- * Independent, best-effort active reporting. User/dedup/deadline state belongs to the worker;
- * consent, calls, invalidation and retry ownership are protected by lock across context/worker threads.
+ * Independent, best-effort active reporting. User/deadline state belongs to the worker;
+ * consent, dedup, calls, invalidation and retry ownership are protected by lock across context/worker threads.
  * Volatile foreground/storage flags and the pending snapshot may also change during invalidation.
  */
 // Consent withdrawal and clearAllData attempt synchronous deletion; failed storage is disabled for this instance.
@@ -151,6 +152,8 @@ internal class ActiveBeaconController(
             }
             if (value == TrackingConsent.NOT_GRANTED) {
                 pendingInMemory = null
+                sentDay = ""
+                sent.clear()
                 // Clear synchronously so a stopped executor cannot leave consent-withdrawn data behind.
                 clearStorage()
             }
@@ -168,10 +171,11 @@ internal class ActiveBeaconController(
             call?.cancel()
             cancelRetryLocked()
             pendingInMemory = null
+            sentDay = ""
+            sent.clear()
             clearStorage()
         }
         executor.executeSafe("active clear", core.internalLogger) {
-            sent.clear()
             nextAllowedAt = 0L
         }
     }
@@ -199,19 +203,15 @@ internal class ActiveBeaconController(
         val now = wallClock()
         val elapsed = SystemClock.elapsedRealtime()
         val day = day(now)
-        if (sentDay != day) {
-            sentDay = day
-            sent.clear()
-        }
         val key = identity(currentUser())
         val body = buildBody(sdkContext, currentUser()) ?: return
         nextAllowedAt = maxOf(nextAllowedAt, withStorage(0L) { it.getLong("next_allowed", 0) })
         if (now < nextAllowedAt) {
             val pending = readPending(now)
-            if (key !in sent && (pending == null || pending.day != day || pending.identity != key)) {
+            if (!wasSent(key, day) && (pending == null || pending.day != day || pending.identity != key)) {
                 savePending(body, key, day, now, elapsed, workGeneration)
             }
-            if (pending != null || key !in sent) scheduleRetry(0, nextAllowedAt, workGeneration)
+            if (pending != null || !wasSent(key, day)) scheduleRetry(0, nextAllowedAt, workGeneration)
             return
         }
         synchronized(lock) {
@@ -222,7 +222,7 @@ internal class ActiveBeaconController(
         val pending = readPending(now)
         if (pending != null) {
             if (!send(pending.body, pending.age, pending.identity, pending.day, 0, true, workGeneration)) {
-                if (key !in sent && (pending.day != day || pending.identity != key)) {
+                if (!wasSent(key, day) && (pending.day != day || pending.identity != key)) {
                     savePending(body, key, day, now, elapsed, workGeneration)
                     // The one-record queue now contains a beacon that has not been attempted yet.
                     if (foreground) scheduleRetry(0, maxOf(nextAllowedAt, now + 5_000), workGeneration)
@@ -230,7 +230,6 @@ internal class ActiveBeaconController(
                 return
             }
         }
-        if (key in sent) return
         if (!send(body, 0, key, day, 0, false, workGeneration)) {
             synchronized(lock) {
                 // This snapshot was captured while eligible in the foreground. Keep it if only
@@ -249,7 +248,7 @@ internal class ActiveBeaconController(
         if (request.consent != TrackingConsent.GRANTED || !hasIdentity()) return
         val day = day(request.wallTime)
         val key = identity(currentUser())
-        if (day == sentDay && key in sent) return
+        if (wasSent(key, day)) return
         val body = buildBody(sdkContext, currentUser()) ?: return
         val pending = readPending(wallClock())
         if (pending != null && pending.identity == key && pending.day == day) return
@@ -284,6 +283,11 @@ internal class ActiveBeaconController(
             if (stopped || !foreground || consent != TrackingConsent.GRANTED || generation != expectedGeneration) {
                 return false
             }
+            // A process may stop after the sent marker was committed but before pending was removed.
+            if (wasSent(key, day)) {
+                if (pending) clearPending()
+                return true
+            }
             version = generation
             activeCall = callFactory.newCall(request)
             call = activeCall
@@ -316,13 +320,13 @@ internal class ActiveBeaconController(
             if (stopped || consent != TrackingConsent.GRANTED || version != generation) return false
             when (result) {
                 Result.SUCCESS -> {
-                    if (day == sentDay) sent.add(key)
+                    recordSent(key, day)
                     if (pending) clearPending()
                     return true
                 }
                 Result.PERMANENT -> {
                     log("Active beacon rejected by the server.")
-                    if (day == sentDay) sent.add(key)
+                    recordSent(key, day)
                     if (pending) clearPending()
                     return true
                 }
@@ -490,6 +494,39 @@ internal class ActiveBeaconController(
             }
         }
     }
+    private fun wasSent(key: String, day: String): Boolean = synchronized(lock) {
+        loadSent()
+        day == sentDay && key in sent
+    }
+
+    // Caller holds lock. Load only the current local day; an older replay must not replace today's set.
+    private fun loadSent() {
+        val today = day(wallClock())
+        if (sentDay == today) return
+        sentDay = today
+        sent.clear()
+        withStorage(Unit) {
+            if (it.getString("sent_day", null) == today) {
+                val identities = JSONArray(it.getString("sent_identities", null) ?: "[]")
+                for (index in 0 until identities.length()) sent.add(identities.getString(index))
+            }
+        }
+    }
+
+    // Caller holds lock after validating the response generation. Disk writes stay on the worker.
+    private fun recordSent(key: String, day: String) {
+        loadSent()
+        if (day != sentDay) return
+        sent.add(key)
+        withStorage(Unit) {
+            // JSON escapes the identity separator and control characters before writing preference XML.
+            val identities = JSONArray(sent).toString()
+            if (!it.edit().putString("sent_day", sentDay).putString("sent_identities", identities).commit()) {
+                log("Active beacon sent state could not be persisted; deduplication is memory only.")
+            }
+        }
+    }
+
     private fun clearPending() {
         synchronized(lock) {
             cancelRetryLocked()
