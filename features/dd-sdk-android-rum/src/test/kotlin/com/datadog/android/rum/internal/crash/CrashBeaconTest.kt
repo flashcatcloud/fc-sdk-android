@@ -112,6 +112,41 @@ internal class CrashBeaconTest {
     }
 
     @Test
+    fun `M use persisted date and reserve one crash W Java writes before send`() {
+        whenever(mockCall.execute()) doReturn response(202)
+        val reservation = checkNotNull(testedBeacon.reserve())
+        assertThat(testedBeacon.reserve()).isNull()
+        // A concurrent native crash cannot take the JVM crash's id while its report is writing.
+        assertThat(testedBeacon.send({ fakeDatadogContext }, "SIGABRT", "native", 9999, 500)).isNull()
+        val result = testedBeacon.send(
+            { fakeDatadogContext },
+            "java.lang.IllegalStateException",
+            "boom",
+            9999,
+            500,
+            reservation = reservation,
+            persistedDate = 86400010
+        )
+        assertThat(result?.crashDate).isEqualTo(86400010)
+        argumentCaptor<Request> {
+            verify(mockCallFactory).newCall(capture())
+            val body = JSONObject(Buffer().also { firstValue.body!!.writeTo(it) }.readUtf8())
+            assertThat(body.getLong("date")).isEqualTo(86400010)
+            assertThat(body.getLong("launch_time")).isEqualTo(86399510)
+        }
+        assertThat(
+            testedBeacon.send(
+                { fakeDatadogContext },
+                "java.lang.IllegalStateException",
+                "second",
+                9999,
+                500,
+                reservation = reservation
+            )
+        ).isNull()
+    }
+
+    @Test
     fun `M post the beacon next to the intake and report it sent W send() { intake accepts it }`() {
         whenever(mockCall.execute()) doReturn response(202)
 
@@ -195,7 +230,7 @@ internal class CrashBeaconTest {
                     Thread.sleep(60_000)
                     fakeDatadogContext
                 },
-                throwable = IllegalStateException("boom"),
+                crashType = "java.lang.IllegalStateException",
                 message = "boom",
                 crashTimeMs = 1_000_000L,
                 timeSinceAppStartMs = 4_000L
@@ -204,18 +239,6 @@ internal class CrashBeaconTest {
 
         assertThat(result.beacon.status).isEqualTo(CrashBeacon.STATUS_SKIPPED)
         assertThat(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start)).isLessThan(200L)
-    }
-
-    @Test
-    fun `M send a crash type W payload() { anonymous exception class }`() {
-        val anonymous = object : IllegalStateException("anonymous") {}
-        val rumContext = RumContext.fromFeatureContext(
-            fakeDatadogContext.featuresContext[Feature.RUM_FEATURE_NAME].orEmpty()
-        )
-
-        val body = JSONObject(testedBeacon.payload(fakeDatadogContext, rumContext, anonymous, "m", 1L, 0L))
-
-        assertThat(body.getString("crash_type")).isEqualTo(anonymous.javaClass.name).isNotEmpty()
     }
 
     @Test
@@ -266,7 +289,7 @@ internal class CrashBeaconTest {
 
         val second = testedBeacon.send(
             datadogContext = { fakeDatadogContext },
-            throwable = IllegalStateException("again"),
+            crashType = "java.lang.IllegalStateException",
             message = "again",
             crashTimeMs = 2_000_000L,
             timeSinceAppStartMs = 5_000L
@@ -304,6 +327,78 @@ internal class CrashBeaconTest {
 
         assertThat(result.status).isEqualTo(CrashBeacon.STATUS_TIMEOUT)
         assertThat(waitedMs).isLessThan(1_000L)
+    }
+
+    @Test
+    fun `M hand out the beacon's date before the request leaves W send() { onDispatch }`() {
+        val dispatched = mutableListOf<Long>()
+        whenever(mockCall.execute()) doAnswer {
+            assertThat(dispatched).hasSize(1)
+            response(202)
+        }
+
+        val result = checkNotNull(
+            testedBeacon.send(
+                datadogContext = { fakeDatadogContext },
+                crashType = "SIGSEGV",
+                message = "NDK crash detected with signal: SIGSEGV",
+                crashTimeMs = 1_000_000L,
+                timeSinceAppStartMs = 4_000L,
+                onDispatch = { dispatched += it }
+            )
+        )
+
+        assertThat(dispatched).containsExactly(result.crashDate)
+    }
+
+    @Test
+    fun `M hand out the crash id before sending W send() { onCrashId }`() {
+        val seen = mutableListOf<String>()
+        whenever(mockCall.execute()) doAnswer {
+            assertThat(seen).containsExactly(testedBeacon.crashId)
+            response(202)
+        }
+
+        val result = checkNotNull(
+            testedBeacon.send(
+                datadogContext = { fakeDatadogContext },
+                crashType = "SIGSEGV",
+                message = "NDK crash detected with signal: SIGSEGV",
+                crashTimeMs = 1_000_000L,
+                timeSinceAppStartMs = 4_000L,
+                onCrashId = { seen += it }
+            )
+        )
+
+        assertThat(result.beacon.status).isEqualTo(CrashBeacon.STATUS_SENT)
+        assertThat(seen).containsExactly(testedBeacon.crashId)
+    }
+
+    @Test
+    fun `M send nothing W send() { the crash id cannot be recorded }`() {
+        val result = checkNotNull(
+            testedBeacon.send(
+                datadogContext = { fakeDatadogContext },
+                crashType = "SIGSEGV",
+                message = "NDK crash detected with signal: SIGSEGV",
+                crashTimeMs = 1_000_000L,
+                timeSinceAppStartMs = 4_000L,
+                onCrashId = { throw java.io.IOException("disk full") }
+            )
+        )
+
+        assertThat(result.beacon.status).isEqualTo(CrashBeacon.STATUS_FAILED)
+        verify(mockCallFactory, never()).newCall(any())
+    }
+
+    @Test
+    fun `M arm with the console's switch and wait W armState()`() {
+        assertThat(testedBeacon.armState()).isEqualTo(true to CrashBeacon.DEFAULT_TIMEOUT_MS)
+
+        configuration.enabled = false
+        configuration.timeoutMs = 1500
+
+        assertThat(testedBeacon.armState()).isEqualTo(false to 1500)
     }
 
     @Test
@@ -386,7 +481,7 @@ internal class CrashBeaconTest {
         val result = checkNotNull(
             testedBeacon.send(
                 { fakeDatadogContext },
-                IllegalStateException("boom"),
+                "java.lang.IllegalStateException",
                 "boom",
                 crashTimeMs,
                 timeSinceAppStartMs
@@ -413,7 +508,7 @@ internal class CrashBeaconTest {
         whenever(mockCall.execute()) doReturn response(202)
 
         val result = checkNotNull(
-            testedBeacon.send({ fakeDatadogContext }, IllegalStateException("boom"), "boom", 1_000_000L, 4_000L)
+            testedBeacon.send({ fakeDatadogContext }, "java.lang.IllegalStateException", "boom", 1_000_000L, 4_000L)
         )
 
         assertThat(result.crashDate).isEqualTo(1_120_000L)
@@ -432,7 +527,7 @@ internal class CrashBeaconTest {
             checkNotNull(
                 testedBeacon.send(
                     { fakeDatadogContext },
-                    IllegalStateException("boom"),
+                    "java.lang.IllegalStateException",
                     "boom",
                     1_000_000L,
                     4_000L
@@ -471,6 +566,97 @@ internal class CrashBeaconTest {
 
     // region Internal
 
+    @Test
+    fun `M stop before HTTP W send() { dispatch date cannot be persisted }`() {
+        val result = checkNotNull(
+            testedBeacon.send(
+                { fakeDatadogContext },
+                "SIGSEGV",
+                "native crash",
+                5_000L,
+                4_000L,
+                onDispatch = { throw IOException("disk full") }
+            )
+        )
+
+        assertThat(result.beacon.status).isEqualTo(CrashBeacon.STATUS_FAILED)
+        assertThat(result.crashDate).isNull()
+        verify(mockCallFactory, never()).newCall(any())
+    }
+
+    @Test
+    fun `M stop before HTTP W send() { dispatch persistence outlives native wait }`() {
+        val release = CountDownLatch(1)
+        val result = try {
+            checkNotNull(
+                testedBeacon.send(
+                    { fakeDatadogContext },
+                    "SIGSEGV",
+                    "native crash",
+                    5_000L,
+                    4_000L,
+                    onDispatch = {
+                        while (release.count > 0) {
+                            try {
+                                release.await()
+                            } catch (_: InterruptedException) {
+                                // Disk IO may outlive interruption.
+                            }
+                        }
+                    },
+                    waitTimeoutMs = 100L
+                )
+            )
+        } finally {
+            release.countDown()
+        }
+        executor.shutdown()
+        assertThat(executor.awaitTermination(2, TimeUnit.SECONDS)).isTrue
+
+        assertThat(result.beacon.status).isEqualTo(CrashBeacon.STATUS_TIMEOUT)
+        assertThat(result.crashDate).isNull()
+        verify(mockCallFactory, never()).newCall(any())
+    }
+
+    @Test
+    fun `M use the frozen native budget W send() { remote timeout changed }`() {
+        configuration.timeoutMs = 2_000
+        whenever(mockCall.execute()) doReturn response(202)
+
+        val result = checkNotNull(
+            testedBeacon.send(
+                { fakeDatadogContext },
+                "SIGSEGV",
+                "native crash",
+                5_000L,
+                4_000L,
+                waitMarginMs = 250L,
+                waitTimeoutMs = 500L
+            )
+        )
+
+        assertThat(result.beacon.status).isEqualTo(CrashBeacon.STATUS_SENT)
+        assertThat(mockCall.timeout().timeoutNanos()).isEqualTo(TimeUnit.MILLISECONDS.toNanos(150L))
+    }
+
+    @Test
+    fun `M send nothing W send() { native wait already exhausted }`() {
+        val result = checkNotNull(
+            testedBeacon.send(
+                { fakeDatadogContext },
+                "SIGSEGV",
+                "native crash",
+                5_000L,
+                4_000L,
+                waitMarginMs = 250L,
+                waitTimeoutMs = 200L
+            )
+        )
+
+        assertThat(result.beacon.status).isEqualTo(CrashBeacon.STATUS_TIMEOUT)
+        verify(mockCallFactory, never()).newCall(any())
+    }
+
     private fun send(
         crashTimeMs: Long = 1_000_000L,
         timeSinceAppStartMs: Long = 4_000L,
@@ -478,7 +664,7 @@ internal class CrashBeaconTest {
     ) = checkNotNull(
         testedBeacon.send(
             datadogContext = readContext,
-            throwable = IllegalStateException("boom"),
+            crashType = IllegalStateException::class.java.canonicalName!!,
             message = "boom",
             crashTimeMs = crashTimeMs,
             timeSinceAppStartMs = timeSinceAppStartMs

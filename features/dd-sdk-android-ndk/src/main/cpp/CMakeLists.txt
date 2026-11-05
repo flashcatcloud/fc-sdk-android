@@ -12,6 +12,8 @@ add_library( # Sets the name of the library.
         datadog-native-lib.h
         utils/signal-monitor.c
         utils/signal-monitor.h
+        utils/crash-beacon.c
+        utils/crash-beacon.h
         utils/file-utils.cpp
         utils/file-utils.h
         utils/string-utils.cpp

@@ -19,6 +19,7 @@
 #include <unistd.h>
 
 #include "backtrace-handler.h"
+#include "crash-beacon.h"
 #include "datadog-native-lib.h"
 
 static const char *LOG_TAG = "DatadogNdkCrashReporter";
@@ -148,6 +149,18 @@ void uninstall_handlers() {
 }
 
 void handle_signal(int signum, siginfo_t *info, void *user_context) {
+    // FLASHCAT FORK - a crash while the crash beacon of an earlier one is under way keeps that
+    // earlier crash's report and lets it end the process. Only reachable with the beacon on.
+    if (crash_beacon_installed && !crash_beacon_try_claim(signum)) {
+        if (crash_beacon_is_owner()) {
+            // A recursive fault in unwinding/reporting cannot wait for itself to finish.
+            uninstall_handlers();
+            invoke_previous_handler(signum, info, user_context);
+            return;
+        }
+        crash_beacon_park();
+    }
+
     const size_t signals_array_size = handled_signals_size();
     for (int i = 0; i < signals_array_size; i++) {
         const int signal = handled_signals[i].signal_value;
@@ -171,10 +184,20 @@ void handle_signal(int signum, siginfo_t *info, void *user_context) {
         }
     }
 
+    // FLASHCAT FORK - the report is written: hand over to the crash beacon, within its timeout.
+    if (crash_beacon_installed) {
+        crash_beacon_on_crash();
+    }
+
     // We need to uninstall our custom handlers otherwise we will go in a continuous loop when
     // calling the prev handler (sigaction) with this signum.
     uninstall_handlers();
     invoke_previous_handler(signum, info, user_context);
+
+    // FLASHCAT FORK - reached only when the previous handler let the process live on.
+    if (crash_beacon_installed) {
+        crash_beacon_reset();
+    }
 }
 
 bool configure_signal_stack() {

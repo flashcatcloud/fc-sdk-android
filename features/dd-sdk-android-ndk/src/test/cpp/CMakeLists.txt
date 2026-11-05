@@ -7,6 +7,7 @@ add_library(
         datadog-native-lib-test
         SHARED
         integration-tests.cpp
+        test-crash-beacon.cpp
         test-crash-log.cpp
         test-datetime-utils.cpp
         test-format-utils.cpp
