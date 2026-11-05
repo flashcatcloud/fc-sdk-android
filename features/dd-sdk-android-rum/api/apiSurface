@@ -67,6 +67,7 @@ data class com.datadog.android.rum.RumConfiguration
     constructor(String)
     fun setSessionSampleRate(Float): Builder
     fun setRemoteConfigurationEnabled(Boolean): Builder
+    fun setActiveBeaconEnabled(Boolean): Builder
     fun setBeforeSampling(BeforeSamplingCallback): Builder
     fun setSessionOnError(Boolean): Builder
     fun setSessionReplayOnError(Boolean): Builder

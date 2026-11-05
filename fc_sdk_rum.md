@@ -240,3 +240,39 @@ Shadow Plugin 对 Android AAR 的支持有限，推荐方式是：先将这些�
 3. 在 `sample/vendor-lib` 中添加宿主冲突依赖（OkHttp 4.9/4.11/5.0-alpha, Gson 2.8.6/2.10）模拟编译
 4. 宿主集成测试：使用 compileSdk 33 的宿主项目接入修改后的 SDK
 
+
+### 活跃设备上报
+
+RUM 默认启用独立的活跃上报通道。应用在前台且用户已授予数据采集权限时，SDK 在启动、回到前台、授权及用户 ID 变化时发送活跃信号；该信号不受会话采样率和仅错误会话采集配置影响。应用可在 RUM 初始化时调用 `RumConfiguration.Builder(applicationId).setActiveBeaconEnabled(false)` 关闭该通道。
+
+设备数使用 SDK 匿名 ID，卸载重装会产生新的 ID；关闭匿名追踪后不统计活跃设备，但设置了用户 ID 时仍可统计登录用户。登录用户数由 `Datadog.setUserInfo` 提供的 ID 决定，应传入稳定的业务账号 ID。发送失败时仅保留最新一条待补发，并在之后符合条件的前台触发中重试；记录超过 72 小时或撤回授权后丢弃。跨日触发依据设备本地时间，设备时间或时区与服务端不一致时可能影响跨日统计。后端需要部署支持 `/api/v2/rum/active` 的版本。
+
+同一设备和用户组合在设备本地同一天内去重，已处理的身份集合会持久化，应用重启后仍然有效；切换至当天尚未上报的账号或进入下一天可再次上报。撤回授权或调用 `clearAllData` 会清除待补发记录及已处理记录，之后重新满足上报条件时可再次发送。
+
+正常情况下，`DdRumContentProvider` 会在进程启动时提前监听 Activity 生命周期，因此在 Activity 内等待隐私授权后才初始化 SDK，也能立即取得当前前台状态。仅当宿主在 manifest 合并时移除了该 Provider，或 SDK 运行在未启动该 Provider 的次进程中，且初始化时 Activity 已经启动，首次活跃信号才需要等待后续 Activity 启动回调确认前台状态。
+
+#### 自定义代理路径
+
+使用 `RumConfiguration.Builder.useCustomEndpoint(...)` 设置自定义 RUM 地址（内部配置项为 `customEndpointUrl`）时，代理必须同时转发普通事件和活跃上报。活跃上报默认开启，仅让后端支持接口还不够，客户网关也需要配置对应路由。
+
+对于不带 `ddforward` 的地址，SDK 在路径末尾追加 `/active`。例如配置 `https://gw.customer.com/rum-proxy` 时：
+
+| SDK 请求 | 客户网关应转发到的后端路径 |
+|---|---|
+| `POST /rum-proxy` | `/api/v2/rum` |
+| `POST /rum-proxy/active` | `/api/v2/rum/active` |
+
+与普通事件一样，client token 通过 `DD-API-KEY` 请求头发送。代理应保留请求方法、JSON 请求体、`Content-Type`、`DD-API-KEY` 请求头和查询参数，并透传后端响应状态码；限流时还应透传 `Flashcat-Request-Rate-Limit-Delay` 或 `Retry-After` 响应头。
+
+对于带 `ddforward` 的地址，外层代理路径保持不变，SDK 将 `ddforward` 指定的目标路径追加 `/active`。例如 `https://gw.customer.com/proxy?ddforward=%2Fapi%2Fv2%2Frum` 的活跃上报仍请求 `/proxy`，其 `ddforward` 目标变为 `/api/v2/rum/active`。代理的目标白名单或转发规则需要允许这个目标。
+
+如果网关只精确匹配普通事件路径，新增的活跃路径可能返回 404。SDK 将 404 视为永久失败，不保存该条补发，只记录一条内部 DEBUG 拒绝日志；若请求对应当天的身份组合，会将其持久化为当天已处理，重启后同一天的同组合触发也不再发送（撤回授权或清除数据后除外）。普通 RUM 事件能上传不能证明活跃通道已打通。
+
+#### 私有化升级检查
+
+1. 部署支持 `/api/v2/rum/active` 的后端及其配套数据表。
+2. 在客户实际使用的网关上增加上述活跃上报路由或 `ddforward` 目标放行规则，确认 POST、`DD-API-KEY` 请求头、查询参数、请求体、响应状态和限流响应头均能透传；在发布新版客户端前完成此配置。
+3. 通过该网关运行已授权的测试 App，验证冷启动及切换账号时的活跃请求得到后端 202，且不是网关返回的 404、登录页面或伪造成功响应。202 仅说明接口接受请求，还需要核对 `t_active_devices` 中对应测试设备/账号的 `source=ping` 记录和统计结果。
+4. 后端和网关验证通过后，升级客户端 SDK。如果暂时无法开通活跃路径，可显式设置 `setActiveBeaconEnabled(false)` 暂停该通道；此时没有独立活跃上报，不能以普通事件上传成功代替此项验收。
+
+升级时，`cloud.flashcat` 下的 `dd-sdk-android-core`、`dd-sdk-android-internal`、`dd-sdk-android-rum` 等 SDK 包需要升级到同一版本。只升级其中部分包（例如手动替换 AAR 时只换了 rum）会导致 `Rum.enable` 时因缺少新接口或新类而崩溃。使用 Gradle 依赖时通常会自动对齐；手动集成 AAR 时请整套替换为同版本文件。

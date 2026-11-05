@@ -90,6 +90,12 @@ data class RumConfiguration internal constructor(
             return this
         }
 
+        /** Enables the independent active-device beacon. Enabled by default. */
+        fun setActiveBeaconEnabled(enabled: Boolean): Builder {
+            rumConfig = rumConfig.copy(activeBeaconEnabled = enabled)
+            return this
+        }
+
         /**
          * Have the last word on session sampling.
          *

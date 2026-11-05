@@ -20,6 +20,7 @@ import com.datadog.android.api.feature.StorageBackedFeature
 import com.datadog.android.api.net.RequestFactory
 import com.datadog.android.api.storage.FeatureStorageConfiguration
 import com.datadog.android.api.storage.datastore.DataStoreHandler
+import com.datadog.android.core.FeatureDataClearListener
 import com.datadog.android.core.configuration.UploadSchedulerStrategy
 import com.datadog.android.core.internal.configuration.DataUploadConfiguration
 import com.datadog.android.core.internal.data.upload.DataFlusher
@@ -142,6 +143,17 @@ internal class SdkFeature(
 
     @AnyThread
     fun clearAllData() {
+        // FLASHCAT FORK - clear feature data kept outside the regular event storage too.
+        try {
+            (wrappedFeature as? FeatureDataClearListener)?.onClearData()
+        } catch (e: Exception) {
+            internalLogger.log(
+                InternalLogger.Level.WARN,
+                InternalLogger.Target.MAINTAINER,
+                { "Unable to clear additional feature data; continuing regular storage cleanup." },
+                e
+            )
+        }
         storage.dropAll()
         dataStore.clearAllData()
     }
