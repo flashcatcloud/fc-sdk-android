@@ -1111,7 +1111,7 @@ internal class RumFeature(
             manager?.runningAppProcesses?.firstOrNull { it.pid == android.os.Process.myPid() }?.processName
                 ?: "pid-${android.os.Process.myPid()}"
         }
-        if (!configuration.activeBeaconEnabled) {
+        if (!configuration.trackActiveDevices) {
             // A disabled feature cannot hear a later consent withdrawal; remove its old queue now.
             val name = ActiveBeaconController.storeName(core.name, applicationId, intake, processName)
             core.getPersistenceExecutorService().executeSafe("clear disabled active beacon", sdkCore.internalLogger) {
@@ -1219,7 +1219,7 @@ internal class RumFeature(
         // FLASHCAT FORK - the same for the replay of a collected session the replay rate does not
         // keep.
         val sessionReplayOnError: Boolean = false,
-        val activeBeaconEnabled: Boolean = true
+        val trackActiveDevices: Boolean = true
     )
 
     internal companion object {
