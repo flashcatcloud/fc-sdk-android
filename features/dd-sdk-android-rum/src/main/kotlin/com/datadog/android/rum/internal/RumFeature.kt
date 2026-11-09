@@ -1392,7 +1392,7 @@ internal class RumFeature(
         // keep.
         val sessionReplayOnError: Boolean = false,
         // FLASHCAT FORK - crash beacon, opt-in for both JVM and native crashes.
-        val crashBeaconEnabled: Boolean = false
+        val crashBeaconEnabled: Boolean = false,
         val trackActiveDevices: Boolean = true
     )
 
