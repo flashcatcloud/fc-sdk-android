@@ -14,6 +14,7 @@
 
 #include "android/log.h"
 #include "backtrace-handler.h"
+#include "crash-beacon.h"
 #include "datetime-utils.h"
 #include "file-utils.h"
 #include "signal-monitor.h"
@@ -95,7 +96,7 @@ void write_crash_report(int signum,
     }
 
     // serialize the log
-    const string file_path = main_context.storage_dir.append("/").append(crash_log_filename);
+    const string file_path = main_context.storage_dir + "/" + crash_log_filename;
     const uint64_t timestamp = time_since_epoch();
     const std::string serialized_log = serialize_crash_report(signum, timestamp, signal_name, error_message, error_stacktrace);
 
@@ -106,6 +107,9 @@ void write_crash_report(int signum,
         logs_file_output_stream << serialized_log.c_str();
     }
     logs_file_output_stream.close();
+    if (crash_beacon_installed && !logs_file_output_stream.fail()) {
+        crash_beacon_record_report(timestamp, timestamp - global_app_start_time_millis);
+    }
     pthread_mutex_unlock(&handler_mutex);
 }
 
@@ -160,4 +164,47 @@ Java_com_datadog_android_ndk_internal_NdkCrashReportsFeature_updateTrackingConse
         jobject /* this */,
         jint consent) {
     update_tracking_consent(consent);
+}
+// FLASHCAT FORK - crash beacon bindings, see crash-beacon.h.
+extern "C" JNIEXPORT jboolean JNICALL
+Java_com_datadog_android_ndk_internal_NdkCrashBeacon_installNative(
+        JNIEnv *env,
+        jobject /* this */) {
+    return crash_beacon_install() ? JNI_TRUE : JNI_FALSE;
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_datadog_android_ndk_internal_NdkCrashBeacon_uninstallNative(
+        JNIEnv *env,
+        jobject /* this */) {
+    crash_beacon_uninstall();
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_datadog_android_ndk_internal_NdkCrashBeacon_armNative(
+        JNIEnv *env,
+        jobject /* this */,
+        jboolean armed,
+        jint timeout_ms) {
+    crash_beacon_arm(armed == JNI_TRUE, (int) timeout_ms);
+}
+
+extern "C" JNIEXPORT jlongArray JNICALL
+Java_com_datadog_android_ndk_internal_NdkCrashBeacon_waitForCrashNative(
+        JNIEnv *env,
+        jobject /* this */) {
+    const int signal = crash_beacon_wait_for_crash();
+    if (signal == 0) return nullptr;
+    const jlong values[] = {signal, crash_beacon_report_time(), crash_beacon_report_uptime(),
+                           crash_beacon_remaining_wait_ms()};
+    jlongArray result = env->NewLongArray(4);
+    if (result != nullptr) env->SetLongArrayRegion(result, 0, 4, values);
+    return result;
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_datadog_android_ndk_internal_NdkCrashBeacon_finishNative(
+        JNIEnv *env,
+        jobject /* this */) {
+    crash_beacon_finish();
 }

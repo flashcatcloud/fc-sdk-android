@@ -23,7 +23,8 @@ import java.util.UUID
 internal class RumRequestFactory(
     internal val customEndpointUrl: String?,
     private val viewEventFilter: RumViewEventFilter,
-    private val internalLogger: InternalLogger
+    private val internalLogger: InternalLogger,
+    private val enrichCrash: (ByteArray) -> ByteArray = { it }
 ) : RequestFactory {
 
     override fun create(
@@ -34,7 +35,7 @@ internal class RumRequestFactory(
     ): Request {
         val requestId = UUID.randomUUID().toString()
         val body = viewEventFilter.filterOutRedundantViewEvents(batchData)
-            .map { it.data }
+            .map { enrichCrash(it.data) }
             .join(
                 separator = PAYLOAD_SEPARATOR,
                 internalLogger = internalLogger

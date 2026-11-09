@@ -70,6 +70,15 @@ internal class DatadogLateCrashReporter(
         val lastViewEvent = (event["lastViewEvent"] as? JsonObject)?.let {
             rumEventDeserializer.deserialize(it) as? ViewEvent
         }
+        // FLASHCAT FORK - present when the crash sent a crash beacon: the report is counted under the
+        // beacon's id, with its outcome.
+        val crashId = event["crashId"] as? String
+        val beacon = (event["beaconStatus"] as? String)?.let {
+            ErrorEvent.Beacon(status = it, duration = event["beaconDuration"] as? Long)
+        }
+        // The date the beacon was sent under: the intake derives the launch day of both from their
+        // dates, and this launch's clock offset may not be the crashed process's.
+        val crashDate = event["crashDate"] as? Long
 
         if (timestamp == null || signalName == null || stacktrace == null ||
             errorLogMessage == null || lastViewEvent == null
@@ -94,7 +103,16 @@ internal class DatadogLateCrashReporter(
                 signalName,
                 null,
                 lastViewEvent
-            )
+            ).let { errorEvent ->
+                if (crashId == null) {
+                    errorEvent
+                } else {
+                    errorEvent.copy(
+                        date = crashDate ?: errorEvent.date,
+                        error = errorEvent.error.copy(id = crashId, beacon = beacon)
+                    )
+                }
+            }
             writeScope {
                 writeCrash(it, rumWriter, toSendErrorEvent, lastViewEvent)
             }

@@ -6,9 +6,11 @@
 
 package com.datadog.android.ndk.internal
 
+import android.app.Application
 import android.content.Context
 import com.datadog.android.api.InternalLogger
 import com.datadog.android.api.feature.Feature
+import com.datadog.android.api.feature.FeatureEventReceiver
 import com.datadog.android.api.feature.FeatureSdkCore
 import com.datadog.android.core.InternalSdkCore
 import com.datadog.android.internal.utils.allowThreadDiskReads
@@ -24,9 +26,12 @@ import java.util.concurrent.TimeUnit
  * NDK crashes to our logs dashboard.
  */
 internal class NdkCrashReportsFeature(
-    private val sdkCore: FeatureSdkCore
-) : Feature, TrackingConsentProviderCallback {
+    private val sdkCore: FeatureSdkCore,
+    // FLASHCAT FORK - off unless the app turned it on; off, nothing about the beacon is created.
+    private val crashBeaconEnabled: Boolean = false
+) : Feature, TrackingConsentProviderCallback, FeatureEventReceiver {
     private var nativeLibraryLoaded = false
+    internal var crashBeacon: NdkCrashBeacon? = null
 
     override val name: String = Feature.NDK_CRASH_REPORTS_FEATURE_NAME
 
@@ -68,17 +73,39 @@ internal class NdkCrashReportsFeature(
         val nowElapsedNs = sdkCore.timeProvider.getDeviceElapsedTimeNanos()
         val appStartTimestamp =
             TimeUnit.MILLISECONDS.toNanos(nowMs) - nowElapsedNs + sdkCore.appStartTimeNs
+        val appStartTimeMs = TimeUnit.NANOSECONDS.toMillis(appStartTimestamp)
         registerSignalHandler(
             ndkCrashesDirs.absolutePath,
             consentToInt(internalSdkCore.trackingConsent),
-            TimeUnit.NANOSECONDS.toMillis(appStartTimestamp)
+            appStartTimeMs
         )
+        if (crashBeaconEnabled) {
+            // Best effort: whatever goes wrong, native crashes are still reported as before.
+            crashBeacon = try {
+                NdkCrashBeacon(sdkCore, ndkCrashesDirs)
+                    .takeIf { it.start(appContext as? Application) }
+            } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
+                null
+            }
+        }
+        sdkCore.setEventReceiver(name, this)
+        // Covers a RUM/config update concurrent with our initialization, before the receiver existed.
+        crashBeacon?.rearm()
+    }
+
+    override fun onReceive(event: Any) {
+        if ((event as? Map<*, *>)?.get("type") == "ndk_crash_beacon_config_changed") {
+            crashBeacon?.rearm()
+        }
     }
 
     override fun onStop() {
         if (!nativeLibraryLoaded) {
             return
         }
+        sdkCore.removeEventReceiver(name)
+        crashBeacon?.stop()
+        crashBeacon = null
         unregisterSignalHandler()
     }
 

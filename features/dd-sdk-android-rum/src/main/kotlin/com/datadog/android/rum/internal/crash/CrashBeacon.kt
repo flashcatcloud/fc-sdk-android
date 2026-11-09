@@ -40,10 +40,9 @@ import java.util.concurrent.atomic.AtomicReference
  * became of the beacon in `error.beacon`. The intake merges the two by that id.
  *
  * A JVM crash reaches us from an uncaught exception handler. It can use ordinary JVM code, but
- * reading SDK state can still block. Preparation and sending therefore run on the beacon thread,
- * before the crash is written, which lets the written crash carry the beacon's outcome.
- * The wait is bounded, so a beacon that hangs costs the crash at
- * most the configured timeout before it goes on to be written and handed to the previous handler.
+ * reading SDK state can still block. Sending runs on the beacon thread after the JVM report has
+ * been persisted. Its outcome is saved separately and attached when the report is uploaded.
+ * The wait is bounded; networking must never delay saving the full crash report.
  *
  * The request runs on a thread created at startup: a crash caused by running out of memory or
  * threads must not depend on creating one.
@@ -76,6 +75,26 @@ internal class CrashBeacon(
         if (!hasCustomErrorEventMapper) (executor as? ThreadPoolExecutor)?.prestartCoreThread()
     }
 
+    /**
+     * Whether a crash may send a beacon as far as the console and the configuration say, and how
+     * long it waits for one: what a native crash, which cannot ask at the crash, is armed with ahead
+     * of it. Reads only in-memory fields.
+     */
+    fun armState(): Pair<Boolean, Int> {
+        val enabled = configuration.enabled != false && !hasCustomErrorEventMapper
+        return enabled to timeoutMs().toInt()
+    }
+
+    internal fun timeoutMs(): Long =
+        (configuration.timeoutMs?.takeIf { it in MIN_TIMEOUT_MS..MAX_TIMEOUT_MS } ?: DEFAULT_TIMEOUT_MS).toLong()
+
+    /** Reserve before persisting a JVM crash, so concurrent Java/native crashes cannot share its id. */
+    fun reserve(): Reservation? = if (claimed.compareAndSet(false, true)) Reservation(this) else null
+
+    internal class Reservation internal constructor(internal val owner: CrashBeacon) {
+        internal val used = AtomicBoolean(false)
+    }
+
     /** Stops the beacon thread with the SDK. */
     fun shutdown() {
         executor.shutdownNow()
@@ -83,7 +102,7 @@ internal class CrashBeacon(
 
     /**
      * Sends the beacon of the crash happening now, waits for it within the timeout, and tells what
-     * became of it. The crash is then written under [crashId].
+     * became of it. The recoverable crash report must already be persisted under [crashId].
      *
      * The crashed thread only submits and waits: reading the SDK context, deciding whether to send,
      * building and sending the request all run on the beacon thread, inside the bound. Nothing here
@@ -94,20 +113,38 @@ internal class CrashBeacon(
      * no beacon.
      *
      * @param datadogContext reads the SDK context, with the RUM feature context, at the crash.
+     * @param crashType the exception class, or the signal name of a native crash.
      * @param crashTimeMs the crash time on the device clock, the one the crash is written with.
      * @param timeSinceAppStartMs the crash time since the process started, as written with the crash.
+     * @param onCrashId called with [crashId] before anything is sent, for a crash whose report is
+     * written after the beacon and has to know the id first. If it throws, nothing is sent.
+     * @param onDispatch called on the beacon thread with the beacon's corrected date just before the
+     * request leaves, for a report written later that must carry the same date (the intake merges
+     * the two by the launch day it derives from it).
+     * @param waitMarginMs taken off the wait, for a caller that itself waits on a clock that
+     * started earlier (the native signal handler) and must learn the outcome before it stops.
+     * @param waitTimeoutMs remaining wait, from the configuration frozen for this crash.
+     * @param reservation the JVM crash's id reservation, made before persisting the full report.
+     * @param persistedDate the JVM report's already persisted date, immune to later clock/view changes.
      */
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught", "LongParameterList", "ReturnCount")
     fun send(
         datadogContext: () -> DatadogContext?,
-        throwable: Throwable,
+        crashType: String,
         message: String,
         crashTimeMs: Long,
-        timeSinceAppStartMs: Long
+        timeSinceAppStartMs: Long,
+        onCrashId: (String) -> Unit = {},
+        onDispatch: (Long) -> Unit = {},
+        waitMarginMs: Long = 0L,
+        waitTimeoutMs: Long? = null,
+        reservation: Reservation? = null,
+        persistedDate: Long? = null
     ): Result? {
-        if (!claimed.compareAndSet(false, true)) return null
-        // The full ErrorEvent is mapped later, on the persistence thread. Calling the user's
-        // mapper twice, or with a partial event, cannot preserve its filtering semantics.
+        val claim = reservation ?: reserve() ?: return null
+        if (claim.owner !== this || !claim.used.compareAndSet(false, true)) return null
+        // A native ErrorEvent is mapped on the next launch; JVM events are already mapped.
+        // Keep the shared opt-out for custom mappers: never send an unfiltered partial event.
         if (hasCustomErrorEventMapper) return Result(ErrorEvent.Beacon(STATUS_SKIPPED, 0L), null)
         // Decided here, on the crashed thread, before anything is submitted: a background crash, or
         // one the console turned beacons off for, must not wait on the beacon thread at all.
@@ -115,17 +152,32 @@ internal class CrashBeacon(
             return Result(ErrorEvent.Beacon(STATUS_SKIPPED, 0L), null)
         }
         val start = clock()
-        val timeoutMs = (
-            configuration.timeoutMs?.takeIf { it in MIN_TIMEOUT_MS..MAX_TIMEOUT_MS }
-                ?: DEFAULT_TIMEOUT_MS
-            ).toLong()
+        try {
+            onCrashId(crashId)
+        } catch (e: Throwable) {
+            // The report would not carry the id a sent beacon counted the crash under: one crash
+            // would be counted twice. Better not to send.
+            return Result(ErrorEvent.Beacon(status = STATUS_FAILED, duration = clock() - start), null)
+        }
+        val timeoutMs = ((waitTimeoutMs ?: timeoutMs()) - waitMarginMs).coerceAtLeast(0L)
+        if (timeoutMs == 0L) return Result(ErrorEvent.Beacon(STATUS_TIMEOUT, clock() - start), null)
         val dispatch = AtomicReference<Dispatch>(Dispatch.Pending)
         var future: Future<String>? = null
         val status = try {
             @Suppress("UnsafeThirdPartyFunctionCall") // every failure is caught below
             val submitted = executor.submit<String> {
                 try {
-                    attempt(datadogContext, throwable, message, crashTimeMs, timeSinceAppStartMs, timeoutMs, dispatch)
+                    attempt(
+                        datadogContext,
+                        crashType,
+                        message,
+                        crashTimeMs,
+                        timeSinceAppStartMs,
+                        timeoutMs,
+                        dispatch,
+                        onDispatch,
+                        persistedDate
+                    )
                 } catch (e: Throwable) {
                     // Logging belongs inside the bound too: a logger can itself wait on SDK state.
                     internalLogger.log(
@@ -159,12 +211,14 @@ internal class CrashBeacon(
     @Suppress("ReturnCount", "LongParameterList")
     private fun attempt(
         readContext: () -> DatadogContext?,
-        throwable: Throwable,
+        crashType: String,
         message: String,
         crashTimeMs: Long,
         timeSinceAppStartMs: Long,
         timeoutMs: Long,
-        dispatch: AtomicReference<Dispatch>
+        dispatch: AtomicReference<Dispatch>,
+        onDispatch: (Long) -> Unit,
+        persistedDate: Long?
     ): String {
         val datadogContext = readContext() ?: return STATUS_FAILED
         val rumContext = RumContext.fromFeatureContext(
@@ -188,8 +242,11 @@ internal class CrashBeacon(
         } else {
             datadogContext.time.serverTimeOffsetMs
         }
-        val date = crashTimeMs + offset
-        val body = payload(datadogContext, rumContext, throwable, message, date, timeSinceAppStartMs)
+        val date = persistedDate ?: (crashTimeMs + offset)
+        val body = payload(datadogContext, rumContext, crashType, message, date, timeSinceAppStartMs)
+        // Persist the date before claiming dispatch. Failure must stop the request, just like an
+        // id write failure. If persistence outlives the wait, the CAS prevents a late request.
+        onDispatch(date)
         if (!dispatch.compareAndSet(Dispatch.Pending, Dispatch.Ready(date))) return STATUS_TIMEOUT
         return post(body, timeoutMs)
     }
@@ -225,7 +282,7 @@ internal class CrashBeacon(
     internal fun payload(
         datadogContext: DatadogContext,
         rumContext: RumContext,
-        throwable: Throwable,
+        crashType: String,
         message: String,
         date: Long,
         timeSinceAppStartMs: Long
@@ -239,9 +296,7 @@ internal class CrashBeacon(
             put("application_id", applicationId)
             put("launch_time", date - timeSinceAppStartMs)
             put("date", date)
-            // An anonymous or local class has no canonical name and an empty simple name; the intake
-            // requires a crash type, so fall back to the binary name.
-            put("crash_type", throwable.javaClass.canonicalName ?: throwable.javaClass.name)
+            put("crash_type", crashType)
             put("crash_message", message.take(MAX_MESSAGE_LENGTH))
             put("session_id", rumContext.sessionId)
             putOpt("view_id", rumContext.viewId)
