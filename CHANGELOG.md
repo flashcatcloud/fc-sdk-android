@@ -1,3 +1,9 @@
+# Unreleased
+
+* [FEATURE] RUM: report active devices through a dedicated `/api/v2/rum/active` request, independent of session sampling and of the batched event upload. A beacon is sent on launch, on return to the foreground, when tracking consent is granted and when the user ID changes, at most once per device, user and app version (name and version code) per local day, including across app restarts. It is enabled by default; disable it with `RumConfiguration.Builder.setTrackActiveDevices(false)`. **Rollout note:** the backend must serve `/api/v2/rum/active`, and a gateway or proxy that matches only the regular event path must also forward this one.
+
+---
+
 # 0.7.3 / 2026-10-18
 
 * [FIX] RUM: keep the remote configuration across app upgrades. The stored settings were keyed by the app version as well as the endpoint, application, service and environment, so the first session after every app upgrade found no stored entry, was drawn on the values passed to init, and reported no settings version. An installed app runs one version at a time, so the key no longer includes it: the first session after an upgrade uses the settings the previous version stored until the new fetch replaces them. The request still sends `app_version`. Entries written by earlier versions of the SDK are no longer read and are removed by the existing sweep, so the first session after upgrading the SDK itself uses the init values once.

@@ -16,6 +16,7 @@ import com.datadog.android.api.feature.FeatureEventReceiver
 import com.datadog.android.api.feature.StorageBackedFeature
 import com.datadog.android.api.storage.FeatureStorageConfiguration
 import com.datadog.android.api.storage.datastore.DataStoreHandler
+import com.datadog.android.core.FeatureDataClearListener
 import com.datadog.android.core.configuration.BatchProcessingLevel
 import com.datadog.android.core.configuration.BatchSize
 import com.datadog.android.core.configuration.UploadFrequency
@@ -462,6 +463,22 @@ internal class SdkFeatureTest {
         // Then
         verify(mockDataStore).clearAllData()
     }
+
+    @Test
+    fun `M clear regular storage W additional feature cleanup throws`() {
+        val feature = mock<FeatureWithClearData>()
+        whenever(feature.onClearData()).thenThrow(IllegalStateException("additional storage"))
+        testedFeature = SdkFeature(coreFeature.mockInstance, mockContextProvider, feature, mockInternalLogger)
+        testedFeature.storage = mockStorage
+        testedFeature.dataStore = mockDataStore
+
+        testedFeature.clearAllData()
+
+        verify(mockStorage).dropAll()
+        verify(mockDataStore).clearAllData()
+    }
+
+    private interface FeatureWithClearData : Feature, FeatureDataClearListener
 
     // region FeatureScope
 

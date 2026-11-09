@@ -90,6 +90,12 @@ data class RumConfiguration internal constructor(
             return this
         }
 
+        /** Sends the once-a-day active-device beacon. Enabled by default. */
+        fun setTrackActiveDevices(enabled: Boolean): Builder {
+            rumConfig = rumConfig.copy(trackActiveDevices = enabled)
+            return this
+        }
+
         /**
          * Have the last word on session sampling.
          *

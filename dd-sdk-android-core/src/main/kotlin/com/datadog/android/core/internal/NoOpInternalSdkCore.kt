@@ -11,6 +11,7 @@ import com.datadog.android.api.SdkCore
 import com.datadog.android.api.context.DatadogContext
 import com.datadog.android.api.context.NetworkInfo
 import com.datadog.android.api.context.TimeInfo
+import com.datadog.android.api.context.UserInfo
 import com.datadog.android.api.feature.Feature
 import com.datadog.android.api.feature.FeatureContextUpdateReceiver
 import com.datadog.android.api.feature.FeatureEventReceiver
@@ -44,6 +45,11 @@ import java.util.concurrent.TimeUnit
  * A no-op implementation of [SdkCore].
  */
 internal object NoOpInternalSdkCore : InternalSdkCore {
+
+    // FLASHCAT FORK - user snapshots used by the active beacon.
+    override fun addUserInfoListener(listener: (UserInfo, TrackingConsent) -> Unit) = Unit
+
+    override fun removeUserInfoListener(listener: (UserInfo, TrackingConsent) -> Unit) = Unit
 
     override val name: String = "no-op"
 

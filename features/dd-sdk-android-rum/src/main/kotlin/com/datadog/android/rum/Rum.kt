@@ -76,6 +76,8 @@ object Rum {
         )
 
         sdkCore.registerFeature(rumFeature)
+        // The core has registered the consent callback before the independent sender can run.
+        rumFeature.startActiveBeacon()
 
         sdkCore.getFeature(rumFeature.name)?.dataStore?.let {
             RumAnonymousIdentifierManager(it, sdkCore).manageAnonymousId(
