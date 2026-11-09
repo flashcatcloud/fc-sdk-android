@@ -90,9 +90,9 @@ data class RumConfiguration internal constructor(
             return this
         }
 
-        /** Enables the independent active-device beacon. Enabled by default. */
-        fun setActiveBeaconEnabled(enabled: Boolean): Builder {
-            rumConfig = rumConfig.copy(activeBeaconEnabled = enabled)
+        /** Sends the once-a-day active-device beacon. Enabled by default. */
+        fun setTrackActiveDevices(enabled: Boolean): Builder {
+            rumConfig = rumConfig.copy(trackActiveDevices = enabled)
             return this
         }
 
