@@ -38,6 +38,7 @@ fun Thread.State.asString(): String {
 }
 
 /**
- * Converts stacktrace to string format.
+ * Converts stacktrace to string format, bounded like [Throwable.loggableStackTrace].
  */
-fun Array<StackTraceElement>.loggableStackTrace(): String = joinToString("\n") { "at $it" }
+fun Array<StackTraceElement>.loggableStackTrace(): String =
+    joinToString("\n") { "at $it" }.limitStackTraceLength()
