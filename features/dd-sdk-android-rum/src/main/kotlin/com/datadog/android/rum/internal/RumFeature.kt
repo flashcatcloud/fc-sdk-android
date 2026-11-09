@@ -56,6 +56,7 @@ import com.datadog.android.rum.internal.active.ActiveBeaconController
 import com.datadog.android.rum.internal.anr.ANRDetectorRunnable
 import com.datadog.android.rum.internal.crash.CrashBeacon
 import com.datadog.android.rum.internal.crash.JvmCrashPersistence
+import com.datadog.android.rum.internal.crash.JvmCrashPersistence.Companion.withSampledForErrorOf
 import com.datadog.android.rum.internal.debug.UiRumDebugListener
 import com.datadog.android.rum.internal.domain.InfoProvider
 import com.datadog.android.rum.internal.domain.RumDataWriter
@@ -1018,7 +1019,7 @@ internal class RumFeature(
                     internalCore.getDatadogContext()?.let { context ->
                         context.copy(
                             featuresContext = context.featuresContext +
-                                (Feature.RUM_FEATURE_NAME to reportContext.toMap())
+                                (Feature.RUM_FEATURE_NAME to reportContext.withSampledForErrorOf(context).toMap())
                         )
                     }
                 },

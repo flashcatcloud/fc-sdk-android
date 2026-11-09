@@ -6,6 +6,8 @@
 
 package com.datadog.android.rum.internal.crash
 
+import com.datadog.android.api.context.DatadogContext
+import com.datadog.android.api.feature.Feature
 import com.datadog.android.api.storage.RawBatchEvent
 import com.datadog.android.rum.internal.domain.RumContext
 import com.datadog.android.rum.internal.domain.scope.RumSessionScope
@@ -151,6 +153,18 @@ internal class JvmCrashPersistence(private val directory: () -> File?) {
                 viewName = view.get("name")?.asString,
                 viewUrl = view.get("url").asString
             )
+        }
+
+        /**
+         * FLASHCAT FORK - the report does not say whether its session is kept only on error, so
+         * that is taken from the RUM context of [datadogContext], read at the crash, as long as it
+         * is still the report's session.
+         */
+        fun RumContext.withSampledForErrorOf(datadogContext: DatadogContext): RumContext {
+            val live = RumContext.fromFeatureContext(
+                datadogContext.featuresContext[Feature.RUM_FEATURE_NAME].orEmpty()
+            )
+            return copy(sampledForError = live.sessionId == sessionId && live.sampledForError)
         }
     }
 }

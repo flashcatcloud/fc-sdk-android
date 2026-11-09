@@ -421,6 +421,66 @@ internal class CrashBeaconTest {
     }
 
     @Test
+    fun `M flag the session as sampled for error W send() { withheld session }`() {
+        fakeDatadogContext = fakeDatadogContext.copy(
+            featuresContext = mapOf(
+                Feature.RUM_FEATURE_NAME to fakeRumContext.copy(
+                    sessionState = RumSessionScope.State.WITHHELD,
+                    sampledForError = true
+                ).toMap()
+            )
+        )
+        whenever(mockCall.execute()) doReturn response(202)
+
+        send()
+
+        assertThat(sentBody().getBoolean("session_sampled_for_error")).isTrue()
+    }
+
+    @Test
+    fun `M flag the session as sampled for error W send() { session released by an earlier error }`() {
+        // Released by its first error, the session is collected again, but still not part of the
+        // sample: its views keep `session.sampled_for_error`, and so does its crash.
+        fakeDatadogContext = fakeDatadogContext.copy(
+            featuresContext = mapOf(
+                Feature.RUM_FEATURE_NAME to fakeRumContext.copy(
+                    sessionState = RumSessionScope.State.TRACKED,
+                    sampledForError = true
+                ).toMap()
+            )
+        )
+        whenever(mockCall.execute()) doReturn response(202)
+
+        send()
+
+        assertThat(sentBody().getBoolean("session_sampled_for_error")).isTrue()
+    }
+
+    @Test
+    fun `M omit the sampled for error flag W send() { sampled session }`() {
+        whenever(mockCall.execute()) doReturn response(202)
+
+        send()
+
+        assertThat(sentBody().has("session_sampled_for_error")).isFalse()
+    }
+
+    @Test
+    fun `M not keep the flag of the previous session W send() { feature context merged }`() {
+        // The RUM feature context is merged key by key: the next session must overwrite the flag.
+        val merged = fakeRumContext.copy(sampledForError = true).toMap() +
+            fakeRumContext.copy(sessionId = "1f2c6b1e-6d55-4f5e-9a51-0c1b8a1e2f3d").toMap()
+        fakeDatadogContext = fakeDatadogContext.copy(
+            featuresContext = mapOf(Feature.RUM_FEATURE_NAME to merged)
+        )
+        whenever(mockCall.execute()) doReturn response(202)
+
+        send()
+
+        assertThat(sentBody().has("session_sampled_for_error")).isFalse()
+    }
+
+    @Test
     fun `M skip an expired session W send()`() {
         fakeDatadogContext = fakeDatadogContext.copy(
             featuresContext = mapOf(
@@ -670,6 +730,11 @@ internal class CrashBeaconTest {
             timeSinceAppStartMs = timeSinceAppStartMs
         )
     ).beacon
+
+    private fun sentBody(): JSONObject = argumentCaptor<Request>().run {
+        verify(mockCallFactory).newCall(capture())
+        JSONObject(Buffer().also { firstValue.body!!.writeTo(it) }.readUtf8())
+    }
 
     private fun assertSkipped() {
         val result = send()
