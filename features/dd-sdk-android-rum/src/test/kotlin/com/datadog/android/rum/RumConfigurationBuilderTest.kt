@@ -108,6 +108,7 @@ internal class RumConfigurationBuilderTest {
             assertThat(longTaskTrackingStrategy)
                 .isEqualTo(MainLooperLongTaskStrategy(100L))
             assertThat(backgroundEventTracking).isFalse()
+            assertThat(crashBeaconEnabled).isFalse()
             assertThat(trackFrustrations).isTrue()
             // on Android R+ this should be false, but since default value is static property
             // RumFeature.DEFAULT_RUM_CONFIG, it is evaluated at the static() block during class

@@ -35,6 +35,10 @@ internal class DatadogNdkCrashHandler(
     internal var lastRumViewEvent: JsonObject? = null
     internal var lastNdkCrashLog: NdkCrashLog? = null
 
+    // FLASHCAT FORK - the crash beacon of that crash, written beside it when the app turned beacons
+    // on: the id the beacon counted the crash under, and what became of it.
+    internal var lastCrashBeacon: CrashBeaconRecord? = null
+
     // region NdkCrashHandler
 
     override fun prepareData() {
@@ -70,6 +74,10 @@ internal class DatadogNdkCrashHandler(
                             file.readTextSafe(internalLogger = internalLogger)?.let {
                                 ndkCrashLogDeserializer.deserialize(it)
                             }
+
+                    CRASH_BEACON_FILE_NAME ->
+                        lastCrashBeacon = file.readTextSafe(internalLogger = internalLogger)
+                            ?.let { CrashBeaconRecord.parse(it) }
                 }
             }
         } catch (e: SecurityException) {
@@ -99,6 +107,7 @@ internal class DatadogNdkCrashHandler(
     private fun clearAllReferences() {
         lastRumViewEvent = null
         lastNdkCrashLog = null
+        lastCrashBeacon = null
     }
 
     @WorkerThread
@@ -142,7 +151,14 @@ internal class DatadogNdkCrashHandler(
                     "stacktrace" to ndkCrashLog.stacktrace,
                     "message" to errorLogMessage,
                     "lastViewEvent" to lastViewEvent
-                )
+                ) + lastCrashBeacon?.takeIf { it.belongsTo(ndkCrashLog) }?.let {
+                    mapOf(
+                        "crashId" to it.crashId,
+                        "beaconStatus" to it.status,
+                        "beaconDuration" to it.durationMs,
+                        "crashDate" to it.date.takeIf { date -> date > 0L }
+                    )
+                }.orEmpty()
             )
         } else {
             internalLogger.log(
@@ -182,6 +198,7 @@ internal class DatadogNdkCrashHandler(
 
         private const val RUM_VIEW_EVENT_FILE_NAME = "last_view_event"
         internal const val CRASH_DATA_FILE_NAME = "crash_log"
+        internal const val CRASH_BEACON_FILE_NAME = "crash_beacon"
         internal const val USER_INFO_FILE_NAME = "user_information"
         internal const val NETWORK_INFO_FILE_NAME = "network_information"
 
@@ -227,6 +244,40 @@ internal class DatadogNdkCrashHandler(
 
         internal fun getGrantedUserInfoFile(storageDir: File): File {
             return File(getNdkGrantedDir(storageDir), USER_INFO_FILE_NAME)
+        }
+    }
+}
+
+/**
+ * FLASHCAT FORK - what the beacon thread of a native crash wrote beside its report:
+ * `<crash id> <status> <duration ms> <crash time ms> <beacon date>`, the date 0 when the beacon
+ * was never dispatched.
+ */
+internal data class CrashBeaconRecord(
+    val crashId: String,
+    val status: String,
+    val durationMs: Long,
+    val crashTimeMs: Long,
+    val date: Long
+) {
+    /**
+     * Whether this record was written for that crash report: a process that survived a crash and
+     * crashed again later, unarmed, leaves the first crash's record beside the second's report.
+     */
+    fun belongsTo(crashLog: NdkCrashLog): Boolean =
+        crashLog.timestamp == crashTimeMs
+
+    internal companion object {
+        private val UUID_PATTERN = Regex("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$")
+
+        /** Null for anything else: the report then keeps an id of its own, as before. */
+        fun parse(text: String): CrashBeaconRecord? {
+            val parts = text.trim().split(' ')
+            if (parts.size != 5 || !UUID_PATTERN.matches(parts[0])) return null
+            val duration = parts[2].toLongOrNull() ?: return null
+            val crashTimeMs = parts[3].toLongOrNull() ?: return null
+            val date = parts[4].toLongOrNull() ?: return null
+            return CrashBeaconRecord(parts[0], parts[1], duration, crashTimeMs, date)
         }
     }
 }

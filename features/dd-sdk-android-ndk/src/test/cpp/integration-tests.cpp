@@ -45,6 +45,8 @@ int run_jni_env_dependent_tests(JNIEnv *env) {
     GREATEST_MAIN_END();
 }
 
+SUITE_EXTERN(crash_beacon);
+
 int run_test_suites() {
     int argc = 0;
     char *argv[] = {};
@@ -53,6 +55,7 @@ int run_test_suites() {
     RUN_SUITE(signal_monitor);
     RUN_SUITE(string_utils);
     RUN_SUITE(crash_log);
+    RUN_SUITE(crash_beacon);
     // This test fails on Bitrise on the first backtrace line assertion even and was not able to
     // detect why so far. My guess is related with Linux environment, I actually logged the line
     // and checked the regEx on top and was passing locally. We will disable this test for now as

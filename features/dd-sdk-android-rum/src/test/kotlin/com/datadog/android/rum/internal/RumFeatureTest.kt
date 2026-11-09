@@ -28,6 +28,7 @@ import com.datadog.android.core.feature.event.JvmCrash
 import com.datadog.android.core.feature.event.ThreadDump
 import com.datadog.android.event.EventMapper
 import com.datadog.android.event.MapperSerializer
+import com.datadog.android.event.NoOpEventMapper
 import com.datadog.android.internal.flags.RumFlagEvaluationMessage
 import com.datadog.android.internal.system.BuildSdkVersionProvider
 import com.datadog.android.internal.telemetry.InternalTelemetryEvent
@@ -38,6 +39,7 @@ import com.datadog.android.rum.assertj.RumFeatureAssert
 import com.datadog.android.rum.configuration.VitalsUpdateFrequency
 import com.datadog.android.rum.internal.RumFeature.Companion.SLOW_FRAMES_MONITORING_DISABLED_MESSAGE
 import com.datadog.android.rum.internal.RumFeature.Companion.SLOW_FRAMES_MONITORING_ENABLED_MESSAGE
+import com.datadog.android.rum.internal.crash.CrashBeacon
 import com.datadog.android.rum.internal.domain.InfoProvider
 import com.datadog.android.rum.internal.domain.RumDataWriter
 import com.datadog.android.rum.internal.domain.WithheldEventWriter
@@ -62,6 +64,7 @@ import com.datadog.android.rum.internal.vitals.FrameStateListener
 import com.datadog.android.rum.internal.vitals.FrameStatesAggregator
 import com.datadog.android.rum.internal.vitals.NoOpVitalMonitor
 import com.datadog.android.rum.internal.vitals.VitalReaderRunnable
+import com.datadog.android.rum.model.ErrorEvent
 import com.datadog.android.rum.tracking.InteractionPredicate
 import com.datadog.android.rum.tracking.NoOpTrackingStrategy
 import com.datadog.android.rum.tracking.NoOpViewTrackingStrategy
@@ -108,6 +111,7 @@ import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
@@ -119,6 +123,7 @@ import org.mockito.quality.Strictness
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.TimeUnit
@@ -1376,12 +1381,215 @@ internal class RumFeatureTest {
 
         // Then
         verify(mockRumMonitor).addCrash(
-            fakeMessage,
-            RumErrorSource.SOURCE,
-            fakeThrowable,
-            fakeThreads
+            eq(fakeMessage),
+            eq(RumErrorSource.SOURCE),
+            eq(fakeThrowable),
+            eq(fakeThreads),
+            any(),
+            isNull(),
+            isNull(),
+            isNull()
         )
         verifySlowFramesListenerLogMessage()
+    }
+
+    @Test
+    fun `M persist before sending W onReceive() { JVM crash event, write not confirmed }`(
+        @Forgery fakeThreads: List<ThreadDump>,
+        @Forgery fakeDatadogContext: DatadogContext,
+        forge: Forge
+    ) {
+        testedFeature = RumFeature(
+            mockSdkCore,
+            fakeApplicationId.toString(),
+            fakeConfiguration.copy(crashBeaconEnabled = true, errorEventMapper = NoOpEventMapper()),
+            lateCrashReporterFactory = { mockLateCrashReporter }
+        )
+        whenever(mockSdkCore.getDatadogContext(any())) doReturn fakeDatadogContext
+        val beaconExecutor = Executors.newSingleThreadExecutor()
+        val callFactory = mock<okhttp3.Call.Factory>()
+        whenever(mockSdkCore.createSingleThreadExecutorService("rum-crash-beacon")) doReturn beaconExecutor
+        whenever(mockSdkCore.createOkHttpCallFactory(any())) doReturn callFactory
+        testedFeature.onInitialize(appContext.mockInstance)
+        val crashId = checkNotNull(testedFeature.crashBeacon).crashId
+        val throwable = forge.aThrowable()
+        val message = forge.anAlphabeticalString()
+
+        testedFeature.onReceive(JvmCrash.Rum(message = message, throwable = throwable, threads = fakeThreads))
+
+        // addCrash only queues work. No successful batch write was observed, so never network.
+        verify(mockRumMonitor).addCrash(
+            eq(message),
+            eq(RumErrorSource.SOURCE),
+            eq(throwable),
+            eq(fakeThreads),
+            any(),
+            eq(crashId),
+            isNull(),
+            isNull()
+        )
+        verifyNoInteractions(callFactory)
+        beaconExecutor.shutdownNow()
+    }
+
+    @Test
+    fun `M notify native when RUM is ready W onInitialize()`() {
+        val nativeFeature = mock<com.datadog.android.api.feature.FeatureScope>()
+        whenever(mockSdkCore.getFeature(Feature.NDK_CRASH_REPORTS_FEATURE_NAME)) doReturn nativeFeature
+
+        testedFeature.onInitialize(appContext.mockInstance)
+
+        verify(nativeFeature).sendEvent(mapOf("type" to "ndk_crash_beacon_config_changed"))
+    }
+
+    @Test
+    fun `M disarm the native crash beacon W onReceive() { arm request, beacon turned off at init }`() {
+        // Given
+        testedFeature.onInitialize(appContext.mockInstance)
+        var armed: Pair<Boolean, Int>? = null
+
+        // When
+        testedFeature.onReceive(
+            mapOf(
+                "type" to RumFeature.NDK_CRASH_BEACON_ARM_MESSAGE_TYPE,
+                "onArm" to { enabled: Boolean, timeoutMs: Int -> armed = enabled to timeoutMs }
+            )
+        )
+
+        // Then
+        assertThat(testedFeature.crashBeacon).isNull()
+        assertThat(armed).isEqualTo(false to CrashBeacon.DEFAULT_TIMEOUT_MS)
+    }
+
+    @Test
+    fun `M send the native crash beacon under the crash id W onReceive() { beacon request }`(
+        @Forgery fakeDatadogContext: DatadogContext
+    ) {
+        // Given
+        // No custom error mapper: one skips beacons altogether.
+        testedFeature = RumFeature(
+            mockSdkCore,
+            fakeApplicationId.toString(),
+            fakeConfiguration.copy(errorEventMapper = NoOpEventMapper(), crashBeaconEnabled = true),
+            lateCrashReporterFactory = { mockLateCrashReporter }
+        )
+        whenever(mockSdkCore.getDatadogContext(any())) doReturn fakeDatadogContext
+        val beaconExecutor = Executors.newSingleThreadExecutor()
+        whenever(mockSdkCore.createSingleThreadExecutorService("rum-crash-beacon")) doReturn beaconExecutor
+        whenever(mockSdkCore.createOkHttpCallFactory(any())) doReturn mock()
+        testedFeature.onInitialize(appContext.mockInstance)
+        val crashId = checkNotNull(testedFeature.crashBeacon).crashId
+        val seenIds = mutableListOf<String>()
+        var result: Triple<String, String, Long>? = null
+
+        // When
+        testedFeature.onReceive(
+            mapOf(
+                "type" to RumFeature.NDK_CRASH_BEACON_MESSAGE_TYPE,
+                "crashType" to "SIGSEGV",
+                "message" to "NDK crash detected with signal: SIGSEGV",
+                "crashTimeMs" to 5_000L,
+                "timeSinceAppStartMs" to 4_000L,
+                "onCrashId" to { id: String -> seenIds += id },
+                "onResult" to { id: String, status: String, durationMs: Long ->
+                    result = Triple(id, status, durationMs)
+                }
+            )
+        )
+
+        // Then
+        // Not visible to the user here (no app process state in a unit test): skipped on the
+        // crashed thread, before an id is needed.
+        assertThat(seenIds).isEmpty()
+        assertThat(result).isEqualTo(Triple(crashId, CrashBeacon.STATUS_SKIPPED, 0L))
+        beaconExecutor.shutdownNow()
+    }
+
+    @Test
+    fun `M skip unfiltered beacons W onInitialize() { custom error mapper }`(
+        @Forgery fakeDatadogContext: DatadogContext
+    ) {
+        val errorMapper: EventMapper<ErrorEvent> = mock()
+        testedFeature = RumFeature(
+            mockSdkCore,
+            fakeApplicationId.toString(),
+            fakeConfiguration.copy(errorEventMapper = errorMapper, crashBeaconEnabled = true),
+            lateCrashReporterFactory = { mockLateCrashReporter }
+        )
+        whenever(mockSdkCore.getDatadogContext(any())) doReturn fakeDatadogContext
+        val beaconExecutor = Executors.newSingleThreadExecutor()
+        whenever(mockSdkCore.createSingleThreadExecutorService("rum-crash-beacon")) doReturn beaconExecutor
+        whenever(mockSdkCore.createOkHttpCallFactory(any())) doReturn mock()
+        testedFeature.onInitialize(appContext.mockInstance)
+
+        val result = checkNotNull(testedFeature.crashBeacon).send(
+            datadogContext = { error("No raw context may be read") },
+            crashType = "java.lang.IllegalStateException",
+            message = "private message",
+            crashTimeMs = 1_000_000L,
+            timeSinceAppStartMs = 1_000L
+        )
+
+        assertThat(result?.beacon?.status).isEqualTo(CrashBeacon.STATUS_SKIPPED)
+        verify(errorMapper, never()).map(any())
+        beaconExecutor.shutdownNow()
+    }
+
+    @Test
+    fun `M still add the crash W onReceive() { JVM crash event, beacon throws before sending }`(
+        @Forgery fakeThreads: List<ThreadDump>,
+        @Forgery fakeDatadogContext: DatadogContext,
+        forge: Forge
+    ) {
+        // Given
+        testedFeature = RumFeature(
+            mockSdkCore,
+            fakeApplicationId.toString(),
+            fakeConfiguration.copy(errorEventMapper = NoOpEventMapper(), crashBeaconEnabled = true),
+            lateCrashReporterFactory = { mockLateCrashReporter }
+        )
+        whenever(mockSdkCore.getDatadogContext(any())) doReturn fakeDatadogContext
+        val beaconExecutor = Executors.newSingleThreadExecutor()
+        whenever(mockSdkCore.createSingleThreadExecutorService("rum-crash-beacon")) doReturn beaconExecutor
+        whenever(mockSdkCore.createOkHttpCallFactory(any())) doReturn mock()
+        testedFeature.onInitialize(appContext.mockInstance)
+        checkNotNull(testedFeature.crashBeacon)
+        whenever(mockSdkCore.appStartTimeNs) doThrow IllegalStateException("broken core")
+        val fakeThrowable = forge.aThrowable()
+        val fakeMessage = forge.anAlphabeticalString()
+
+        // When
+        testedFeature.onReceive(JvmCrash.Rum(message = fakeMessage, throwable = fakeThrowable, threads = fakeThreads))
+
+        // Then
+        verify(mockRumMonitor).addCrash(
+            eq(fakeMessage),
+            eq(RumErrorSource.SOURCE),
+            eq(fakeThrowable),
+            eq(fakeThreads),
+            any(),
+            eq(checkNotNull(testedFeature.crashBeacon).crashId),
+            isNull(),
+            isNull()
+        )
+        beaconExecutor.shutdownNow()
+    }
+
+    @Test
+    fun `M prepare no beacon W onInitialize() { beacon turned off at init }`() {
+        // Given
+        testedFeature = RumFeature(
+            mockSdkCore,
+            fakeApplicationId.toString(),
+            fakeConfiguration.copy(crashBeaconEnabled = false),
+            lateCrashReporterFactory = { mockLateCrashReporter }
+        )
+
+        // When
+        testedFeature.onInitialize(appContext.mockInstance)
+
+        // Then
+        assertThat(testedFeature.crashBeacon).isNull()
     }
 
     // endregion

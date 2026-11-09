@@ -16,7 +16,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
+import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.spy
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.mockito.quality.Strictness
 
@@ -33,6 +36,26 @@ internal class RemoteConfigStoreTest {
         appContext = mock()
         whenever(appContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE))
             .thenReturn(preferences)
+    }
+
+    @Test
+    fun `M publish new beacon settings before notifying native W store()`() {
+        val observed = mutableListOf<Pair<Boolean?, Int?>>()
+        lateinit var store: RemoteConfigStore
+        store = RemoteConfigStore(
+            appContext,
+            STORE_KEY,
+            mock<InternalLogger>(),
+            onCrashBeaconConfigurationChanged = {
+                observed += store.crashBeaconEnabled() to store.crashBeaconTimeoutMs()
+            }
+        )
+
+        store.store(RemoteConfigValues(null, 1, crashBeaconEnabled = false, crashBeaconTimeoutMs = 500))
+        store.store(RemoteConfigValues(null, 2, crashBeaconEnabled = true, crashBeaconTimeoutMs = 2_000))
+        store.store(RemoteConfigValues(null, 3))
+
+        assertThat(observed).containsExactly(false to 500, true to 2_000, null to null)
     }
 
     // region store key
@@ -155,6 +178,53 @@ internal class RemoteConfigStoreTest {
 
         assertThat(testedStore().snapshot().sessionOnError).isNull()
         assertThat(testedStore().sessionReplayOnError()).isNull()
+    }
+
+    @Test
+    fun `M keep the crash beacon switch and wait W store() then read`() {
+        val store = testedStore()
+        store.store(RemoteConfigValues(0f, 1, crashBeaconEnabled = false, crashBeaconTimeoutMs = 1500))
+
+        assertThat(testedStore().crashBeaconEnabled()).isFalse
+        assertThat(testedStore().crashBeaconTimeoutMs()).isEqualTo(1500)
+        assertThat(testedStore().snapshot().crashBeaconTimeoutMs).isEqualTo(1500)
+
+        // A later response that omits them hands them back to the defaults.
+        store.store(RemoteConfigValues(0f, 2))
+
+        assertThat(testedStore().crashBeaconEnabled()).isNull()
+        assertThat(testedStore().crashBeaconTimeoutMs()).isNull()
+    }
+
+    @Test
+    fun `M read crash settings without accessing preferences W crashBeaconTimeoutMs()`() {
+        testedStore().store(RemoteConfigValues(null, crashBeaconEnabled = false, crashBeaconTimeoutMs = 1500))
+        val observedPreferences = spy(preferences)
+        whenever(appContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE))
+            .thenReturn(observedPreferences)
+        val store = testedStore()
+        clearInvocations(observedPreferences)
+
+        assertThat(store.crashBeaconTimeoutMs()).isEqualTo(1500)
+        assertThat(store.crashBeaconEnabled()).isFalse
+        assertThat(store.crashBeaconConfiguration.timeoutMs).isEqualTo(1500)
+        verifyNoInteractions(observedPreferences)
+    }
+
+    @Test
+    fun `M refresh the same crash settings object W store() { running beacon }`() {
+        val store = testedStore()
+        val configuration = store.crashBeaconConfiguration
+
+        store.store(RemoteConfigValues(null, crashBeaconEnabled = false, crashBeaconTimeoutMs = 500))
+
+        assertThat(configuration.enabled).isFalse
+        assertThat(configuration.timeoutMs).isEqualTo(500)
+
+        store.store(RemoteConfigValues(null))
+
+        assertThat(configuration.enabled).isNull()
+        assertThat(configuration.timeoutMs).isNull()
     }
 
     @Test
