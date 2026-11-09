@@ -1001,7 +1001,7 @@ internal class RumFeatureTest {
     fun `M register and remove active user listener W feature starts and stops`(@Forgery context: DatadogContext) {
         featureWith(
             fakeConfiguration.copy(
-                activeBeaconEnabled = true,
+                trackActiveDevices = true,
                 customEndpointUrl = "https://example.com/rum",
                 remoteConfigurationEnabled = false
             )
@@ -1024,7 +1024,7 @@ internal class RumFeatureTest {
     fun `M not start active sender W beacon is disabled`(@Forgery context: DatadogContext) {
         featureWith(
             fakeConfiguration.copy(
-                activeBeaconEnabled = false,
+                trackActiveDevices = false,
                 customEndpointUrl = "https://example.com/rum",
                 remoteConfigurationEnabled = false
             )
@@ -1042,7 +1042,7 @@ internal class RumFeatureTest {
     fun `M keep rum enableable W active beacon setup throws`(@Forgery context: DatadogContext) {
         featureWith(
             fakeConfiguration.copy(
-                activeBeaconEnabled = true,
+                trackActiveDevices = true,
                 customEndpointUrl = "https://example.com/rum",
                 remoteConfigurationEnabled = false
             )
@@ -1067,7 +1067,7 @@ internal class RumFeatureTest {
     fun `M drop withheld data W active consent storage throws`(@Forgery context: DatadogContext) {
         featureWith(
             fakeConfiguration.copy(
-                activeBeaconEnabled = true,
+                trackActiveDevices = true,
                 customEndpointUrl = "https://example.com/rum",
                 remoteConfigurationEnabled = false
             )
