@@ -55,7 +55,16 @@ dependencies {
 }
 
 unMock {
-    keepStartingWith("android.os")
+    // Keep the JVM-compatible looper/parcel implementation; Process needs Android's libcore.
+    keep("android.os.BaseBundle")
+    keep("android.os.Bundle")
+    keep("android.os.Parcel")
+    keep("android.os.Handler")
+    keep("android.os.IMessenger")
+    keep("android.os.Looper")
+    keep("android.os.Message")
+    keep("android.os.MessageQueue")
+    keep("android.os.SystemProperties")
     keepStartingWith("org.json")
 }
 

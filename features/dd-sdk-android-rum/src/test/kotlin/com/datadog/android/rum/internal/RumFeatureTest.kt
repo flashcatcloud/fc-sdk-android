@@ -12,9 +12,11 @@ import android.app.Application
 import android.app.ApplicationExitInfo
 import android.content.ContentResolver
 import android.content.Context
+import android.content.SharedPreferences
 import android.content.res.Resources
 import com.datadog.android.api.InternalLogger
 import com.datadog.android.api.context.DatadogContext
+import com.datadog.android.api.context.UserInfo
 import com.datadog.android.api.feature.EventWriteScope
 import com.datadog.android.api.feature.Feature
 import com.datadog.android.api.feature.FeatureContextUpdateReceiver
@@ -30,6 +32,7 @@ import com.datadog.android.event.NoOpEventMapper
 import com.datadog.android.internal.flags.RumFlagEvaluationMessage
 import com.datadog.android.internal.system.BuildSdkVersionProvider
 import com.datadog.android.internal.telemetry.InternalTelemetryEvent
+import com.datadog.android.privacy.TrackingConsent
 import com.datadog.android.rum.GlobalRumMonitor
 import com.datadog.android.rum.RumErrorSource
 import com.datadog.android.rum.assertj.RumFeatureAssert
@@ -39,6 +42,7 @@ import com.datadog.android.rum.internal.RumFeature.Companion.SLOW_FRAMES_MONITOR
 import com.datadog.android.rum.internal.crash.CrashBeacon
 import com.datadog.android.rum.internal.domain.InfoProvider
 import com.datadog.android.rum.internal.domain.RumDataWriter
+import com.datadog.android.rum.internal.domain.WithheldEventWriter
 import com.datadog.android.rum.internal.domain.accessibility.DefaultAccessibilityReader
 import com.datadog.android.rum.internal.domain.accessibility.DefaultAccessibilitySnapshotManager
 import com.datadog.android.rum.internal.domain.accessibility.NoOpAccessibilityReader
@@ -996,6 +1000,106 @@ internal class RumFeatureTest {
             configuration,
             lateCrashReporterFactory = { mockLateCrashReporter }
         )
+    }
+
+    @Test
+    fun `M register and remove active user listener W feature starts and stops`(@Forgery context: DatadogContext) {
+        featureWith(
+            fakeConfiguration.copy(
+                trackActiveDevices = true,
+                customEndpointUrl = "https://example.com/rum",
+                remoteConfigurationEnabled = false
+            )
+        )
+        whenever(mockSdkCore.getDatadogContext()) doReturn context
+        whenever(mockSdkCore.name) doReturn "default"
+        whenever(mockSdkCore.createOkHttpCallFactory(any())) doReturn mock()
+        testedFeature.onInitialize(appContext.mockInstance)
+        testedFeature.startActiveBeacon()
+        val listener = argumentCaptor<(UserInfo, TrackingConsent) -> Unit>()
+        verify(mockSdkCore).addUserInfoListener(listener.capture())
+
+        testedFeature.onStop()
+
+        verify(mockSdkCore).removeUserInfoListener(listener.firstValue)
+        verify(mockScheduledExecutorService, atLeastOnce()).shutdownNow()
+    }
+
+    @Test
+    fun `M not start active sender W beacon is disabled`(@Forgery context: DatadogContext) {
+        featureWith(
+            fakeConfiguration.copy(
+                trackActiveDevices = false,
+                customEndpointUrl = "https://example.com/rum",
+                remoteConfigurationEnabled = false
+            )
+        )
+        whenever(mockSdkCore.getDatadogContext()) doReturn context
+        whenever(mockSdkCore.name) doReturn "default"
+        whenever(mockSdkCore.getPersistenceExecutorService()) doReturn mock()
+        testedFeature.onInitialize(appContext.mockInstance)
+        testedFeature.startActiveBeacon()
+        verify(mockSdkCore, never()).addUserInfoListener(any())
+        verify(mockSdkCore, never()).createOkHttpCallFactory(any())
+    }
+
+    @Test
+    fun `M keep rum enableable W active beacon setup throws`(@Forgery context: DatadogContext) {
+        featureWith(
+            fakeConfiguration.copy(
+                trackActiveDevices = true,
+                customEndpointUrl = "https://example.com/rum",
+                remoteConfigurationEnabled = false
+            )
+        )
+        whenever(mockSdkCore.getDatadogContext()) doReturn context
+        whenever(mockSdkCore.name) doReturn "default"
+        whenever(mockSdkCore.createOkHttpCallFactory(any())) doThrow RuntimeException("boom")
+        testedFeature.onInitialize(appContext.mockInstance)
+        testedFeature.startActiveBeacon()
+        verify(mockSdkCore, never()).addUserInfoListener(any())
+        verify(mockInternalLogger).log(
+            eq(InternalLogger.Level.WARN),
+            eq(InternalLogger.Target.MAINTAINER),
+            any(),
+            anyOrNull(),
+            any(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `M drop withheld data W active consent storage throws`(@Forgery context: DatadogContext) {
+        featureWith(
+            fakeConfiguration.copy(
+                trackActiveDevices = true,
+                customEndpointUrl = "https://example.com/rum",
+                remoteConfigurationEnabled = false
+            )
+        )
+        val prefs = mock<SharedPreferences>()
+        whenever(prefs.edit()).thenThrow(IllegalStateException("active storage"))
+        whenever(appContext.mockInstance.getSharedPreferences(any(), any())) doReturn prefs
+        whenever(mockSdkCore.getDatadogContext()) doReturn context
+        whenever(mockSdkCore.name) doReturn "default"
+        whenever(mockSdkCore.createOkHttpCallFactory(any())) doReturn mock()
+        val scope = mock<FeatureScope>()
+        whenever(mockSdkCore.getFeature(Feature.RUM_FEATURE_NAME)) doReturn scope
+        whenever(scope.withWriteContext(any(), any())) doAnswer {
+            val callback = it.getArgument<(DatadogContext, EventWriteScope) -> Unit>(it.arguments.lastIndex)
+            callback(context, object : EventWriteScope {
+                override fun invoke(block: (EventBatchWriter) -> Unit) = block(mock())
+            })
+        }
+        testedFeature.onInitialize(appContext.mockInstance)
+        testedFeature.startActiveBeacon()
+        val withheld = mock<WithheldEventWriter>()
+        testedFeature.withheldEvents = withheld
+
+        testedFeature.onConsentUpdated(TrackingConsent.GRANTED, TrackingConsent.NOT_GRANTED)
+
+        verify(prefs).edit()
+        verify(withheld).dropHeldForConsent()
     }
 
     private fun registeredForegroundCallback(): ProcessForegroundCallback {
