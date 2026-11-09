@@ -6,6 +6,7 @@
 
 
 #include <jni.h>
+#include <cstdio>
 #include <string>
 
 
@@ -18,12 +19,16 @@ namespace stringutils {
 
     template<typename... Args>
     std::string format(const char* formatter, Args... args) {
-        // first we compute the size of the buffer required to format this string
-        // we will add 1 at the end for the end of string /0 character
-        const size_t size = snprintf(nullptr, 0, formatter, args...);
-        char buffer[size + 1];
-        snprintf(buffer, size + 1, formatter, args...);
-        return std::string(buffer, buffer + size);
+        const int length = std::snprintf(nullptr, 0, formatter, args...);
+        if (length <= 0) {
+            return {};
+        }
+        const auto size = static_cast<size_t>(length);
+        // Crash reporting can run on a small alternate signal stack.
+        std::string buffer(size + 1, '\0');
+        std::snprintf(buffer.data(), buffer.size(), formatter, args...);
+        buffer.resize(size);
+        return buffer;
     }
 }
 
