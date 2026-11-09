@@ -218,6 +218,16 @@ internal class RumFeature(
      */
     internal var withheldEvents: WithheldEventWriter? = null
 
+    // FLASHCAT FORK - the name of this process, or null when unknown. Replaced in tests.
+    internal var currentProcessName: () -> String? = {
+        @Suppress("TooGenericExceptionCaught", "SwallowedException")
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) Application.getProcessName() else null
+        } catch (e: RuntimeException) {
+            null
+        }
+    }
+
     // FLASHCAT FORK - draws the session of a late crash that belongs to no known session.
     private val lateCrashSessionRandom = SecureRandom()
     private var withheldEventsBackgroundCallback: ProcessForegroundCallback? = null
@@ -806,14 +816,24 @@ internal class RumFeature(
             )
             null
         } ?: return
-        val anrIndex = exitReasons.indexOfFirst { it.reason == ApplicationExitInfo.REASON_ANR }
+        // FLASHCAT FORK - only the exits of this process: the last view read here, and the RUM state
+        // it stands for, are this process's. An ANR of another process of the app (a `:remote`
+        // service) would be attached to a view it never had, or get a session of its own in data
+        // that process never tracked. Every exit is kept when the name is unknown.
+        val processName = currentProcessName()
+        val ownExits = if (processName == null) {
+            exitReasons
+        } else {
+            exitReasons.filter { it.processName == processName }
+        }
+        val anrIndex = ownExits.indexOfFirst { it.reason == ApplicationExitInfo.REASON_ANR }
         if (anrIndex < 0) return
-        val lastKnownAnr = exitReasons[anrIndex]
+        val lastKnownAnr = ownExits[anrIndex]
         // FLASHCAT FORK - the runs of the same process around the ANR: the one before it bounds when
         // the crashed run started, and none after it means the ANR ended the last run.
         val sameProcess = { info: ApplicationExitInfo -> info.processName == lastKnownAnr.processName }
-        val isLastExit = exitReasons.subList(0, anrIndex).none(sameProcess)
-        val previousExitTimestamp = exitReasons.subList(anrIndex + 1, exitReasons.size)
+        val isLastExit = ownExits.subList(0, anrIndex).none(sameProcess)
+        val previousExitTimestamp = ownExits.subList(anrIndex + 1, ownExits.size)
             .firstOrNull(sameProcess)?.timestamp
 
         rumEventsExecutorService.executeSafe("Send fatal ANR", sdkCore.internalLogger) {

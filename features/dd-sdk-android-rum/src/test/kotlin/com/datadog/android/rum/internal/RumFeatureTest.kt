@@ -1773,6 +1773,56 @@ internal class RumFeatureTest {
     }
 
     @Test
+    fun `M take the ANR of this process W consumeLastFatalAnr() { a newer ANR of another process }`(
+        @Forgery fakeViewEventJson: JsonObject
+    ) {
+        // Given
+        fun exit(reason: Int, process: String, timestamp: Long) = mock<ApplicationExitInfo>().apply {
+            whenever(this.reason) doReturn reason
+            whenever(processName) doReturn process
+            whenever(this.timestamp) doReturn timestamp
+        }
+        val ownAnr = exit(ApplicationExitInfo.REASON_ANR, "app", 3_000L)
+        val appExitInfo = listOf(
+            exit(ApplicationExitInfo.REASON_ANR, "app:remote", 4_000L),
+            ownAnr,
+            exit(ApplicationExitInfo.REASON_EXIT_SELF, "app", 2_000L)
+        )
+        val mockActivityManager = mock<ActivityManager>()
+        whenever(mockActivityManager.getHistoricalProcessExitReasons(null, 0, 0)) doReturn appExitInfo
+        whenever(appContext.mockInstance.getSystemService(Context.ACTIVITY_SERVICE)) doReturn mockActivityManager
+        whenever(mockSdkCore.lastViewEvent) doReturn fakeViewEventJson
+        testedFeature.onInitialize(appContext.mockInstance)
+        testedFeature.currentProcessName = { "app" }
+
+        // When
+        testedFeature.consumeLastFatalAnr(mockSameThreadExecutorService())
+
+        // Then
+        verify(mockLateCrashReporter).handleAnrCrash(ownAnr, fakeViewEventJson, 2_000L, true, testedFeature.dataWriter)
+    }
+
+    @Test
+    fun `M report no ANR W consumeLastFatalAnr() { only another process had one }`() {
+        // Given
+        val remoteAnr = mock<ApplicationExitInfo>().apply {
+            whenever(reason) doReturn ApplicationExitInfo.REASON_ANR
+            whenever(processName) doReturn "app:remote"
+        }
+        val mockActivityManager = mock<ActivityManager>()
+        whenever(mockActivityManager.getHistoricalProcessExitReasons(null, 0, 0)) doReturn listOf(remoteAnr)
+        whenever(appContext.mockInstance.getSystemService(Context.ACTIVITY_SERVICE)) doReturn mockActivityManager
+        testedFeature.onInitialize(appContext.mockInstance)
+        testedFeature.currentProcessName = { "app" }
+
+        // When
+        testedFeature.consumeLastFatalAnr(mockSameThreadExecutorService())
+
+        // Then
+        verifyNoInteractions(mockLateCrashReporter)
+    }
+
+    @Test
     fun `M tell the ANR did not end the last run W consumeLastFatalAnr() { the process ran again }`() {
         // Given
         fun exit(reason: Int, timestamp: Long) = mock<ApplicationExitInfo>().apply {

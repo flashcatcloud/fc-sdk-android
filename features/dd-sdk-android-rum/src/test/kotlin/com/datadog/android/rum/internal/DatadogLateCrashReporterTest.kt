@@ -1307,7 +1307,7 @@ internal class DatadogLateCrashReporterTest {
 
         val mockAnrExitInfo = mock<ApplicationExitInfo>().apply {
             whenever(traceInputStream) doReturn mock()
-            whenever(timestamp) doReturn fakeViewEvent.date - 1
+            whenever(timestamp) doReturn fakeViewEvent.date - fakeDatadogContext.time.serverTimeOffsetMs - 1
         }
 
         // When
@@ -1867,6 +1867,46 @@ internal class DatadogLateCrashReporterTest {
         // When
         testedHandler.handleNdkCrashEvent(
             ndkCrash(fakeTimestamp, fakeViewEventJson, timeSinceAppStartMs = 1_000L),
+            mockRumWriter
+        )
+
+        // Then
+        assertThat(drawCount).isZero()
+        argumentCaptor<Any> {
+            verify(mockRumWriter, atLeastOnce()).write(eq(mockEventBatchWriter), capture(), eq(EventType.CRASH))
+            assertThat((firstValue as ErrorEvent).session.id).isEqualTo(fakeViewEvent.session.id)
+        }
+    }
+
+    @Test
+    fun `M keep the last view W handleAnrCrash() { server clock ahead of the device }`(
+        @Forgery viewEvent: ViewEvent,
+        forge: Forge
+    ) {
+        // Given - the view's server date is two hours ahead of the device clock the ANR is dated on
+        val offset = TimeUnit.HOURS.toMillis(2)
+        fakeDatadogContext = fakeDatadogContext.copy(
+            time = fakeDatadogContext.time.copy(serverTimeOffsetMs = offset)
+        )
+        val viewStartedAt = 1_000_000_000L
+        val fakeViewEvent = viewEvent.copy(
+            date = viewStartedAt + offset,
+            view = viewEvent.view.copy(timeSpent = 0L)
+        )
+        val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
+        whenever(mockRumEventDeserializer.deserialize(fakeViewEventJson)) doReturn fakeViewEvent
+        whenever(mockAndroidTraceParser.parse(any())) doReturn forge.anrCrashThreadDump()
+        val mockAnrExitInfo = anrExitInfo(
+            viewStartedAt + 60_000L,
+            ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+        )
+
+        // When
+        testedHandler.handleAnrCrash(
+            mockAnrExitInfo,
+            fakeViewEventJson,
+            viewStartedAt - 1_000L,
+            true,
             mockRumWriter
         )
 

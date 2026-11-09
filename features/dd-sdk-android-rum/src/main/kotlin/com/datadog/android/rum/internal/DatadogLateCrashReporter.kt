@@ -149,9 +149,6 @@ internal class DatadogLateCrashReporter(
         rumWriter: DataWriter<Any>
     ) {
         val lastSlot = readSlot(lastRumViewEventJson)
-        // A view started after the ANR belongs to a later run: this ANR was handled then, or it
-        // belongs to no view known here and is not the last thing that happened to the process.
-        if (lastSlot is LastSlot.View && anrExitInfo.timestamp <= lastSlot.view.date) return
         val rumFeature = sdkCore.getFeature(Feature.RUM_FEATURE_NAME)
 
         if (rumFeature == null) {
@@ -166,13 +163,20 @@ internal class DatadogLateCrashReporter(
         rumFeature.withWriteContext(
             withFeatureContexts = setOf(Feature.RUM_FEATURE_NAME)
         ) { datadogContext, writeScope ->
+            val serverTimeOffsetMs = datadogContext.time.serverTimeOffsetMs
+            // A view started after the ANR belongs to a later run: this ANR was handled then, or it
+            // belongs to no view known here and is not the last thing that happened to the process.
+            // FLASHCAT FORK - on the device clock, like the ANR: the view's date is server time.
+            if (lastSlot is LastSlot.View && anrExitInfo.timestamp <= lastSlot.view.date - serverTimeOffsetMs) {
+                return@withWriteContext
+            }
             // FLASHCAT FORK - the crashed run started after the exit before it: a view or marker
             // written before then belongs to an earlier run.
             val target = resolveTarget(
                 lastSlot,
                 anrExitInfo.timestamp,
                 previousExitTimestamp,
-                datadogContext.time.serverTimeOffsetMs
+                serverTimeOffsetMs
             )
             if (target == CrashTarget.NotReported) return@withWriteContext
             // FLASHCAT FORK - with no view to tell when it happened, only the ANR that ended the last
