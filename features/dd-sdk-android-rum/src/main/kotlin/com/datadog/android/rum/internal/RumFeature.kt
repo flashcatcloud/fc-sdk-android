@@ -18,6 +18,7 @@ import android.os.Looper
 import androidx.annotation.AnyThread
 import androidx.annotation.RequiresApi
 import com.datadog.android.api.InternalLogger
+import com.datadog.android.api.context.DatadogContext
 import com.datadog.android.api.context.UserInfo
 import com.datadog.android.api.feature.EventWriteScope
 import com.datadog.android.api.feature.Feature
@@ -56,8 +57,10 @@ import com.datadog.android.rum.internal.active.ActiveBeaconController
 import com.datadog.android.rum.internal.anr.ANRDetectorRunnable
 import com.datadog.android.rum.internal.crash.CrashBeacon
 import com.datadog.android.rum.internal.crash.JvmCrashPersistence
+import com.datadog.android.rum.internal.crash.JvmCrashPersistence.Companion.withSampledForErrorOf
 import com.datadog.android.rum.internal.debug.UiRumDebugListener
 import com.datadog.android.rum.internal.domain.InfoProvider
+import com.datadog.android.rum.internal.domain.RumContext
 import com.datadog.android.rum.internal.domain.RumDataWriter
 import com.datadog.android.rum.internal.domain.Time
 import com.datadog.android.rum.internal.domain.WithheldEventWriter
@@ -1014,14 +1017,7 @@ internal class RumFeature(
             val error = report.getAsJsonObject("error")
             val reportContext = JvmCrashPersistence.rumContext(report)
             result = beacon.send(
-                datadogContext = {
-                    internalCore.getDatadogContext()?.let { context ->
-                        context.copy(
-                            featuresContext = context.featuresContext +
-                                (Feature.RUM_FEATURE_NAME to reportContext.toMap())
-                        )
-                    }
-                },
+                datadogContext = { jvmCrashBeaconContext(internalCore, reportContext) },
                 crashType = crashEvent.throwable.javaClass.let { it.canonicalName ?: it.name },
                 message = crashEvent.message,
                 crashTimeMs = now.timestamp,
@@ -1037,6 +1033,19 @@ internal class RumFeature(
             if (pending != null) finishJvmCrash(pending, result?.beacon)
         }
     }
+
+    /**
+     * FLASHCAT FORK - the context a JVM crash's beacon is sent with: the RUM context of the
+     * persisted report, plus whether the live session (read with the RUM feature context, which is
+     * only included when asked for) is kept only on error.
+     */
+    internal fun jvmCrashBeaconContext(internalCore: InternalSdkCore, reportContext: RumContext): DatadogContext? =
+        internalCore.getDatadogContext(withFeatureContexts = setOf(Feature.RUM_FEATURE_NAME))?.let { context ->
+            context.copy(
+                featuresContext = context.featuresContext +
+                    (Feature.RUM_FEATURE_NAME to reportContext.withSampledForErrorOf(context).toMap())
+            )
+        }
 
     @Suppress("TooGenericExceptionCaught")
     private fun finishJvmCrash(pending: JvmCrashPersistence.Pending, result: ErrorEvent.Beacon?) {

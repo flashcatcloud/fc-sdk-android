@@ -6,12 +6,19 @@
 
 package com.datadog.android.rum.internal.crash
 
+import com.datadog.android.api.context.DatadogContext
+import com.datadog.android.api.feature.Feature
 import com.datadog.android.api.storage.RawBatchEvent
+import com.datadog.android.rum.internal.crash.JvmCrashPersistence.Companion.withSampledForErrorOf
+import com.datadog.android.rum.internal.domain.RumContext
+import com.datadog.android.rum.internal.domain.scope.RumSessionScope
 import com.datadog.android.rum.model.ErrorEvent
 import com.google.gson.JsonParser
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import java.io.File
 
 internal class JvmCrashPersistenceTest {
@@ -78,5 +85,49 @@ internal class JvmCrashPersistenceTest {
         store.finish(pending, ErrorEvent.Beacon("timeout", 900))
         assertThat(pending.finished.count).isZero()
         assertThat(store.enrich(bytes)).isEqualTo(bytes)
+    }
+
+    @Test
+    fun `M keep the sampled for error flag of the crashed session W withSampledForErrorOf()`() {
+        val report = JvmCrashPersistence.rumContext(JsonParser.parseString(REPORT).asJsonObject)
+        val live = RumContext(
+            sessionId = SESSION_ID,
+            sessionState = RumSessionScope.State.WITHHELD,
+            sampledForError = true
+        )
+
+        val context = report.withSampledForErrorOf(datadogContext(live))
+
+        assertThat(report.sampledForError).isFalse()
+        assertThat(context.sampledForError).isTrue()
+        assertThat(context.sessionId).isEqualTo(SESSION_ID)
+    }
+
+    @Test
+    fun `M not flag the report W withSampledForErrorOf() { live context is another session }`() {
+        val report = JvmCrashPersistence.rumContext(JsonParser.parseString(REPORT).asJsonObject)
+        val live = RumContext(sessionId = "another-session", sampledForError = true)
+
+        assertThat(report.withSampledForErrorOf(datadogContext(live)).sampledForError).isFalse()
+    }
+
+    @Test
+    fun `M not flag the report W withSampledForErrorOf() { sampled session }`() {
+        val report = JvmCrashPersistence.rumContext(JsonParser.parseString(REPORT).asJsonObject)
+        val live = RumContext(sessionId = SESSION_ID, sessionState = RumSessionScope.State.TRACKED)
+
+        assertThat(report.withSampledForErrorOf(datadogContext(live)).sampledForError).isFalse()
+    }
+
+    private fun datadogContext(rumContext: RumContext): DatadogContext = mock<DatadogContext>().also {
+        whenever(it.featuresContext).thenReturn(mapOf(Feature.RUM_FEATURE_NAME to rumContext.toMap()))
+    }
+
+    private companion object {
+        const val SESSION_ID = "8f2c6b1e-6d55-4f5e-9a51-0c1b8a1e2f3d"
+        val REPORT = """
+            {"application":{"id":"app-id"},"session":{"id":"$SESSION_ID"},
+            "view":{"id":"view-id","url":"com.example.MainActivity"}}
+        """.trimIndent()
     }
 }

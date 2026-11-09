@@ -300,6 +300,10 @@ internal class CrashBeacon(
             put("crash_type", crashType)
             put("crash_message", message.take(MAX_MESSAGE_LENGTH))
             put("session_id", rumContext.sessionId)
+            // FLASHCAT FORK - a session kept only on error is not part of the sample: the crash
+            // ledger leaves it out. Without the full report the intake cannot look the session up,
+            // so the beacon says it. Omitted for a sampled session, like on the view.
+            if (rumContext.sampledForError) put(SESSION_SAMPLED_FOR_ERROR, true)
             putOpt("view_id", rumContext.viewId)
             putOpt("view_url", rumContext.viewUrl)
             putOpt("view_name", rumContext.viewName)
@@ -337,6 +341,9 @@ internal class CrashBeacon(
         internal const val STATUS_SKIPPED = "skipped"
 
         internal const val DEFAULT_TIMEOUT_MS = 1_000
+
+        /** The same field name as the views' `session.sampled_for_error`, on every platform. */
+        internal const val SESSION_SAMPLED_FOR_ERROR = "session_sampled_for_error"
 
         /**
          * The foreground rule of crash beacons, the same for JVM and native crashes: a process the

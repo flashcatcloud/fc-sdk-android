@@ -41,6 +41,7 @@ import com.datadog.android.rum.internal.RumFeature.Companion.SLOW_FRAMES_MONITOR
 import com.datadog.android.rum.internal.RumFeature.Companion.SLOW_FRAMES_MONITORING_ENABLED_MESSAGE
 import com.datadog.android.rum.internal.crash.CrashBeacon
 import com.datadog.android.rum.internal.domain.InfoProvider
+import com.datadog.android.rum.internal.domain.RumContext
 import com.datadog.android.rum.internal.domain.RumDataWriter
 import com.datadog.android.rum.internal.domain.WithheldEventWriter
 import com.datadog.android.rum.internal.domain.accessibility.DefaultAccessibilityReader
@@ -50,6 +51,7 @@ import com.datadog.android.rum.internal.domain.accessibility.NoOpAccessibilitySn
 import com.datadog.android.rum.internal.domain.battery.DefaultBatteryInfoProvider
 import com.datadog.android.rum.internal.domain.display.DefaultDisplayInfoProvider
 import com.datadog.android.rum.internal.domain.event.RumEventMapper
+import com.datadog.android.rum.internal.domain.scope.RumSessionScope
 import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
 import com.datadog.android.rum.internal.monitor.AdvancedRumMonitor
 import com.datadog.android.rum.internal.monitor.NoOpAdvancedRumMonitor
@@ -1533,6 +1535,38 @@ internal class RumFeatureTest {
         assertThat(result?.beacon?.status).isEqualTo(CrashBeacon.STATUS_SKIPPED)
         verify(errorMapper, never()).map(any())
         beaconExecutor.shutdownNow()
+    }
+
+    @Test
+    fun `M flag a session kept on error W jvmCrashBeaconContext() { RUM context only when asked for }`(
+        @Forgery fakeDatadogContext: DatadogContext
+    ) {
+        // Given - the core includes a feature context only when it is named, like the real one
+        val sessionId = "8f2c6b1e-6d55-4f5e-9a51-0c1b8a1e2f3d"
+        val live = RumContext(
+            sessionId = sessionId,
+            sessionState = RumSessionScope.State.WITHHELD,
+            sampledForError = true
+        )
+        whenever(mockSdkCore.getDatadogContext(any())) doAnswer {
+            val names = it.getArgument<Set<String>>(0)
+            fakeDatadogContext.copy(
+                featuresContext = if (Feature.RUM_FEATURE_NAME in names) {
+                    mapOf(Feature.RUM_FEATURE_NAME to live.toMap())
+                } else {
+                    emptyMap()
+                }
+            )
+        }
+        val reportContext = RumContext(sessionId = sessionId, sessionState = RumSessionScope.State.TRACKED)
+
+        // When
+        val context = testedFeature.jvmCrashBeaconContext(mockSdkCore, reportContext)
+
+        // Then
+        val sent = RumContext.fromFeatureContext(context?.featuresContext?.get(Feature.RUM_FEATURE_NAME).orEmpty())
+        assertThat(sent.sessionId).isEqualTo(sessionId)
+        assertThat(sent.sampledForError).isTrue
     }
 
     @Test

@@ -27,7 +27,8 @@ internal data class RumContext(
     val viewTimestampOffset: Long = 0L,
     val hasReplay: Boolean = false,
     // FLASHCAT FORK - whether the session is kept only because it reported an error. Read by the
-    // scopes below the session one; not published to the other features.
+    // scopes below the session one, and published so a crash beacon sent from the crash handler
+    // (JVM or native) can tell the intake its session is not part of the sample.
     val sampledForError: Boolean = false
 ) {
 
@@ -47,7 +48,10 @@ internal data class RumContext(
             SYNTHETICS_RESULT_ID to syntheticsResultId,
             VIEW_TIMESTAMP to viewTimestamp,
             HAS_REPLAY to hasReplay,
-            VIEW_TIMESTAMP_OFFSET to viewTimestampOffset
+            VIEW_TIMESTAMP_OFFSET to viewTimestampOffset,
+            // FLASHCAT FORK - always written: the feature context is merged, so an omitted key would
+            // keep the value of the previous session.
+            SESSION_SAMPLED_FOR_ERROR to sampledForError
         )
     }
 
@@ -72,6 +76,9 @@ internal data class RumContext(
         const val VIEW_TIMESTAMP = "view_timestamp"
         const val VIEW_TIMESTAMP_OFFSET = "view_timestamp_offset"
 
+        // FLASHCAT FORK
+        const val SESSION_SAMPLED_FOR_ERROR = "session_sampled_for_error"
+
         fun fromFeatureContext(featureContext: Map<String, Any?>): RumContext {
             val applicationId = featureContext[APPLICATION_ID] as? String
             val sessionId = featureContext[SESSION_ID] as? String
@@ -92,6 +99,7 @@ internal data class RumContext(
             val hasReplay = featureContext[HAS_REPLAY] as? Boolean ?: false
             val viewTimestamp = featureContext[VIEW_TIMESTAMP] as? Long ?: 0L
             val viewTimestampOffset = featureContext[VIEW_TIMESTAMP_OFFSET] as? Long ?: 0L
+            val sampledForError = featureContext[SESSION_SAMPLED_FOR_ERROR] as? Boolean ?: false
 
             return RumContext(
                 applicationId = applicationId ?: NULL_UUID,
@@ -108,7 +116,8 @@ internal data class RumContext(
                 syntheticsResultId = syntheticsResultId,
                 viewTimestamp = viewTimestamp,
                 viewTimestampOffset = viewTimestampOffset,
-                hasReplay = hasReplay
+                hasReplay = hasReplay,
+                sampledForError = sampledForError
             )
         }
     }
