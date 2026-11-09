@@ -25,6 +25,7 @@ import com.datadog.android.rum.BeforeSamplingCallback
 import com.datadog.android.rum.BeforeSamplingContext
 import com.datadog.android.rum.RumSessionListener
 import com.datadog.android.rum.RumSessionType
+import com.datadog.android.rum.internal.DatadogLateCrashReporter
 import com.datadog.android.rum.internal.domain.InfoProvider
 import com.datadog.android.rum.internal.domain.RumContext
 import com.datadog.android.rum.internal.domain.Time
@@ -74,6 +75,7 @@ import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.isA
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -456,6 +458,41 @@ internal class RumSessionScopeTest {
         assertThat(context.sessionStartReason).isEqualTo(RumSessionScope.StartReason.USER_APP_LAUNCH)
         assertThat(context.applicationId).isEqualTo(fakeParentContext.applicationId)
         assertThat(context.viewId).isEqualTo(fakeParentContext.viewId)
+    }
+
+    @Test
+    fun `M mark the last view slot W handleEvent(view) {session drawn as not tracked}`(
+        forge: Forge
+    ) {
+        // Given
+        initializeTestedScope(0f)
+        val event = forge.startViewEvent()
+
+        // When
+        testedScope.handleEvent(event, fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then - the slot is read first, so what an earlier run left there still reaches its crash
+        val sessionId = testedScope.getRumContext().sessionId
+        inOrder(mockSdkCore) {
+            verify(mockSdkCore).lastViewEvent
+            verify(mockSdkCore).writeLastViewEvent(
+                DatadogLateCrashReporter.untrackedSessionMarker(sessionId, event.eventTime.timestamp)
+            )
+        }
+    }
+
+    @Test
+    fun `M not mark the last view slot W handleEvent(view) {session tracked}`(
+        forge: Forge
+    ) {
+        // Given
+        initializeTestedScope(100f)
+
+        // When
+        testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        verify(mockSdkCore, never()).writeLastViewEvent(any())
     }
 
     @Test

@@ -103,6 +103,7 @@ import com.datadog.android.rum.internal.tracking.JetpackViewAttributesProvider
 import com.datadog.android.rum.internal.tracking.NoOpInteractionPredicate
 import com.datadog.android.rum.internal.tracking.NoOpUserActionTrackingStrategy
 import com.datadog.android.rum.internal.tracking.UserActionTrackingStrategy
+import com.datadog.android.rum.internal.utils.percent
 import com.datadog.android.rum.internal.vitals.AggregatingVitalMonitor
 import com.datadog.android.rum.internal.vitals.CPUVitalReader
 import com.datadog.android.rum.internal.vitals.FPSVitalListener
@@ -139,6 +140,7 @@ import com.datadog.android.rum.tracking.ViewTrackingStrategy
 import com.datadog.android.telemetry.model.TelemetryConfigurationEvent
 import com.google.gson.JsonObject
 import java.io.File
+import java.security.SecureRandom
 import java.util.Locale
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
@@ -215,6 +217,9 @@ internal class RumFeature(
      * through it.
      */
     internal var withheldEvents: WithheldEventWriter? = null
+
+    // FLASHCAT FORK - draws the session of a late crash that belongs to no known session.
+    private val lateCrashSessionRandom = SecureRandom()
     private var withheldEventsBackgroundCallback: ProcessForegroundCallback? = null
 
     // The core takes the feature out of its registry before it stops it, so a stop can no longer
@@ -788,11 +793,10 @@ internal class RumFeature(
     internal fun consumeLastFatalAnr(rumEventsExecutorService: ExecutorService) {
         val activityManager =
             appContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        val lastKnownAnr = try {
+        val exitReasons = try {
+            // from docs: Returns: a list of ApplicationExitInfo records matching the criteria,
+            // sorted in the order from most recent to least recent.
             activityManager.getHistoricalProcessExitReasons(null, 0, 0)
-                // from docs: Returns: a list of ApplicationExitInfo records matching the criteria,
-                // sorted in the order from most recent to least recent.
-                .firstOrNull { it.reason == ApplicationExitInfo.REASON_ANR }
         } catch (@Suppress("TooGenericExceptionCaught") e: RuntimeException) {
             sdkCore.internalLogger.log(
                 InternalLogger.Level.ERROR,
@@ -802,22 +806,47 @@ internal class RumFeature(
             )
             null
         } ?: return
+        val anrIndex = exitReasons.indexOfFirst { it.reason == ApplicationExitInfo.REASON_ANR }
+        if (anrIndex < 0) return
+        val lastKnownAnr = exitReasons[anrIndex]
+        // FLASHCAT FORK - the runs of the same process around the ANR: the one before it bounds when
+        // the crashed run started, and none after it means the ANR ended the last run.
+        val sameProcess = { info: ApplicationExitInfo -> info.processName == lastKnownAnr.processName }
+        val isLastExit = exitReasons.subList(0, anrIndex).none(sameProcess)
+        val previousExitTimestamp = exitReasons.subList(anrIndex + 1, exitReasons.size)
+            .firstOrNull(sameProcess)?.timestamp
 
         rumEventsExecutorService.executeSafe("Send fatal ANR", sdkCore.internalLogger) {
-            val lastRumViewEvent = (sdkCore as InternalSdkCore).lastViewEvent
-            if (lastRumViewEvent != null) {
-                lateCrashEventHandler.handleAnrCrash(
-                    lastKnownAnr,
-                    lastRumViewEvent,
-                    dataWriter
-                )
-            } else {
-                sdkCore.internalLogger.log(
-                    InternalLogger.Level.INFO,
-                    InternalLogger.Target.USER,
-                    { NO_LAST_RUM_VIEW_EVENT_AVAILABLE }
-                )
-            }
+            // FLASHCAT FORK - an ANR with no last view is still reported, see DatadogLateCrashReporter.
+            lateCrashEventHandler.handleAnrCrash(
+                lastKnownAnr,
+                (sdkCore as InternalSdkCore).lastViewEvent,
+                previousExitTimestamp,
+                isLastExit,
+                dataWriter
+            )
+        }
+    }
+
+    /**
+     * FLASHCAT FORK - draws the session of a crash reported on the next launch that belongs to no
+     * session known there, exactly like a new session would be drawn now: kept at the current rate,
+     * else kept on error if on-error capture is on (the crash is its error), else not kept.
+     */
+    internal fun drawSessionForLateCrash(): DatadogLateCrashReporter.NewSession? {
+        val sampling = RumSessionScope.resolveSampling(
+            sampleRate,
+            configuration.sessionOnError,
+            remoteConfigStore?.snapshot(),
+            configuration.beforeSampling,
+            sdkCore.internalLogger
+        )
+        return when {
+            lateCrashSessionRandom.nextFloat() < sampling.rate.percent() ->
+                DatadogLateCrashReporter.NewSession(applicationId, sampling.rate, sampledForError = false)
+            sampling.onError && withheldEvents != null ->
+                DatadogLateCrashReporter.NewSession(applicationId, 0f, sampledForError = true)
+            else -> null
         }
     }
 
@@ -1482,8 +1511,6 @@ internal class RumFeature(
             "RUM feature received an event with unknown value of \"type\" property=%s."
         internal const val FAILED_TO_GET_HISTORICAL_EXIT_REASONS =
             "Couldn't get historical exit reasons"
-        internal const val NO_LAST_RUM_VIEW_EVENT_AVAILABLE =
-            "No last known RUM view event found, skipping fatal ANR reporting."
         internal const val LOG_ERROR_EVENT_MISSING_MANDATORY_FIELDS =
             "RUM feature received a log event" +
                 " where mandatory message field is either missing or has a wrong type."
