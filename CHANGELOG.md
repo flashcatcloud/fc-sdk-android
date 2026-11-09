@@ -1,6 +1,6 @@
 # Unreleased
 
-* [FEATURE] RUM: report active devices through a dedicated `/api/v2/rum/active` request, independent of session sampling and of the batched event upload. A beacon is sent on launch, on return to the foreground, when tracking consent is granted and when the user ID changes, at most once per device and user per local day, including across app restarts. It is enabled by default; disable it with `RumConfiguration.Builder.setTrackActiveDevices(false)`. **Rollout note:** the backend must serve `/api/v2/rum/active`, and a gateway or proxy that matches only the regular event path must also forward this one.
+* [FEATURE] RUM: report active devices through a dedicated `/api/v2/rum/active` request, independent of session sampling and of the batched event upload. A beacon is sent on launch, on return to the foreground, when tracking consent is granted and when the user ID changes, at most once per device, user and app version (name and version code) per local day, including across app restarts. It is enabled by default; disable it with `RumConfiguration.Builder.setTrackActiveDevices(false)`. **Rollout note:** the backend must serve `/api/v2/rum/active`, and a gateway or proxy that matches only the regular event path must also forward this one.
 
 ---
 

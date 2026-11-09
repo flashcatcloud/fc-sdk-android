@@ -203,7 +203,7 @@ internal class ActiveBeaconController(
         val now = wallClock()
         val elapsed = SystemClock.elapsedRealtime()
         val day = day(now)
-        val key = identity(currentUser())
+        val key = identity(sdkContext.version, sdkContext.versionCode, currentUser())
         val body = buildBody(sdkContext, currentUser()) ?: return
         nextAllowedAt = maxOf(nextAllowedAt, withStorage(0L) { it.getLong("next_allowed", 0) })
         if (now < nextAllowedAt) {
@@ -247,7 +247,7 @@ internal class ActiveBeaconController(
     private fun deferQueuedTrigger(request: TriggerRequest) {
         if (request.consent != TrackingConsent.GRANTED || !hasIdentity()) return
         val day = day(request.wallTime)
-        val key = identity(currentUser())
+        val key = identity(sdkContext.version, sdkContext.versionCode, currentUser())
         if (wasSent(key, day)) return
         val body = buildBody(sdkContext, currentUser()) ?: return
         val pending = readPending(wallClock())
@@ -575,7 +575,15 @@ internal class ActiveBeaconController(
             val digest = MessageDigest.getInstance("SHA-256").digest(key.toByteArray(Charsets.UTF_8))
             return "dd_active_" + digest.joinToString("") { "%02x".format(it) }
         }
-        internal fun identity(user: UserInfo): String = (user.anonymousId ?: "") + "\u0000" + (user.id ?: "")
+        // The app version and build are part of the key, as they are of the backend's: an upgrade
+        // during the day is reported for the new version too. A key stored by an earlier SDK lacks
+        // them and simply does not match, which costs one request.
+        internal fun identity(version: String, versionCode: Int, user: UserInfo): String = listOf(
+            version,
+            versionCode.toString(),
+            user.anonymousId ?: "",
+            user.id ?: ""
+        ).joinToString("\u0000")
         internal fun pendingAge(
             now: Long,
             elapsed: Long,
