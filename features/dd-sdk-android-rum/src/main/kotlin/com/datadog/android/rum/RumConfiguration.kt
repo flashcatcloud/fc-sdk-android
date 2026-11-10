@@ -407,6 +407,7 @@ data class RumConfiguration internal constructor(
          *
          * By default, background events are not tracked. Enabling this feature might increase the
          * number of sessions tracked and impact your billing.
+         * Fatal crashes can still be reported when this option is disabled, subject to session sampling.
          *
          * @param enabled whether background events should be tracked in RUM.
          */

@@ -198,7 +198,7 @@ internal fun Forge.validBackgroundEvent(): RumRawEvent {
     return this.anElementFrom(
         listOf(
             { startActionEvent() },
-            { addErrorEvent() },
+            { addErrorEvent().copy(isFatal = false) },
             { startResourceEvent() },
             { startFeatureOperationEvent() },
             { stopFeatureOperationEvent() }
