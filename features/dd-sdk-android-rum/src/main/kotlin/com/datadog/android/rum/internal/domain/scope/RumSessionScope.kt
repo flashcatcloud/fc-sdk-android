@@ -428,7 +428,8 @@ internal class RumSessionScope(
             }
             lastUserInteractionNs.set(nanoTime)
         } else if (isExpired) {
-            if (backgroundTrackingEnabled && (isBackgroundEvent || isSdkInitInBackground)) {
+            val isFatalError = isActive && event is RumRawEvent.AddError && event.isFatal
+            if ((backgroundTrackingEnabled || isFatalError) && (isBackgroundEvent || isSdkInitInBackground)) {
                 renewSession(event.eventTime, StartReason.BACKGROUND_LAUNCH, writeScope)
                 lastUserInteractionNs.set(nanoTime)
             } else {

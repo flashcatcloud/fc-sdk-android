@@ -809,6 +809,42 @@ internal class RumSessionScopeTest {
     }
 
     @Test
+    fun `M keep a fatal error untracked after expiration when sample rate is zero`(forge: Forge) {
+        initializeTestedScope(sampleRate = 0f, backgroundTrackingEnabled = false)
+        testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        advanceTimeByMs(TEST_INACTIVITY_MS)
+
+        testedScope.handleEvent(
+            forge.addErrorEvent().copy(isFatal = true),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        assertThat(testedScope.getRumContext().sessionState).isEqualTo(RumSessionScope.State.NOT_TRACKED)
+    }
+
+    @Test
+    fun `M renew session for a fatal error after expiration with background disabled`(forge: Forge) {
+        initializeTestedScope(backgroundTrackingEnabled = false)
+        testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        val initialContext = testedScope.getRumContext()
+        advanceTimeByMs(TEST_INACTIVITY_MS)
+
+        testedScope.handleEvent(
+            forge.addErrorEvent().copy(isFatal = true),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        val context = testedScope.getRumContext()
+        assertThat(context.sessionId).isNotEqualTo(initialContext.sessionId)
+        assertThat(context.sessionState).isEqualTo(RumSessionScope.State.TRACKED)
+        assertThat(context.sessionStartReason).isEqualTo(RumSessionScope.StartReason.BACKGROUND_LAUNCH)
+    }
+
+    @Test
     fun `M update context W handleEvent(error) {after expiration, background disabled}`(
         forge: Forge
     ) {
@@ -819,7 +855,12 @@ internal class RumSessionScopeTest {
 
         // When
         advanceTimeByMs(TEST_INACTIVITY_MS)
-        val result = testedScope.handleEvent(forge.addErrorEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        val result = testedScope.handleEvent(
+            forge.addErrorEvent().copy(isFatal = false),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
         val context = testedScope.getRumContext()
 
         // Then

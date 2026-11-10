@@ -239,6 +239,15 @@ internal class RumViewManagerScope(
         val importanceForeground = ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
         val isForegroundProcess = processFlag == importanceForeground
 
+        // A fatal error needs a view to persist its crash report even when background events are disabled.
+        if (event is RumRawEvent.AddError && event.isFatal && !stopped) {
+            val viewScope = createBackgroundViewScope(event)
+            viewScope.handleEvent(event, datadogContext, writeScope, writer)
+            childrenScopes.add(viewScope)
+            lastStoppedViewTime = null
+            return
+        }
+
         if (event is RumRawEvent.AddViewLoadingTime) {
             sdkCore.internalLogger.log(
                 InternalLogger.Level.WARN,

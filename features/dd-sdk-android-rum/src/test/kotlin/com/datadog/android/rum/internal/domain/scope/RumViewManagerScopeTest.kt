@@ -35,6 +35,7 @@ import com.datadog.android.rum.internal.vitals.NoOpVitalMonitor
 import com.datadog.android.rum.internal.vitals.VitalMonitor
 import com.datadog.android.rum.metric.interactiontonextview.LastInteractionIdentifier
 import com.datadog.android.rum.metric.networksettled.InitialResourceIdentifier
+import com.datadog.android.rum.model.ErrorEvent
 import com.datadog.android.rum.utils.forge.Configurator
 import com.datadog.android.rum.utils.verifyApiUsage
 import com.datadog.android.rum.utils.verifyLog
@@ -52,11 +53,14 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.extension.Extensions
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
@@ -197,6 +201,64 @@ internal class RumViewManagerScopeTest {
     fun `tear down`() {
         // whatever happens
         assertThat(testedScope.getRumContext()).isEqualTo(fakeParentContext)
+    }
+
+    @ParameterizedTest
+    @CsvSource("true,true", "true,false", "false,true", "false,false")
+    fun `M create a crash view W fatal error without active view and background disabled`(
+        foreground: Boolean,
+        displayed: Boolean,
+        forge: Forge
+    ) {
+        testedScope = RumViewManagerScope(
+            parentScope = mockParentScope,
+            sdkCore = mockSdkCore,
+            sessionEndedMetricDispatcher = mockSessionEndedMetricDispatcher,
+            backgroundTrackingEnabled = false,
+            trackFrustrations = fakeTrackFrustrations,
+            viewChangedListener = mockViewChangedListener,
+            firstPartyHostHeaderTypeResolver = mockResolver,
+            cpuVitalMonitor = mockCpuVitalMonitor,
+            memoryVitalMonitor = mockMemoryVitalMonitor,
+            frameRateVitalMonitor = mockFrameRateVitalMonitor,
+            applicationDisplayed = false,
+            sampleRate = fakeSampleRate,
+            initialResourceIdentifier = mockNetworkSettledResourceIdentifier,
+            lastInteractionIdentifier = mockLastInteractionIdentifier,
+            slowFramesListener = mockSlowFramesListener,
+            rumSessionTypeOverride = fakeRumSessionType,
+            accessibilitySnapshotManager = mockAccessibilitySnapshotManager,
+            batteryInfoProvider = mockBatteryInfoProvider,
+            displayInfoProvider = mockDisplayInfoProvider,
+            insightsCollector = mockInsightsCollector
+        )
+        testedScope.applicationDisplayed = displayed
+        DdRumContentProvider.processImportance = if (foreground) {
+            RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+        } else {
+            RunningAppProcessInfo.IMPORTANCE_CACHED
+        }
+        val crash = forge.addErrorEvent().copy(isFatal = true)
+        whenever(mockBatteryInfoProvider.getState()) doReturn BatteryInfo()
+        whenever(mockDisplayInfoProvider.getState()) doReturn DisplayInfo()
+        whenever(mockEventWriteScope.invoke(any())) doAnswer { invocation ->
+            invocation.getArgument<(EventBatchWriter) -> Unit>(0).invoke(mock())
+        }
+
+        testedScope.handleEvent(crash, fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        assertThat(testedScope.childrenScopes).hasSize(1)
+        val view = testedScope.childrenScopes.single()
+        assertThat(view.type).isEqualTo(RumViewType.BACKGROUND)
+        verify(mockSessionEndedMetricDispatcher, never()).onMissedEventTracked(any(), any())
+        // Repeated delivery uses the same view and its existing fatal-error deduplication.
+        testedScope.handleEvent(crash, fakeDatadogContext, mockEventWriteScope, mockWriter)
+        assertThat(testedScope.childrenScopes).containsExactly(view)
+        val events = argumentCaptor<Any>()
+        verify(mockWriter, atLeastOnce()).write(any(), events.capture(), any())
+        val errors = events.allValues.filterIsInstance<ErrorEvent>()
+        assertThat(errors).hasSize(1)
+        assertThat(errors.single().error.isCrash).isTrue()
     }
 
     // region Children scopes
