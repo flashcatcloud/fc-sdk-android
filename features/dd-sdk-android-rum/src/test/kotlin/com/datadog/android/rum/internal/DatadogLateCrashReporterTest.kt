@@ -177,8 +177,6 @@ internal class DatadogLateCrashReporterTest {
                 additionalProperties = fakeUserInfo.additionalProperties.toMutableMap()
             )
         )
-        // The crash follows the last view the crashed run wrote.
-        val fakeTimestamp = fakeViewEvent.date + fakeCrashDelayMs
         val fakeServerOffset =
             forge.aLong(min = -60_000L, max = 60_000L)
         fakeDatadogContext = fakeDatadogContext.copy(
@@ -186,6 +184,8 @@ internal class DatadogLateCrashReporterTest {
                 serverTimeOffsetMs = fakeServerOffset
             )
         )
+        // The crash follows the last view the crashed run wrote.
+        val fakeTimestamp = fakeViewEvent.deviceDate() + fakeCrashDelayMs
         val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
 
         whenever(mockRumEventDeserializer.deserialize(fakeViewEventJson))
@@ -263,7 +263,7 @@ internal class DatadogLateCrashReporterTest {
         // Given
         val fakeViewEvent = viewEvent.copy(date = fakeCurrentTimeMs)
         // The crash follows the last view the crashed run wrote.
-        val fakeTimestamp = fakeViewEvent.date + fakeCrashDelayMs
+        val fakeTimestamp = fakeViewEvent.deviceDate() + fakeCrashDelayMs
         val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
         whenever(mockRumEventDeserializer.deserialize(fakeViewEventJson)).doReturn(fakeViewEvent)
         val fakeCrashId = "6a1f0c2e-3b4d-4e5f-8a9b-0c1d2e3f4a5b"
@@ -314,7 +314,7 @@ internal class DatadogLateCrashReporterTest {
             session = viewEvent.session.copy(sampledForError = true)
         )
         // The crash follows the last view the crashed run wrote.
-        val fakeTimestamp = fakeViewEvent.date + fakeCrashDelayMs
+        val fakeTimestamp = fakeViewEvent.deviceDate() + fakeCrashDelayMs
         val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
         whenever(mockRumEventDeserializer.deserialize(fakeViewEventJson)) doReturn fakeViewEvent
         val fakeEvent = mapOf(
@@ -351,7 +351,7 @@ internal class DatadogLateCrashReporterTest {
             dd = viewEvent.dd.copy(configuration = ViewEvent.Configuration(sessionSampleRate = 0f))
         )
         // The crash follows the last view the crashed run wrote.
-        val fakeTimestamp = fakeViewEvent.date + fakeCrashDelayMs
+        val fakeTimestamp = fakeViewEvent.deviceDate() + fakeCrashDelayMs
         val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
         whenever(mockRumEventDeserializer.deserialize(fakeViewEventJson)) doReturn fakeViewEvent
         val fakeEvent = mapOf(
@@ -438,7 +438,7 @@ internal class DatadogLateCrashReporterTest {
         val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
         whenever(mockRumEventDeserializer.deserialize(fakeViewEventJson)) doReturn fakeViewEvent
         return mapOf(
-            "timestamp" to fakeViewEvent.date + 1,
+            "timestamp" to fakeViewEvent.deviceDate() + 1,
             "signalName" to fakeSignalName,
             "stacktrace" to fakeStacktrace,
             "message" to crashMessage,
@@ -471,8 +471,6 @@ internal class DatadogLateCrashReporterTest {
                 additionalProperties = fakeUserInfo.additionalProperties.toMutableMap()
             )
         )
-        // The crash follows the last view the crashed run wrote.
-        val fakeTimestamp = fakeViewEvent.date + fakeCrashDelayMs
         val fakeServerOffset =
             forge.aLong(min = -60_000L, max = 60_000L)
         fakeDatadogContext = fakeDatadogContext.copy(
@@ -480,6 +478,8 @@ internal class DatadogLateCrashReporterTest {
                 serverTimeOffsetMs = fakeServerOffset
             )
         )
+        // The crash follows the last view the crashed run wrote.
+        val fakeTimestamp = fakeViewEvent.deviceDate() + fakeCrashDelayMs
         val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
 
         whenever(mockRumEventDeserializer.deserialize(fakeViewEventJson))
@@ -575,8 +575,6 @@ internal class DatadogLateCrashReporterTest {
                 additionalProperties = fakeUserInfo.additionalProperties.toMutableMap()
             )
         )
-        // The crash follows the last view the crashed run wrote.
-        val fakeTimestamp = fakeViewEvent.date + fakeCrashDelayMs
         val fakeServerOffset =
             forge.aLong(min = -60_000L, max = 60_000L)
         fakeDatadogContext = fakeDatadogContext.copy(
@@ -584,6 +582,8 @@ internal class DatadogLateCrashReporterTest {
                 serverTimeOffsetMs = fakeServerOffset
             )
         )
+        // The crash follows the last view the crashed run wrote.
+        val fakeTimestamp = fakeViewEvent.deviceDate() + fakeCrashDelayMs
         val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
 
         whenever(mockRumEventDeserializer.deserialize(fakeViewEventJson))
@@ -630,8 +630,6 @@ internal class DatadogLateCrashReporterTest {
             ),
             usr = null
         )
-        // The crash follows the last view the crashed run wrote.
-        val fakeTimestamp = fakeViewEvent.date + fakeCrashDelayMs
         val fakeServerOffset =
             forge.aLong(min = -60_000L, max = 60_000L)
         fakeDatadogContext = fakeDatadogContext.copy(
@@ -639,6 +637,8 @@ internal class DatadogLateCrashReporterTest {
                 serverTimeOffsetMs = fakeServerOffset
             )
         )
+        // The crash follows the last view the crashed run wrote.
+        val fakeTimestamp = fakeViewEvent.deviceDate() + fakeCrashDelayMs
         val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
         val fakeEvent = mapOf(
             "timestamp" to fakeTimestamp,
@@ -724,8 +724,6 @@ internal class DatadogLateCrashReporterTest {
                 additionalProperties = fakeUserInfo.additionalProperties.toMutableMap()
             )
         )
-        // The crash follows the last view the crashed run wrote.
-        val fakeTimestamp = fakeViewEvent.date + fakeCrashDelayMs
         val fakeServerOffset =
             forge.aLong(min = -60_000L, max = 60_000L)
         fakeDatadogContext = fakeDatadogContext.copy(
@@ -733,6 +731,8 @@ internal class DatadogLateCrashReporterTest {
                 serverTimeOffsetMs = fakeServerOffset
             )
         )
+        // The crash follows the last view the crashed run wrote.
+        val fakeTimestamp = fakeViewEvent.deviceDate() + fakeCrashDelayMs
         val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
         whenever(mockRumEventDeserializer.deserialize(fakeViewEventJson))
             .doReturn(fakeViewEvent)
@@ -929,7 +929,6 @@ internal class DatadogLateCrashReporterTest {
                 additionalProperties = fakeUserInfo.additionalProperties.toMutableMap()
             )
         )
-        val fakeTimestamp = fakeViewEvent.date + forge.aLong(min = 1L, max = 1000000L)
         val fakeServerOffset =
             forge.aLong(min = -60_000L, max = 60_000L)
         fakeDatadogContext = fakeDatadogContext.copy(
@@ -937,6 +936,7 @@ internal class DatadogLateCrashReporterTest {
                 serverTimeOffsetMs = fakeServerOffset
             )
         )
+        val fakeTimestamp = fakeViewEvent.deviceDate() + forge.aLong(min = 1L, max = 1000000L)
 
         val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
 
@@ -1022,7 +1022,6 @@ internal class DatadogLateCrashReporterTest {
             ),
             usr = null
         )
-        val fakeTimestamp = fakeViewEvent.date + forge.aLong(min = 1L, max = 1000000L)
         val fakeServerOffset =
             forge.aLong(min = -60_000L, max = 60_000L)
         fakeDatadogContext = fakeDatadogContext.copy(
@@ -1030,6 +1029,7 @@ internal class DatadogLateCrashReporterTest {
                 serverTimeOffsetMs = fakeServerOffset
             )
         )
+        val fakeTimestamp = fakeViewEvent.deviceDate() + forge.aLong(min = 1L, max = 1000000L)
 
         val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
 
@@ -1107,7 +1107,7 @@ internal class DatadogLateCrashReporterTest {
             ),
             session = viewEvent.session.copy(sampledForError = true)
         )
-        val fakeTimestamp = fakeViewEvent.date + forge.aLong(min = 1L, max = 1000000L)
+        val fakeTimestamp = fakeViewEvent.deviceDate() + forge.aLong(min = 1L, max = 1000000L)
         val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
         whenever(mockRumEventDeserializer.deserialize(fakeViewEventJson)) doReturn fakeViewEvent
         whenever(mockAndroidTraceParser.parse(any())) doReturn forge.anrCrashThreadDump()
@@ -1147,7 +1147,6 @@ internal class DatadogLateCrashReporterTest {
                 additionalProperties = fakeUserInfo.additionalProperties.toMutableMap()
             )
         )
-        val fakeTimestamp = fakeViewEvent.date + forge.aLong(min = 1L, max = 1000000L)
         val fakeServerOffset =
             forge.aLong(min = -60_000L, max = 60_000L)
         fakeDatadogContext = fakeDatadogContext.copy(
@@ -1155,6 +1154,7 @@ internal class DatadogLateCrashReporterTest {
                 serverTimeOffsetMs = fakeServerOffset
             )
         )
+        val fakeTimestamp = fakeViewEvent.deviceDate() + forge.aLong(min = 1L, max = 1000000L)
 
         val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
 
@@ -1234,7 +1234,6 @@ internal class DatadogLateCrashReporterTest {
                 max = DatadogLateCrashReporter.VIEW_EVENT_AVAILABILITY_TIME_THRESHOLD - 1000
             )
         )
-        val fakeTimestamp = fakeViewEvent.date + forge.aLong(min = 1L, max = 1000000L)
         val fakeServerOffset =
             forge.aLong(min = -60_000L, max = 60_000L)
         fakeDatadogContext = fakeDatadogContext.copy(
@@ -1242,6 +1241,7 @@ internal class DatadogLateCrashReporterTest {
                 serverTimeOffsetMs = fakeServerOffset
             )
         )
+        val fakeTimestamp = fakeViewEvent.deviceDate() + forge.aLong(min = 1L, max = 1000000L)
 
         val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
 
@@ -1269,12 +1269,14 @@ internal class DatadogLateCrashReporterTest {
     @Test
     fun `M not send anything W handleAnrCrash() { view deserialization fails, new session not kept }`(
         @LongForgery(min = 1) fakeTimestamp: Long,
-        @Forgery viewEvent: ViewEvent
+        @Forgery viewEvent: ViewEvent,
+        forge: Forge
     ) {
         // Given
         val fakeViewEventJson = viewEvent.toJson().asJsonObject
 
         whenever(mockRumEventDeserializer.deserialize(fakeViewEventJson)) doReturn null
+        whenever(mockAndroidTraceParser.parse(any())) doReturn forge.anrCrashThreadDump()
 
         val mockAnrExitInfo = mock<ApplicationExitInfo>().apply {
             whenever(traceInputStream) doReturn mock()
@@ -1284,8 +1286,50 @@ internal class DatadogLateCrashReporterTest {
         // When
         testedHandler.handleAnrCrash(mockAnrExitInfo, fakeViewEventJson, null, true, mockRumWriter)
 
-        // Then
+        // Then - the draw is the decision: not drawn again at a later launch
         assertThat(drawCount).isEqualTo(1)
+        verifyNoInteractions(mockRumWriter)
+        verify(mockSdkCore).writeLastFatalAnrSent(fakeTimestamp)
+    }
+
+    @Test
+    fun `M neither draw nor mark W handleAnrCrash() { no last view, empty threads dump }`(
+        @LongForgery(min = 1, max = 1_000_000_000_000L) fakeTimestamp: Long,
+        @StringForgery fakeApplicationId: String
+    ) {
+        // Given
+        fakeNewSession = DatadogLateCrashReporter.NewSession(fakeApplicationId, 100f, sampledForError = false)
+        val mockAnrExitInfo = anrExitInfo(fakeTimestamp, ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND)
+        whenever(mockAndroidTraceParser.parse(any())) doReturn emptyList()
+
+        // When
+        testedHandler.handleAnrCrash(mockAnrExitInfo, null, null, true, mockRumWriter)
+
+        // Then - left to the next launch, which finds no draw made for it
+        assertThat(drawCount).isZero()
+        verifyNoInteractions(mockRumWriter)
+        verify(mockSdkCore, never()).writeLastFatalAnrSent(any())
+    }
+
+    @Test
+    fun `M not mark again W handleAnrCrash() { ANR already decided, session drawn as not tracked }`(
+        @LongForgery(min = 10_000, max = 1_000_000_000_000L) fakeTimestamp: Long
+    ) {
+        // Given
+        whenever(mockSdkCore.lastFatalAnrSent) doReturn fakeTimestamp
+        val mockAnrExitInfo = anrExitInfo(fakeTimestamp, ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND)
+
+        // When
+        testedHandler.handleAnrCrash(
+            mockAnrExitInfo,
+            untrackedMarker(date = fakeTimestamp - 1_000),
+            fakeTimestamp - 5_000,
+            true,
+            mockRumWriter
+        )
+
+        // Then
+        verify(mockSdkCore, never()).writeLastFatalAnrSent(any())
         verifyNoInteractions(mockRumWriter, mockAndroidTraceParser)
     }
 
@@ -1307,7 +1351,7 @@ internal class DatadogLateCrashReporterTest {
 
         val mockAnrExitInfo = mock<ApplicationExitInfo>().apply {
             whenever(traceInputStream) doReturn mock()
-            whenever(timestamp) doReturn fakeViewEvent.date - fakeDatadogContext.time.serverTimeOffsetMs - 1
+            whenever(timestamp) doReturn fakeViewEvent.deviceDate() - 1
         }
 
         // When
@@ -1329,7 +1373,6 @@ internal class DatadogLateCrashReporterTest {
                 max = DatadogLateCrashReporter.VIEW_EVENT_AVAILABILITY_TIME_THRESHOLD - 1000
             )
         )
-        val fakeTimestamp = fakeViewEvent.date + forge.aLong(min = 1L, max = 1000000L)
         val fakeServerOffset =
             forge.aLong(min = -60_000L, max = 60_000L)
         fakeDatadogContext = fakeDatadogContext.copy(
@@ -1340,6 +1383,7 @@ internal class DatadogLateCrashReporterTest {
                 Feature.RUM_FEATURE_NAME to mapOf(RumContext.SESSION_ID to viewEvent.session.id)
             )
         )
+        val fakeTimestamp = fakeViewEvent.deviceDate() + forge.aLong(min = 1L, max = 1000000L)
 
         val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
 
@@ -1369,7 +1413,6 @@ internal class DatadogLateCrashReporterTest {
                 max = DatadogLateCrashReporter.VIEW_EVENT_AVAILABILITY_TIME_THRESHOLD - 1000
             )
         )
-        val fakeTimestamp = fakeViewEvent.date + forge.aLong(min = 1L, max = 1000000L)
         val fakeServerOffset =
             forge.aLong(min = -60_000L, max = 60_000L)
         fakeDatadogContext = fakeDatadogContext.copy(
@@ -1377,6 +1420,7 @@ internal class DatadogLateCrashReporterTest {
                 serverTimeOffsetMs = fakeServerOffset
             )
         )
+        val fakeTimestamp = fakeViewEvent.deviceDate() + forge.aLong(min = 1L, max = 1000000L)
 
         val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
 
@@ -1407,7 +1451,6 @@ internal class DatadogLateCrashReporterTest {
                 max = DatadogLateCrashReporter.VIEW_EVENT_AVAILABILITY_TIME_THRESHOLD - 1000
             )
         )
-        val fakeTimestamp = fakeViewEvent.date + forge.aLong(min = 1L, max = 1000000L)
         val fakeServerOffset =
             forge.aLong(min = -60_000L, max = 60_000L)
         fakeDatadogContext = fakeDatadogContext.copy(
@@ -1415,6 +1458,7 @@ internal class DatadogLateCrashReporterTest {
                 serverTimeOffsetMs = fakeServerOffset
             )
         )
+        val fakeTimestamp = fakeViewEvent.deviceDate() + forge.aLong(min = 1L, max = 1000000L)
 
         val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
 
@@ -1429,8 +1473,9 @@ internal class DatadogLateCrashReporterTest {
         // When
         testedHandler.handleAnrCrash(mockAnrExitInfo, fakeViewEventJson, null, true, mockRumWriter)
 
-        // Then
+        // Then - an unreadable dump is left for the next launch to read
         verifyNoInteractions(mockRumWriter)
+        verify(mockSdkCore, never()).writeLastFatalAnrSent(any())
     }
 
     @Test
@@ -1462,7 +1507,7 @@ internal class DatadogLateCrashReporterTest {
         val mockAnrExitInfo = mock<ApplicationExitInfo>().apply {
             whenever(traceInputStream) doThrow fakeException
             // Right after the last view: the ANR belongs to it.
-            whenever(timestamp) doReturn fakeViewEvent.date + 1
+            whenever(timestamp) doReturn fakeViewEvent.deviceDate() + 1
         }
 
         // When
@@ -1512,7 +1557,7 @@ internal class DatadogLateCrashReporterTest {
         val mockAnrExitInfo = mock<ApplicationExitInfo>().apply {
             whenever(traceInputStream) doReturn null
             // Right after the last view: the ANR belongs to it.
-            whenever(timestamp) doReturn fakeViewEvent.date + 1
+            whenever(timestamp) doReturn fakeViewEvent.deviceDate() + 1
         }
 
         // When
@@ -1569,6 +1614,33 @@ internal class DatadogLateCrashReporterTest {
             assertThat(error.date).isEqualTo(fakeTimestamp + offset)
             assertThat(error.error.isCrash).isTrue
             assertThat(error.dd.configuration?.sessionSampleRate).isEqualTo(fakeSampleRate)
+        }
+    }
+
+    @Test
+    fun `M date the view of its own session like the error W handleNdkCrashEvent() { no last view, crash beacon }`(
+        @LongForgery(min = 1, max = 1_000_000_000_000L) fakeTimestamp: Long,
+        @StringForgery fakeApplicationId: String
+    ) {
+        // Given - the crashed process's clock offset, kept with the beacon, is not this launch's
+        fakeNewSession = DatadogLateCrashReporter.NewSession(fakeApplicationId, 100f, sampledForError = false)
+        val fakeCrashDate = fakeTimestamp + fakeDatadogContext.time.serverTimeOffsetMs + 90_000L
+        val fakeEvent = ndkCrash(fakeTimestamp, lastViewEvent = null) + mapOf(
+            "crashId" to "6a1f0c2e-3b4d-4e5f-8a9b-0c1d2e3f4a5b",
+            "beaconStatus" to "sent",
+            "crashDate" to fakeCrashDate
+        )
+
+        // When
+        testedHandler.handleNdkCrashEvent(fakeEvent, mockRumWriter)
+
+        // Then
+        argumentCaptor<Any> {
+            verify(mockRumWriter, times(2)).write(eq(mockEventBatchWriter), capture(), eq(EventType.CRASH))
+            val error = allValues.filterIsInstance<ErrorEvent>().single()
+            val view = allValues.filterIsInstance<ViewEvent>().single()
+            assertThat(error.date).isEqualTo(fakeCrashDate)
+            assertThat(view.date).isEqualTo(fakeCrashDate)
         }
     }
 
@@ -1660,7 +1732,8 @@ internal class DatadogLateCrashReporterTest {
         )
         val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
         whenever(mockRumEventDeserializer.deserialize(fakeViewEventJson)) doReturn fakeViewEvent
-        val fakeTimestamp = fakeViewEvent.date + DatadogLateCrashReporter.VIEW_EVENT_AVAILABILITY_TIME_THRESHOLD + 120_000L
+        val fakeTimestamp =
+            fakeViewEvent.deviceDate() + DatadogLateCrashReporter.VIEW_EVENT_AVAILABILITY_TIME_THRESHOLD + 120_000L
 
         // When
         testedHandler.handleNdkCrashEvent(ndkCrash(fakeTimestamp, fakeViewEventJson), mockRumWriter)
@@ -1683,7 +1756,7 @@ internal class DatadogLateCrashReporterTest {
         val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
         whenever(mockRumEventDeserializer.deserialize(fakeViewEventJson)) doReturn fakeViewEvent
         // The run started 2s after the view's last update and crashed a minute later.
-        val fakeTimestamp = fakeViewEvent.date + 3_000L + 60_000L
+        val fakeTimestamp = fakeViewEvent.deviceDate() + 3_000L + 60_000L
 
         // When
         testedHandler.handleNdkCrashEvent(
@@ -1706,7 +1779,7 @@ internal class DatadogLateCrashReporterTest {
         )
         val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
         whenever(mockRumEventDeserializer.deserialize(fakeViewEventJson)) doReturn fakeViewEvent
-        val fakeTimestamp = fakeViewEvent.date + 3_000L
+        val fakeTimestamp = fakeViewEvent.deviceDate() + 3_000L
 
         // When
         testedHandler.handleNdkCrashEvent(
@@ -1789,6 +1862,7 @@ internal class DatadogLateCrashReporterTest {
         // Then
         assertThat(drawCount).isZero()
         verifyNoInteractions(mockRumWriter, mockAndroidTraceParser)
+        verify(mockSdkCore).writeLastFatalAnrSent(fakeTimestamp)
     }
 
     @Test
@@ -1809,9 +1883,11 @@ internal class DatadogLateCrashReporterTest {
             mockRumWriter
         )
 
-        // Then
+        // Then - marked like a report: a later launch, whose slot this one may have replaced,
+        // does not decide again
         assertThat(drawCount).isZero()
         verifyNoInteractions(mockRumWriter, mockAndroidTraceParser)
+        verify(mockSdkCore).writeLastFatalAnrSent(fakeTimestamp)
     }
 
     @Test
@@ -1829,14 +1905,14 @@ internal class DatadogLateCrashReporterTest {
         val fakeViewEventJson = fakeViewEvent.toJson().asJsonObject
         whenever(mockRumEventDeserializer.deserialize(fakeViewEventJson)) doReturn fakeViewEvent
         whenever(mockAndroidTraceParser.parse(any())) doReturn forge.anrCrashThreadDump()
-        val fakeTimestamp = fakeViewEvent.date + 60_000L
+        val fakeTimestamp = fakeViewEvent.deviceDate() + 60_000L
         val mockAnrExitInfo = anrExitInfo(fakeTimestamp, ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND)
 
         // When
         testedHandler.handleAnrCrash(
             mockAnrExitInfo,
             fakeViewEventJson,
-            fakeViewEvent.date + 10_000L,
+            fakeViewEvent.deviceDate() + 10_000L,
             true,
             mockRumWriter
         )
@@ -1930,6 +2006,9 @@ internal class DatadogLateCrashReporterTest {
         "message" to "NDK crash detected with signal: SIGSEGV",
         "lastViewEvent" to lastViewEvent
     )
+
+    /** The date of a view, on the device clock crashes are dated by: a view's date is server time. */
+    private fun ViewEvent.deviceDate(): Long = date - fakeDatadogContext.time.serverTimeOffsetMs
 
     private fun untrackedMarker(date: Long): JsonObject = JsonParser.parseString(
         String(DatadogLateCrashReporter.untrackedSessionMarker("untracked-session", date), Charsets.UTF_8)

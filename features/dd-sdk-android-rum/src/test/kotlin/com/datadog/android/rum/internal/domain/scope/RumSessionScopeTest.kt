@@ -493,6 +493,67 @@ internal class RumSessionScopeTest {
 
         // Then
         verify(mockSdkCore, never()).writeLastViewEvent(any())
+        verify(mockSdkCore, never()).deleteLastViewEvent()
+    }
+
+    @Test
+    fun `M clear the marker W handleEvent(ResetSession) {session drawn as tracked after one not tracked}`(
+        forge: Forge
+    ) {
+        // Given - the console's rate goes from 0 to 100 between two sessions of one run
+        val published = AtomicReference(RemoteConfigValues(0f, 1))
+        val remoteConfig = mock<RemoteConfigStore>()
+        whenever(remoteConfig.snapshot()).thenAnswer { published.get() }
+        initializeTestedScope(remoteConfig = remoteConfig)
+        testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        assertThat(testedScope.getRumContext().sessionState).isEqualTo(RumSessionScope.State.NOT_TRACKED)
+        published.set(RemoteConfigValues(100f, 2))
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then - a crash of the new session before its first view is not taken for the old one's
+        assertThat(testedScope.getRumContext().sessionState).isEqualTo(RumSessionScope.State.TRACKED)
+        inOrder(mockSdkCore) {
+            verify(mockSdkCore).writeLastViewEvent(any())
+            verify(mockSdkCore).deleteLastViewEvent()
+        }
+    }
+
+    @Test
+    fun `M keep marking W handleEvent(ResetSession) {two sessions drawn as not tracked}`(
+        forge: Forge
+    ) {
+        // Given
+        initializeTestedScope(0f)
+        testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then - the new session's marker replaces the old one
+        verify(mockSdkCore, times(2)).writeLastViewEvent(any())
+        verify(mockSdkCore, never()).deleteLastViewEvent()
+    }
+
+    @Test
+    fun `M clear the marker once W handleEvent(ResetSession) {two sessions drawn as tracked}`(
+        forge: Forge
+    ) {
+        // Given
+        val published = AtomicReference(RemoteConfigValues(0f, 1))
+        val remoteConfig = mock<RemoteConfigStore>()
+        whenever(remoteConfig.snapshot()).thenAnswer { published.get() }
+        initializeTestedScope(remoteConfig = remoteConfig)
+        testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        published.set(RemoteConfigValues(100f, 2))
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then - the views of a tracked session replace the slot themselves
+        verify(mockSdkCore, times(1)).deleteLastViewEvent()
     }
 
     @Test

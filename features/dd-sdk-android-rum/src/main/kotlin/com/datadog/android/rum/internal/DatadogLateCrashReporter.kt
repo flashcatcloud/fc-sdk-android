@@ -12,6 +12,7 @@ import androidx.annotation.RequiresApi
 import androidx.annotation.WorkerThread
 import com.datadog.android.api.InternalLogger
 import com.datadog.android.api.context.DatadogContext
+import com.datadog.android.api.feature.EventWriteScope
 import com.datadog.android.api.feature.Feature
 import com.datadog.android.api.storage.DataWriter
 import com.datadog.android.api.storage.EventBatchWriter
@@ -110,7 +111,12 @@ internal class DatadogLateCrashReporter(
             val lastViewEvent = (target as? CrashTarget.LastView)?.view
                 // No foreground state is persisted with a native crash: one with no view to attach
                 // to is taken as a crash during the application launch.
-                ?: newSessionView(datadogContext, timestamp, inForeground = true)
+                ?: newSessionView(
+                    datadogContext,
+                    // The beacon's date, when there is one: the error is dated by it too.
+                    crashDate ?: (timestamp + datadogContext.time.serverTimeOffsetMs),
+                    inForeground = true
+                )
                 ?: return@withWriteContext
             val toSendErrorEvent = resolveErrorEventFromViewEvent(
                 datadogContext,
@@ -170,6 +176,8 @@ internal class DatadogLateCrashReporter(
             if (lastSlot is LastSlot.View && anrExitInfo.timestamp <= lastSlot.view.date - serverTimeOffsetMs) {
                 return@withWriteContext
             }
+            // FLASHCAT FORK - first: an ANR already decided is not decided, nor marked, again.
+            if (anrExitInfo.timestamp == sdkCore.lastFatalAnrSent) return@withWriteContext
             // FLASHCAT FORK - the crashed run started after the exit before it: a view or marker
             // written before then belongs to an earlier run.
             val target = resolveTarget(
@@ -178,31 +186,44 @@ internal class DatadogLateCrashReporter(
                 previousExitTimestamp,
                 serverTimeOffsetMs
             )
-            if (target == CrashTarget.NotReported) return@withWriteContext
+            // FLASHCAT FORK - the ANR stays the last one of the process until another ends a run, so
+            // a decision not to report it is marked like a report: left unmarked, a later launch
+            // would decide again, from a slot this launch may have replaced, and could report it.
+            if (target == CrashTarget.NotReported) {
+                markFatalAnrHandled(anrExitInfo, writeScope)
+                return@withWriteContext
+            }
             // FLASHCAT FORK - with no view to tell when it happened, only the ANR that ended the last
             // run of the process is reported: an older one, from before the SDK kept any record of
             // the app, would be reported in a session of its own with no view newer than it.
-            if (target == CrashTarget.NewSession && !isLastExit) return@withWriteContext
+            if (target == CrashTarget.NewSession && !isLastExit) {
+                markFatalAnrHandled(anrExitInfo, writeScope)
+                return@withWriteContext
+            }
 
             // means we are too late, last view event belongs to the ongoing session
             if (target is CrashTarget.LastView && target.view.session.id == datadogContext.rumSessionId) {
                 return@withWriteContext
             }
 
-            val lastFatalAnrSent = sdkCore.lastFatalAnrSent
-            if (anrExitInfo.timestamp == lastFatalAnrSent) return@withWriteContext
+            // FLASHCAT FORK - before a session is drawn for it: an unreadable dump leaves the ANR to
+            // the next launch, which must not find a draw already made.
+            val threadDumps = readThreadsDump(anrExitInfo)
+            if (threadDumps.isEmpty()) return@withWriteContext
 
             val lastViewEvent = (target as? CrashTarget.LastView)?.view
                 ?: newSessionView(
                     datadogContext,
-                    anrExitInfo.timestamp,
+                    anrExitInfo.timestamp + serverTimeOffsetMs,
                     // The rule crash beacons use: a process the user could see.
                     inForeground = CrashBeacon.isUserVisible(anrExitInfo.importance)
                 )
-                ?: return@withWriteContext
-
-            val threadDumps = readThreadsDump(anrExitInfo)
-            if (threadDumps.isEmpty()) return@withWriteContext
+                ?: run {
+                    // FLASHCAT FORK - the draw left its session out: drawn again later, an ANR
+                    // would be kept more often than the rate says.
+                    markFatalAnrHandled(anrExitInfo, writeScope)
+                    return@withWriteContext
+                }
 
             val toSendErrorEvent = resolveErrorEventFromViewEvent(
                 datadogContext,
@@ -229,6 +250,15 @@ internal class DatadogLateCrashReporter(
     // endregion
 
     // region Internal
+
+    /**
+     * FLASHCAT FORK - a fatal ANR decided for good is not decided again. A thread dump that could
+     * not be read is not a decision: it is left for the next launch to read.
+     */
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun markFatalAnrHandled(anrExitInfo: ApplicationExitInfo, writeScope: EventWriteScope) {
+        writeScope { sdkCore.writeLastFatalAnrSent(anrExitInfo.timestamp) }
+    }
 
     /**
      * FLASHCAT FORK - a session kept only on error uploaded nothing before it crashed: its last view
@@ -319,18 +349,18 @@ internal class DatadogLateCrashReporter(
      * the foreground, its "Background" view in the background, starting at the crash. Null when the
      * draw does not keep the session. Late crashes are never retried (the NDK report is deleted
      * once read, a fatal ANR is marked sent before it is written), so the ids and the draw are
-     * plain random ones.
+     * plain random ones. [date] is the crash's, on the server clock, as the error reports it.
      */
     private fun newSessionView(
         datadogContext: DatadogContext,
-        crashTimestamp: Long,
+        date: Long,
         inForeground: Boolean
     ): ViewEvent? {
         val session = drawNewSession() ?: return null
         val deviceInfo = datadogContext.deviceInfo
         val user = datadogContext.userInfo
         return ViewEvent(
-            date = crashTimestamp + datadogContext.time.serverTimeOffsetMs,
+            date = date,
             application = ViewEvent.Application(
                 id = session.applicationId,
                 currentLocale = deviceInfo.localeInfo.currentLocale
