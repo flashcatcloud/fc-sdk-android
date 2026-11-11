@@ -56,6 +56,8 @@ import com.datadog.android.rum.internal.metric.slowframes.SlowFramesListener
 import com.datadog.android.rum.internal.monitor.AdvancedRumMonitor
 import com.datadog.android.rum.internal.monitor.NoOpAdvancedRumMonitor
 import com.datadog.android.rum.internal.remoteconfig.ProcessForegroundCallback
+import com.datadog.android.rum.internal.remoteconfig.RemoteConfigStore
+import com.datadog.android.rum.internal.remoteconfig.RemoteConfigValues
 import com.datadog.android.rum.internal.thread.NoOpScheduledExecutorService
 import com.datadog.android.rum.internal.tracking.NoOpInteractionPredicate
 import com.datadog.android.rum.internal.tracking.NoOpUserActionTrackingStrategy
@@ -1661,6 +1663,86 @@ internal class RumFeatureTest {
     }
 
     @Test
+    fun `M draw a sampled session W drawSessionForLateCrash() { rate keeps it }`() {
+        // Given
+        testedFeature = RumFeature(
+            mockSdkCore,
+            fakeApplicationId.toString(),
+            fakeConfiguration.copy(sessionOnError = true, beforeSampling = null),
+            lateCrashReporterFactory = { mockLateCrashReporter }
+        )
+        testedFeature.sampleRate = 100f
+
+        // When
+        val session = testedFeature.drawSessionForLateCrash()
+
+        // Then
+        assertThat(session).isEqualTo(
+            DatadogLateCrashReporter.NewSession(fakeApplicationId.toString(), 100f, sampledForError = false)
+        )
+    }
+
+    @Test
+    fun `M draw a session kept on error W drawSessionForLateCrash() { rate misses it, on error }`() {
+        // Given
+        testedFeature = RumFeature(
+            mockSdkCore,
+            fakeApplicationId.toString(),
+            fakeConfiguration.copy(sessionOnError = true, beforeSampling = null),
+            lateCrashReporterFactory = { mockLateCrashReporter }
+        )
+        testedFeature.sampleRate = 0f
+        testedFeature.withheldEvents = mock()
+
+        // When
+        val session = testedFeature.drawSessionForLateCrash()
+
+        // Then
+        assertThat(session).isEqualTo(
+            DatadogLateCrashReporter.NewSession(fakeApplicationId.toString(), 0f, sampledForError = true)
+        )
+    }
+
+    @Test
+    fun `M draw no session W drawSessionForLateCrash() { rate misses it, no on error }`() {
+        // Given
+        testedFeature = RumFeature(
+            mockSdkCore,
+            fakeApplicationId.toString(),
+            fakeConfiguration.copy(sessionOnError = false, beforeSampling = null),
+            lateCrashReporterFactory = { mockLateCrashReporter }
+        )
+        testedFeature.sampleRate = 0f
+        testedFeature.withheldEvents = mock()
+
+        // When + Then
+        assertThat(testedFeature.drawSessionForLateCrash()).isNull()
+    }
+
+    @Test
+    fun `M follow the console W drawSessionForLateCrash() { console turned on error on }`() {
+        // Given
+        testedFeature = RumFeature(
+            mockSdkCore,
+            fakeApplicationId.toString(),
+            fakeConfiguration.copy(sessionOnError = false, beforeSampling = null),
+            lateCrashReporterFactory = { mockLateCrashReporter }
+        )
+        testedFeature.sampleRate = 100f
+        testedFeature.withheldEvents = mock()
+        testedFeature.remoteConfigStore = mock<RemoteConfigStore>().apply {
+            whenever(snapshot()) doReturn RemoteConfigValues(sessionSampleRate = 0f, sessionOnError = true)
+        }
+
+        // When
+        val session = testedFeature.drawSessionForLateCrash()
+
+        // Then
+        assertThat(session?.sampledForError).isTrue
+        assertThat(session?.sampleRate).isEqualTo(0f)
+    }
+
+    @Test
     fun `M consume last fatal ANR crash W consumeLastFatalAnr()`(
         @Forgery fakeViewEventJson: JsonObject,
         forge: Forge
@@ -1685,14 +1767,120 @@ internal class RumFeatureTest {
         // Then
         verify(mockLateCrashReporter)
             .handleAnrCrash(
-                appExitInfo.first { it.reason == ApplicationExitInfo.REASON_ANR },
-                fakeViewEventJson,
-                testedFeature.dataWriter
+                eq(appExitInfo.first { it.reason == ApplicationExitInfo.REASON_ANR }),
+                eq(fakeViewEventJson),
+                anyOrNull(),
+                any(),
+                eq(testedFeature.dataWriter)
             )
     }
 
     @Test
-    fun `M not consume last fatal ANR crash W consumeLastFatalAnr() { no last view event }`(
+    fun `M pass the runs around the ANR W consumeLastFatalAnr()`(
+        @Forgery fakeViewEventJson: JsonObject
+    ) {
+        // Given - most recent first: another process, the ANR, then the run before it
+        fun exit(reason: Int, process: String, timestamp: Long) = mock<ApplicationExitInfo>().apply {
+            whenever(this.reason) doReturn reason
+            whenever(processName) doReturn process
+            whenever(this.timestamp) doReturn timestamp
+        }
+        val anr = exit(ApplicationExitInfo.REASON_ANR, "app", 3_000L)
+        val appExitInfo = listOf(
+            exit(ApplicationExitInfo.REASON_EXIT_SELF, "app:remote", 4_000L),
+            anr,
+            exit(ApplicationExitInfo.REASON_EXIT_SELF, "app:remote", 2_500L),
+            exit(ApplicationExitInfo.REASON_USER_REQUESTED, "app", 2_000L),
+            exit(ApplicationExitInfo.REASON_CRASH, "app", 1_000L)
+        )
+        val mockActivityManager = mock<ActivityManager>()
+        whenever(mockActivityManager.getHistoricalProcessExitReasons(null, 0, 0)) doReturn appExitInfo
+        whenever(appContext.mockInstance.getSystemService(Context.ACTIVITY_SERVICE)) doReturn mockActivityManager
+        whenever(mockSdkCore.lastViewEvent) doReturn fakeViewEventJson
+        testedFeature.onInitialize(appContext.mockInstance)
+
+        // When
+        testedFeature.consumeLastFatalAnr(mockSameThreadExecutorService())
+
+        // Then
+        verify(mockLateCrashReporter).handleAnrCrash(anr, fakeViewEventJson, 2_000L, true, testedFeature.dataWriter)
+    }
+
+    @Test
+    fun `M take the ANR of this process W consumeLastFatalAnr() { a newer ANR of another process }`(
+        @Forgery fakeViewEventJson: JsonObject
+    ) {
+        // Given
+        fun exit(reason: Int, process: String, timestamp: Long) = mock<ApplicationExitInfo>().apply {
+            whenever(this.reason) doReturn reason
+            whenever(processName) doReturn process
+            whenever(this.timestamp) doReturn timestamp
+        }
+        val ownAnr = exit(ApplicationExitInfo.REASON_ANR, "app", 3_000L)
+        val appExitInfo = listOf(
+            exit(ApplicationExitInfo.REASON_ANR, "app:remote", 4_000L),
+            ownAnr,
+            exit(ApplicationExitInfo.REASON_EXIT_SELF, "app", 2_000L)
+        )
+        val mockActivityManager = mock<ActivityManager>()
+        whenever(mockActivityManager.getHistoricalProcessExitReasons(null, 0, 0)) doReturn appExitInfo
+        whenever(appContext.mockInstance.getSystemService(Context.ACTIVITY_SERVICE)) doReturn mockActivityManager
+        whenever(mockSdkCore.lastViewEvent) doReturn fakeViewEventJson
+        testedFeature.onInitialize(appContext.mockInstance)
+        testedFeature.currentProcessName = { "app" }
+
+        // When
+        testedFeature.consumeLastFatalAnr(mockSameThreadExecutorService())
+
+        // Then
+        verify(mockLateCrashReporter).handleAnrCrash(ownAnr, fakeViewEventJson, 2_000L, true, testedFeature.dataWriter)
+    }
+
+    @Test
+    fun `M report no ANR W consumeLastFatalAnr() { only another process had one }`() {
+        // Given
+        val remoteAnr = mock<ApplicationExitInfo>().apply {
+            whenever(reason) doReturn ApplicationExitInfo.REASON_ANR
+            whenever(processName) doReturn "app:remote"
+        }
+        val mockActivityManager = mock<ActivityManager>()
+        whenever(mockActivityManager.getHistoricalProcessExitReasons(null, 0, 0)) doReturn listOf(remoteAnr)
+        whenever(appContext.mockInstance.getSystemService(Context.ACTIVITY_SERVICE)) doReturn mockActivityManager
+        testedFeature.onInitialize(appContext.mockInstance)
+        testedFeature.currentProcessName = { "app" }
+
+        // When
+        testedFeature.consumeLastFatalAnr(mockSameThreadExecutorService())
+
+        // Then
+        verifyNoInteractions(mockLateCrashReporter)
+    }
+
+    @Test
+    fun `M tell the ANR did not end the last run W consumeLastFatalAnr() { the process ran again }`() {
+        // Given
+        fun exit(reason: Int, timestamp: Long) = mock<ApplicationExitInfo>().apply {
+            whenever(this.reason) doReturn reason
+            whenever(processName) doReturn "app"
+            whenever(this.timestamp) doReturn timestamp
+        }
+        val anr = exit(ApplicationExitInfo.REASON_ANR, 3_000L)
+        val appExitInfo = listOf(exit(ApplicationExitInfo.REASON_EXIT_SELF, 4_000L), anr)
+        val mockActivityManager = mock<ActivityManager>()
+        whenever(mockActivityManager.getHistoricalProcessExitReasons(null, 0, 0)) doReturn appExitInfo
+        whenever(appContext.mockInstance.getSystemService(Context.ACTIVITY_SERVICE)) doReturn mockActivityManager
+        whenever(mockSdkCore.lastViewEvent) doReturn null
+        testedFeature.onInitialize(appContext.mockInstance)
+
+        // When
+        testedFeature.consumeLastFatalAnr(mockSameThreadExecutorService())
+
+        // Then
+        verify(mockLateCrashReporter).handleAnrCrash(anr, null, null, false, testedFeature.dataWriter)
+    }
+
+    @Test
+    fun `M consume last fatal ANR crash W consumeLastFatalAnr() { no last view event }`(
         forge: Forge
     ) {
         // Given
@@ -1713,12 +1901,13 @@ internal class RumFeatureTest {
         testedFeature.consumeLastFatalAnr(mockExecutor)
 
         // Then
-        verifyNoInteractions(mockLateCrashReporter)
-        mockInternalLogger.verifyLog(
-            InternalLogger.Level.INFO,
-            InternalLogger.Target.USER,
-            RumFeature.NO_LAST_RUM_VIEW_EVENT_AVAILABLE,
-            mode = atLeastOnce()
+        // Reported in a session of its own, see DatadogLateCrashReporter.
+        verify(mockLateCrashReporter).handleAnrCrash(
+            eq(appExitInfo.first { it.reason == ApplicationExitInfo.REASON_ANR }),
+            isNull(),
+            anyOrNull(),
+            any(),
+            eq(testedFeature.dataWriter)
         )
     }
 

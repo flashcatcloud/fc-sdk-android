@@ -121,14 +121,14 @@ internal class DatadogNdkCrashHandler(
         }
         val errorLogMessage = LOG_CRASH_MSG.format(Locale.US, ndkCrashLog.signalName)
 
-        if (lastViewEvent != null) {
-            sendCrashRumEvent(
-                sdkCore,
-                errorLogMessage,
-                ndkCrashLog,
-                lastViewEvent
-            )
-        }
+        // FLASHCAT FORK - sent without a last view too: RUM reports a crash that belongs to no view
+        // known here in a session of its own.
+        sendCrashRumEvent(
+            sdkCore,
+            errorLogMessage,
+            ndkCrashLog,
+            lastViewEvent
+        )
     }
 
     @Suppress("StringLiteralDuplication")
@@ -137,7 +137,7 @@ internal class DatadogNdkCrashHandler(
         sdkCore: FeatureSdkCore,
         errorLogMessage: String,
         ndkCrashLog: NdkCrashLog,
-        lastViewEvent: JsonObject
+        lastViewEvent: JsonObject?
     ) {
         val rumFeature = sdkCore.getFeature(Feature.RUM_FEATURE_NAME)
         if (rumFeature != null) {
