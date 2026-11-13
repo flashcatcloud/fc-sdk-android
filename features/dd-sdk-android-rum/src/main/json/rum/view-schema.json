@@ -401,6 +401,26 @@
             "accessibility": {
               "description": "Accessibility properties of the view",
               "allOf": [{ "$ref": "_view-accessibility-schema.json" }]
+            },
+            "cpu_usage_average": {
+              "type": "number",
+              "description": "Average process user + system CPU usage during measured foreground time, as a percentage of all cores (0-100).",
+              "readOnly": true
+            },
+            "cpu_usage_max": {
+              "type": "number",
+              "description": "Peak process CPU usage over foreground intervals of at least 250ms, as a percentage of all cores (0-100).",
+              "readOnly": true
+            },
+            "main_thread_cpu_usage_average": {
+              "type": "number",
+              "description": "Average main-thread user + system CPU usage during measured foreground time, as a percentage of one core (0-100).",
+              "readOnly": true
+            },
+            "main_thread_cpu_usage_max": {
+              "type": "number",
+              "description": "Peak main-thread CPU usage over foreground intervals of at least 250ms, as a percentage of one core (0-100).",
+              "readOnly": true
             }
           },
           "readOnly": true
