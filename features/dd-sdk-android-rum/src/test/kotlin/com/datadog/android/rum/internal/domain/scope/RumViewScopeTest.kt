@@ -6479,6 +6479,22 @@ internal class RumViewScopeTest {
         }
     }
 
+    @Test
+    fun `M stop sampling the replaced view's CPU usage W renew`() {
+        var sample = CpuUsageSample(10.0, 1.0, 0.0)
+        val monitor = CpuUsageMonitor({ sample }, 4, true)
+        testedScope = newRumViewScope(cpuVitalMonitor = monitor, type = RumViewType.FOREGROUND)
+        val replaced = requireNotNull(testedScope.cpuUsage)
+        sample = CpuUsageSample(12.0, 1.0, 1.0)
+
+        val renewed = testedScope.renew(Time(), fakeSampleRate, null)
+        sample = CpuUsageSample(100.0, 50.0, 2.0)
+        monitor.sample()
+
+        assertThat(replaced.values()?.average).isEqualTo(50.0)
+        assertThat(renewed.cpuUsage?.values()?.average).isEqualTo(100.0)
+    }
+
     // region Vitals
 
     @Test

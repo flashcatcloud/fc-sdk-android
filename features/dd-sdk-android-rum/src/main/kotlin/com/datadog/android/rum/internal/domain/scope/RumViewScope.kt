@@ -147,7 +147,7 @@ internal open class RumViewScope(
 
     // region Vitals Fields
 
-    private val cpuUsage = if (type == RumViewType.FOREGROUND) {
+    internal val cpuUsage = if (type == RumViewType.FOREGROUND) {
         (cpuVitalMonitor as? CpuUsageMonitor)?.registerUsage()
     } else {
         null
@@ -485,6 +485,8 @@ internal open class RumViewScope(
         sampleRate: Float,
         drawnConfiguration: DrawnConfiguration?
     ): RumViewScope {
+        // The renewed scope replaces this one without stopping it, so its CPU usage would otherwise keep sampling.
+        cpuUsage?.let { (cpuVitalMonitor as? CpuUsageMonitor)?.unregisterUsage(it) }
         return RumViewScope(
             parentScope = this,
             sdkCore = sdkCore,
