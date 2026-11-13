@@ -66,6 +66,8 @@ import com.datadog.android.rum.internal.toLongTask
 import com.datadog.android.rum.internal.toView
 import com.datadog.android.rum.internal.toVital
 import com.datadog.android.rum.internal.utils.buildDDTagsString
+import com.datadog.android.rum.internal.vitals.CpuUsageMonitor
+import com.datadog.android.rum.internal.vitals.CpuUsageSample
 import com.datadog.android.rum.internal.vitals.VitalInfo
 import com.datadog.android.rum.internal.vitals.VitalListener
 import com.datadog.android.rum.internal.vitals.VitalMonitor
@@ -6439,6 +6441,43 @@ internal class RumViewScopeTest {
     }
 
     // endregion
+
+    @Test
+    fun `M report normalized CPU usage and preserve zero W stop view`() {
+        var sample = CpuUsageSample(10.0, 1.0, 0.0)
+        val monitor = CpuUsageMonitor({ sample }, 4, true)
+        testedScope = newRumViewScope(cpuVitalMonitor = monitor, type = RumViewType.FOREGROUND)
+        sample = CpuUsageSample(12.0, 1.0, 1.0)
+        testedScope.handleEvent(
+            RumRawEvent.StopView(fakeKey, emptyMap()), fakeDatadogContext, mockEventWriteScope, mockWriter
+        )
+        argumentCaptor<ViewEvent> {
+            verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
+            assertThat(lastValue.view.cpuUsageAverage).isEqualTo(50.0)
+            assertThat(lastValue.view.cpuUsageMax).isEqualTo(50.0)
+            assertThat(lastValue.view.mainThreadCpuUsageAverage).isEqualTo(0.0)
+            val json = lastValue.toJson().asJsonObject.getAsJsonObject("view")
+            assertThat(json.get("cpu_usage_average").asDouble).isEqualTo(50.0)
+            assertThat(json.get("main_thread_cpu_usage_average").asDouble).isEqualTo(0.0)
+            val decoded = ViewEvent.fromJson(lastValue.toJson().toString())
+            assertThat(decoded.view.cpuUsageAverage?.toDouble()).isEqualTo(50.0)
+        }
+    }
+
+    @Test
+    fun `M omit CPU usage W no measured foreground interval`() {
+        val monitor = CpuUsageMonitor({ CpuUsageSample(0.0, 0.0, 0.0) }, 4, true)
+        testedScope = newRumViewScope(cpuVitalMonitor = monitor, type = RumViewType.FOREGROUND)
+        testedScope.handleEvent(
+            RumRawEvent.StopView(fakeKey, emptyMap()), fakeDatadogContext, mockEventWriteScope, mockWriter
+        )
+        argumentCaptor<ViewEvent> {
+            verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
+            val json = lastValue.toJson().asJsonObject.getAsJsonObject("view")
+            assertThat(json.has("cpu_usage_average")).isFalse()
+            assertThat(json.has("main_thread_cpu_usage_average")).isFalse()
+        }
+    }
 
     // region Vitals
 

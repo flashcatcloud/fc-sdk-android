@@ -108,6 +108,9 @@ import com.datadog.android.rum.internal.tracking.NoOpUserActionTrackingStrategy
 import com.datadog.android.rum.internal.tracking.UserActionTrackingStrategy
 import com.datadog.android.rum.internal.vitals.AggregatingVitalMonitor
 import com.datadog.android.rum.internal.vitals.CPUVitalReader
+import com.datadog.android.rum.internal.vitals.CpuUsageLifecycleCallbacks
+import com.datadog.android.rum.internal.vitals.CpuUsageMonitor
+import com.datadog.android.rum.internal.vitals.CpuUsageReader
 import com.datadog.android.rum.internal.vitals.FPSVitalListener
 import com.datadog.android.rum.internal.vitals.FrameStateListener
 import com.datadog.android.rum.internal.vitals.FrameStatesAggregator
@@ -179,6 +182,7 @@ internal class RumFeature(
     internal var longTaskTrackingStrategy: TrackingStrategy = NoOpTrackingStrategy()
 
     internal var cpuVitalMonitor: VitalMonitor = NoOpVitalMonitor()
+    private var cpuUsageForegroundCallback: Application.ActivityLifecycleCallbacks? = null
     internal var memoryVitalMonitor: VitalMonitor = NoOpVitalMonitor()
     internal var frameRateVitalMonitor: VitalMonitor = NoOpVitalMonitor()
 
@@ -444,6 +448,9 @@ internal class RumFeature(
         actionTrackingStrategy = NoOpUserActionTrackingStrategy()
         longTaskTrackingStrategy = NoOpTrackingStrategy()
 
+        cpuUsageForegroundCallback?.let { (appContext as? Application)?.unregisterActivityLifecycleCallbacks(it) }
+        cpuUsageForegroundCallback = null
+        (cpuVitalMonitor as? CpuUsageMonitor)?.stop()
         cpuVitalMonitor = NoOpVitalMonitor()
         memoryVitalMonitor = NoOpVitalMonitor()
         frameRateVitalMonitor = NoOpVitalMonitor()
@@ -866,7 +873,21 @@ internal class RumFeature(
     private fun initializeCpuVitalMonitor(frequency: VitalsUpdateFrequency) {
         if (frequency == VitalsUpdateFrequency.NEVER) return
 
-        cpuVitalMonitor = AggregatingVitalMonitor()
+        val reader = CpuUsageReader(sdkCore.internalLogger)
+        val processInfo = ActivityManager.RunningAppProcessInfo()
+        ActivityManager.getMyMemoryState(processInfo)
+        val monitor = CpuUsageMonitor(
+            reader::read,
+            Runtime.getRuntime().availableProcessors(),
+            processInfo.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+        )
+        cpuVitalMonitor = monitor
+        (appContext as? Application)?.let { application ->
+            val callback = CpuUsageLifecycleCallbacks(monitor::setForeground)
+            application.registerActivityLifecycleCallbacks(callback)
+            cpuUsageForegroundCallback = callback
+        }
+        monitor.start(vitalExecutorService, frequency.periodInMs, sdkCore.internalLogger)
         initializeVitalMonitor(
             CPUVitalReader(internalLogger = sdkCore.internalLogger),
             cpuVitalMonitor,

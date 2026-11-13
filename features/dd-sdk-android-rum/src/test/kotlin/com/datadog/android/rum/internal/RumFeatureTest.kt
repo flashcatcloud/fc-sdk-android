@@ -61,6 +61,7 @@ import com.datadog.android.rum.internal.tracking.NoOpInteractionPredicate
 import com.datadog.android.rum.internal.tracking.NoOpUserActionTrackingStrategy
 import com.datadog.android.rum.internal.tracking.UserActionTrackingStrategy
 import com.datadog.android.rum.internal.vitals.AggregatingVitalMonitor
+import com.datadog.android.rum.internal.vitals.CpuUsageMonitor
 import com.datadog.android.rum.internal.vitals.FPSVitalListener
 import com.datadog.android.rum.internal.vitals.FrameStateListener
 import com.datadog.android.rum.internal.vitals.FrameStatesAggregator
@@ -721,7 +722,7 @@ internal class RumFeatureTest {
 
         // Then
         assertThat(testedFeature.cpuVitalMonitor)
-            .isInstanceOf(AggregatingVitalMonitor::class.java)
+            .isInstanceOf(CpuUsageMonitor::class.java)
         assertThat(testedFeature.memoryVitalMonitor)
             .isInstanceOf(AggregatingVitalMonitor::class.java)
         assertThat(testedFeature.frameRateVitalMonitor)
@@ -1145,14 +1146,12 @@ internal class RumFeatureTest {
 
         // Then
         argumentCaptor<Runnable> {
-            verify(mockScheduledExecutorService, times(2)).schedule(
+            verify(mockScheduledExecutorService, times(3)).schedule(
                 capture(),
                 eq(fakeFrequency.periodInMs),
                 eq(TimeUnit.MILLISECONDS)
             )
-            allValues.forEach {
-                assertThat(it).isInstanceOf(VitalReaderRunnable::class.java)
-            }
+            assertThat(allValues.filterIsInstance<VitalReaderRunnable>()).hasSize(2)
         }
     }
 

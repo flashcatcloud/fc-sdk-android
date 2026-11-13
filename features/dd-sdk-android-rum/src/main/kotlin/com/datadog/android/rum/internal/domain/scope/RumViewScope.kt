@@ -51,6 +51,7 @@ import com.datadog.android.rum.internal.toVital
 import com.datadog.android.rum.internal.utils.buildDDTagsString
 import com.datadog.android.rum.internal.utils.hasUserData
 import com.datadog.android.rum.internal.utils.newRumEventWriteOperation
+import com.datadog.android.rum.internal.vitals.CpuUsageMonitor
 import com.datadog.android.rum.internal.vitals.VitalInfo
 import com.datadog.android.rum.internal.vitals.VitalListener
 import com.datadog.android.rum.internal.vitals.VitalMonitor
@@ -146,6 +147,11 @@ internal open class RumViewScope(
 
     // region Vitals Fields
 
+    private val cpuUsage = if (type == RumViewType.FOREGROUND) {
+        (cpuVitalMonitor as? CpuUsageMonitor)?.registerUsage()
+    } else {
+        null
+    }
     private var cpuTicks: Double? = null
     internal var cpuVitalListener: VitalListener = object : VitalListener {
         private var initialTickCount: Double = Double.NaN
@@ -1141,6 +1147,7 @@ internal open class RumViewScope(
         if (!stopped) {
             sideEffect()
 
+            cpuUsage?.let { (cpuVitalMonitor as? CpuUsageMonitor)?.unregisterUsage(it) }
             stopped = true
             resolveViewDuration(event)
             sendViewUpdate(event, datadogContext, writeScope, writer)
@@ -1184,6 +1191,7 @@ internal open class RumViewScope(
         val eventFrozenFramesCount = frozenFrameCount
 
         val eventCpuTicks = cpuTicks
+        val eventCpuUsage = cpuUsage?.values()
 
         val eventFrustrationCount = frustrationCount
 
@@ -1304,6 +1312,10 @@ internal open class RumViewScope(
                     frozenFrame = ViewEvent.FrozenFrame(eventFrozenFramesCount),
                     customTimings = timings,
                     isActive = !viewComplete,
+                    cpuUsageAverage = eventCpuUsage?.average,
+                    cpuUsageMax = eventCpuUsage?.max,
+                    mainThreadCpuUsageAverage = eventCpuUsage?.mainThreadAverage,
+                    mainThreadCpuUsageMax = eventCpuUsage?.mainThreadMax,
                     cpuTicksCount = eventCpuTicks,
                     cpuTicksPerSecond = if (durationNs >= ONE_SECOND_NS) {
                         eventCpuTicks?.let { (it * ONE_SECOND_NS) / durationNs }
