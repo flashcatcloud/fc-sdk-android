@@ -10,12 +10,15 @@ import android.app.Activity
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
+import java.util.concurrent.Executor
 
 internal class CpuUsageLifecycleCallbacksTest {
+    private val immediate = Executor { it.run() }
+
     @Test
     fun `excludes paused periods and supports multiple resumed activities`() {
         var active = false
-        val callback = CpuUsageLifecycleCallbacks { active = it }
+        val callback = CpuUsageLifecycleCallbacks(immediate, mock()) { active = it }
         val first = mock<Activity>()
         val second = mock<Activity>()
         callback.onActivityStarted(first)
@@ -33,8 +36,21 @@ internal class CpuUsageLifecycleCallbacksTest {
     @Test
     fun `handles initialization after an activity was already resumed`() {
         var active = true
-        val callback = CpuUsageLifecycleCallbacks { active = it }
+        val callback = CpuUsageLifecycleCallbacks(immediate, mock()) { active = it }
         callback.onActivityPaused(mock())
         assertThat(active).isFalse()
+    }
+
+    @Test
+    fun `defers foreground changes to the executor instead of the calling thread`() {
+        val pending = mutableListOf<Runnable>()
+        val changes = mutableListOf<Boolean>()
+        val callback = CpuUsageLifecycleCallbacks({ pending.add(it) }, mock()) { changes.add(it) }
+        val activity = mock<Activity>()
+        callback.onActivityResumed(activity)
+        callback.onActivityPaused(activity)
+        assertThat(changes).isEmpty()
+        pending.forEach { it.run() }
+        assertThat(changes).containsExactly(true, false)
     }
 }

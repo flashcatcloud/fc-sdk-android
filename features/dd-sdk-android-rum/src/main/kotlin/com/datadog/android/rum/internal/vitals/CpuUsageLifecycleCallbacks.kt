@@ -9,23 +9,32 @@ package com.datadog.android.rum.internal.vitals
 import android.app.Activity
 import android.app.Application
 import android.os.Bundle
+import com.datadog.android.api.InternalLogger
+import com.datadog.android.core.internal.utils.executeSafe
 import java.util.Collections
 import java.util.IdentityHashMap
+import java.util.concurrent.Executor
 
-/** Only resumed (interactive) activities contribute, matching iOS active foreground periods. */
-internal class CpuUsageLifecycleCallbacks(private val setForeground: (Boolean) -> Unit) :
-    Application.ActivityLifecycleCallbacks {
+/**
+ * Only resumed (interactive) activities contribute, matching iOS active foreground periods.
+ * Transitions run on [executor] because closing an interval reads `/proc`, which must stay off the main thread.
+ */
+internal class CpuUsageLifecycleCallbacks(
+    private val executor: Executor,
+    private val internalLogger: InternalLogger,
+    private val setForeground: (Boolean) -> Unit
+) : Application.ActivityLifecycleCallbacks {
     private val resumed = Collections.newSetFromMap(IdentityHashMap<Activity, Boolean>())
 
     override fun onActivityResumed(activity: Activity) {
         resumed.add(activity)
-        setForeground(true)
+        post(true)
     }
 
     override fun onActivityPaused(activity: Activity) {
         resumed.remove(activity)
         // Also handles an SDK enabled after this activity's onResume was already delivered.
-        if (resumed.isEmpty()) setForeground(false)
+        if (resumed.isEmpty()) post(false)
     }
 
     override fun onActivityStopped(activity: Activity) = onActivityPaused(activity)
@@ -33,4 +42,8 @@ internal class CpuUsageLifecycleCallbacks(private val setForeground: (Boolean) -
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
     override fun onActivityStarted(activity: Activity) = Unit
     override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
+
+    private fun post(active: Boolean) {
+        executor.executeSafe("CPU usage foreground change", internalLogger) { setForeground(active) }
+    }
 }

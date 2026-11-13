@@ -883,7 +883,11 @@ internal class RumFeature(
         )
         cpuVitalMonitor = monitor
         (appContext as? Application)?.let { application ->
-            val callback = CpuUsageLifecycleCallbacks(monitor::setForeground)
+            val callback = CpuUsageLifecycleCallbacks(
+                vitalExecutorService,
+                sdkCore.internalLogger,
+                monitor::setForeground
+            )
             application.registerActivityLifecycleCallbacks(callback)
             cpuUsageForegroundCallback = callback
         }
