@@ -88,8 +88,12 @@ object ForegroundStateTracker : Application.ActivityLifecycleCallbacks {
 
     @Synchronized
     override fun onActivityDestroyed(activity: Activity) {
-        // An activity finished from its onCreate is never started.
-        pending.remove(activity)
+        // An activity finished from its onCreate is never started or stopped. If it was the last one about to be
+        // shown, the process leaves the screen here: count it, which also ends the foreground launch exemption.
+        val removed = pending.remove(activity)
+        if (removed && pending.isEmpty() && started.isEmpty() && !activity.isChangingConfigurations) {
+            backgroundTransitions++
+        }
     }
 
     override fun onActivityResumed(activity: Activity) = Unit

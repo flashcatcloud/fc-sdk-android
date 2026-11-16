@@ -9,6 +9,7 @@ import android.app.Activity
 import android.app.ActivityManager.RunningAppProcessInfo
 import com.datadog.android.rum.DdRumContentProvider
 import com.datadog.android.rum.ForegroundStateTracker
+import com.datadog.tools.unit.getStaticValue
 import com.datadog.tools.unit.setStaticValue
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
@@ -135,6 +136,46 @@ internal class ForegroundStateTrackerTest {
     }
 
     @Test
+    fun `only activity finished from onCreate in a background launch counts as a background transition`() {
+        val finished: Activity = mock()
+        DdRumContentProvider.processImportance = RunningAppProcessInfo.IMPORTANCE_SERVICE
+        resetToProcessStart()
+        ForegroundStateTracker.onActivityCreated(finished, null)
+        assertThat(ForegroundStateTracker.isInBackground()).isFalse()
+        ForegroundStateTracker.onActivityDestroyed(finished)
+        assertThat(ForegroundStateTracker.isInBackground()).isTrue()
+        assertThat(ForegroundStateTracker.backgroundTransitions).isEqualTo(1)
+    }
+
+    @Test
+    fun `only activity finished from onCreate in a foreground launch ends the launch exemption`() {
+        val finished: Activity = mock()
+        DdRumContentProvider.processImportance = RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+        resetToProcessStart()
+        ForegroundStateTracker.onActivityCreated(finished, null)
+        ForegroundStateTracker.onActivityDestroyed(finished)
+        assertThat(ForegroundStateTracker.isInBackground()).isTrue()
+        assertThat(ForegroundStateTracker.backgroundTransitions).isEqualTo(1)
+    }
+
+    @Test
+    fun `trampoline activity finished after the next one started is not a background transition`() {
+        val trampoline: Activity = mock()
+        val main: Activity = mock()
+        DdRumContentProvider.processImportance = RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+        resetToProcessStart()
+        ForegroundStateTracker.onActivityCreated(trampoline, null)
+        ForegroundStateTracker.onActivityCreated(main, null)
+        ForegroundStateTracker.onActivityStarted(main)
+        ForegroundStateTracker.onActivityDestroyed(trampoline)
+        assertThat(ForegroundStateTracker.isInBackground()).isFalse()
+        assertThat(ForegroundStateTracker.backgroundTransitions).isEqualTo(0)
+        ForegroundStateTracker.onActivityStopped(main)
+        ForegroundStateTracker.onActivityDestroyed(main)
+        assertThat(ForegroundStateTracker.backgroundTransitions).isEqualTo(1)
+    }
+
+    @Test
     fun `rotation does not count as a background transition`() {
         val old: Activity = mock()
         val recreated: Activity = mock()
@@ -149,8 +190,14 @@ internal class ForegroundStateTrackerTest {
         assertThat(ForegroundStateTracker.backgroundTransitions).isEqualTo(transitions + 1)
     }
 
-    // The tracker is process-wide; other tests leave it in the background with transitions already counted.
-    private fun resetToProcessStart() {
-        ForegroundStateTracker::class.java.setStaticValue("backgroundTransitions", 0)
-    }
+    private fun resetToProcessStart() = resetForegroundStateTracker()
+}
+
+/** The tracker is process-wide; earlier tests can leave activities and counted transitions behind. */
+internal fun resetForegroundStateTracker() {
+    val type = ForegroundStateTracker::class.java
+    type.getStaticValue<ForegroundStateTracker, MutableSet<*>>("started").clear()
+    type.getStaticValue<ForegroundStateTracker, MutableSet<*>>("pending").clear()
+    type.setStaticValue("foreground", false)
+    type.setStaticValue("backgroundTransitions", 0)
 }

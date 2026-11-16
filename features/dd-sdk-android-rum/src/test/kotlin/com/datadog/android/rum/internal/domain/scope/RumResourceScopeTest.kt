@@ -6,6 +6,8 @@
 
 package com.datadog.android.rum.internal.domain.scope
 
+import android.app.Activity
+import android.app.ActivityManager
 import com.datadog.android.api.InternalLogger
 import com.datadog.android.api.context.DatadogContext
 import com.datadog.android.api.context.NetworkInfo
@@ -15,6 +17,7 @@ import com.datadog.android.api.storage.EventBatchWriter
 import com.datadog.android.api.storage.EventType
 import com.datadog.android.core.internal.net.FirstPartyHostHeaderTypeResolver
 import com.datadog.android.internal.utils.loggableStackTrace
+import com.datadog.android.rum.DdRumContentProvider
 import com.datadog.android.rum.ForegroundStateTracker
 import com.datadog.android.rum.RumAttributes
 import com.datadog.android.rum.RumErrorSource
@@ -24,6 +27,7 @@ import com.datadog.android.rum.RumSessionType
 import com.datadog.android.rum.assertj.ErrorEventAssert.Companion.assertThat
 import com.datadog.android.rum.assertj.ResourceEventAssert.Companion.assertThat
 import com.datadog.android.rum.internal.FeaturesContextResolver
+import com.datadog.android.rum.internal.active.resetForegroundStateTracker
 import com.datadog.android.rum.internal.domain.RumContext
 import com.datadog.android.rum.internal.domain.Time
 import com.datadog.android.rum.internal.domain.event.ResourceTiming
@@ -3786,6 +3790,59 @@ internal class RumResourceScopeTest {
             verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
             assertThat(firstValue).hasDurationGreaterThan(TimeUnit.MILLISECONDS.toNanos(RESOURCE_DURATION_MS))
         }
+    }
+
+    @Test
+    fun `M send the Resource without duration W handleEvent(StopResource) {only activity finished from onCreate}`(
+        @Forgery kind: RumResourceKind,
+        @LongForgery(200, 600) statusCode: Long,
+        @LongForgery(0, 1024) size: Long
+    ) {
+        // Given
+        // Foreground cold launch: the launch exemption applies until the only activity leaves without starting.
+        val initialProcessImportance = DdRumContentProvider.processImportance
+        DdRumContentProvider.processImportance = ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+        resetForegroundStateTracker()
+        try {
+            val activity: Activity = mock()
+            ForegroundStateTracker.onActivityCreated(activity, null)
+            testedScope = RumResourceScope.fromEvent(
+                parentScope = mockParentScope,
+                sdkCore = rumMonitor.mockSdkCore,
+                event = RumRawEvent.StartResource(fakeKey, fakeUrl, fakeMethod, emptyMap(), fakeEventTime),
+                firstPartyHostHeaderTypeResolver = mockResolver,
+                timestampOffset = fakeServerOffset,
+                featuresContextResolver = mockFeaturesContextResolver,
+                sampleRate = fakeSampleRate,
+                networkSettledMetricResolver = mockNetworkSettledMetricResolver,
+                rumSessionTypeOverride = fakeRumSessionType,
+                insightsCollector = mockInsightsCollector
+            ) as RumResourceScope
+            ForegroundStateTracker.onActivityDestroyed(activity)
+
+            // When
+            mockEvent = RumRawEvent.StopResource(
+                fakeKey,
+                statusCode,
+                size,
+                kind,
+                emptyMap(),
+                timeWithOffset(RESOURCE_DURATION_MS)
+            )
+            testedScope.handleEvent(mockEvent, fakeDatadogContext, mockEventWriteScope, mockWriter)
+        } finally {
+            DdRumContentProvider.processImportance = initialProcessImportance
+        }
+
+        // Then
+        argumentCaptor<ResourceEvent> {
+            verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
+            assertThat(firstValue)
+                .hasNoDuration()
+                .hasUrl(fakeUrl)
+                .hasStatusCode(statusCode)
+        }
+        verify(mockInsightsCollector, never()).onNetworkRequest(any(), any())
     }
 
     private fun scopeWithBackgroundState(startedInBackground: Boolean, transitions: Int): RumResourceScope {
