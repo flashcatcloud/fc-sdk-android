@@ -495,6 +495,8 @@ public final class com/datadog/android/rum/DdRumContentProvider$Companion {
 public final class com/datadog/android/rum/ForegroundStateTracker : android/app/Application$ActivityLifecycleCallbacks {
 	public static final field INSTANCE Lcom/datadog/android/rum/ForegroundStateTracker;
 	public final fun addListener (Lkotlin/jvm/functions/Function1;)V
+	public final fun getBackgroundTransitions ()I
+	public final fun isInBackground ()Z
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityDestroyed (Landroid/app/Activity;)V
 	public fun onActivityPaused (Landroid/app/Activity;)V

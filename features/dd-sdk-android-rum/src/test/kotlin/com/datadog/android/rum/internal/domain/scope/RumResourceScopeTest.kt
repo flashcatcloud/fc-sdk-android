@@ -15,6 +15,7 @@ import com.datadog.android.api.storage.EventBatchWriter
 import com.datadog.android.api.storage.EventType
 import com.datadog.android.core.internal.net.FirstPartyHostHeaderTypeResolver
 import com.datadog.android.internal.utils.loggableStackTrace
+import com.datadog.android.rum.ForegroundStateTracker
 import com.datadog.android.rum.RumAttributes
 import com.datadog.android.rum.RumErrorSource
 import com.datadog.android.rum.RumResourceKind
@@ -50,6 +51,7 @@ import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.BoolForgery
 import fr.xgouchet.elmyr.annotation.FloatForgery
 import fr.xgouchet.elmyr.annotation.Forgery
+import fr.xgouchet.elmyr.annotation.IntForgery
 import fr.xgouchet.elmyr.annotation.LongForgery
 import fr.xgouchet.elmyr.annotation.StringForgery
 import fr.xgouchet.elmyr.annotation.StringForgeryType
@@ -227,7 +229,9 @@ internal class RumResourceScopeTest {
             sampleRate = fakeSampleRate,
             networkSettledMetricResolver = mockNetworkSettledMetricResolver,
             rumSessionTypeOverride = fakeRumSessionType,
-            insightsCollector = mockInsightsCollector
+            insightsCollector = mockInsightsCollector,
+            startedInBackground = false,
+            backgroundTransitionsAtStart = ForegroundStateTracker.backgroundTransitions
         )
     }
 
@@ -430,7 +434,9 @@ internal class RumResourceScopeTest {
             sampleRate = fakeSampleRate,
             networkSettledMetricResolver = mockNetworkSettledMetricResolver,
             rumSessionTypeOverride = fakeRumSessionType,
-            insightsCollector = mockInsightsCollector
+            insightsCollector = mockInsightsCollector,
+            startedInBackground = false,
+            backgroundTransitionsAtStart = ForegroundStateTracker.backgroundTransitions
         )
         doAnswer { true }.whenever(mockResolver).isFirstPartyUrl(brokenUrl)
         val attributes = forge.exhaustiveAttributes(excludedKeys = fakeResourceAttributes.keys)
@@ -681,7 +687,9 @@ internal class RumResourceScopeTest {
             sampleRate = fakeSampleRate,
             networkSettledMetricResolver = mockNetworkSettledMetricResolver,
             rumSessionTypeOverride = fakeRumSessionType,
-            insightsCollector = mockInsightsCollector
+            insightsCollector = mockInsightsCollector,
+            startedInBackground = false,
+            backgroundTransitionsAtStart = ForegroundStateTracker.backgroundTransitions
         )
 
         // When
@@ -933,7 +941,9 @@ internal class RumResourceScopeTest {
             sampleRate = fakeSampleRate,
             networkSettledMetricResolver = mockNetworkSettledMetricResolver,
             rumSessionTypeOverride = fakeRumSessionType,
-            insightsCollector = mockInsightsCollector
+            insightsCollector = mockInsightsCollector,
+            startedInBackground = false,
+            backgroundTransitionsAtStart = ForegroundStateTracker.backgroundTransitions
         )
         whenever(rumMonitor.mockInstance.getAttributes()) doReturn emptyMap()
 
@@ -1504,7 +1514,9 @@ internal class RumResourceScopeTest {
             sampleRate = fakeSampleRate,
             networkSettledMetricResolver = mockNetworkSettledMetricResolver,
             rumSessionTypeOverride = fakeRumSessionType,
-            insightsCollector = mockInsightsCollector
+            insightsCollector = mockInsightsCollector,
+            startedInBackground = false,
+            backgroundTransitionsAtStart = ForegroundStateTracker.backgroundTransitions
         )
 
         // When
@@ -1607,7 +1619,9 @@ internal class RumResourceScopeTest {
             sampleRate = fakeSampleRate,
             networkSettledMetricResolver = mockNetworkSettledMetricResolver,
             rumSessionTypeOverride = fakeRumSessionType,
-            insightsCollector = mockInsightsCollector
+            insightsCollector = mockInsightsCollector,
+            startedInBackground = false,
+            backgroundTransitionsAtStart = ForegroundStateTracker.backgroundTransitions
         )
 
         // When
@@ -1688,7 +1702,9 @@ internal class RumResourceScopeTest {
             sampleRate = fakeSampleRate,
             networkSettledMetricResolver = mockNetworkSettledMetricResolver,
             rumSessionTypeOverride = fakeRumSessionType,
-            insightsCollector = mockInsightsCollector
+            insightsCollector = mockInsightsCollector,
+            startedInBackground = false,
+            backgroundTransitionsAtStart = ForegroundStateTracker.backgroundTransitions
         )
         doAnswer { true }.whenever(mockResolver).isFirstPartyUrl(brokenUrl)
         val attributes = forge.exhaustiveAttributes(excludedKeys = fakeResourceAttributes.keys)
@@ -1788,7 +1804,9 @@ internal class RumResourceScopeTest {
             sampleRate = fakeSampleRate,
             networkSettledMetricResolver = mockNetworkSettledMetricResolver,
             rumSessionTypeOverride = fakeRumSessionType,
-            insightsCollector = mockInsightsCollector
+            insightsCollector = mockInsightsCollector,
+            startedInBackground = false,
+            backgroundTransitionsAtStart = ForegroundStateTracker.backgroundTransitions
         )
         doAnswer { true }.whenever(mockResolver).isFirstPartyUrl(brokenUrl)
         val attributes = forge.exhaustiveAttributes(excludedKeys = fakeResourceAttributes.keys)
@@ -3595,6 +3613,200 @@ internal class RumResourceScopeTest {
 
         // Then
         verify(mockInsightsCollector).onNetworkRequest(any(), any())
+    }
+
+    // endregion
+
+    // region Background
+
+    @Test
+    fun `M keep the duration W handleEvent(StopResource) {app stayed in the foreground}`(
+        @Forgery kind: RumResourceKind,
+        @LongForgery(200, 600) statusCode: Long,
+        @LongForgery(0, 1024) size: Long,
+        @IntForgery(0) transitions: Int
+    ) {
+        // Given
+        testedScope = scopeWithBackgroundState(startedInBackground = false, transitions = transitions)
+
+        // When
+        mockEvent = RumRawEvent.StopResource(
+            fakeKey,
+            statusCode,
+            size,
+            kind,
+            emptyMap(),
+            timeWithOffset(RESOURCE_DURATION_MS),
+            backgroundTransitions = transitions
+        )
+        testedScope.handleEvent(mockEvent, fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        argumentCaptor<ResourceEvent> {
+            verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
+            assertThat(firstValue).hasDuration(TimeUnit.MILLISECONDS.toNanos(RESOURCE_DURATION_MS))
+        }
+        verify(mockInsightsCollector).onNetworkRequest(any(), any())
+    }
+
+    @Test
+    fun `M send the Resource without duration W handleEvent(StopResource) {app went to background meanwhile}`(
+        @Forgery kind: RumResourceKind,
+        @LongForgery(200, 600) statusCode: Long,
+        @LongForgery(0, 1024) size: Long,
+        @IntForgery(0, 1000) transitions: Int,
+        @IntForgery(1, 10) extraTransitions: Int
+    ) {
+        // Given
+        testedScope = scopeWithBackgroundState(startedInBackground = false, transitions = transitions)
+
+        // When
+        mockEvent = RumRawEvent.StopResource(
+            fakeKey,
+            statusCode,
+            size,
+            kind,
+            emptyMap(),
+            timeWithOffset(RESOURCE_DURATION_MS),
+            backgroundTransitions = transitions + extraTransitions
+        )
+        val result = testedScope.handleEvent(mockEvent, fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        argumentCaptor<ResourceEvent> {
+            verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
+            assertThat(firstValue)
+                .hasNoDuration()
+                .hasId(testedScope.resourceId)
+                .hasUrl(fakeUrl)
+                .hasMethod(fakeMethod)
+                .hasKind(kind)
+                .hasStatusCode(statusCode)
+                .hasTimestamp(resolveExpectedTimestamp())
+        }
+        verify(mockInsightsCollector, never()).onNetworkRequest(any(), any())
+        assertThat(result).isNull()
+    }
+
+    @Test
+    fun `M send the Resource without duration W handleEvent(StopResource) {started in background}`(
+        @Forgery kind: RumResourceKind,
+        @LongForgery(200, 600) statusCode: Long,
+        @LongForgery(0, 1024) size: Long,
+        @IntForgery(0) transitions: Int
+    ) {
+        // Given
+        val startEvent = RumRawEvent.StartResource(
+            fakeKey,
+            fakeUrl,
+            fakeMethod,
+            emptyMap(),
+            fakeEventTime,
+            backgroundTransitions = transitions,
+            startedInBackground = true
+        )
+        testedScope = RumResourceScope.fromEvent(
+            parentScope = mockParentScope,
+            sdkCore = rumMonitor.mockSdkCore,
+            event = startEvent,
+            firstPartyHostHeaderTypeResolver = mockResolver,
+            timestampOffset = fakeServerOffset,
+            featuresContextResolver = mockFeaturesContextResolver,
+            sampleRate = fakeSampleRate,
+            networkSettledMetricResolver = mockNetworkSettledMetricResolver,
+            rumSessionTypeOverride = fakeRumSessionType,
+            insightsCollector = mockInsightsCollector
+        ) as RumResourceScope
+
+        // When
+        mockEvent = RumRawEvent.StopResource(
+            fakeKey,
+            statusCode,
+            size,
+            kind,
+            emptyMap(),
+            timeWithOffset(RESOURCE_DURATION_MS),
+            backgroundTransitions = transitions
+        )
+        testedScope.handleEvent(mockEvent, fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        argumentCaptor<ResourceEvent> {
+            verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
+            assertThat(firstValue)
+                .hasNoDuration()
+                .hasUrl(fakeUrl)
+                .hasStatusCode(statusCode)
+        }
+        verify(mockInsightsCollector, never()).onNetworkRequest(any(), any())
+    }
+
+    @Test
+    fun `M keep the duration W handleEvent(StopResource+AddResourceTiming) {background after stop}`(
+        @Forgery kind: RumResourceKind,
+        @LongForgery(200, 600) statusCode: Long,
+        @LongForgery(0, 1024) size: Long,
+        @Forgery timing: ResourceTiming,
+        @IntForgery(0, 1000) transitions: Int
+    ) {
+        // Given
+        testedScope = scopeWithBackgroundState(startedInBackground = false, transitions = transitions)
+        testedScope.handleEvent(
+            RumRawEvent.WaitForResourceTiming(fakeKey),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+        testedScope.handleEvent(
+            RumRawEvent.StopResource(
+                fakeKey,
+                statusCode,
+                size,
+                kind,
+                emptyMap(),
+                timeWithOffset(RESOURCE_DURATION_MS),
+                backgroundTransitions = transitions
+            ),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        // When
+        // The timing arrives after the app went to the background; only start and stop matter.
+        testedScope.handleEvent(
+            RumRawEvent.AddResourceTiming(fakeKey, timing, timeWithOffset(RESOURCE_DURATION_MS * 2)),
+            fakeDatadogContext,
+            mockEventWriteScope,
+            mockWriter
+        )
+
+        // Then
+        argumentCaptor<ResourceEvent> {
+            verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
+            assertThat(firstValue).hasDurationGreaterThan(TimeUnit.MILLISECONDS.toNanos(RESOURCE_DURATION_MS))
+        }
+    }
+
+    private fun scopeWithBackgroundState(startedInBackground: Boolean, transitions: Int): RumResourceScope {
+        return RumResourceScope(
+            parentScope = mockParentScope,
+            sdkCore = rumMonitor.mockSdkCore,
+            url = fakeUrl,
+            method = fakeMethod,
+            key = fakeKey,
+            eventTime = fakeEventTime,
+            initialAttributes = fakeResourceAttributes,
+            serverTimeOffsetInMs = fakeServerOffset,
+            firstPartyHostHeaderTypeResolver = mockResolver,
+            featuresContextResolver = mockFeaturesContextResolver,
+            sampleRate = fakeSampleRate,
+            networkSettledMetricResolver = mockNetworkSettledMetricResolver,
+            rumSessionTypeOverride = fakeRumSessionType,
+            insightsCollector = mockInsightsCollector,
+            startedInBackground = startedInBackground,
+            backgroundTransitionsAtStart = transitions
+        )
     }
 
     // endregion

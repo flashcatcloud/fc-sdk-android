@@ -8,6 +8,7 @@ package com.datadog.android.rum.internal.domain.scope
 
 import com.datadog.android.core.feature.event.ThreadDump
 import com.datadog.android.internal.telemetry.InternalTelemetryEvent
+import com.datadog.android.rum.ForegroundStateTracker
 import com.datadog.android.rum.RumActionType
 import com.datadog.android.rum.RumErrorSource
 import com.datadog.android.rum.RumPerformanceMetric
@@ -58,7 +59,10 @@ internal sealed class RumRawEvent {
         val url: String,
         val method: RumResourceMethod,
         val attributes: Map<String, Any?>,
-        override val eventTime: Time = Time()
+        override val eventTime: Time = Time(),
+        // Read on the calling thread, so the state is the one at the call, not when the worker handles the event.
+        val backgroundTransitions: Int = ForegroundStateTracker.backgroundTransitions,
+        val startedInBackground: Boolean = ForegroundStateTracker.isInBackground()
     ) : RumRawEvent()
 
     internal data class WaitForResourceTiming(
@@ -78,7 +82,8 @@ internal sealed class RumRawEvent {
         val size: Long?,
         val kind: RumResourceKind,
         val attributes: Map<String, Any?>,
-        override val eventTime: Time = Time()
+        override val eventTime: Time = Time(),
+        val backgroundTransitions: Int = ForegroundStateTracker.backgroundTransitions
     ) : RumRawEvent()
 
     internal data class StopResourceWithError(

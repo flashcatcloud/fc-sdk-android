@@ -58,7 +58,9 @@ internal class RumResourceScope(
     internal val sampleRate: Float,
     networkSettledMetricResolver: NetworkSettledMetricResolver,
     private val rumSessionTypeOverride: RumSessionType?,
-    internal val insightsCollector: InsightsCollector
+    internal val insightsCollector: InsightsCollector,
+    startedInBackground: Boolean,
+    private val backgroundTransitionsAtStart: Int
 ) : RumScope {
 
     internal val resourceId: String = UUID.randomUUID().toString()
@@ -77,6 +79,10 @@ internal class RumResourceScope(
     private var kind: RumResourceKind = RumResourceKind.UNKNOWN
     private var statusCode: Long? = null
     private var size: Long? = null
+
+    // A request in flight while the app is in the background can be frozen or deferred by the OS, so the
+    // wall-clock duration would count time the request never ran. Such a resource is sent without a duration.
+    private var spannedBackground = startedInBackground
 
     init {
         networkSettledMetricResolver.resourceWasStarted(
@@ -142,6 +148,7 @@ internal class RumResourceScope(
         kind = event.kind
         statusCode = event.statusCode
         size = event.size
+        spannedBackground = spannedBackground || event.backgroundTransitions != backgroundTransitionsAtStart
 
         if (!(waitForTiming && timing == null)) {
             sendResource(kind, event.statusCode, event.size, event.eventTime, datadogContext, writeScope, writer)
@@ -270,8 +277,8 @@ internal class RumResourceScope(
                 datadogContext,
                 rumContext.viewId.orEmpty()
             )
-            val duration = resolveResourceDuration(eventTime)
-            insightsCollector.onNetworkRequest(eventTimestamp, duration)
+            val duration = if (spannedBackground) null else resolveResourceDuration(eventTime)
+            duration?.let { insightsCollector.onNetworkRequest(eventTimestamp, it) }
             ResourceEvent(
                 date = eventTimestamp,
                 resource = ResourceEvent.Resource(
@@ -650,7 +657,9 @@ internal class RumResourceScope(
                 sampleRate = sampleRate,
                 networkSettledMetricResolver = networkSettledMetricResolver,
                 rumSessionTypeOverride = rumSessionTypeOverride,
-                insightsCollector = insightsCollector
+                insightsCollector = insightsCollector,
+                startedInBackground = event.startedInBackground,
+                backgroundTransitionsAtStart = event.backgroundTransitions
             )
         }
     }
