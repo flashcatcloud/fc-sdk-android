@@ -6,6 +6,7 @@
 package com.datadog.android.rum
 
 import android.app.Activity
+import android.app.ActivityManager
 import android.app.Application
 import android.os.Bundle
 import android.util.Log
@@ -22,8 +23,16 @@ object ForegroundStateTracker : Application.ActivityLifecycleCallbacks {
     // Weak, so the process-wide object never keeps an activity alive. Membership (unlike a counter) ignores
     // the stop of an activity started before registration while another one is still visible.
     private val started: MutableSet<Activity> = Collections.newSetFromMap(WeakHashMap())
+
+    // Created but not yet started: an activity about to be shown, so work done in its onCreate is not background.
+    private val pending: MutableSet<Activity> = Collections.newSetFromMap(WeakHashMap())
     private var foreground = false
     private val listeners = mutableSetOf<(Boolean) -> Unit>()
+
+    /** Number of foreground to background transitions since process start; it only increases. */
+    @Volatile
+    var backgroundTransitions: Int = 0
+        private set
 
     @Synchronized
     fun register(application: Application) {
@@ -32,6 +41,15 @@ object ForegroundStateTracker : Application.ActivityLifecycleCallbacks {
             registered = true
         }
     }
+
+    /**
+     * Whether the process is in the background: no activity is started or about to start. A process launched in
+     * the foreground is not in the background before its first activity starts; a process launched in the
+     * background (e.g. by a broadcast) is, until an activity is created.
+     */
+    @Synchronized
+    fun isInBackground(): Boolean =
+        !foreground && pending.isEmpty() && (backgroundTransitions > 0 || launchedInBackground())
 
     @Synchronized
     fun addListener(listener: (Boolean) -> Unit) {
@@ -44,6 +62,7 @@ object ForegroundStateTracker : Application.ActivityLifecycleCallbacks {
 
     @Synchronized
     override fun onActivityStarted(activity: Activity) {
+        pending.remove(activity)
         started.add(activity)
         if (!foreground) {
             foreground = true
@@ -57,15 +76,35 @@ object ForegroundStateTracker : Application.ActivityLifecycleCallbacks {
         // A rotation stops the old activity before the new one starts; it is not a background transition.
         if (removed && started.isEmpty() && foreground && !activity.isChangingConfigurations) {
             foreground = false
+            backgroundTransitions++
             notifyListeners(false)
         }
     }
 
-    override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
+    @Synchronized
+    override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+        pending.add(activity)
+    }
+
+    @Synchronized
+    override fun onActivityDestroyed(activity: Activity) {
+        // An activity finished from its onCreate is never started or stopped. If it was the last one about to be
+        // shown, the process leaves the screen here: count it, which also ends the foreground launch exemption.
+        val removed = pending.remove(activity)
+        if (removed && pending.isEmpty() && started.isEmpty() && !activity.isChangingConfigurations) {
+            backgroundTransitions++
+        }
+    }
+
     override fun onActivityResumed(activity: Activity) = Unit
     override fun onActivityPaused(activity: Activity) = Unit
     override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
-    override fun onActivityDestroyed(activity: Activity) = Unit
+
+    // 0 means the importance is unknown (DdRumContentProvider did not run); treat it as a foreground launch.
+    private fun launchedInBackground(): Boolean {
+        val importance = DdRumContentProvider.processImportance
+        return importance != 0 && importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+    }
 
     private fun notifyListeners(foreground: Boolean) {
         listeners.toList().forEach { notifyListener(it, foreground) }
