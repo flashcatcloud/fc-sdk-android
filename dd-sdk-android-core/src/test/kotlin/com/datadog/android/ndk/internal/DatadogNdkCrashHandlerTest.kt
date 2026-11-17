@@ -285,18 +285,30 @@ internal class DatadogNdkCrashHandlerTest {
     }
 
     @Test
-    fun `M not send RUM event W handleNdkCrash() { missing last RUM view event }`() {
+    fun `M send RUM event without a view W handleNdkCrash() { missing last RUM view event }`() {
         // Given
         testedHandler.lastNdkCrashLog = fakeNdkCrashLog
 
         // When
         testedHandler.handleNdkCrash(mockSdkCore)
 
-        // Then
+        // Then - RUM reports a crash that belongs to no view known here in a session of its own
         verify(mockExecutorService).execute(captureRunnable.capture())
         verifyNoInteractions(mockSdkCore)
         captureRunnable.firstValue.run()
-        verifyNoInteractions(mockInternalLogger, mockRumFeatureScope)
+        verify(mockRumFeatureScope).sendEvent(
+            mapOf(
+                "type" to "ndk_crash",
+                "sourceType" to "ndk",
+                "timestamp" to fakeNdkCrashLog.timestamp,
+                "timeSinceAppStartMs" to fakeNdkCrashLog.timeSinceAppStartMs,
+                "signalName" to fakeNdkCrashLog.signalName,
+                "stacktrace" to fakeNdkCrashLog.stacktrace,
+                "message" to DatadogNdkCrashHandler.LOG_CRASH_MSG
+                    .format(Locale.US, fakeNdkCrashLog.signalName),
+                "lastViewEvent" to null
+            )
+        )
     }
 
     @Test

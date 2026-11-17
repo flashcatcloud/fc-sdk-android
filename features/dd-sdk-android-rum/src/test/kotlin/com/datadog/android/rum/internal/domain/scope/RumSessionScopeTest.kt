@@ -25,6 +25,7 @@ import com.datadog.android.rum.BeforeSamplingCallback
 import com.datadog.android.rum.BeforeSamplingContext
 import com.datadog.android.rum.RumSessionListener
 import com.datadog.android.rum.RumSessionType
+import com.datadog.android.rum.internal.DatadogLateCrashReporter
 import com.datadog.android.rum.internal.domain.InfoProvider
 import com.datadog.android.rum.internal.domain.RumContext
 import com.datadog.android.rum.internal.domain.Time
@@ -50,6 +51,7 @@ import com.datadog.android.rum.model.ViewEvent
 import com.datadog.android.rum.model.VitalAppLaunchEvent
 import com.datadog.android.rum.utils.forge.Configurator
 import com.datadog.tools.unit.forge.exhaustiveAttributes
+import com.google.gson.JsonParser
 import fr.xgouchet.elmyr.Forge
 import fr.xgouchet.elmyr.annotation.BoolForgery
 import fr.xgouchet.elmyr.annotation.FloatForgery
@@ -74,6 +76,7 @@ import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.isA
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -456,6 +459,183 @@ internal class RumSessionScopeTest {
         assertThat(context.sessionStartReason).isEqualTo(RumSessionScope.StartReason.USER_APP_LAUNCH)
         assertThat(context.applicationId).isEqualTo(fakeParentContext.applicationId)
         assertThat(context.viewId).isEqualTo(fakeParentContext.viewId)
+    }
+
+    @Test
+    fun `M mark the last view slot W handleEvent(view) {session drawn as not tracked}`(
+        forge: Forge
+    ) {
+        // Given
+        initializeTestedScope(0f)
+        val event = forge.startViewEvent()
+
+        // When
+        testedScope.handleEvent(event, fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then - the slot is read first, so what an earlier run left there still reaches its crash
+        val sessionId = testedScope.getRumContext().sessionId
+        inOrder(mockSdkCore) {
+            verify(mockSdkCore).lastViewEvent
+            verify(mockSdkCore).writeLastViewEvent(
+                DatadogLateCrashReporter.untrackedSessionMarker(sessionId, event.eventTime.timestamp)
+            )
+        }
+    }
+
+    @Test
+    fun `M mark the last view slot with the session W handleEvent(view) {session tracked}`(
+        forge: Forge
+    ) {
+        // Given
+        initializeTestedScope(100f)
+        val event = forge.startViewEvent()
+
+        // When
+        testedScope.handleEvent(event, fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then - read first, so what an earlier run left there still reaches its crash
+        val sessionId = testedScope.getRumContext().sessionId
+        inOrder(mockSdkCore) {
+            verify(mockSdkCore).lastViewEvent
+            verify(mockSdkCore).writeLastViewEvent(
+                DatadogLateCrashReporter.trackedSessionMarker(
+                    DatadogLateCrashReporter.CrashSession(
+                        sessionId,
+                        fakeParentContext.applicationId,
+                        100f,
+                        sampledForError = false
+                    ),
+                    event.eventTime.timestamp
+                )
+            )
+        }
+        verify(mockSdkCore, never()).deleteLastViewEvent()
+    }
+
+    @Test
+    fun `M mark the session kept on error W handleEvent(view) {rate misses, on error}`(
+        forge: Forge
+    ) {
+        // Given
+        initializeTestedScope(0f, withheldEvents = mock(), sessionOnError = true)
+        val event = forge.startViewEvent()
+
+        // When
+        testedScope.handleEvent(event, fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        val sessionId = testedScope.getRumContext().sessionId
+        verify(mockSdkCore).writeLastViewEvent(
+            DatadogLateCrashReporter.trackedSessionMarker(
+                DatadogLateCrashReporter.CrashSession(
+                    sessionId,
+                    fakeParentContext.applicationId,
+                    0f,
+                    sampledForError = true
+                ),
+                event.eventTime.timestamp
+            )
+        )
+    }
+
+    @Test
+    fun `M mark the slot after the ended session clears it W handleEvent(view) {kept on error, renewed}`(
+        forge: Forge
+    ) {
+        // Given - a session kept on error that ends without an error has its slot cleared
+        val mockWithheldEvents = mock<WithheldEventWriter>()
+        initializeTestedScope(0f, withheldEvents = mockWithheldEvents, sessionOnError = true)
+        testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        val endedSessionId = testedScope.getRumContext().sessionId
+        assertThat(testedScope.getRumContext().sessionState).isEqualTo(RumSessionScope.State.WITHHELD)
+        advanceTimeByMs(TEST_INACTIVITY_MS)
+
+        // When
+        testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then - the next session's marker is written after that clear, so it survives it
+        assertThat(testedScope.getRumContext().sessionId).isNotEqualTo(endedSessionId)
+        inOrder(mockWithheldEvents, mockSdkCore) {
+            verify(mockWithheldEvents).endSession(eq(endedSessionId), any())
+            verify(mockSdkCore).writeLastViewEvent(any())
+        }
+    }
+
+    @Test
+    fun `M replace the untracked marker W handleEvent(ResetSession) {session drawn as tracked after one not tracked}`(
+        forge: Forge
+    ) {
+        // Given - the console's rate goes from 0 to 100 between two sessions of one run
+        val published = AtomicReference(RemoteConfigValues(0f, 1))
+        val remoteConfig = mock<RemoteConfigStore>()
+        whenever(remoteConfig.snapshot()).thenAnswer { published.get() }
+        initializeTestedScope(remoteConfig = remoteConfig)
+        testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        assertThat(testedScope.getRumContext().sessionState).isEqualTo(RumSessionScope.State.NOT_TRACKED)
+        published.set(RemoteConfigValues(100f, 2))
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then - a crash of the new session before its first view is not taken for the old one's
+        assertThat(testedScope.getRumContext().sessionState).isEqualTo(RumSessionScope.State.TRACKED)
+        assertThat(lastMarkerKey()).isEqualTo(TRACKED_MARKER_KEY)
+    }
+
+    @Test
+    fun `M keep marking W handleEvent(ResetSession) {two sessions drawn as not tracked}`(
+        forge: Forge
+    ) {
+        // Given
+        initializeTestedScope(0f)
+        testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // When
+        testedScope.handleEvent(RumRawEvent.ResetSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then - the new session's marker replaces the old one
+        verify(mockSdkCore, times(2)).writeLastViewEvent(any())
+        verify(mockSdkCore, never()).deleteLastViewEvent()
+        assertThat(lastMarkerKey()).isEqualTo(UNTRACKED_MARKER_KEY)
+    }
+
+    @Test
+    fun `M replace the untracked marker W handleEvent(view) {new scope after a stopped untracked one}`(
+        forge: Forge
+    ) {
+        // Given - a session drawn as not tracked is stopped; the rate then goes to 100, and the
+        // next interaction starts a session in a scope of its own, as the application scope does
+        initializeTestedScope(0f)
+        testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        testedScope.handleEvent(RumRawEvent.StopSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        assertThat(lastMarkerKey()).isEqualTo(UNTRACKED_MARKER_KEY)
+        initializeTestedScope(100f)
+
+        // When
+        testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then
+        assertThat(testedScope.getRumContext().sessionState).isEqualTo(RumSessionScope.State.TRACKED)
+        assertThat(lastMarkerKey()).isEqualTo(TRACKED_MARKER_KEY)
+    }
+
+    @Test
+    fun `M not mark the slot W handleEvent(view) {stopped session renewed while draining}`(
+        forge: Forge
+    ) {
+        // Given - no on-error capture: a stopped session still renews on an interaction once expired
+        initializeTestedScope(100f)
+        testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        testedScope.handleEvent(RumRawEvent.StopSession(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        val stoppedSessionId = testedScope.getRumContext().sessionId
+        advanceTimeByMs(TEST_INACTIVITY_MS)
+
+        // When
+        testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then - it was drawn again, but the slot speaks for the session that replaced it
+        assertThat(testedScope.getRumContext().sessionId).isNotEqualTo(stoppedSessionId)
+        verify(mockSdkCore, times(1)).writeLastViewEvent(any())
     }
 
     @Test
@@ -2853,6 +3033,13 @@ internal class RumSessionScopeTest {
 
     // endregion
 
+    /** The marker key of the last marker this scope wrote to the slot of the last view. */
+    private fun lastMarkerKey(): String {
+        val captor = argumentCaptor<ByteArray>()
+        verify(mockSdkCore, atLeastOnce()).writeLastViewEvent(captor.capture())
+        return JsonParser.parseString(String(captor.lastValue, Charsets.UTF_8)).asJsonObject.keySet().single()
+    }
+
     private fun initializeTestedScope(
         sampleRate: Float = 100f,
         withMockChildScope: Boolean = true,
@@ -2908,6 +3095,8 @@ internal class RumSessionScopeTest {
 
         private const val TEST_SLEEP_MS = 50L
         private const val TEST_INACTIVITY_MS = TEST_SLEEP_MS * 3
+        private const val TRACKED_MARKER_KEY = "fc_tracked_session"
+        private const val UNTRACKED_MARKER_KEY = "fc_untracked_session"
         private const val TEST_MAX_DURATION_MS = TEST_SLEEP_MS * 10
 
         private val TEST_INACTIVITY_NS = TimeUnit.MILLISECONDS.toNanos(TEST_INACTIVITY_MS)

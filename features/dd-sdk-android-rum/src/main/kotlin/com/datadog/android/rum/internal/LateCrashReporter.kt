@@ -17,11 +17,19 @@ internal interface LateCrashReporter {
 
     fun handleNdkCrashEvent(event: Map<*, *>, rumWriter: DataWriter<Any>)
 
+    /**
+     * @param lastRumViewEventJson what the slot of the last view held at launch, if anything.
+     * @param previousExitTimestamp when the run of the same process before the ANR ended, if known:
+     * the crashed run started after it.
+     * @param isLastExit whether the ANR ended the last run of its process.
+     */
     @WorkerThread
     @RequiresApi(Build.VERSION_CODES.R)
     fun handleAnrCrash(
         anrExitInfo: ApplicationExitInfo,
-        lastRumViewEventJson: JsonObject,
+        lastRumViewEventJson: JsonObject?,
+        previousExitTimestamp: Long?,
+        isLastExit: Boolean,
         rumWriter: DataWriter<Any>
     )
 }

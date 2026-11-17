@@ -21,6 +21,7 @@ import com.datadog.android.rum.BeforeSamplingCallback
 import com.datadog.android.rum.BeforeSamplingContext
 import com.datadog.android.rum.RumSessionListener
 import com.datadog.android.rum.RumSessionType
+import com.datadog.android.rum.internal.DatadogLateCrashReporter
 import com.datadog.android.rum.internal.domain.InfoProvider
 import com.datadog.android.rum.internal.domain.RumContext
 import com.datadog.android.rum.internal.domain.Time
@@ -490,6 +491,8 @@ internal class RumSessionScope(
             else -> State.NOT_TRACKED
         }
         sessionId = UUID.randomUUID().toString()
+        // A stopped session draining alongside the one that replaced it does not speak for the slot.
+        if (isActive) markSession(time.timestamp, writeScope)
         replayOnError = withheldEvents != null && (remoteValues?.sessionReplayOnError ?: sessionReplayOnError)
         val drawnSessionId = sessionId
         replayWatched = !sampledForError && keepSession && replayOnError
@@ -536,51 +539,39 @@ internal class RumSessionScope(
     }
 
     /**
-     * FLASHCAT FORK - what a draw made now would use: the console's values where it set them, the
-     * init values where it did not, and the host application's hook with the last word on the
-     * rate. The hook's documented contract is that 0 never collects, so a rate it sets to 0 turns
-     * the on-error switch off too - "never" must not quietly become "on error". A rate it leaves
-     * alone leaves the switch alone.
+     * FLASHCAT FORK - every draw marks the slot of the last view with its session, until the
+     * session's first view replaces the marker. A crash before that view is then known at the next
+     * launch for one of this session: not reported if the session was left out of the sample, and
+     * reported in this session, as drawn, if it was kept - not drawn a second time, which would
+     * keep a kept session's crash only at the rate squared.
      */
-    private fun resolveSampling(remoteValues: RemoteConfigValues?): Sampling {
-        val rate = remoteValues?.sessionSampleRate ?: sampleRate
-        val onError = remoteValues?.sessionOnError ?: sessionOnError
-        val override = askBeforeSampling(rate, remoteValues?.custom)
-        return if (override == null) {
-            Sampling(rate, onError)
+    private fun markSession(timestamp: Long, writeScope: EventWriteScope) {
+        val marker = if (sessionState == State.NOT_TRACKED) {
+            DatadogLateCrashReporter.untrackedSessionMarker(sessionId, timestamp)
         } else {
-            Sampling(override, onError && override != 0f)
-        }
-    }
-
-    private data class Sampling(val rate: Float, val onError: Boolean)
-
-    /**
-     * FLASHCAT FORK - asks the host application's hook for the rate to draw with, or null to keep
-     * the incoming one. Anything unusable — a throw, a null, a rate outside 0..100 — leaves the
-     * incoming rate alone: a mistake in the host application must never take a customer's
-     * collection down with it.
-     */
-    private fun askBeforeSampling(rate: Float, customJson: String?): Float? {
-        val hook = beforeSampling ?: return null
-        val override = try {
-            val custom = decodeCustomValues(customJson)
-            hook.sampleRate(BeforeSamplingContext(sessionSampleRate = rate, custom = custom))
-        } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
-            sdkCore.internalLogger.log(
-                InternalLogger.Level.ERROR,
-                InternalLogger.Target.USER,
-                { BEFORE_SAMPLING_THREW_MESSAGE.format(rate) },
-                e
+            DatadogLateCrashReporter.trackedSessionMarker(
+                DatadogLateCrashReporter.CrashSession(
+                    id = sessionId,
+                    applicationId = parentScope.getRumContext().applicationId,
+                    sampleRate = effectiveSampleRate,
+                    sampledForError = sampledForError
+                ),
+                timestamp
             )
-            null
         }
-        return if (override == null || override.isNaN() || override < 0f || override > MAX_SAMPLE_RATE) {
-            null
-        } else {
-            override
+        writeScope {
+            // Read before it is replaced: what the previous run left there is still owed to its
+            // crash, which may be read after this.
+            sdkCore.lastViewEvent
+            sdkCore.writeLastViewEvent(marker)
         }
     }
+
+    /** FLASHCAT FORK - the rate a session is drawn at, and whether one the rate misses is kept on error. */
+    internal data class Sampling(val rate: Float, val onError: Boolean)
+
+    private fun resolveSampling(remoteValues: RemoteConfigValues?): Sampling =
+        resolveSampling(sampleRate, sessionOnError, remoteValues, beforeSampling, sdkCore.internalLogger)
 
     private fun updateSessionStateForSessionReplay(state: State, sessionId: String) {
         // FLASHCAT FORK - where on-error capture is in use, a stopped session draining alongside the
@@ -628,6 +619,63 @@ internal class RumSessionScope(
         internal const val RUM_SESSION_ERRORED_BUS_MESSAGE = "rum_session_errored"
 
         private const val MAX_SAMPLE_RATE = 100f
+
+        /**
+         * FLASHCAT FORK - what a draw made now would use: the console's values where it set them,
+         * the init values where it did not, and the host application's hook with the last word on
+         * the rate. The hook's documented contract is that 0 never collects, so a rate it sets to 0
+         * turns the on-error switch off too - "never" must not quietly become "on error". A rate it
+         * leaves alone leaves the switch alone. Shared with a crash reported on the next launch that
+         * needs a session of its own, which is drawn like any new session.
+         */
+        internal fun resolveSampling(
+            sampleRate: Float,
+            sessionOnError: Boolean,
+            remoteValues: RemoteConfigValues?,
+            beforeSampling: BeforeSamplingCallback?,
+            internalLogger: InternalLogger
+        ): Sampling {
+            val rate = remoteValues?.sessionSampleRate ?: sampleRate
+            val onError = remoteValues?.sessionOnError ?: sessionOnError
+            val override = askBeforeSampling(beforeSampling, rate, remoteValues?.custom, internalLogger)
+            return if (override == null) {
+                Sampling(rate, onError)
+            } else {
+                Sampling(override, onError && override != 0f)
+            }
+        }
+
+        /**
+         * FLASHCAT FORK - asks the host application's hook for the rate to draw with, or null to
+         * keep the incoming one. Anything unusable — a throw, a null, a rate outside 0..100 — leaves
+         * the incoming rate alone: a mistake in the host application must never take a customer's
+         * collection down with it.
+         */
+        private fun askBeforeSampling(
+            beforeSampling: BeforeSamplingCallback?,
+            rate: Float,
+            customJson: String?,
+            internalLogger: InternalLogger
+        ): Float? {
+            val hook = beforeSampling ?: return null
+            val override = try {
+                val custom = decodeCustomValues(customJson)
+                hook.sampleRate(BeforeSamplingContext(sessionSampleRate = rate, custom = custom))
+            } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
+                internalLogger.log(
+                    InternalLogger.Level.ERROR,
+                    InternalLogger.Target.USER,
+                    { BEFORE_SAMPLING_THREW_MESSAGE.format(rate) },
+                    e
+                )
+                null
+            }
+            return if (override == null || override.isNaN() || override < 0f || override > MAX_SAMPLE_RATE) {
+                null
+            } else {
+                override
+            }
+        }
 
         // FLASHCAT FORK - what a forced session reports as its rate: it is kept unconditionally,
         // which is what a rate of a hundred means.
