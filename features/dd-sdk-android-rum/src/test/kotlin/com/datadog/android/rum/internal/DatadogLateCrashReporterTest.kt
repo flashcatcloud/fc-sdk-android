@@ -116,7 +116,7 @@ internal class DatadogLateCrashReporterTest {
     @Forgery
     lateinit var fakeDatadogContext: DatadogContext
 
-    private var fakeNewSession: DatadogLateCrashReporter.NewSession? = null
+    private var fakeNewSession: DatadogLateCrashReporter.CrashSession? = null
     private var drawCount = 0
 
     @BeforeEach
@@ -1298,7 +1298,7 @@ internal class DatadogLateCrashReporterTest {
         @StringForgery fakeApplicationId: String
     ) {
         // Given
-        fakeNewSession = DatadogLateCrashReporter.NewSession(fakeApplicationId, 100f, sampledForError = false)
+        fakeNewSession = DatadogLateCrashReporter.CrashSession(DRAWN_SESSION_ID, fakeApplicationId, 100f, sampledForError = false)
         val mockAnrExitInfo = anrExitInfo(fakeTimestamp, ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND)
         whenever(mockAndroidTraceParser.parse(any())) doReturn emptyList()
 
@@ -1590,7 +1590,7 @@ internal class DatadogLateCrashReporterTest {
         @FloatForgery(min = 0f, max = 100f) fakeSampleRate: Float
     ) {
         // Given
-        fakeNewSession = DatadogLateCrashReporter.NewSession(fakeApplicationId, fakeSampleRate, sampledForError = false)
+        fakeNewSession = DatadogLateCrashReporter.CrashSession(DRAWN_SESSION_ID, fakeApplicationId, fakeSampleRate, sampledForError = false)
         val offset = fakeDatadogContext.time.serverTimeOffsetMs
 
         // When
@@ -1623,7 +1623,7 @@ internal class DatadogLateCrashReporterTest {
         @StringForgery fakeApplicationId: String
     ) {
         // Given - the crashed process's clock offset, kept with the beacon, is not this launch's
-        fakeNewSession = DatadogLateCrashReporter.NewSession(fakeApplicationId, 100f, sampledForError = false)
+        fakeNewSession = DatadogLateCrashReporter.CrashSession(DRAWN_SESSION_ID, fakeApplicationId, 100f, sampledForError = false)
         val fakeCrashDate = fakeTimestamp + fakeDatadogContext.time.serverTimeOffsetMs + 90_000L
         val fakeEvent = ndkCrash(fakeTimestamp, lastViewEvent = null) + mapOf(
             "crashId" to "6a1f0c2e-3b4d-4e5f-8a9b-0c1d2e3f4a5b",
@@ -1650,7 +1650,7 @@ internal class DatadogLateCrashReporterTest {
         @StringForgery fakeApplicationId: String
     ) {
         // Given
-        fakeNewSession = DatadogLateCrashReporter.NewSession(fakeApplicationId, 0f, sampledForError = true)
+        fakeNewSession = DatadogLateCrashReporter.CrashSession(DRAWN_SESSION_ID, fakeApplicationId, 0f, sampledForError = true)
 
         // When
         testedHandler.handleNdkCrashEvent(ndkCrash(fakeTimestamp, lastViewEvent = null), mockRumWriter)
@@ -1685,7 +1685,7 @@ internal class DatadogLateCrashReporterTest {
         @StringForgery fakeApplicationId: String
     ) {
         // Given
-        fakeNewSession = DatadogLateCrashReporter.NewSession(fakeApplicationId, 100f, sampledForError = false)
+        fakeNewSession = DatadogLateCrashReporter.CrashSession(DRAWN_SESSION_ID, fakeApplicationId, 100f, sampledForError = false)
         val marker = untrackedMarker(date = fakeTimestamp - 1_000)
 
         // When
@@ -1705,7 +1705,7 @@ internal class DatadogLateCrashReporterTest {
         @StringForgery fakeApplicationId: String
     ) {
         // Given - marked before the crashed run started
-        fakeNewSession = DatadogLateCrashReporter.NewSession(fakeApplicationId, 100f, sampledForError = false)
+        fakeNewSession = DatadogLateCrashReporter.CrashSession(DRAWN_SESSION_ID, fakeApplicationId, 100f, sampledForError = false)
         val marker = untrackedMarker(date = fakeTimestamp - 6_000)
 
         // When
@@ -1720,12 +1720,124 @@ internal class DatadogLateCrashReporterTest {
     }
 
     @Test
+    fun `M report in the crashed run's session W handleNdkCrashEvent() { tracked marker, no view yet }`(
+        @LongForgery(min = 10_000, max = 1_000_000_000_000L) fakeTimestamp: Long,
+        @StringForgery fakeApplicationId: String,
+        @FloatForgery(min = 1f, max = 100f) fakeSampleRate: Float
+    ) {
+        // Given - the session was drawn as kept, and crashed before its first view
+        val drawn = DatadogLateCrashReporter.CrashSession("tracked-session", fakeApplicationId, fakeSampleRate, false)
+        val marker = trackedMarker(drawn, date = fakeTimestamp - 1_000)
+
+        // When
+        testedHandler.handleNdkCrashEvent(
+            ndkCrash(fakeTimestamp, lastViewEvent = marker, timeSinceAppStartMs = 5_000L),
+            mockRumWriter
+        )
+
+        // Then - reported as it was drawn, not drawn a second time
+        assertThat(drawCount).isZero()
+        argumentCaptor<Any> {
+            verify(mockRumWriter, times(2)).write(eq(mockEventBatchWriter), capture(), eq(EventType.CRASH))
+            val error = allValues.filterIsInstance<ErrorEvent>().single()
+            val view = allValues.filterIsInstance<ViewEvent>().single()
+            assertThat(view.session.id).isEqualTo("tracked-session")
+            assertThat(view.application.id).isEqualTo(fakeApplicationId)
+            assertThat(view.session.sampledForError).isNull()
+            assertThat(view.dd.configuration?.sessionSampleRate).isEqualTo(fakeSampleRate)
+            assertThat(view.view.name).isEqualTo("ApplicationLaunch")
+            assertThat(error.session.id).isEqualTo("tracked-session")
+            assertThat(error.view.id).isEqualTo(view.view.id)
+            assertThat(error.dd.configuration?.sessionSampleRate).isEqualTo(fakeSampleRate)
+        }
+    }
+
+    @Test
+    fun `M report in the crashed run's session W handleNdkCrashEvent() { marker of a session kept on error }`(
+        @LongForgery(min = 10_000, max = 1_000_000_000_000L) fakeTimestamp: Long,
+        @StringForgery fakeApplicationId: String
+    ) {
+        // Given
+        val drawn = DatadogLateCrashReporter.CrashSession("withheld-session", fakeApplicationId, 0f, true)
+        val marker = trackedMarker(drawn, date = fakeTimestamp - 1_000)
+
+        // When
+        testedHandler.handleNdkCrashEvent(
+            ndkCrash(fakeTimestamp, lastViewEvent = marker, timeSinceAppStartMs = 5_000L),
+            mockRumWriter
+        )
+
+        // Then
+        assertThat(drawCount).isZero()
+        argumentCaptor<Any> {
+            verify(mockRumWriter, times(2)).write(eq(mockEventBatchWriter), capture(), eq(EventType.CRASH))
+            val view = allValues.filterIsInstance<ViewEvent>().single()
+            val error = allValues.filterIsInstance<ErrorEvent>().single()
+            assertThat(view.session.id).isEqualTo("withheld-session")
+            assertThat(view.session.sampledForError).isTrue
+            assertThat(view.dd.configuration?.sessionSampleRate).isEqualTo(0f)
+            assertThat(error.session.id).isEqualTo("withheld-session")
+            assertThat(error.dd.configuration?.sessionSampleRate).isEqualTo(0f)
+        }
+    }
+
+    @Test
+    fun `M report in a session of its own W handleNdkCrashEvent() { tracked marker of an earlier run }`(
+        @LongForgery(min = 10_000, max = 1_000_000_000_000L) fakeTimestamp: Long,
+        @StringForgery fakeApplicationId: String
+    ) {
+        // Given - marked before the crashed run started
+        fakeNewSession = DatadogLateCrashReporter.CrashSession(DRAWN_SESSION_ID, fakeApplicationId, 100f, false)
+        val drawn = DatadogLateCrashReporter.CrashSession("earlier-session", fakeApplicationId, 100f, false)
+        val marker = trackedMarker(drawn, date = fakeTimestamp - 6_000)
+
+        // When
+        testedHandler.handleNdkCrashEvent(
+            ndkCrash(fakeTimestamp, lastViewEvent = marker, timeSinceAppStartMs = 5_000L),
+            mockRumWriter
+        )
+
+        // Then
+        assertThat(drawCount).isEqualTo(1)
+        argumentCaptor<Any> {
+            verify(mockRumWriter, times(2)).write(eq(mockEventBatchWriter), capture(), eq(EventType.CRASH))
+            assertThat(allValues.filterIsInstance<ViewEvent>().single().session.id).isEqualTo(DRAWN_SESSION_ID)
+        }
+    }
+
+    @Test
+    fun `M report in a session of its own W handleNdkCrashEvent() { tracked marker older than 4h before the crash }`(
+        @LongForgery(min = 10_000, max = 1_000_000_000_000L) fakeTimestamp: Long,
+        @StringForgery fakeApplicationId: String
+    ) {
+        // Given - drawn within the crashed run, but long enough ago for its session to have ended
+        fakeNewSession = DatadogLateCrashReporter.CrashSession(DRAWN_SESSION_ID, fakeApplicationId, 100f, false)
+        val drawn = DatadogLateCrashReporter.CrashSession("ended-session", fakeApplicationId, 100f, false)
+        val age = DatadogLateCrashReporter.VIEW_EVENT_AVAILABILITY_TIME_THRESHOLD + 60_000L
+        val crashTimestamp = fakeTimestamp + age
+        val marker = trackedMarker(drawn, date = fakeTimestamp)
+
+        // When
+        testedHandler.handleNdkCrashEvent(
+            ndkCrash(crashTimestamp, lastViewEvent = marker, timeSinceAppStartMs = age + 1_000L),
+            mockRumWriter
+        )
+
+        // Then
+        assertThat(drawCount).isEqualTo(1)
+        argumentCaptor<Any> {
+            verify(mockRumWriter, times(2)).write(eq(mockEventBatchWriter), capture(), eq(EventType.CRASH))
+            assertThat(allValues.filterIsInstance<ViewEvent>().single().session.id).isEqualTo(DRAWN_SESSION_ID)
+        }
+    }
+
+    @Test
     fun `M report in a session of its own W handleNdkCrashEvent() { last view older than 4h before the crash }`(
         @Forgery viewEvent: ViewEvent,
         @StringForgery fakeApplicationId: String
     ) {
         // Given
-        fakeNewSession = DatadogLateCrashReporter.NewSession(fakeApplicationId, 100f, sampledForError = false)
+        fakeNewSession = DatadogLateCrashReporter.CrashSession(DRAWN_SESSION_ID, fakeApplicationId, 100f, sampledForError = false)
         val fakeViewEvent = viewEvent.copy(
             date = 1_000_000_000L,
             view = viewEvent.view.copy(timeSpent = 0L)
@@ -1748,7 +1860,7 @@ internal class DatadogLateCrashReporterTest {
         @StringForgery fakeApplicationId: String
     ) {
         // Given
-        fakeNewSession = DatadogLateCrashReporter.NewSession(fakeApplicationId, 100f, sampledForError = false)
+        fakeNewSession = DatadogLateCrashReporter.CrashSession(DRAWN_SESSION_ID, fakeApplicationId, 100f, sampledForError = false)
         val fakeViewEvent = viewEvent.copy(
             date = 1_000_000_000L,
             view = viewEvent.view.copy(timeSpent = TimeUnit.SECONDS.toNanos(1))
@@ -1802,7 +1914,7 @@ internal class DatadogLateCrashReporterTest {
         forge: Forge
     ) {
         // Given
-        fakeNewSession = DatadogLateCrashReporter.NewSession(fakeApplicationId, 100f, sampledForError = false)
+        fakeNewSession = DatadogLateCrashReporter.CrashSession(DRAWN_SESSION_ID, fakeApplicationId, 100f, sampledForError = false)
         whenever(mockAndroidTraceParser.parse(any())) doReturn forge.anrCrashThreadDump()
         val mockAnrExitInfo = anrExitInfo(fakeTimestamp, ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND)
 
@@ -1831,7 +1943,7 @@ internal class DatadogLateCrashReporterTest {
         forge: Forge
     ) {
         // Given
-        fakeNewSession = DatadogLateCrashReporter.NewSession(fakeApplicationId, 100f, sampledForError = false)
+        fakeNewSession = DatadogLateCrashReporter.CrashSession(DRAWN_SESSION_ID, fakeApplicationId, 100f, sampledForError = false)
         whenever(mockAndroidTraceParser.parse(any())) doReturn forge.anrCrashThreadDump()
         val mockAnrExitInfo = anrExitInfo(fakeTimestamp, ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED)
 
@@ -1853,7 +1965,7 @@ internal class DatadogLateCrashReporterTest {
         @StringForgery fakeApplicationId: String
     ) {
         // Given
-        fakeNewSession = DatadogLateCrashReporter.NewSession(fakeApplicationId, 100f, sampledForError = false)
+        fakeNewSession = DatadogLateCrashReporter.CrashSession(DRAWN_SESSION_ID, fakeApplicationId, 100f, sampledForError = false)
         val mockAnrExitInfo = anrExitInfo(fakeTimestamp, ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND)
 
         // When
@@ -1871,7 +1983,7 @@ internal class DatadogLateCrashReporterTest {
         @StringForgery fakeApplicationId: String
     ) {
         // Given
-        fakeNewSession = DatadogLateCrashReporter.NewSession(fakeApplicationId, 100f, sampledForError = false)
+        fakeNewSession = DatadogLateCrashReporter.CrashSession(DRAWN_SESSION_ID, fakeApplicationId, 100f, sampledForError = false)
         val mockAnrExitInfo = anrExitInfo(fakeTimestamp, ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND)
 
         // When
@@ -1891,13 +2003,46 @@ internal class DatadogLateCrashReporterTest {
     }
 
     @Test
+    fun `M report in the crashed run's session W handleAnrCrash() { tracked marker, no view yet }`(
+        @LongForgery(min = 10_000, max = 1_000_000_000_000L) fakeTimestamp: Long,
+        @StringForgery fakeApplicationId: String,
+        forge: Forge
+    ) {
+        // Given - not the last exit: dated within the crashed run, the marker says which session it was
+        val drawn = DatadogLateCrashReporter.CrashSession("tracked-session", fakeApplicationId, 50f, false)
+        whenever(mockAndroidTraceParser.parse(any())) doReturn forge.anrCrashThreadDump()
+        val mockAnrExitInfo = anrExitInfo(fakeTimestamp, ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND)
+
+        // When
+        testedHandler.handleAnrCrash(
+            mockAnrExitInfo,
+            trackedMarker(drawn, date = fakeTimestamp - 1_000),
+            fakeTimestamp - 5_000,
+            false,
+            mockRumWriter
+        )
+
+        // Then
+        assertThat(drawCount).isZero()
+        verify(mockSdkCore).writeLastFatalAnrSent(fakeTimestamp)
+        argumentCaptor<Any> {
+            verify(mockRumWriter, times(2)).write(eq(mockEventBatchWriter), capture(), eq(EventType.CRASH))
+            val error = allValues.filterIsInstance<ErrorEvent>().single()
+            val view = allValues.filterIsInstance<ViewEvent>().single()
+            assertThat(view.session.id).isEqualTo("tracked-session")
+            assertThat(view.dd.configuration?.sessionSampleRate).isEqualTo(50f)
+            assertThat(error.session.id).isEqualTo("tracked-session")
+        }
+    }
+
+    @Test
     fun `M report in a session of its own W handleAnrCrash() { last view of a run before the previous exit }`(
         @Forgery viewEvent: ViewEvent,
         @StringForgery fakeApplicationId: String,
         forge: Forge
     ) {
         // Given - the last view was never consumed: a run in between ended without writing one
-        fakeNewSession = DatadogLateCrashReporter.NewSession(fakeApplicationId, 100f, sampledForError = false)
+        fakeNewSession = DatadogLateCrashReporter.CrashSession(DRAWN_SESSION_ID, fakeApplicationId, 100f, sampledForError = false)
         val fakeViewEvent = viewEvent.copy(
             date = 1_000_000_000L,
             view = viewEvent.view.copy(timeSpent = TimeUnit.SECONDS.toNanos(1))
@@ -2014,6 +2159,11 @@ internal class DatadogLateCrashReporterTest {
         String(DatadogLateCrashReporter.untrackedSessionMarker("untracked-session", date), Charsets.UTF_8)
     ).asJsonObject
 
+    private fun trackedMarker(session: DatadogLateCrashReporter.CrashSession, date: Long): JsonObject =
+        JsonParser.parseString(
+            String(DatadogLateCrashReporter.trackedSessionMarker(session, date), Charsets.UTF_8)
+        ).asJsonObject
+
     private fun anrExitInfo(timestamp: Long, importance: Int): ApplicationExitInfo =
         mock<ApplicationExitInfo>().apply {
             whenever(traceInputStream) doReturn mock()
@@ -2038,6 +2188,10 @@ internal class DatadogLateCrashReporterTest {
         val otherThreads = aList { getForgery<ThreadDump>() }.map { it.copy(crashed = false) }
         val mainThread = getForgery<ThreadDump>().copy(name = "main", crashed = true)
         return shuffle(otherThreads + mainThread)
+    }
+
+    companion object {
+        private const val DRAWN_SESSION_ID = "drawn-session"
     }
 
     enum class ValueMissingType {

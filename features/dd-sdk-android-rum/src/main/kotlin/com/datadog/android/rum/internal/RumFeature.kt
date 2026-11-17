@@ -142,6 +142,7 @@ import com.google.gson.JsonObject
 import java.io.File
 import java.security.SecureRandom
 import java.util.Locale
+import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.ScheduledExecutorService
@@ -853,7 +854,7 @@ internal class RumFeature(
      * session known there, exactly like a new session would be drawn now: kept at the current rate,
      * else kept on error if on-error capture is on (the crash is its error), else not kept.
      */
-    internal fun drawSessionForLateCrash(): DatadogLateCrashReporter.NewSession? {
+    internal fun drawSessionForLateCrash(): DatadogLateCrashReporter.CrashSession? {
         val sampling = RumSessionScope.resolveSampling(
             sampleRate,
             configuration.sessionOnError,
@@ -863,9 +864,19 @@ internal class RumFeature(
         )
         return when {
             lateCrashSessionRandom.nextFloat() < sampling.rate.percent() ->
-                DatadogLateCrashReporter.NewSession(applicationId, sampling.rate, sampledForError = false)
+                DatadogLateCrashReporter.CrashSession(
+                    UUID.randomUUID().toString(),
+                    applicationId,
+                    sampling.rate,
+                    sampledForError = false
+                )
             sampling.onError && withheldEvents != null ->
-                DatadogLateCrashReporter.NewSession(applicationId, 0f, sampledForError = true)
+                DatadogLateCrashReporter.CrashSession(
+                    UUID.randomUUID().toString(),
+                    applicationId,
+                    0f,
+                    sampledForError = true
+                )
             else -> null
         }
     }

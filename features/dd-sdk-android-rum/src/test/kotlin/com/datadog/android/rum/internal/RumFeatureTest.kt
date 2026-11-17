@@ -1644,8 +1644,14 @@ internal class RumFeatureTest {
 
         // Then
         assertThat(session).isEqualTo(
-            DatadogLateCrashReporter.NewSession(fakeApplicationId.toString(), 100f, sampledForError = false)
+            DatadogLateCrashReporter.CrashSession(
+                checkNotNull(session).id,
+                fakeApplicationId.toString(),
+                100f,
+                sampledForError = false
+            )
         )
+        assertThat(UUID.fromString(session.id)).isNotNull
     }
 
     @Test
@@ -1665,8 +1671,14 @@ internal class RumFeatureTest {
 
         // Then
         assertThat(session).isEqualTo(
-            DatadogLateCrashReporter.NewSession(fakeApplicationId.toString(), 0f, sampledForError = true)
+            DatadogLateCrashReporter.CrashSession(
+                checkNotNull(session).id,
+                fakeApplicationId.toString(),
+                0f,
+                sampledForError = true
+            )
         )
+        assertThat(UUID.fromString(session.id)).isNotNull
     }
 
     @Test

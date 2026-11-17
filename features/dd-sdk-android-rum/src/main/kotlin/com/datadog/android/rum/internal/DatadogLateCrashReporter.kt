@@ -51,7 +51,7 @@ internal class DatadogLateCrashReporter(
      * FLASHCAT FORK - draws the session a crash that belongs to no known session is reported in,
      * like a new session would be drawn now; null when that draw does not keep it.
      */
-    private val drawNewSession: () -> NewSession? = {
+    private val drawNewSession: () -> CrashSession? = {
         sdkCore.getFeature(Feature.RUM_FEATURE_NAME)?.unwrap<RumFeature>()?.drawSessionForLateCrash()
     }
 ) : LateCrashReporter {
@@ -111,7 +111,8 @@ internal class DatadogLateCrashReporter(
             val lastViewEvent = (target as? CrashTarget.LastView)?.view
                 // No foreground state is persisted with a native crash: one with no view to attach
                 // to is taken as a crash during the application launch.
-                ?: newSessionView(
+                ?: sessionViewFor(
+                    target,
                     datadogContext,
                     // The beacon's date, when there is one: the error is dated by it too.
                     crashDate ?: (timestamp + datadogContext.time.serverTimeOffsetMs),
@@ -140,7 +141,7 @@ internal class DatadogLateCrashReporter(
                 }
             }
             writeScope {
-                writeCrash(it, rumWriter, toSendErrorEvent, lastViewEvent, target == CrashTarget.NewSession)
+                writeCrash(it, rumWriter, toSendErrorEvent, lastViewEvent, target !is CrashTarget.LastView)
             }
         }
     }
@@ -212,7 +213,8 @@ internal class DatadogLateCrashReporter(
             if (threadDumps.isEmpty()) return@withWriteContext
 
             val lastViewEvent = (target as? CrashTarget.LastView)?.view
-                ?: newSessionView(
+                ?: sessionViewFor(
+                    target,
                     datadogContext,
                     anrExitInfo.timestamp + serverTimeOffsetMs,
                     // The rule crash beacons use: a process the user could see.
@@ -242,7 +244,7 @@ internal class DatadogLateCrashReporter(
                 // mark it before creating RUM events, so that we don't handle it again if code crashed after
                 // RUM events are written
                 sdkCore.writeLastFatalAnrSent(anrExitInfo.timestamp)
-                writeCrash(it, rumWriter, toSendErrorEvent, lastViewEvent, target == CrashTarget.NewSession)
+                writeCrash(it, rumWriter, toSendErrorEvent, lastViewEvent, target !is CrashTarget.LastView)
             }
         }
     }
@@ -292,17 +294,37 @@ internal class DatadogLateCrashReporter(
 
     /**
      * FLASHCAT FORK - what the slot the last view is written to holds: the last view of the last
-     * session that wrote one, or the marker of a session drawn as not tracked (see
-     * [untrackedSessionMarker]), whichever came last.
+     * session that wrote one, or the marker of the last session drawn (see [untrackedSessionMarker]
+     * and [trackedSessionMarker]), whichever came last.
      */
     private fun readSlot(json: JsonObject?): LastSlot? {
         if (json == null) return null
-        if (json.has(UNTRACKED_SESSION_KEY)) {
-            val date = (json.get(UNTRACKED_SESSION_KEY) as? JsonObject)?.get(MARKER_DATE_KEY) as? JsonPrimitive
-            return date?.takeIf { it.isNumber }?.let { LastSlot.Untracked(it.asLong) }
+        (json.get(UNTRACKED_SESSION_KEY) as? JsonObject)?.let { marker ->
+            return marker.longOrNull(MARKER_DATE_KEY)?.let { LastSlot.Untracked(it) }
+        }
+        (json.get(TRACKED_SESSION_KEY) as? JsonObject)?.let { marker ->
+            return readTrackedMarker(marker)
         }
         return (rumEventDeserializer.deserialize(json) as? ViewEvent)?.let { LastSlot.View(it) }
     }
+
+    @Suppress("ReturnCount")
+    private fun readTrackedMarker(marker: JsonObject): LastSlot.Tracked? {
+        val date = marker.longOrNull(MARKER_DATE_KEY) ?: return null
+        val sessionId = marker.stringOrNull(MARKER_SESSION_ID_KEY) ?: return null
+        val applicationId = marker.stringOrNull(MARKER_APPLICATION_ID_KEY) ?: return null
+        val sampleRate = (marker.get(MARKER_SAMPLE_RATE_KEY) as? JsonPrimitive)
+            ?.takeIf { it.isNumber }?.asFloat ?: return null
+        val sampledForError = (marker.get(MARKER_SAMPLED_FOR_ERROR_KEY) as? JsonPrimitive)
+            ?.takeIf { it.isBoolean }?.asBoolean ?: return null
+        return LastSlot.Tracked(date, CrashSession(sessionId, applicationId, sampleRate, sampledForError))
+    }
+
+    private fun JsonObject.longOrNull(key: String): Long? =
+        (get(key) as? JsonPrimitive)?.takeIf { it.isNumber }?.asLong
+
+    private fun JsonObject.stringOrNull(key: String): String? =
+        (get(key) as? JsonPrimitive)?.takeIf { it.isString }?.asString
 
     /**
      * FLASHCAT FORK - where a crash reported on the next launch goes.
@@ -313,9 +335,11 @@ internal class DatadogLateCrashReporter(
      * - Nowhere, when the crashed run's session was drawn as not tracked: it was left out of the
      * sample on purpose, and reporting its crash in a session of its own would count the crashes
      * of untracked sessions on top of the tracked ones the sample stands for.
+     * - The crashed run's session, as it was drawn, when it was kept but wrote no view yet, no more
+     * than [VIEW_EVENT_AVAILABILITY_TIME_THRESHOLD] before the crash: drawing it again would keep
+     * its crash only at the rate squared.
      * - A session of its own otherwise: the crash belongs to no session known here (none was
-     * drawn yet, the one drawn wrote no view, or the view was thrown away with a session kept on
-     * error that ended without one).
+     * drawn yet, or the view was thrown away with a session kept on error that ended without one).
      */
     private fun resolveTarget(
         lastSlot: LastSlot?,
@@ -335,28 +359,56 @@ internal class DatadogLateCrashReporter(
                 if (isOfCrashedRun && isRecent) CrashTarget.LastView(view) else CrashTarget.NewSession
             }
             is LastSlot.Untracked -> {
-                val isOfCrashedRun = lastSlot.date <= crashTimestamp &&
-                    (runStartedAt == null || lastSlot.date >= runStartedAt)
-                if (isOfCrashedRun) CrashTarget.NotReported else CrashTarget.NewSession
+                if (lastSlot.date.isOfCrashedRun(crashTimestamp, runStartedAt)) {
+                    CrashTarget.NotReported
+                } else {
+                    CrashTarget.NewSession
+                }
+            }
+            is LastSlot.Tracked -> {
+                // As recent as a last view must be: older, the session it marks has ended.
+                val isRecent = crashTimestamp - lastSlot.date <= VIEW_EVENT_AVAILABILITY_TIME_THRESHOLD
+                if (lastSlot.date.isOfCrashedRun(crashTimestamp, runStartedAt) && isRecent) {
+                    CrashTarget.ViewlessSession(lastSlot.session)
+                } else {
+                    CrashTarget.NewSession
+                }
             }
             null -> CrashTarget.NewSession
         }
     }
 
+    /** FLASHCAT FORK - a marker dated within the crashed run, on the device clock like the crash. */
+    private fun Long.isOfCrashedRun(crashTimestamp: Long, runStartedAt: Long?): Boolean =
+        this <= crashTimestamp && (runStartedAt == null || this >= runStartedAt)
+
     /**
-     * FLASHCAT FORK - the one view of the session a crash with no known session is reported in,
-     * drawn like a new session would be now: [RumViewManagerScope]'s "ApplicationLaunch" view in
-     * the foreground, its "Background" view in the background, starting at the crash. Null when the
-     * draw does not keep the session. Late crashes are never retried (the NDK report is deleted
-     * once read, a fatal ANR is marked sent before it is written), so the ids and the draw are
-     * plain random ones. [date] is the crash's, on the server clock, as the error reports it.
+     * FLASHCAT FORK - the view a crash with no view to attach to is reported in: one of the crashed
+     * run's own session when its marker says it was kept, else one of a session drawn now.
      */
-    private fun newSessionView(
+    private fun sessionViewFor(
+        target: CrashTarget,
         datadogContext: DatadogContext,
         date: Long,
         inForeground: Boolean
     ): ViewEvent? {
-        val session = drawNewSession() ?: return null
+        val session = (target as? CrashTarget.ViewlessSession)?.session ?: drawNewSession() ?: return null
+        return newSessionView(session, datadogContext, date, inForeground)
+    }
+
+    /**
+     * FLASHCAT FORK - the one view a crash with no view to attach to is reported in, in [session]:
+     * [RumViewManagerScope]'s "ApplicationLaunch" view in the foreground, its "Background" view in
+     * the background, starting at the crash. Late crashes are never retried (the NDK report is
+     * deleted once read, a fatal ANR is marked sent before it is written), so the view id is a
+     * plain random one. [date] is the crash's, on the server clock, as the error reports it.
+     */
+    private fun newSessionView(
+        session: CrashSession,
+        datadogContext: DatadogContext,
+        date: Long,
+        inForeground: Boolean
+    ): ViewEvent {
         val deviceInfo = datadogContext.deviceInfo
         val user = datadogContext.userInfo
         return ViewEvent(
@@ -371,7 +423,7 @@ internal class DatadogLateCrashReporter(
             buildId = datadogContext.appBuildId,
             ddtags = buildDDTagsString(datadogContext),
             session = ViewEvent.ViewEventSession(
-                id = UUID.randomUUID().toString(),
+                id = session.id,
                 type = ViewEvent.ViewEventSessionType.USER,
                 // Absent, rather than false, for a sampled session - as on every other view.
                 sampledForError = session.sampledForError.takeIf { it }
@@ -648,7 +700,11 @@ internal class DatadogLateCrashReporter(
         internal val VIEW_EVENT_AVAILABILITY_TIME_THRESHOLD = TimeUnit.HOURS.toMillis(4)
 
         private const val UNTRACKED_SESSION_KEY = "fc_untracked_session"
+        private const val TRACKED_SESSION_KEY = "fc_tracked_session"
         private const val MARKER_SESSION_ID_KEY = "session_id"
+        private const val MARKER_APPLICATION_ID_KEY = "application_id"
+        private const val MARKER_SAMPLE_RATE_KEY = "sample_rate"
+        private const val MARKER_SAMPLED_FOR_ERROR_KEY = "sampled_for_error"
         private const val MARKER_DATE_KEY = "date"
 
         /**
@@ -662,10 +718,30 @@ internal class DatadogLateCrashReporter(
             }
             return JsonObject().apply { add(UNTRACKED_SESSION_KEY, marker) }.toString().toByteArray(Charsets.UTF_8)
         }
+
+        /**
+         * FLASHCAT FORK - written to the slot of the last view when a session is drawn as kept, so
+         * a crash of that session before its first view is reported in it at the next launch, as
+         * it was drawn. Device time.
+         */
+        internal fun trackedSessionMarker(session: CrashSession, timestamp: Long): ByteArray {
+            val marker = JsonObject().apply {
+                addProperty(MARKER_SESSION_ID_KEY, session.id)
+                addProperty(MARKER_APPLICATION_ID_KEY, session.applicationId)
+                addProperty(MARKER_SAMPLE_RATE_KEY, session.sampleRate)
+                addProperty(MARKER_SAMPLED_FOR_ERROR_KEY, session.sampledForError)
+                addProperty(MARKER_DATE_KEY, timestamp)
+            }
+            return JsonObject().apply { add(TRACKED_SESSION_KEY, marker) }.toString().toByteArray(Charsets.UTF_8)
+        }
     }
 
-    /** FLASHCAT FORK - the session a crash with no known session is reported in. */
-    internal data class NewSession(
+    /**
+     * FLASHCAT FORK - the session a crash with no view to attach to is reported in: the crashed
+     * run's own, from its marker, or one drawn for it now.
+     */
+    internal data class CrashSession(
+        val id: String,
         val applicationId: String,
         val sampleRate: Float,
         val sampledForError: Boolean
@@ -674,10 +750,12 @@ internal class DatadogLateCrashReporter(
     private sealed class LastSlot {
         class View(val view: ViewEvent) : LastSlot()
         class Untracked(val date: Long) : LastSlot()
+        class Tracked(val date: Long, val session: CrashSession) : LastSlot()
     }
 
     private sealed class CrashTarget {
         class LastView(val view: ViewEvent) : CrashTarget()
+        class ViewlessSession(val session: CrashSession) : CrashTarget()
         object NewSession : CrashTarget()
         object NotReported : CrashTarget()
     }

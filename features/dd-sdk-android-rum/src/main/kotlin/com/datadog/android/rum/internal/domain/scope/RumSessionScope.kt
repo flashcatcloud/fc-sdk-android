@@ -122,11 +122,6 @@ internal class RumSessionScope(
     // the replay itself and decides from this whether a replay it did not keep is kept on error.
     private var replayOnError: Boolean = false
 
-    // FLASHCAT FORK - whether the slot of the last view still holds the marker this process wrote
-    // for a session drawn as not tracked: such a session writes no view, so only the next session
-    // can replace it.
-    private var slotHoldsUntrackedMarker: Boolean = false
-
     // FLASHCAT FORK - whether the current session is a collected one whose replay may be kept on
     // error: its end is reported to the buffer like a withheld session's, so Session Replay hears
     // what became of the replay it holds.
@@ -495,11 +490,8 @@ internal class RumSessionScope(
             else -> State.NOT_TRACKED
         }
         sessionId = UUID.randomUUID().toString()
-        if (sessionState == State.NOT_TRACKED) {
-            markUntrackedSession(sessionId, time.timestamp, writeScope)
-        } else if (slotHoldsUntrackedMarker) {
-            clearUntrackedMarker(writeScope)
-        }
+        // A stopped session draining alongside the one that replaced it does not speak for the slot.
+        if (isActive) markSession(time.timestamp, writeScope)
         replayOnError = withheldEvents != null && (remoteValues?.sessionReplayOnError ?: sessionReplayOnError)
         val drawnSessionId = sessionId
         replayWatched = !sampledForError && keepSession && replayOnError
@@ -546,34 +538,32 @@ internal class RumSessionScope(
     }
 
     /**
-     * FLASHCAT FORK - a session left out of the sample writes no view, so the slot of the last view
-     * would still hold a view of an earlier session, or nothing: a crash of this session reported at
-     * the next launch would go to that view, or to a session of its own. Marking the slot tells the
-     * crash for one of a session left out on purpose, which is not reported.
+     * FLASHCAT FORK - every draw marks the slot of the last view with its session, until the
+     * session's first view replaces the marker. A crash before that view is then known at the next
+     * launch for one of this session: not reported if the session was left out of the sample, and
+     * reported in this session, as drawn, if it was kept - not drawn a second time, which would
+     * keep a kept session's crash only at the rate squared.
      */
-    private fun markUntrackedSession(sessionId: String, timestamp: Long, writeScope: EventWriteScope) {
-        val marker = DatadogLateCrashReporter.untrackedSessionMarker(sessionId, timestamp)
+    private fun markSession(timestamp: Long, writeScope: EventWriteScope) {
+        val marker = if (sessionState == State.NOT_TRACKED) {
+            DatadogLateCrashReporter.untrackedSessionMarker(sessionId, timestamp)
+        } else {
+            DatadogLateCrashReporter.trackedSessionMarker(
+                DatadogLateCrashReporter.CrashSession(
+                    id = sessionId,
+                    applicationId = parentScope.getRumContext().applicationId,
+                    sampleRate = effectiveSampleRate,
+                    sampledForError = sampledForError
+                ),
+                timestamp
+            )
+        }
         writeScope {
             // Read before it is replaced: what the previous run left there is still owed to its
             // crash, which may be read after this.
             sdkCore.lastViewEvent
             sdkCore.writeLastViewEvent(marker)
         }
-        slotHoldsUntrackedMarker = true
-    }
-
-    /**
-     * FLASHCAT FORK - a session drawn after one left out of the sample is not that session: left
-     * in the slot, the marker would have a crash of this session, before its first view, taken for
-     * one of the session left out, and not reported. With the slot empty, such a crash is reported
-     * in a session of its own, as one of a session that wrote no view is.
-     */
-    private fun clearUntrackedMarker(writeScope: EventWriteScope) {
-        writeScope {
-            sdkCore.lastViewEvent
-            sdkCore.deleteLastViewEvent()
-        }
-        slotHoldsUntrackedMarker = false
     }
 
     /** FLASHCAT FORK - the rate a session is drawn at, and whether one the rate misses is kept on error. */
