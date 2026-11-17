@@ -1480,7 +1480,6 @@ internal class DatadogLateCrashReporterTest {
 
     @Test
     fun `M not send anything W handleAnrCrash() { cannot open trace information, IOException }`(
-        @LongForgery(min = 1) fakeTimestamp: Long,
         @Forgery viewEvent: ViewEvent,
         forge: Forge
     ) {
@@ -1531,7 +1530,6 @@ internal class DatadogLateCrashReporterTest {
 
     @Test
     fun `M not send anything W handleAnrCrash() { cannot open trace information, null }`(
-        @LongForgery(min = 1) fakeTimestamp: Long,
         @Forgery viewEvent: ViewEvent,
         forge: Forge
     ) {
