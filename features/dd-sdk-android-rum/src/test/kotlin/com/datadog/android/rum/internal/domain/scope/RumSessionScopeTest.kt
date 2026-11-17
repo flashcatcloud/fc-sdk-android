@@ -539,6 +539,29 @@ internal class RumSessionScopeTest {
     }
 
     @Test
+    fun `M mark the slot after the ended session clears it W handleEvent(view) {kept on error, renewed}`(
+        forge: Forge
+    ) {
+        // Given - a session kept on error that ends without an error has its slot cleared
+        val mockWithheldEvents = mock<WithheldEventWriter>()
+        initializeTestedScope(0f, withheldEvents = mockWithheldEvents, sessionOnError = true)
+        testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+        val endedSessionId = testedScope.getRumContext().sessionId
+        assertThat(testedScope.getRumContext().sessionState).isEqualTo(RumSessionScope.State.WITHHELD)
+        advanceTimeByMs(TEST_INACTIVITY_MS)
+
+        // When
+        testedScope.handleEvent(forge.startViewEvent(), fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        // Then - the next session's marker is written after that clear, so it survives it
+        assertThat(testedScope.getRumContext().sessionId).isNotEqualTo(endedSessionId)
+        inOrder(mockWithheldEvents, mockSdkCore) {
+            verify(mockWithheldEvents).endSession(eq(endedSessionId), any())
+            verify(mockSdkCore).writeLastViewEvent(any())
+        }
+    }
+
+    @Test
     fun `M replace the untracked marker W handleEvent(ResetSession) {session drawn as tracked after one not tracked}`(
         forge: Forge
     ) {
