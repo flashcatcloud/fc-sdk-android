@@ -9,7 +9,6 @@ import com.datadog.gradle.config.dependencyUpdateConfig
 import com.datadog.gradle.config.detektCustomConfig
 import com.datadog.gradle.config.javadocConfig
 import com.datadog.gradle.config.kotlinConfig
-import com.datadog.gradle.config.publishingConfig
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -56,9 +55,4 @@ kotlinConfig(jvmBytecodeTarget = JvmTarget.JVM_11)
 androidLibraryConfig()
 javadocConfig()
 dependencyUpdateConfig()
-publishingConfig(
-    "The Profiling feature to use with the Datadog monitoring " +
-        "library for Android applications.",
-    customArtifactId = "dd-sdk-android-profiling-noop"
-)
 detektCustomConfig()

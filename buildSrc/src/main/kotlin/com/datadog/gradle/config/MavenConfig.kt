@@ -11,6 +11,7 @@ import com.vanniktech.maven.publish.JavaLibrary
 import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import org.gradle.api.Project
+import org.gradle.api.component.AdhocComponentWithVariants
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.kotlin.dsl.configure
@@ -35,6 +36,21 @@ fun Project.publishingConfig(
                 publishJavadocJar = true
             )
         )
+    }
+    skipTestFixturesPublication()
+}
+
+// Test fixtures are only consumed by this repository's own tests, and every published
+// artifact costs files against the Maven Central monthly File Count quota.
+private fun Project.skipTestFixturesPublication() {
+    afterEvaluate {
+        val component = components.findByName(MavenConfig.PUBLICATION) as? AdhocComponentWithVariants
+            ?: return@afterEvaluate
+        listOf(
+            "releaseTestFixturesVariantReleaseApiPublication",
+            "releaseTestFixturesVariantReleaseRuntimePublication"
+        ).mapNotNull { configurations.findByName(it) }
+            .forEach { component.withVariantsFromConfiguration(it) { skip() } }
     }
 }
 
