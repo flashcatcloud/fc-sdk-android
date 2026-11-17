@@ -23,7 +23,7 @@ object AndroidConfig {
     /**
      * Determine version based on CI environment variables (GitHub Actions)
      * - Tag (GITHUB_REF_TYPE == "tag") → Release version parsed from tag (e.g., v0.5.0 -> 0.5.0)
-     * - Anything else, including a push to the publish branch and local builds → the snapshot
+     * - Anything else, including a manual workflow run on a branch and local builds → the snapshot
      *   version below
      */
     val VERSION = determineVersion()
