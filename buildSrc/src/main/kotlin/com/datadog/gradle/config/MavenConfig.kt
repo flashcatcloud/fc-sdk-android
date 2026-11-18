@@ -6,10 +6,12 @@
 
 package com.datadog.gradle.config
 
+import com.android.build.gradle.LibraryExtension
 import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
 import com.vanniktech.maven.publish.JavaLibrary
 import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.component.AdhocComponentWithVariants
 import org.gradle.api.publish.PublishingExtension
@@ -42,15 +44,29 @@ fun Project.publishingConfig(
 
 // Test fixtures are only consumed by this repository's own tests, and every published
 // artifact costs files against the Maven Central monthly File Count quota.
+// The configuration names are AGP internals: fail the build if they stop matching, otherwise
+// an AGP upgrade would silently start publishing the test fixtures again.
 private fun Project.skipTestFixturesPublication() {
     afterEvaluate {
+        if (!extensions.getByType(LibraryExtension::class.java).testFixtures.enable) {
+            return@afterEvaluate
+        }
         val component = components.findByName(MavenConfig.PUBLICATION) as? AdhocComponentWithVariants
-            ?: return@afterEvaluate
+            ?: throw GradleException(
+                "$path: component '${MavenConfig.PUBLICATION}' not found, " +
+                    "cannot exclude test fixtures from publishing"
+            )
         listOf(
             "releaseTestFixturesVariantReleaseApiPublication",
             "releaseTestFixturesVariantReleaseRuntimePublication"
-        ).mapNotNull { configurations.findByName(it) }
-            .forEach { component.withVariantsFromConfiguration(it) { skip() } }
+        ).forEach { name ->
+            val configuration = configurations.findByName(name)
+                ?: throw GradleException(
+                    "$path: configuration '$name' not found, " +
+                        "cannot exclude test fixtures from publishing"
+                )
+            component.withVariantsFromConfiguration(configuration) { skip() }
+        }
     }
 }
 
