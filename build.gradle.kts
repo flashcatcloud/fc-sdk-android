@@ -72,6 +72,26 @@ tasks.register("publishAll") {
     })
 }
 
+// Releases are staged under build/publish/staging and uploaded to the Central Portal as one
+// bundle when the build finishes. Maven Central counts every bundled file against a monthly
+// File Count quota but does not require checksums of the .asc signatures, so drop them
+// once all publications have been staged.
+val pruneSignatureChecksums = tasks.register<Delete>("pruneSignatureChecksums") {
+    delete(
+        fileTree(layout.buildDirectory.dir("publish/staging")) {
+            include("**/*.asc.md5", "**/*.asc.sha1")
+        }
+    )
+}
+
+subprojects {
+    tasks.withType<PublishToMavenRepository>().configureEach {
+        val publishTask = this
+        finalizedBy(pruneSignatureChecksums)
+        pruneSignatureChecksums.configure { mustRunAfter(publishTask) }
+    }
+}
+
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }

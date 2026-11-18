@@ -10,7 +10,6 @@ import com.datadog.gradle.config.detektCustomConfig
 import com.datadog.gradle.config.javadocConfig
 import com.datadog.gradle.config.junitConfig
 import com.datadog.gradle.config.kotlinConfig
-import com.datadog.gradle.config.publishingConfig
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -69,7 +68,4 @@ androidLibraryConfig()
 junitConfig()
 javadocConfig()
 dependencyUpdateConfig()
-publishingConfig(
-    "An OkHttp collection of extensions to be used in conjunction with OpenTelemetry Datadog SDK."
-)
 detektCustomConfig()
