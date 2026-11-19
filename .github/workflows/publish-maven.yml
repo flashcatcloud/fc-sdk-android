@@ -24,6 +24,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Extract release notes from changelog
+        if: github.event_name == 'push'
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          VERSION="${TAG#v}"
+          bash .github/scripts/extract-release-notes.sh \
+            --changelog CHANGELOG.md --version "${VERSION}" --level 1 \
+            --output "${RUNNER_TEMP}/release-changelog.md"
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -78,11 +88,12 @@ jobs:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PASSWORD: ${{ secrets.GPG_PASSPHRASE }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
         run: |
-          echo "📦 Building signed Maven repository for ${{ github.ref_name }}"
+          echo "📦 Building signed Maven repository for ${TAG}"
           ./gradlew publishAllPublicationsToLocalRepoRepository --no-daemon --stacktrace
 
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${TAG#v}"
           ZIP="fc-sdk-android-${VERSION}-maven-repo.zip"
           ( cd build/maven-repo && zip -qr "../${ZIP}" . )
           ls -lh "build/${ZIP}"
@@ -90,19 +101,23 @@ jobs:
           MODULES="$(ls build/maven-repo/cloud/flashcat | sed 's/.*/- `cloud.flashcat:&`/')"
           export VERSION MODULES
           # Only substitute these two, so Gradle snippets like ${rootDir} stay intact
-          perl -pe 's/\$\{VERSION\}/$ENV{VERSION}/g; s/\$\{MODULES\}/$ENV{MODULES}/g' \
-            .github/release-notes/maven-repo-zip.md > build/release-notes.md
+          {
+            cat "${RUNNER_TEMP}/release-changelog.md"
+            printf '\n---\n\n'
+            perl -pe 's/\$\{VERSION\}/$ENV{VERSION}/g; s/\$\{MODULES\}/$ENV{MODULES}/g' \
+              .github/release-notes/maven-repo-zip.md
+          } > build/release-notes.md
 
-          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
-            gh release upload "${GITHUB_REF_NAME}" "build/${ZIP}" --clobber
-            gh release edit "${GITHUB_REF_NAME}" --notes-file build/release-notes.md
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release upload "${TAG}" "build/${ZIP}" --clobber
+            gh release edit "${TAG}" --notes-file build/release-notes.md
           else
-            gh release create "${GITHUB_REF_NAME}" "build/${ZIP}" \
-              --title "${GITHUB_REF_NAME}" \
-              --notes-file build/release-notes.md
+            gh release create "${TAG}" "build/${ZIP}" \
+              --title "${TAG}" \
+              --notes-file build/release-notes.md --verify-tag
           fi
 
-          echo "✅ ${ZIP} attached to ${GITHUB_REF_NAME}"
+          echo "✅ ${ZIP} attached to ${TAG}"
 
       - name: Publish to Maven Central
         if: github.event_name == 'workflow_dispatch'
