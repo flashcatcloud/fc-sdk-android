@@ -150,6 +150,17 @@ private fun Project.basePublishingConfig(
         publishToMavenCentral(automaticRelease = false)
     }
 
+    // File repository used to build the zip attached to GitHub Releases. Publishing here
+    // does not touch Maven Central; the release workflow zips this directory as-is.
+    configure<PublishingExtension> {
+        repositories {
+            maven {
+                name = "localRepo"
+                url = uri(rootProject.layout.buildDirectory.dir("maven-repo"))
+            }
+        }
+    }
+
     // Manual signing configuration
     val signingExtension = extensions.findByType(SigningExtension::class)
     if (signingExtension == null) {

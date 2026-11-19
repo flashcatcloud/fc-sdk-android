@@ -1,14 +1,16 @@
-name: Publish to Maven Central
+name: Publish SDK
 
 on:
   push:
     tags:
-      - "v*" # 推送 tag（如 v0.1.0）时触发正式发布
-  workflow_dispatch: # 支持在 GitHub Actions 页面手动触发，选 tag 发正式版，选 branch 发快照版
+      - "v*" # 打正式版 tag：签名后打成 Maven 仓库 zip，挂到 GitHub Release，不发 Maven Central
+  workflow_dispatch: # Actions 页面手动触发：选 tag 提交正式版到 Maven Central，选分支发快照版
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # 创建 Release 并上传 zip 需要写权限
     # Bound the job so a stuck Gradle build is killed instead of running up to
     # GitHub's 6h default. Headroom is deliberate: a known-good release run has
     # taken ~52 min, and the Maven Central upload is network-bound, so a tight
@@ -69,7 +71,57 @@ jobs:
       - name: Stop Gradle Daemon
         run: ./gradlew --stop
 
+      - name: Publish Maven repository zip to GitHub Release
+        if: github.event_name == 'push'
+        env:
+          # GPG signing credentials (supports both base64 and ASCII armored)
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSWORD: ${{ secrets.GPG_PASSPHRASE }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "📦 Building signed Maven repository for ${{ github.ref_name }}"
+          ./gradlew publishAllPublicationsToLocalRepoRepository --no-daemon --stacktrace
+
+          VERSION="${GITHUB_REF_NAME#v}"
+          ZIP="fc-sdk-android-${VERSION}-maven-repo.zip"
+          ( cd build/maven-repo && zip -qr "../${ZIP}" . )
+          ls -lh "build/${ZIP}"
+
+          cat > build/release-notes.md <<EOF
+          FlashCat Android SDK ${VERSION} 的 Maven 仓库包。解压后可直接作为本地 Maven 仓库使用，不依赖 Maven Central。
+
+          用法：
+          1. 下载并解压到项目里，例如 \`fc-maven-repo/\`。
+          2. 在 \`settings.gradle.kts\` 里加上这个仓库（\`mavenCentral()\` 保留，第三方依赖还从那里下载）：
+
+          \`\`\`kotlin
+          exclusiveContent {
+              forRepository { maven { url = uri("fc-maven-repo") } }
+              filter { includeGroup("cloud.flashcat") }
+          }
+          \`\`\`
+
+          3. 依赖写法不变，版本用 ${VERSION}：
+
+          \`\`\`kotlin
+          implementation("cloud.flashcat:dd-sdk-android-core:${VERSION}")
+          \`\`\`
+
+          包内文件带 GPG 签名（\`.asc\`）。
+          EOF
+
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release upload "${GITHUB_REF_NAME}" "build/${ZIP}" --clobber
+          else
+            gh release create "${GITHUB_REF_NAME}" "build/${ZIP}" \
+              --title "${GITHUB_REF_NAME}" \
+              --notes-file build/release-notes.md
+          fi
+
+          echo "✅ ${ZIP} attached to ${GITHUB_REF_NAME}"
+
       - name: Publish to Maven Central
+        if: github.event_name == 'workflow_dispatch'
         env:
           # Maven Central Portal credentials
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
@@ -78,17 +130,12 @@ jobs:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PASSWORD: ${{ secrets.GPG_PASSPHRASE }}
         run: |
-          # Determine if this is a snapshot or release build
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            echo "📦 Publishing release version (from tag: ${{ github.ref_name }})"
-            VERSION_TYPE="release"
+            echo "📦 Publishing release version to Maven Central (from tag: ${{ github.ref_name }})"
           else
-            echo "📦 Publishing snapshot version (from branch: ${{ github.ref_name }})"
-            VERSION_TYPE="snapshot"
+            echo "📦 Publishing snapshot version to Maven Central (from branch: ${{ github.ref_name }})"
           fi
 
-          # Publish all modules using Vanniktech plugin
-          # This will upload to Maven Central Portal
           ./gradlew publishAllPublicationsToMavenCentralRepository --no-daemon --stacktrace
 
           echo "✅ Publishing completed"
@@ -104,12 +151,17 @@ jobs:
       - name: Determine version type
         id: version
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            echo "type=正式版" >> $GITHUB_OUTPUT
-            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+              echo "type=正式版，已提交到 Maven Central（需在 Portal 手动发布）" >> $GITHUB_OUTPUT
+              echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            else
+              echo "type=快照版，已发布到 Maven Central" >> $GITHUB_OUTPUT
+              echo "version=${{ github.ref_name }}-SNAPSHOT" >> $GITHUB_OUTPUT
+            fi
           else
-            echo "type=快照版" >> $GITHUB_OUTPUT
-            echo "version=${{ github.ref_name }}-SNAPSHOT" >> $GITHUB_OUTPUT
+            echo "type=正式版，Maven 仓库 zip 已挂到 GitHub Release" >> $GITHUB_OUTPUT
+            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Notify deployment success
@@ -153,12 +205,17 @@ jobs:
       - name: Determine version type
         id: version
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            echo "type=正式版" >> $GITHUB_OUTPUT
-            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+              echo "type=正式版，已提交到 Maven Central（需在 Portal 手动发布）" >> $GITHUB_OUTPUT
+              echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            else
+              echo "type=快照版，已发布到 Maven Central" >> $GITHUB_OUTPUT
+              echo "version=${{ github.ref_name }}-SNAPSHOT" >> $GITHUB_OUTPUT
+            fi
           else
-            echo "type=快照版" >> $GITHUB_OUTPUT
-            echo "version=${{ github.ref_name }}-SNAPSHOT" >> $GITHUB_OUTPUT
+            echo "type=正式版，Maven 仓库 zip 已挂到 GitHub Release" >> $GITHUB_OUTPUT
+            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Notify deployment failure
