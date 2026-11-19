@@ -3746,15 +3746,15 @@ internal class RumResourceScopeTest {
     }
 
     @Test
-    fun `M keep the duration W handleEvent(StopResource+AddResourceTiming) {background after stop}`(
+    fun `M omit the duration W handleEvent(StopResource+AddResourceTiming) {background before timing}`(
         @Forgery kind: RumResourceKind,
         @LongForgery(200, 600) statusCode: Long,
         @LongForgery(0, 1024) size: Long,
-        @Forgery timing: ResourceTiming,
-        @IntForgery(0, 1000) transitions: Int
+        @Forgery timing: ResourceTiming
     ) {
         // Given
-        testedScope = scopeWithBackgroundState(startedInBackground = false, transitions = transitions)
+        resetForegroundStateTracker()
+        testedScope = scopeWithBackgroundState(startedInBackground = false, transitions = 0)
         testedScope.handleEvent(
             RumRawEvent.WaitForResourceTiming(fakeKey),
             fakeDatadogContext,
@@ -3769,7 +3769,7 @@ internal class RumResourceScopeTest {
                 kind,
                 emptyMap(),
                 timeWithOffset(RESOURCE_DURATION_MS),
-                backgroundTransitions = transitions
+                backgroundTransitions = 0
             ),
             fakeDatadogContext,
             mockEventWriteScope,
@@ -3777,7 +3777,9 @@ internal class RumResourceScopeTest {
         )
 
         // When
-        // The timing arrives after the app went to the background; only start and stop matter.
+        val activity: Activity = mock()
+        ForegroundStateTracker.onActivityStarted(activity)
+        ForegroundStateTracker.onActivityStopped(activity)
         testedScope.handleEvent(
             RumRawEvent.AddResourceTiming(fakeKey, timing, timeWithOffset(RESOURCE_DURATION_MS * 2)),
             fakeDatadogContext,
@@ -3788,8 +3790,9 @@ internal class RumResourceScopeTest {
         // Then
         argumentCaptor<ResourceEvent> {
             verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
-            assertThat(firstValue).hasDurationGreaterThan(TimeUnit.MILLISECONDS.toNanos(RESOURCE_DURATION_MS))
+            assertThat(firstValue).hasNoDuration()
         }
+        verify(mockInsightsCollector, never()).onNetworkRequest(any(), any())
     }
 
     @Test

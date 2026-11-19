@@ -73,7 +73,8 @@ internal sealed class RumRawEvent {
     internal data class AddResourceTiming(
         val key: Any,
         val timing: ResourceTiming,
-        override val eventTime: Time = Time()
+        override val eventTime: Time = Time(),
+        val backgroundTransitions: Int = ForegroundStateTracker.backgroundTransitions
     ) : RumRawEvent()
 
     internal data class StopResource(
