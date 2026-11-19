@@ -11,7 +11,6 @@ import com.datadog.gradle.config.dependencyUpdateConfig
 import com.datadog.gradle.config.java11
 import com.datadog.gradle.config.junitConfig
 import com.datadog.gradle.config.kotlinConfig
-import com.datadog.gradle.config.publishingConfig
 import org.jetbrains.kotlin.ir.backend.js.compile
 
 plugins {
@@ -63,7 +62,3 @@ kotlinConfig()
 junitConfig()
 dependencyUpdateConfig()
 androidLibraryConfig()
-publishingConfig(
-    projectDescription = "An internal benchmarking tool to measure the overhead of Datadog SDK",
-    customArtifactId = "dd-sdk-android-benchmark-internal"
-)

@@ -9,7 +9,6 @@ import com.datadog.gradle.config.dependencyUpdateConfig
 import com.datadog.gradle.config.detektCustomConfig
 import com.datadog.gradle.config.javadocConfig
 import com.datadog.gradle.config.kotlinConfig
-import com.datadog.gradle.config.publishingConfig
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -60,8 +59,4 @@ kotlinConfig(jvmBytecodeTarget = JvmTarget.JVM_11)
 androidLibraryConfig()
 javadocConfig()
 dependencyUpdateConfig()
-publishingConfig(
-    "Session Replay Extension Support for Jetpack Compose.",
-    customArtifactId = "dd-sdk-android-session-replay-compose-noop"
-)
 detektCustomConfig()
