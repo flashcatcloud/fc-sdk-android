@@ -56,8 +56,10 @@ allprojects {
 // - GPG_PASSWORD: Your GPG key passphrase
 //
 // Publishing workflow:
-// 1. For SNAPSHOT: ./gradlew publishAllPublicationsToMavenCentralRepository
-// 2. For RELEASE: Same command, then manually publish in Portal UI (or set automaticRelease=true)
+// 1. GitHub Release zip: ./gradlew publishAllPublicationsToLocalRepoRepository
+//    writes a Maven repository to build/maven-repo. The tag workflow zips it.
+// 2. Maven Central (manual workflow only): ./gradlew publishAllPublicationsToMavenCentralRepository
+//    SNAPSHOT publishes immediately; RELEASE stays in the Portal until someone publishes it.
 
 // Note: All publishing configuration is now handled by the Vanniktech plugin
 // configured in each subproject's publishingConfig() call in MavenConfig.kt
