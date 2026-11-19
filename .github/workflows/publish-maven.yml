@@ -87,31 +87,15 @@ jobs:
           ( cd build/maven-repo && zip -qr "../${ZIP}" . )
           ls -lh "build/${ZIP}"
 
-          cat > build/release-notes.md <<EOF
-          FlashCat Android SDK ${VERSION} 的 Maven 仓库包。解压后可直接作为本地 Maven 仓库使用，不依赖 Maven Central。
-
-          用法：
-          1. 下载并解压到项目里，例如 \`fc-maven-repo/\`。
-          2. 在 \`settings.gradle.kts\` 里加上这个仓库（\`mavenCentral()\` 保留，第三方依赖还从那里下载）：
-
-          \`\`\`kotlin
-          exclusiveContent {
-              forRepository { maven { url = uri("fc-maven-repo") } }
-              filter { includeGroup("cloud.flashcat") }
-          }
-          \`\`\`
-
-          3. 依赖写法不变，版本用 ${VERSION}：
-
-          \`\`\`kotlin
-          implementation("cloud.flashcat:dd-sdk-android-core:${VERSION}")
-          \`\`\`
-
-          包内文件带 GPG 签名（\`.asc\`）。
-          EOF
+          MODULES="$(ls build/maven-repo/cloud/flashcat | sed 's/.*/- `cloud.flashcat:&`/')"
+          export VERSION MODULES
+          # Only substitute these two, so Gradle snippets like ${rootDir} stay intact
+          perl -pe 's/\$\{VERSION\}/$ENV{VERSION}/g; s/\$\{MODULES\}/$ENV{MODULES}/g' \
+            .github/release-notes/maven-repo-zip.md > build/release-notes.md
 
           if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
             gh release upload "${GITHUB_REF_NAME}" "build/${ZIP}" --clobber
+            gh release edit "${GITHUB_REF_NAME}" --notes-file build/release-notes.md
           else
             gh release create "${GITHUB_REF_NAME}" "build/${ZIP}" \
               --title "${GITHUB_REF_NAME}" \
