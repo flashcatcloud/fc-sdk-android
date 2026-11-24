@@ -3613,7 +3613,7 @@ internal class RumViewScopeTest {
     }
 
     @Test
-    fun `M convert pending resource to error W handleEvent() {resource stopped by error}`(
+    fun `M retain pending resource and add pending error W handleEvent() {resource stopped by error}`(
         @LongForgery(1) pendingResources: Long,
         @LongForgery(min = 0, max = Long.MAX_VALUE - 1) pendingErrors: Long,
         forge: Forge
@@ -3628,12 +3628,12 @@ internal class RumViewScopeTest {
         testedScope.handleEvent(fakeEvent, fakeDatadogContext, mockEventWriteScope, mockWriter)
 
         // Then
-        assertThat(testedScope.pendingResourceCount).isEqualTo(pendingResources - 1)
+        assertThat(testedScope.pendingResourceCount).isEqualTo(pendingResources)
         assertThat(testedScope.pendingErrorCount).isEqualTo(pendingErrors + 1)
     }
 
     @Test
-    fun `M convert pending resource to error W handleEvent() {resource stopped by error with stacktrace}`(
+    fun `M retain pending resource and add pending error W handleEvent() {resource stopped by error with stacktrace}`(
         @LongForgery(1) pendingResources: Long,
         @LongForgery(min = 0, max = Long.MAX_VALUE - 1) pendingErrors: Long,
         forge: Forge
@@ -3648,7 +3648,7 @@ internal class RumViewScopeTest {
         testedScope.handleEvent(fakeEvent, fakeDatadogContext, mockEventWriteScope, mockWriter)
 
         // Then
-        assertThat(testedScope.pendingResourceCount).isEqualTo(pendingResources - 1)
+        assertThat(testedScope.pendingResourceCount).isEqualTo(pendingResources)
         assertThat(testedScope.pendingErrorCount).isEqualTo(pendingErrors + 1)
     }
 

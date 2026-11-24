@@ -215,7 +215,7 @@ internal class RumActionScope(
         if (keyRef != null) {
             ongoingResourceKeys.remove(keyRef)
             lastInteractionNanos = now
-            resourceCount--
+            // A failed request still emits a resource; retain it in the action total.
             errorCount++
         }
     }
