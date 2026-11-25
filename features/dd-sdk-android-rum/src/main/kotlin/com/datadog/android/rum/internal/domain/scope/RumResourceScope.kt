@@ -190,7 +190,14 @@ internal class RumResourceScope(
             writeScope,
             writer
         )
-        sendFailedResource(event.statusCode, event.eventTime, event.backgroundTransitions, datadogContext, writeScope, writer)
+        sendFailedResource(
+            event.statusCode,
+            event.eventTime,
+            event.backgroundTransitions,
+            datadogContext,
+            writeScope,
+            writer
+        )
     }
 
     @WorkerThread
@@ -217,7 +224,14 @@ internal class RumResourceScope(
             writeScope,
             writer
         )
-        sendFailedResource(event.statusCode, event.eventTime, event.backgroundTransitions, datadogContext, writeScope, writer)
+        sendFailedResource(
+            event.statusCode,
+            event.eventTime,
+            event.backgroundTransitions,
+            datadogContext,
+            writeScope,
+            writer
+        )
     }
 
     private fun sendFailedResource(
@@ -231,8 +245,10 @@ internal class RumResourceScope(
         stopped = true
         spannedBackground = spannedBackground || backgroundTransitions != backgroundTransitionsAtStart
         // The same attempt has one resource ID, regardless of whether it also emits an error.
-        // Transport failures have no HTTP response; status 0 is a failed native request.
-        sendResource(RumResourceKind.NATIVE, statusCode ?: 0L, null, eventTime, datadogContext, writeScope, writer)
+        // Preserve a kind already reported by StopResource while waiting for timing.
+        // Without a known kind, transport failures use native so status 0 counts as failure.
+        val resourceKind = kind.takeIf { it != RumResourceKind.UNKNOWN } ?: RumResourceKind.NATIVE
+        sendResource(resourceKind, statusCode ?: 0L, null, eventTime, datadogContext, writeScope, writer)
     }
 
     @Suppress("LongMethod")
