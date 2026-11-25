@@ -93,7 +93,8 @@ internal sealed class RumRawEvent {
         val source: RumErrorSource,
         val throwable: Throwable,
         val attributes: Map<String, Any?>,
-        override val eventTime: Time = Time()
+        override val eventTime: Time = Time(),
+        val backgroundTransitions: Int = ForegroundStateTracker.backgroundTransitions
     ) : RumRawEvent()
 
     internal data class StopResourceWithStackTrace(
@@ -104,7 +105,8 @@ internal sealed class RumRawEvent {
         val stackTrace: String,
         val errorType: String?,
         val attributes: Map<String, Any?>,
-        override val eventTime: Time = Time()
+        override val eventTime: Time = Time(),
+        val backgroundTransitions: Int = ForegroundStateTracker.backgroundTransitions
     ) : RumRawEvent()
 
     internal data class AddError(

@@ -1003,12 +1003,11 @@ internal open class RumViewScope(
             val entry = iterator.next()
             val scope = entry.value.handleEvent(event, datadogContext, writeScope, writer)
             if (scope == null) {
-                // if we finalized this scope and it was by error, we won't have resource
-                // event written, but error event instead
+                // Failed requests write both resource and error events. Each storage callback
+                // settles its own pending counter; only the resource settles network activity.
                 if (event is RumRawEvent.StopResourceWithError ||
                     event is RumRawEvent.StopResourceWithStackTrace
                 ) {
-                    pendingResourceCount--
                     pendingErrorCount++
                 }
                 iterator.remove()

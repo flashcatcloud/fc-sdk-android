@@ -99,6 +99,7 @@ internal class RumResourceScope(
         writeScope: EventWriteScope,
         writer: DataWriter<Any>
     ): RumScope? {
+        if (sent) return null
         when (event) {
             is RumRawEvent.WaitForResourceTiming -> if (key == event.key) waitForTiming = true
             is RumRawEvent.AddResourceTiming -> onAddResourceTiming(event, datadogContext, writeScope, writer)
@@ -187,8 +188,15 @@ internal class RumResourceScope(
             ErrorEvent.Category.EXCEPTION,
             datadogContext,
             writeScope,
-            writer,
-            event.eventTime.nanoTime
+            writer
+        )
+        sendFailedResource(
+            event.statusCode,
+            event.eventTime,
+            event.backgroundTransitions,
+            datadogContext,
+            writeScope,
+            writer
         )
     }
 
@@ -214,9 +222,33 @@ internal class RumResourceScope(
             errorCategory,
             datadogContext,
             writeScope,
-            writer,
-            event.eventTime.nanoTime
+            writer
         )
+        sendFailedResource(
+            event.statusCode,
+            event.eventTime,
+            event.backgroundTransitions,
+            datadogContext,
+            writeScope,
+            writer
+        )
+    }
+
+    private fun sendFailedResource(
+        statusCode: Long?,
+        eventTime: Time,
+        backgroundTransitions: Int,
+        datadogContext: DatadogContext,
+        writeScope: EventWriteScope,
+        writer: DataWriter<Any>
+    ) {
+        stopped = true
+        spannedBackground = spannedBackground || backgroundTransitions != backgroundTransitionsAtStart
+        // The same attempt has one resource ID, regardless of whether it also emits an error.
+        // Preserve a kind already reported by StopResource while waiting for timing.
+        // Without a known kind, transport failures use native so status 0 counts as failure.
+        val resourceKind = kind.takeIf { it != RumResourceKind.UNKNOWN } ?: RumResourceKind.NATIVE
+        sendResource(resourceKind, statusCode ?: 0L, null, eventTime, datadogContext, writeScope, writer)
     }
 
     @Suppress("LongMethod")
@@ -413,8 +445,7 @@ internal class RumResourceScope(
         errorCategory: ErrorEvent.Category?,
         datadogContext: DatadogContext,
         writeScope: EventWriteScope,
-        writer: DataWriter<Any>,
-        resourceStopTimestampInNanos: Long
+        writer: DataWriter<Any>
     ) {
         val errorFingerprint = resourceAttributes.remove(RumAttributes.ERROR_FINGERPRINT) as? String
         val rumContext = getRumContext()
@@ -527,11 +558,11 @@ internal class RumResourceScope(
             .onError {
                 it.eventDropped(
                     rumContext.viewId.orEmpty(),
-                    StorageEvent.Error(resourceId, resourceStopTimestampInNanos)
+                    StorageEvent.Error()
                 )
             }
             .onSuccess {
-                it.eventSent(rumContext.viewId.orEmpty(), StorageEvent.Error(resourceId, resourceStopTimestampInNanos))
+                it.eventSent(rumContext.viewId.orEmpty(), StorageEvent.Error())
             }
             .submit()
 

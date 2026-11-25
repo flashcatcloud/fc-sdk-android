@@ -69,6 +69,7 @@ import org.junit.jupiter.api.extension.Extensions
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
+import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.junit.jupiter.MockitoSettings
@@ -1236,6 +1237,128 @@ internal class RumResourceScopeTest {
     }
 
     @Test
+    fun `M count TLS failure once W repeated stop and late timing`() {
+        val event = RumRawEvent.StopResourceWithError(
+            fakeKey,
+            null,
+            "TLS handshake failed",
+            RumErrorSource.NETWORK,
+            javax.net.ssl.SSLHandshakeException("certificate expired"),
+            emptyMap(),
+            timeWithOffset(RESOURCE_DURATION_MS)
+        )
+        testedScope.handleEvent(
+            RumRawEvent.WaitForResourceTiming(fakeKey), fakeDatadogContext, mockEventWriteScope, mockWriter
+        )
+
+        testedScope.handleEvent(event, fakeDatadogContext, mockEventWriteScope, mockWriter)
+        testedScope.handleEvent(event, fakeDatadogContext, mockEventWriteScope, mockWriter)
+        testedScope.handleEvent(
+            RumRawEvent.AddResourceTiming(fakeKey, ResourceTiming()),
+            fakeDatadogContext, mockEventWriteScope, mockWriter
+        )
+
+        argumentCaptor<ResourceEvent> {
+            verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
+            assertThat(lastValue.resource.id).isEqualTo(testedScope.resourceId)
+            assertThat(lastValue.resource.type).isEqualTo(ResourceEvent.ResourceType.NATIVE)
+            assertThat(lastValue.resource.statusCode).isEqualTo(0L)
+            assertThat(lastValue.resource.url).isEqualTo(fakeUrl)
+            assertThat(lastValue.resource.size).isNull()
+            assertThat(lastValue.resource.duration).isEqualTo(TimeUnit.MILLISECONDS.toNanos(RESOURCE_DURATION_MS))
+        }
+        verify(mockWriter).write(eq(mockEventBatchWriter), isA<ErrorEvent>(), eq(EventType.DEFAULT))
+        verifyNoMoreInteractions(mockWriter)
+        assertThat(testedScope.isActive()).isFalse()
+        verify(rumMonitor.mockInstance as AdvancedRumMonitor).eventSent(
+            fakeParentContext.viewId.orEmpty(), StorageEvent.Resource(testedScope.resourceId, event.eventTime.nanoTime)
+        )
+        verify(rumMonitor.mockInstance as AdvancedRumMonitor).eventSent(
+            fakeParentContext.viewId.orEmpty(), StorageEvent.Error()
+        )
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `M preserve known kind W failure while waiting for timing`(withStackTrace: Boolean) {
+        testedScope.handleEvent(
+            RumRawEvent.WaitForResourceTiming(fakeKey), fakeDatadogContext, mockEventWriteScope, mockWriter
+        )
+        testedScope.handleEvent(
+            RumRawEvent.StopResource(fakeKey, 200L, 64L, RumResourceKind.FETCH, emptyMap()),
+            fakeDatadogContext, mockEventWriteScope, mockWriter
+        )
+        val failure = if (withStackTrace) {
+            RumRawEvent.StopResourceWithStackTrace(
+                fakeKey, null, "connection lost", RumErrorSource.NETWORK,
+                "stacktrace", "NetworkError", emptyMap(), timeWithOffset(RESOURCE_DURATION_MS)
+            )
+        } else {
+            RumRawEvent.StopResourceWithError(
+                fakeKey, null, "connection lost", RumErrorSource.NETWORK,
+                java.io.IOException("connection lost"), emptyMap(), timeWithOffset(RESOURCE_DURATION_MS)
+            )
+        }
+
+        testedScope.handleEvent(failure, fakeDatadogContext, mockEventWriteScope, mockWriter)
+        testedScope.handleEvent(failure, fakeDatadogContext, mockEventWriteScope, mockWriter)
+        testedScope.handleEvent(
+            RumRawEvent.AddResourceTiming(fakeKey, ResourceTiming()),
+            fakeDatadogContext, mockEventWriteScope, mockWriter
+        )
+
+        argumentCaptor<ResourceEvent> {
+            verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
+            assertThat(lastValue.resource.id).isEqualTo(testedScope.resourceId)
+            assertThat(lastValue.resource.type).isEqualTo(ResourceEvent.ResourceType.FETCH)
+            // The terminal failure must not reuse the preceding successful status or body size.
+            assertThat(lastValue.resource.statusCode).isEqualTo(0L)
+            assertThat(lastValue.resource.size).isNull()
+        }
+        verify(mockWriter).write(eq(mockEventBatchWriter), isA<ErrorEvent>(), eq(EventType.DEFAULT))
+        verifyNoMoreInteractions(mockWriter)
+    }
+
+    @Test
+    fun `M omit failure duration W app crossed background during request`() {
+        testedScope = scopeWithBackgroundState(startedInBackground = false, transitions = 0)
+        val event = RumRawEvent.StopResourceWithError(
+            fakeKey, null, "timeout", RumErrorSource.NETWORK,
+            java.net.SocketTimeoutException(), emptyMap(), timeWithOffset(RESOURCE_DURATION_MS),
+            backgroundTransitions = 1
+        )
+
+        testedScope.handleEvent(event, fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        argumentCaptor<ResourceEvent> {
+            verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
+            assertThat(lastValue.resource.statusCode).isEqualTo(0L)
+            assertThat(lastValue.resource.duration).isNull()
+        }
+        verify(mockWriter).write(eq(mockEventBatchWriter), isA<ErrorEvent>(), eq(EventType.DEFAULT))
+        verifyNoMoreInteractions(mockWriter)
+    }
+
+    @Test
+    fun `M retain HTTP failure status W stop with stacktrace`() {
+        val event = RumRawEvent.StopResourceWithStackTrace(
+            fakeKey, 503L, "unavailable", RumErrorSource.NETWORK,
+            "stacktrace", "NetworkError", emptyMap(), timeWithOffset(RESOURCE_DURATION_MS)
+        )
+
+        testedScope.handleEvent(event, fakeDatadogContext, mockEventWriteScope, mockWriter)
+
+        argumentCaptor<ResourceEvent> {
+            verify(mockWriter).write(eq(mockEventBatchWriter), capture(), eq(EventType.DEFAULT))
+            assertThat(lastValue.resource.id).isEqualTo(testedScope.resourceId)
+            assertThat(lastValue.resource.statusCode).isEqualTo(503L)
+            assertThat(lastValue.resource.size).isNull()
+        }
+        verify(mockWriter).write(eq(mockEventBatchWriter), isA<ErrorEvent>(), eq(EventType.DEFAULT))
+        verifyNoMoreInteractions(mockWriter)
+    }
+
+    @Test
     fun `M send Error W handleEvent(StopResourceWithError)`(
         @StringForgery message: String,
         @Forgery source: RumErrorSource,
@@ -1310,6 +1433,7 @@ internal class RumResourceScopeTest {
                 }
         }
         verify(mockParentScope, never()).handleEvent(any(), any(), any(), any())
+        verify(mockWriter).write(eq(mockEventBatchWriter), isA<ResourceEvent>(), eq(EventType.DEFAULT))
         verifyNoMoreInteractions(mockWriter)
         assertThat(result).isEqualTo(null)
     }
@@ -1392,6 +1516,7 @@ internal class RumResourceScopeTest {
                 }
         }
         verify(mockParentScope, never()).handleEvent(any(), any(), any(), any())
+        verify(mockWriter).write(eq(mockEventBatchWriter), isA<ResourceEvent>(), eq(EventType.DEFAULT))
         verifyNoMoreInteractions(mockWriter)
         assertThat(result).isEqualTo(null)
     }
@@ -1472,6 +1597,7 @@ internal class RumResourceScopeTest {
                 }
         }
         verify(mockParentScope, never()).handleEvent(any(), any(), any(), any())
+        verify(mockWriter).write(eq(mockEventBatchWriter), isA<ResourceEvent>(), eq(EventType.DEFAULT))
         verifyNoMoreInteractions(mockWriter)
         assertThat(result).isEqualTo(null)
     }
@@ -1575,6 +1701,7 @@ internal class RumResourceScopeTest {
                 }
         }
         verify(mockParentScope, never()).handleEvent(any(), any(), any(), any())
+        verify(mockWriter).write(eq(mockEventBatchWriter), isA<ResourceEvent>(), eq(EventType.DEFAULT))
         verifyNoMoreInteractions(mockWriter)
         assertThat(result).isEqualTo(null)
     }
@@ -1679,6 +1806,7 @@ internal class RumResourceScopeTest {
                 }
         }
         verify(mockParentScope, never()).handleEvent(any(), any(), any(), any())
+        verify(mockWriter).write(eq(mockEventBatchWriter), isA<ResourceEvent>(), eq(EventType.DEFAULT))
         verifyNoMoreInteractions(mockWriter)
         assertThat(result).isEqualTo(null)
     }
@@ -1780,6 +1908,7 @@ internal class RumResourceScopeTest {
                 }
         }
         verify(mockParentScope, never()).handleEvent(any(), any(), any(), any())
+        verify(mockWriter).write(eq(mockEventBatchWriter), isA<ResourceEvent>(), eq(EventType.DEFAULT))
         verifyNoMoreInteractions(mockWriter)
         assertThat(result).isEqualTo(null)
     }
@@ -1882,6 +2011,7 @@ internal class RumResourceScopeTest {
                 }
         }
         verify(mockParentScope, never()).handleEvent(any(), any(), any(), any())
+        verify(mockWriter).write(eq(mockEventBatchWriter), isA<ResourceEvent>(), eq(EventType.DEFAULT))
         verifyNoMoreInteractions(mockWriter)
         assertThat(result).isEqualTo(null)
     }
@@ -1965,6 +2095,7 @@ internal class RumResourceScopeTest {
                 }
         }
         verify(mockParentScope, never()).handleEvent(any(), any(), any(), any())
+        verify(mockWriter).write(eq(mockEventBatchWriter), isA<ResourceEvent>(), eq(EventType.DEFAULT))
         verifyNoMoreInteractions(mockWriter)
         assertThat(result).isEqualTo(null)
     }
@@ -2048,6 +2179,7 @@ internal class RumResourceScopeTest {
                 }
         }
         verify(mockParentScope, never()).handleEvent(any(), any(), any(), any())
+        verify(mockWriter).write(eq(mockEventBatchWriter), isA<ResourceEvent>(), eq(EventType.DEFAULT))
         verifyNoMoreInteractions(mockWriter)
         assertThat(result).isEqualTo(null)
     }
@@ -2130,6 +2262,7 @@ internal class RumResourceScopeTest {
                 }
         }
         verify(mockParentScope, never()).handleEvent(any(), any(), any(), any())
+        verify(mockWriter).write(eq(mockEventBatchWriter), isA<ResourceEvent>(), eq(EventType.DEFAULT))
         verifyNoMoreInteractions(mockWriter)
         assertThat(result).isEqualTo(null)
     }
@@ -2213,6 +2346,7 @@ internal class RumResourceScopeTest {
                 }
         }
         verify(mockParentScope, never()).handleEvent(any(), any(), any(), any())
+        verify(mockWriter).write(eq(mockEventBatchWriter), isA<ResourceEvent>(), eq(EventType.DEFAULT))
         verifyNoMoreInteractions(mockWriter)
         assertThat(result).isEqualTo(null)
     }
@@ -2300,6 +2434,7 @@ internal class RumResourceScopeTest {
                 }
         }
         verify(mockParentScope, never()).handleEvent(any(), any(), any(), any())
+        verify(mockWriter).write(eq(mockEventBatchWriter), isA<ResourceEvent>(), eq(EventType.DEFAULT))
         verifyNoMoreInteractions(mockWriter)
         assertThat(result).isEqualTo(null)
     }
@@ -2388,6 +2523,7 @@ internal class RumResourceScopeTest {
                 }
         }
         verify(mockParentScope, never()).handleEvent(any(), any(), any(), any())
+        verify(mockWriter).write(eq(mockEventBatchWriter), isA<ResourceEvent>(), eq(EventType.DEFAULT))
         verifyNoMoreInteractions(mockWriter)
         assertThat(result).isEqualTo(null)
     }
@@ -3524,7 +3660,7 @@ internal class RumResourceScopeTest {
         verify(rumMonitor.mockInstance as AdvancedRumMonitor)
             .eventSent(
                 fakeParentContext.viewId.orEmpty(),
-                StorageEvent.Error(testedScope.resourceId, mockEvent.eventTime.nanoTime)
+                StorageEvent.Error()
             )
     }
 
@@ -3556,7 +3692,7 @@ internal class RumResourceScopeTest {
         verify(rumMonitor.mockInstance as AdvancedRumMonitor)
             .eventDropped(
                 fakeParentContext.viewId.orEmpty(),
-                StorageEvent.Error(testedScope.resourceId, mockEvent.eventTime.nanoTime)
+                StorageEvent.Error()
             )
     }
 
@@ -3590,7 +3726,7 @@ internal class RumResourceScopeTest {
         verify(rumMonitor.mockInstance as AdvancedRumMonitor)
             .eventDropped(
                 fakeParentContext.viewId.orEmpty(),
-                StorageEvent.Error(testedScope.resourceId, mockEvent.eventTime.nanoTime)
+                StorageEvent.Error()
             )
     }
 
