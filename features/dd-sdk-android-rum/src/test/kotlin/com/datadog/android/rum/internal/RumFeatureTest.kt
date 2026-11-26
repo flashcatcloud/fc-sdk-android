@@ -1611,6 +1611,30 @@ internal class RumFeatureTest {
     }
 
     @Test
+    fun `M reuse the crashed thread's stack W crashStack() { JVM crash event }`(
+        forge: Forge
+    ) {
+        val crashed = ThreadDump(name = "main", state = "runnable", stack = "already formatted", crashed = true)
+        val other = ThreadDump(name = "worker", state = "waiting", stack = "other thread", crashed = false)
+        val event = JvmCrash.Rum(
+            message = forge.anAlphabeticalString(),
+            throwable = forge.aThrowable(),
+            threads = listOf(other, crashed)
+        )
+
+        assertThat(testedFeature.crashStack(event)).isEqualTo("already formatted")
+    }
+
+    @Test
+    fun `M format the throwable W crashStack() { no crashed thread dump }`() {
+        val throwable = IllegalStateException("boom")
+        val event = JvmCrash.Rum(message = "boom", throwable = throwable, threads = emptyList())
+
+        assertThat(testedFeature.crashStack(event))
+            .startsWith("java.lang.IllegalStateException: boom")
+    }
+
+    @Test
     fun `M prepare no beacon W onInitialize() { beacon turned off at init }`() {
         // Given
         testedFeature = RumFeature(

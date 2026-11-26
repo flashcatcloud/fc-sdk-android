@@ -41,6 +41,7 @@ import com.datadog.android.event.EventMapper
 import com.datadog.android.event.MapperSerializer
 import com.datadog.android.event.NoOpEventMapper
 import com.datadog.android.internal.flags.RumFlagEvaluationMessage
+import com.datadog.android.internal.utils.loggableStackTrace
 import com.datadog.android.internal.system.BuildSdkVersionProvider
 import com.datadog.android.internal.telemetry.InternalTelemetryEvent
 import com.datadog.android.privacy.TrackingConsent
@@ -1046,6 +1047,7 @@ internal class RumFeature(
         val internalCore = sdkCore as? InternalSdkCore ?: return
         val crashType = event["crashType"] as? String ?: return
         val message = event["message"] as? String ?: return
+        val stack = event["stack"] as? String ?: ""
         val crashTimeMs = event["crashTimeMs"] as? Long ?: return
         val timeSinceAppStartMs = event["timeSinceAppStartMs"] as? Long ?: return
 
@@ -1062,6 +1064,7 @@ internal class RumFeature(
             datadogContext = { internalCore.getDatadogContext(withFeatureContexts = setOf(Feature.RUM_FEATURE_NAME)) },
             crashType = crashType,
             message = message,
+            stack = stack,
             crashTimeMs = crashTimeMs,
             timeSinceAppStartMs = timeSinceAppStartMs,
             onCrashId = onCrashId,
@@ -1105,6 +1108,7 @@ internal class RumFeature(
                 datadogContext = { jvmCrashBeaconContext(internalCore, reportContext) },
                 crashType = crashEvent.throwable.javaClass.let { it.canonicalName ?: it.name },
                 message = crashEvent.message,
+                stack = crashStack(crashEvent),
                 crashTimeMs = now.timestamp,
                 timeSinceAppStartMs = error.get("time_since_app_start").asLong,
                 waitTimeoutMs = (pending.remainingMs() - JVM_BEACON_RESULT_MARGIN_MS).coerceAtLeast(0),
@@ -1117,6 +1121,17 @@ internal class RumFeature(
         } finally {
             if (pending != null) finishJvmCrash(pending, result?.beacon)
         }
+    }
+
+    /**
+     * The stack the full report stores: the crashed thread's, already formatted by the exception
+     * handler, so a crash out of memory does not format it again. A failure must not cost the beacon.
+     */
+    @Suppress("TooGenericExceptionCaught")
+    internal fun crashStack(crashEvent: JvmCrash.Rum): String = try {
+        crashEvent.threads.firstOrNull { it.crashed }?.stack ?: crashEvent.throwable.loggableStackTrace()
+    } catch (_: Throwable) {
+        ""
     }
 
     /**

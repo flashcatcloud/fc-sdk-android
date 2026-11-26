@@ -35,10 +35,11 @@ import java.util.concurrent.atomic.AtomicReference
 /**
  * FLASHCAT FORK - the crash beacon.
  *
- * When the app crashes in the foreground, a beacon of a few hundred bytes, without stack, is sent
- * while the crash ends the process, so the crash is counted even if the app is never opened again.
- * The full report still follows on the next launch, under [crashId] as `error.id`, and carries what
- * became of the beacon in `error.beacon`. The intake merges the two by that id.
+ * When the app crashes in the foreground, a beacon is sent while the crash ends the process, so the
+ * crash is counted even if the app is never opened again. It carries the crash stack in
+ * `crash_stack`, shortened so the body stays within the intake's 8KB limit. The full report still
+ * follows on the next launch, under [crashId] as `error.id`, and carries what became of the beacon
+ * in `error.beacon`. The intake merges the two by that id.
  *
  * A JVM crash reaches us from an uncaught exception handler. It can use ordinary JVM code, but
  * reading SDK state can still block. Sending runs on the beacon thread after the JVM report has
@@ -127,6 +128,8 @@ internal class CrashBeacon(
      * @param waitTimeoutMs remaining wait, from the configuration frozen for this crash.
      * @param reservation the JVM crash's id reservation, made before persisting the full report.
      * @param persistedDate the JVM report's already persisted date, immune to later clock/view changes.
+     * @param stack the crash stack, the same text the full report stores. Shortened to keep the body
+     * within [MAX_BEACON_BYTES]. Empty sends no `crash_stack`.
      */
     @Suppress("TooGenericExceptionCaught", "LongParameterList", "ReturnCount")
     fun send(
@@ -140,7 +143,8 @@ internal class CrashBeacon(
         waitMarginMs: Long = 0L,
         waitTimeoutMs: Long? = null,
         reservation: Reservation? = null,
-        persistedDate: Long? = null
+        persistedDate: Long? = null,
+        stack: String = ""
     ): Result? {
         val claim = reservation ?: reserve() ?: return null
         if (claim.owner !== this || !claim.used.compareAndSet(false, true)) return null
@@ -177,7 +181,8 @@ internal class CrashBeacon(
                         timeoutMs,
                         dispatch,
                         onDispatch,
-                        persistedDate
+                        persistedDate,
+                        stack
                     )
                 } catch (e: Throwable) {
                     // Logging belongs inside the bound too: a logger can itself wait on SDK state.
@@ -219,7 +224,8 @@ internal class CrashBeacon(
         timeoutMs: Long,
         dispatch: AtomicReference<Dispatch>,
         onDispatch: (Long) -> Unit,
-        persistedDate: Long?
+        persistedDate: Long?,
+        stack: String
     ): String {
         val datadogContext = readContext() ?: return STATUS_FAILED
         val rumContext = RumContext.fromFeatureContext(
@@ -244,7 +250,15 @@ internal class CrashBeacon(
             datadogContext.time.serverTimeOffsetMs
         }
         val date = persistedDate ?: (crashTimeMs + offset)
-        val body = payload(datadogContext, rumContext, crashType, message, date, timeSinceAppStartMs)
+        val body = payload(
+            datadogContext,
+            rumContext,
+            crashType,
+            message,
+            date,
+            timeSinceAppStartMs,
+            stack
+        )
         // Persist the date before claiming dispatch. Failure must stop the request, just like an
         // id write failure. If persistence outlives the wait, the CAS prevents a late request.
         onDispatch(date)
@@ -279,20 +293,21 @@ internal class CrashBeacon(
         }
     }
 
-    @Suppress("LongParameterList")
+    @Suppress("LongParameterList", "TooGenericExceptionCaught")
     internal fun payload(
         datadogContext: DatadogContext,
         rumContext: RumContext,
         crashType: String,
         message: String,
         date: Long,
-        timeSinceAppStartMs: Long
+        timeSinceAppStartMs: Long,
+        stack: String = ""
     ): String {
         // This exact corrected date is also passed to the crash report. A view change or clock
         // sync while the request is in flight must not change the ledger's launch-date key.
         val deviceInfo = datadogContext.deviceInfo
         val user = datadogContext.userInfo
-        return JSONObject().apply {
+        fun encode(includedStack: String): String = JSONObject().apply {
             put("crash_id", crashId)
             put("application_id", applicationId)
             put("launch_time", date - timeSinceAppStartMs)
@@ -318,7 +333,18 @@ internal class CrashBeacon(
             put("device_type", deviceInfo.deviceType.toErrorSchemaType().toJson().asString)
             put("sdk_version", datadogContext.sdkVersion)
             put("source", datadogContext.source)
+            // The same text as the full report's error.stack. Left out when there is none, or when
+            // even a truncated stack would push the body past the intake limit.
+            if (includedStack.isNotEmpty()) put(CRASH_STACK, includedStack)
         }.toString()
+
+        // Out of memory is a common way to crash: a stack that cannot be added must not cost the
+        // crash its count.
+        return try {
+            encode(stackWithinBeacon(stack, ::encode))
+        } catch (e: Throwable) {
+            encode("")
+        }
     }
 
     internal data class Result(val beacon: ErrorEvent.Beacon, val crashDate: Long?)
@@ -358,6 +384,72 @@ internal class CrashBeacon(
         private const val CALL_TIMEOUT_MARGIN_MS = 100L
         private const val MIN_CALL_TIMEOUT_MS = 100L
         private const val MAX_MESSAGE_LENGTH = 256
+
+        /** The intake rejects a beacon larger than this. The stack is shortened to stay inside it. */
+        internal const val MAX_BEACON_BYTES = 8 * 1024
+        internal const val CRASH_STACK = "crash_stack"
+        internal const val STACK_TRUNCATED_MARK = "\n\t... stack truncated"
+        private const val CAUSED_BY = "\nCaused by: "
+
+        /**
+         * The longest clip of [stack] (see [clipStack]) whose JSON body still fits in
+         * [MAX_BEACON_BYTES]. Empty when there is no stack, or when no clip fits.
+         *
+         * Every character takes at least one byte, so no candidate is longer than the limit: a
+         * 64KB stack is never copied whole into a body.
+         */
+        internal fun stackWithinBeacon(stack: String, encode: (String) -> String): String {
+            if (stack.isEmpty()) return ""
+            fun fits(candidate: String) = candidate.isNotEmpty() &&
+                encode(candidate).toByteArray(Charsets.UTF_8).size <= MAX_BEACON_BYTES
+            if (stack.length <= MAX_BEACON_BYTES && fits(stack)) return stack
+            var low = 0
+            var high = minOf(stack.length - 1, MAX_BEACON_BYTES)
+            var best = ""
+            while (low <= high) {
+                val mid = (low + high) ushr 1
+                val candidate = clipStack(stack, mid)
+                if (fits(candidate)) {
+                    best = candidate
+                    low = mid + 1
+                } else {
+                    high = mid - 1
+                }
+            }
+            return best
+        }
+
+        /**
+         * At most [maxChars] of [stack], cut on line boundaries when possible: the frames where the
+         * crash was raised, a mark where frames were dropped, and the last `Caused by:` section
+         * (the root cause of a JVM crash) in up to half the room.
+         */
+        internal fun clipStack(stack: String, maxChars: Int): String {
+            if (maxChars <= 0 || stack.isEmpty()) return ""
+            if (stack.length <= maxChars) return stack
+            if (maxChars <= STACK_TRUNCATED_MARK.length) return ""
+            val budget = maxChars - STACK_TRUNCATED_MARK.length
+            val causeStart = stack.lastIndexOf(CAUSED_BY).let { if (it > 0) it + 1 else -1 }
+            val tail = if (causeStart > 0) {
+                stack.substring(causeStart, lineCut(stack, causeStart, budget / 2))
+            } else {
+                ""
+            }
+            val headRoom = if (tail.isEmpty()) budget else budget - tail.length - 1
+            val headLimit = if (causeStart > 0) causeStart - 1 else stack.length
+            val headEnd = lineCut(stack, 0, minOf(headRoom, headLimit))
+            val head = stack.substring(0, headEnd) + STACK_TRUNCATED_MARK
+            return if (tail.isEmpty()) head else head + "\n" + tail
+        }
+
+        /** The end of at most [maxLength] chars of [text] from [from], on a line break if any. */
+        private fun lineCut(text: String, from: Int, maxLength: Int): Int {
+            if (maxLength <= 0) return from
+            val end = from + maxLength
+            if (end >= text.length) return text.length
+            val lineEnd = text.lastIndexOf('\n', end - 1)
+            return if (lineEnd > from) lineEnd else end
+        }
 
         private val JSON_MEDIA_TYPE = "application/json".toMediaType()
 

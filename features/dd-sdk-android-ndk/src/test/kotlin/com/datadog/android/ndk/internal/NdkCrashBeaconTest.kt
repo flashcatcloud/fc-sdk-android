@@ -214,6 +214,7 @@ internal class NdkCrashBeaconTest {
         val event = sentToRum.single { it["type"] == NdkCrashBeacon.SEND_EVENT_TYPE }
         assertThat(event["crashType"]).isEqualTo("SIGSEGV")
         assertThat(event["message"]).isEqualTo("NDK crash detected with signal: SIGSEGV")
+        assertThat(event["stack"]).isEqualTo("")
         assertThat(event["crashTimeMs"]).isEqualTo(5_000L)
         assertThat(event["timeSinceAppStartMs"]).isEqualTo(4_000L)
 
@@ -235,6 +236,46 @@ internal class NdkCrashBeaconTest {
         assertThatThrownBy { (event["onDispatch"] as (Long) -> Unit)(9_999L) }
             .isInstanceOf(IllegalStateException::class.java)
         assertThat(file.readText()).isEqualTo("$CRASH_ID sent 105 5000 5120")
+    }
+
+    @Test
+    fun `M read this crash's stack W crashStackFromLog()`() {
+        val json = """{"signal":11,"timestamp":5000,"time_since_app_start_ms":4000,"signal_name":"SIGSEGV","message":"Segmentation fault","stacktrace":"0  pc 0000abcd  /system/lib64/libc.so\n1  pc 00001234  /data/app/libapp.so (\"sym\")"}"""
+
+        assertThat(NdkCrashBeacon.crashStackFromLog(json, 5_000L)).isEqualTo(
+            "0  pc 0000abcd  /system/lib64/libc.so\n1  pc 00001234  /data/app/libapp.so (\"sym\")"
+        )
+    }
+
+    @Test
+    fun `M ignore another crash's log W crashStackFromLog() { timestamp differs }`() {
+        val json = """{"timestamp":1,"stacktrace":"stale"}"""
+
+        assertThat(NdkCrashBeacon.crashStackFromLog(json, 5_000L)).isEmpty()
+    }
+
+    @Test
+    fun `M attach the written stack W send() { crash log matches }`() {
+        File(tempDir, NdkCrashBeacon.CRASH_LOG_FILE_NAME).writeText(
+            """{"signal":11,"timestamp":5000,"time_since_app_start_ms":4000,"signal_name":"SIGSEGV","message":"Segmentation fault","stacktrace":"0  pc 0000abcd\n1  pc 00001234"}"""
+        )
+
+        testedBeacon.send(NdkCrashBeacon.NativeCrash(11, 5_000L, 4_000L, 900L))
+
+        val event = sentToRum.single { it["type"] == NdkCrashBeacon.SEND_EVENT_TYPE }
+        assertThat(event["stack"]).isEqualTo("0  pc 0000abcd\n1  pc 00001234")
+    }
+
+    @Test
+    fun `M attach no stack W send() { crash log is another crash }`() {
+        File(tempDir, NdkCrashBeacon.CRASH_LOG_FILE_NAME).writeText(
+            """{"timestamp":1,"stacktrace":"stale"}"""
+        )
+
+        testedBeacon.send(NdkCrashBeacon.NativeCrash(11, 5_000L, 4_000L, 900L))
+
+        val event = sentToRum.single { it["type"] == NdkCrashBeacon.SEND_EVENT_TYPE }
+        assertThat(event["stack"]).isEqualTo("")
     }
 
     @Test

@@ -194,6 +194,9 @@ internal class NdkCrashBeacon(
                 "type" to SEND_EVENT_TYPE,
                 "crashType" to signalName,
                 "message" to CRASH_MESSAGE.format(signalName),
+                // The stack just written into crash_log. Empty when it is missing or belongs to
+                // another crash; RUM still sends the beacon.
+                "stack" to readCrashStack(crash.timestampMs),
                 "crashTimeMs" to crash.timestampMs,
                 "timeSinceAppStartMs" to crash.timeSinceAppStartMs,
                 "waitTimeoutMs" to crash.remainingWaitMs,
@@ -206,6 +209,22 @@ internal class NdkCrashBeacon(
                 }
             )
         )
+    }
+
+    /**
+     * The stack of the report written for this crash. The signal handler only wakes us after that
+     * write succeeds, and the timestamp in the file is the one [NativeCrash.timestampMs] carries.
+     * A file from a crash this process survived must not be attached to the next one.
+     */
+    @Suppress("TooGenericExceptionCaught")
+    private fun readCrashStack(timestampMs: Long): String {
+        return try {
+            val file = File(directory, CRASH_LOG_FILE_NAME)
+            if (!file.isFile || file.length() <= 0L || file.length() > MAX_CRASH_LOG_BYTES) return ""
+            crashStackFromLog(file.readText(), timestampMs)
+        } catch (_: Throwable) {
+            ""
+        }
     }
 
     /**
@@ -312,6 +331,71 @@ internal class NdkCrashBeacon(
         internal const val ARM_EVENT_TYPE = "ndk_crash_beacon_arm"
         internal const val SEND_EVENT_TYPE = "ndk_crash_beacon"
         internal const val RESULT_FILE_NAME = "crash_beacon"
+
+        /** The native crash report, see datadog-native-lib.cpp `crash_log`. */
+        internal const val CRASH_LOG_FILE_NAME = "crash_log"
+
+        /** Native backtraces are capped near 36KB; don't read a runaway file into the beacon. */
+        private const val MAX_CRASH_LOG_BYTES = 128L * 1024L
+
+        /**
+         * The `stacktrace` of a crash log whose `timestamp` is [timestampMs]. Empty when the log is
+         * not that crash, or is not the JSON the signal handler writes.
+         */
+        internal fun crashStackFromLog(json: String, timestampMs: Long): String {
+            if (jsonLongField(json, "timestamp") != timestampMs) return ""
+            return jsonStringField(json, "stacktrace").orEmpty()
+        }
+
+        private fun jsonLongField(json: String, name: String): Long? {
+            val key = "\"$name\":"
+            val at = json.indexOf(key)
+            if (at < 0) return null
+            var i = at + key.length
+            while (i < json.length && json[i].isWhitespace()) i++
+            val start = i
+            if (i < json.length && (json[i] == '-' || json[i] == '+')) i++
+            val digits = i
+            while (i < json.length && json[i].isDigit()) i++
+            if (i == digits) return null
+            return json.substring(start, i).toLongOrNull()
+        }
+
+        /** The signal handler writes `"stacktrace":"..."` with no space, as the last field. */
+        private fun jsonStringField(json: String, name: String): String? {
+            val key = "\"$name\":\""
+            val at = json.indexOf(key)
+            if (at < 0) return null
+            val out = StringBuilder()
+            var i = at + key.length
+            while (i < json.length) {
+                val c = json[i]
+                if (c == '"') return out.toString()
+                if (c != '\\') {
+                    out.append(c)
+                    i++
+                    continue
+                }
+                if (i + 1 >= json.length) return null
+                when (val escaped = json[i + 1]) {
+                    'n' -> out.append('\n')
+                    'r' -> out.append('\r')
+                    't' -> out.append('\t')
+                    '"', '\\', '/' -> out.append(escaped)
+                    'u' -> {
+                        if (i + 5 >= json.length) return null
+                        val code = json.substring(i + 2, i + 6).toIntOrNull(16) ?: return null
+                        out.append(code.toChar())
+                        i += 6
+                        continue
+                    }
+                    else -> return null
+                }
+                i += 2
+            }
+            return null
+        }
+
         internal const val STATUS_TIMEOUT = "timeout"
         internal const val DEFAULT_TIMEOUT_MS = 1_000
         private const val STOP_WAIT_MS = 500L

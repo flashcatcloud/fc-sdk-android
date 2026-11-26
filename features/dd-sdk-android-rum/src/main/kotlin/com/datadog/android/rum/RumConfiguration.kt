@@ -184,9 +184,10 @@ data class RumConfiguration internal constructor(
         /**
          * FLASHCAT FORK - Sets whether a crash in the foreground sends a crash beacon.
          *
-         * The beacon is a few hundred bytes without stack, sent while the crash ends the process, so
-         * the crash is counted even if the app is never opened again. The full report still follows
-         * on the next launch, under the same id. The full crash is persisted before networking.
+         * The beacon is sent while the crash ends the process, so the crash is counted even if the app
+         * is never opened again. It includes the crash stack, shortened to stay within the intake's
+         * 8KB limit. The full report still follows on the next launch, under the same id. The full
+         * crash is persisted before networking.
          * Persistence confirmation and the beacon share a one-second budget by default (remote
          * configuration: 0.5 to 2 seconds), before handing off to the previous crash handler.
          *

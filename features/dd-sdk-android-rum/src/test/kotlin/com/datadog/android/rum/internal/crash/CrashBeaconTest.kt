@@ -185,6 +185,96 @@ internal class CrashBeaconTest {
         assertThat(body.getString("service")).isEqualTo(fakeDatadogContext.service)
         assertThat(body.getString("sdk_version")).isEqualTo(fakeDatadogContext.sdkVersion)
         assertThat(body.getString("source")).isEqualTo(fakeDatadogContext.source)
+        assertThat(body.has(CrashBeacon.CRASH_STACK)).isFalse()
+    }
+
+    @Test
+    fun `M send the crash stack W send() { stack }`() {
+        whenever(mockCall.execute()) doReturn response(202)
+        val stack = "java.lang.IllegalStateException: boom\n\tat com.example.Main.crash(Main.kt:10)"
+
+        checkNotNull(
+            testedBeacon.send(
+                { fakeDatadogContext },
+                "java.lang.IllegalStateException",
+                "boom",
+                1_000_000L,
+                4_000L,
+                stack = stack
+            )
+        )
+
+        assertThat(sentBody().getString(CrashBeacon.CRASH_STACK)).isEqualTo(stack)
+    }
+
+    @Test
+    fun `M shorten the stack to the intake limit W send() { stack longer than the beacon }`() {
+        whenever(mockCall.execute()) doReturn response(202)
+        val frame = "\tat com.example.Main.crash(Main.kt:10)\n"
+        val stack = "java.lang.StackOverflowError\n" + frame.repeat(4_000)
+
+        checkNotNull(
+            testedBeacon.send(
+                { fakeDatadogContext },
+                "java.lang.StackOverflowError",
+                "stack overflow",
+                1_000_000L,
+                4_000L,
+                stack = stack
+            )
+        )
+
+        val raw = argumentCaptor<Request>().run {
+            verify(mockCallFactory).newCall(capture())
+            Buffer().also { firstValue.body!!.writeTo(it) }.readUtf8()
+        }
+        assertThat(raw.toByteArray(Charsets.UTF_8).size).isLessThanOrEqualTo(CrashBeacon.MAX_BEACON_BYTES)
+        val sentStack = JSONObject(raw).getString(CrashBeacon.CRASH_STACK)
+        assertThat(sentStack).startsWith("java.lang.StackOverflowError")
+        assertThat(sentStack).endsWith("stack truncated")
+        assertThat(sentStack.length).isLessThan(stack.length)
+    }
+
+    @Test
+    fun `M keep the top frames and the root cause W clipStack() { long chained stack }`() {
+        val frame = "\tat com.example.Main.crash(Main.kt:10)\n"
+        val stack = "java.lang.RuntimeException: wrapper\n" + frame.repeat(500) +
+            "Caused by: java.io.IOException: root\n\tat com.example.Io.read(Io.kt:5)"
+
+        val clipped = CrashBeacon.clipStack(stack, 2_000)
+
+        assertThat(clipped.length).isLessThanOrEqualTo(2_000)
+        assertThat(clipped).startsWith("java.lang.RuntimeException: wrapper\n")
+        assertThat(clipped).contains(CrashBeacon.STACK_TRUNCATED_MARK)
+        assertThat(clipped).endsWith("Caused by: java.io.IOException: root\n\tat com.example.Io.read(Io.kt:5)")
+    }
+
+    @Test
+    fun `M keep the stack whole W clipStack() { stack within the room }`() {
+        val stack = "java.lang.IllegalStateException: boom\n\tat com.example.Main.crash(Main.kt:10)"
+
+        assertThat(CrashBeacon.clipStack(stack, stack.length)).isEqualTo(stack)
+    }
+
+    @Test
+    fun `M never build a body from the whole stack W stackWithinBeacon() { huge stack }`() {
+        val stack = "x\n".repeat(32_000)
+        var longest = 0
+
+        val kept = CrashBeacon.stackWithinBeacon(stack) { candidate ->
+            longest = maxOf(longest, candidate.length)
+            """{"crash_stack":"$candidate"}"""
+        }
+
+        assertThat(longest).isLessThanOrEqualTo(CrashBeacon.MAX_BEACON_BYTES)
+        assertThat(kept).isNotEmpty()
+    }
+
+    @Test
+    fun `M leave the stack out W stackWithinBeacon() { no clip fits }`() {
+        val kept = CrashBeacon.stackWithinBeacon("frame\n".repeat(100)) { "x".repeat(CrashBeacon.MAX_BEACON_BYTES + 1) }
+
+        assertThat(kept).isEmpty()
     }
 
     @Test
