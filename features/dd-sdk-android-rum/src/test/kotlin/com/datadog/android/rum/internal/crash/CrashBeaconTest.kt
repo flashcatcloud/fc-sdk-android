@@ -185,6 +185,182 @@ internal class CrashBeaconTest {
         assertThat(body.getString("service")).isEqualTo(fakeDatadogContext.service)
         assertThat(body.getString("sdk_version")).isEqualTo(fakeDatadogContext.sdkVersion)
         assertThat(body.getString("source")).isEqualTo(fakeDatadogContext.source)
+        assertThat(body.getString("source_type")).isEqualTo("android")
+        assertThat(body.getString("arch")).isEqualTo(fakeDatadogContext.deviceInfo.architecture)
+        assertThat(body.has(CrashBeacon.CRASH_STACK)).isFalse()
+    }
+
+    @Test
+    fun `M preserve symbolication identifiers W send() { native crash }`() {
+        whenever(mockCall.execute()) doReturn response(202)
+        fakeDatadogContext = fakeDatadogContext.copy(appBuildId = "build-a")
+
+        testedBeacon.send(
+            { fakeDatadogContext }, "SIGSEGV", "native crash", 1_000_000L, 4_000L,
+            stack = "0  pc 0000abcd  /data/app/libapp.so",
+            sourceType = "ndk"
+        )
+
+        val body = sentBody()
+        assertThat(body.getString("source_type")).isEqualTo("ndk")
+        assertThat(body.getString("build_id")).isEqualTo("build-a")
+        assertThat(body.getString("arch")).isEqualTo(fakeDatadogContext.deviceInfo.architecture)
+    }
+
+    @Test
+    fun `M preserve the JVM build id and omit an unavailable id W payload()`() {
+        for (buildId in listOf("build-java", null)) {
+            val body = JSONObject(
+                testedBeacon.payload(
+                    fakeDatadogContext.copy(appBuildId = buildId), fakeRumContext,
+                    "java.lang.IllegalStateException", "boom", 1_000_000L, 4_000L
+                )
+            )
+            assertThat(body.getString("source_type")).isEqualTo("android")
+            if (buildId == null) {
+                assertThat(body.has("build_id")).isFalse()
+            } else {
+                assertThat(body.getString("build_id")).isEqualTo(buildId)
+            }
+        }
+    }
+
+    @Test
+    fun `M send the crash stack W send() { stack }`() {
+        whenever(mockCall.execute()) doReturn response(202)
+        val stack = "java.lang.IllegalStateException: boom\n\tat com.example.Main.crash(Main.kt:10)"
+
+        checkNotNull(
+            testedBeacon.send(
+                { fakeDatadogContext },
+                "java.lang.IllegalStateException",
+                "boom",
+                1_000_000L,
+                4_000L,
+                stack = stack
+            )
+        )
+
+        assertThat(sentBody().getString(CrashBeacon.CRASH_STACK)).isEqualTo(stack)
+    }
+
+    @Test
+    fun `M shorten the stack to the intake limit W send() { stack longer than the beacon }`() {
+        whenever(mockCall.execute()) doReturn response(202)
+        val frame = "\tat com.example.Main.crash(Main.kt:10)\n"
+        val stack = "java.lang.StackOverflowError\n" + frame.repeat(4_000)
+
+        checkNotNull(
+            testedBeacon.send(
+                { fakeDatadogContext },
+                "java.lang.StackOverflowError",
+                "stack overflow",
+                1_000_000L,
+                4_000L,
+                stack = stack
+            )
+        )
+
+        val raw = argumentCaptor<Request>().run {
+            verify(mockCallFactory).newCall(capture())
+            Buffer().also { firstValue.body!!.writeTo(it) }.readUtf8()
+        }
+        assertThat(raw.toByteArray(Charsets.UTF_8).size).isLessThanOrEqualTo(CrashBeacon.MAX_BEACON_BYTES)
+        val sentStack = JSONObject(raw).getString(CrashBeacon.CRASH_STACK)
+        assertThat(sentStack).startsWith("java.lang.StackOverflowError")
+        assertThat(sentStack).endsWith("stack truncated")
+        assertThat(sentStack.length).isLessThan(stack.length)
+    }
+
+    @Test
+    fun `M keep the top frames and the root cause W clipStack() { long chained stack }`() {
+        val frame = "\tat com.example.Main.crash(Main.kt:10)\n"
+        val stack = "java.lang.RuntimeException: wrapper\n" + frame.repeat(500) +
+            "Caused by: java.io.IOException: root\n\tat com.example.Io.read(Io.kt:5)"
+
+        val clipped = CrashBeacon.clipStack(stack, 2_000)
+
+        assertThat(clipped.length).isLessThanOrEqualTo(2_000)
+        assertThat(clipped).startsWith("java.lang.RuntimeException: wrapper\n")
+        assertThat(clipped).contains(CrashBeacon.STACK_TRUNCATED_MARK)
+        assertThat(clipped).endsWith("Caused by: java.io.IOException: root\n\tat com.example.Io.read(Io.kt:5)")
+    }
+
+    @Test
+    fun `M keep the stack whole W clipStack() { stack within the room }`() {
+        val stack = "java.lang.IllegalStateException: boom\n\tat com.example.Main.crash(Main.kt:10)"
+
+        assertThat(CrashBeacon.clipStack(stack, stack.length)).isEqualTo(stack)
+    }
+
+    @Test
+    fun `M give unused wrapper room to the cause W clipStack() { short wrapper long cause }`() {
+        val wrapper = "java.lang.RuntimeException: wrapper\n" +
+            (0..2).joinToString("\n") { "\tat com.example.Wrapper.f$it(Wrapper.kt:1)" }
+        val cause = "Caused by: java.io.IOException: root\n" +
+            (0..299).joinToString("\n") { "\tat com.example.Root.f$it(Root.kt:1)" }
+
+        val clipped = CrashBeacon.clipStack("$wrapper\n$cause", 8_192)
+
+        assertThat(clipped).startsWith("$wrapper\nCaused by: java.io.IOException: root\n")
+        assertThat(clipped).endsWith(CrashBeacon.STACK_TRUNCATED_MARK)
+        assertThat(clipped.split(CrashBeacon.STACK_TRUNCATED_MARK)).hasSize(2)
+        assertThat(clipped.length).isBetween(8_100, 8_192)
+    }
+
+    @Test
+    fun `M mark both gaps W clipStack() { long wrapper and cause }`() {
+        val frame = "\tat com.example.Main.crash(Main.kt:10)\n"
+        val stack = "java.lang.RuntimeException: wrapper\n" + frame.repeat(500) +
+            "Caused by: java.io.IOException: root\n" + frame.repeat(500)
+
+        val clipped = CrashBeacon.clipStack(stack, 2_000)
+
+        assertThat(clipped.split(CrashBeacon.STACK_TRUNCATED_MARK)).hasSize(3)
+        assertThat(clipped).contains(CrashBeacon.STACK_TRUNCATED_MARK + "\nCaused by:")
+        assertThat(clipped).endsWith(CrashBeacon.STACK_TRUNCATED_MARK)
+        assertThat(clipped.length).isLessThanOrEqualTo(2_000)
+    }
+
+    @Test
+    fun `M respect small budgets and escaped UTF8 payload size W clipStack and payload()`() {
+        val stack = "java.lang.RuntimeException: 中文\\\"错误\n" +
+            "\tat com.example.Main.crash(Main.kt:10)\n".repeat(3) +
+            "Caused by: java.io.IOException: 中文根因\n" +
+            "\tat com.example.Root.read(读取文件.kt:20)\n".repeat(500)
+        for (budget in 0..256) {
+            assertThat(CrashBeacon.clipStack(stack, budget).length).isLessThanOrEqualTo(budget)
+        }
+        val raw = testedBeacon.payload(
+            fakeDatadogContext.copy(appBuildId = "build-utf8"), fakeRumContext,
+            "java.lang.RuntimeException", "中文错误", 1_000_000L, 4_000L, stack
+        )
+
+        assertThat(raw.toByteArray(Charsets.UTF_8).size).isLessThanOrEqualTo(CrashBeacon.MAX_BEACON_BYTES)
+        assertThat(JSONObject(raw).getString("crash_stack"))
+            .contains("Caused by: java.io.IOException: 中文根因")
+            .endsWith(CrashBeacon.STACK_TRUNCATED_MARK)
+    }
+
+    @Test
+    fun `M never build a body from the whole stack W stackWithinBeacon() { huge stack }`() {
+        val stack = "x\n".repeat(32_000)
+        var longest = 0
+
+        val kept = CrashBeacon.stackWithinBeacon(stack) { candidate ->
+            longest = maxOf(longest, candidate.length)
+            """{"crash_stack":"$candidate"}"""
+        }
+
+        assertThat(longest).isLessThanOrEqualTo(CrashBeacon.MAX_BEACON_BYTES)
+        assertThat(kept).isNotEmpty()
+    }
+
+    @Test
+    fun `M leave the stack out W stackWithinBeacon() { no clip fits }`() {
+        val kept = CrashBeacon.stackWithinBeacon("frame\n".repeat(100)) { "x".repeat(CrashBeacon.MAX_BEACON_BYTES + 1) }
+
+        assertThat(kept).isEmpty()
     }
 
     @Test
