@@ -165,6 +165,7 @@ internal class RumResourceScope(
     ) {
         if (key != event.key) return
         timing = event.timing
+        spannedBackground = spannedBackground || event.backgroundTransitions != backgroundTransitionsAtStart
         if (stopped && !sent) {
             sendResource(kind, statusCode, size, event.eventTime, datadogContext, writeScope, writer)
         }
