@@ -130,6 +130,7 @@ internal class CrashBeacon(
      * @param persistedDate the JVM report's already persisted date, immune to later clock/view changes.
      * @param stack the crash stack, the same text the full report stores. Shortened to keep the body
      * within [MAX_BEACON_BYTES]. Empty sends no `crash_stack`.
+     * @param sourceType the stack's symbolication type: `android` for JVM crashes, `ndk` for native crashes.
      */
     @Suppress("TooGenericExceptionCaught", "LongParameterList", "ReturnCount")
     fun send(
@@ -144,7 +145,8 @@ internal class CrashBeacon(
         waitTimeoutMs: Long? = null,
         reservation: Reservation? = null,
         persistedDate: Long? = null,
-        stack: String = ""
+        stack: String = "",
+        sourceType: String = "android"
     ): Result? {
         val claim = reservation ?: reserve() ?: return null
         if (claim.owner !== this || !claim.used.compareAndSet(false, true)) return null
@@ -182,7 +184,8 @@ internal class CrashBeacon(
                         dispatch,
                         onDispatch,
                         persistedDate,
-                        stack
+                        stack,
+                        sourceType
                     )
                 } catch (e: Throwable) {
                     // Logging belongs inside the bound too: a logger can itself wait on SDK state.
@@ -225,7 +228,8 @@ internal class CrashBeacon(
         dispatch: AtomicReference<Dispatch>,
         onDispatch: (Long) -> Unit,
         persistedDate: Long?,
-        stack: String
+        stack: String,
+        sourceType: String
     ): String {
         val datadogContext = readContext() ?: return STATUS_FAILED
         val rumContext = RumContext.fromFeatureContext(
@@ -257,7 +261,8 @@ internal class CrashBeacon(
             message,
             date,
             timeSinceAppStartMs,
-            stack
+            stack,
+            sourceType
         )
         // Persist the date before claiming dispatch. Failure must stop the request, just like an
         // id write failure. If persistence outlives the wait, the CAS prevents a late request.
@@ -301,7 +306,8 @@ internal class CrashBeacon(
         message: String,
         date: Long,
         timeSinceAppStartMs: Long,
-        stack: String = ""
+        stack: String = "",
+        sourceType: String = "android"
     ): String {
         // This exact corrected date is also passed to the crash report. A view change or clock
         // sync while the request is in flight must not change the ledger's launch-date key.
@@ -333,6 +339,9 @@ internal class CrashBeacon(
             put("device_type", deviceInfo.deviceType.toErrorSchemaType().toJson().asString)
             put("sdk_version", datadogContext.sdkVersion)
             put("source", datadogContext.source)
+            put("source_type", sourceType)
+            put("arch", deviceInfo.architecture)
+            putOpt("build_id", datadogContext.appBuildId)
             // The same text as the full report's error.stack. Left out when there is none, or when
             // even a truncated stack would push the body past the intake limit.
             if (includedStack.isNotEmpty()) put(CRASH_STACK, includedStack)
@@ -421,25 +430,28 @@ internal class CrashBeacon(
 
         /**
          * At most [maxChars] of [stack], cut on line boundaries when possible: the frames where the
-         * crash was raised, a mark where frames were dropped, and the last `Caused by:` section
-         * (the root cause of a JVM crash) in up to half the room.
+         * crash was raised and the last `Caused by:` section (the root cause of a JVM crash).
+         * Each section gets half the room initially, then gives unused room to the other one.
+         * A marker follows each section only when frames were actually dropped there.
          */
         internal fun clipStack(stack: String, maxChars: Int): String {
             if (maxChars <= 0 || stack.isEmpty()) return ""
             if (stack.length <= maxChars) return stack
             if (maxChars <= STACK_TRUNCATED_MARK.length) return ""
-            val budget = maxChars - STACK_TRUNCATED_MARK.length
-            val causeStart = stack.lastIndexOf(CAUSED_BY).let { if (it > 0) it + 1 else -1 }
-            val tail = if (causeStart > 0) {
-                stack.substring(causeStart, lineCut(stack, causeStart, budget / 2))
-            } else {
-                ""
+            val causeStart = stack.lastIndexOf(CAUSED_BY)
+            if (causeStart <= 0 || maxChars < 2 * (STACK_TRUNCATED_MARK.length + 1) + 1) {
+                return clipSection(stack, 0, stack.length, maxChars)
             }
-            val headRoom = if (tail.isEmpty()) budget else budget - tail.length - 1
-            val headLimit = if (causeStart > 0) causeStart - 1 else stack.length
-            val headEnd = lineCut(stack, 0, minOf(headRoom, headLimit))
-            val head = stack.substring(0, headEnd) + STACK_TRUNCATED_MARK
-            return if (tail.isEmpty()) head else head + "\n" + tail
+            val initialTail = clipSection(stack, causeStart + 1, stack.length, (maxChars - 1) / 2)
+            val head = clipSection(stack, 0, causeStart, maxChars - initialTail.length - 1)
+            val tail = clipSection(stack, causeStart + 1, stack.length, maxChars - head.length - 1)
+            return head + "\n" + tail
+        }
+
+        private fun clipSection(text: String, from: Int, to: Int, maxChars: Int): String {
+            if (to - from <= maxChars) return text.substring(from, to)
+            val end = lineCut(text, from, maxChars - STACK_TRUNCATED_MARK.length)
+            return text.substring(from, end) + STACK_TRUNCATED_MARK
         }
 
         /** The end of at most [maxLength] chars of [text] from [from], on a line break if any. */
@@ -447,6 +459,7 @@ internal class CrashBeacon(
             if (maxLength <= 0) return from
             val end = from + maxLength
             if (end >= text.length) return text.length
+            if (text[end] == '\n') return end
             val lineEnd = text.lastIndexOf('\n', end - 1)
             return if (lineEnd > from) lineEnd else end
         }

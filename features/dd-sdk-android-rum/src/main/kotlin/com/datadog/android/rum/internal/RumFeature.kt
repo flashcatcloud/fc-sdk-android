@@ -1065,6 +1065,7 @@ internal class RumFeature(
             crashType = crashType,
             message = message,
             stack = stack,
+            sourceType = "ndk",
             crashTimeMs = crashTimeMs,
             timeSinceAppStartMs = timeSinceAppStartMs,
             onCrashId = onCrashId,
